@@ -27,11 +27,10 @@ import scala.concurrent.{ExecutionContext, Future}
 @Singleton()
 class CompanyInformationController @Inject()(customsDataStoreConnector: CustomsDataStoreConnector,
                                              cc: ControllerComponents)(implicit executionContext: ExecutionContext)
-  extends BackendController(cc) {
+  extends BackendController(cc):
 
   def companyInformation(eori: String): Action[AnyContent] = Action.async { implicit request =>
     customsDataStoreConnector.getCompanyInformation(eori).map(companyInformation => {
       Ok(Json.toJson(companyInformation))
     })
   }
-}
