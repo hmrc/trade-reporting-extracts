@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 HM Revenue & Customs
+ * Copyright 2023 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,16 +14,17 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.tradereportingextracts.config
+package uk.gov.hmrc.tradereportingextracts.models
 
-import javax.inject.{Inject, Singleton}
-import play.api.Configuration
-import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
+import play.api.libs.json.{Json, OFormat, OWrites}
 
-@Singleton
-class AppConfig @Inject()(val config: Configuration, servicesConfig: ServicesConfig):
+case class EoriPeriod(eori: String,
+                      validFrom: Option[String],
+                      validUntil: Option[String]) {
+  def definedDates: Boolean = validFrom.isDefined || validUntil.isDefined
+}
 
-  val appName: String = config.get[String]("appName")
-
-  lazy val customsDataStore: String = servicesConfig.baseUrl("customs-data-store") +
-    config.get[String]("microservice.services.customs-data-store.context")
+object EoriPeriod {
+  implicit val writes: OWrites[EoriPeriod] = Json.writes[EoriPeriod]
+  implicit val format: OFormat[EoriPeriod] = Json.format[EoriPeriod]
+}
