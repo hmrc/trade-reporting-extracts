@@ -23,6 +23,5 @@ case class AddressInformation(streetAndNumber: String,
                               postalCode: Option[String],
                               countryCode: String)
 
-object AddressInformation {
+object AddressInformation:
   implicit val format: OFormat[AddressInformation] = Json.format[AddressInformation]
-}

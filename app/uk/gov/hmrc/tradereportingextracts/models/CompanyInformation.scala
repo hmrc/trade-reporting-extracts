@@ -22,6 +22,5 @@ case class CompanyInformation(name: String,
                               consent: String,
                               address: AddressInformation)
 
-object CompanyInformation {
+object CompanyInformation:
   implicit val format: OFormat[CompanyInformation] = Json.format[CompanyInformation]
-}

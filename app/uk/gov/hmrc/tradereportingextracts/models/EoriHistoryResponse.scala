@@ -20,6 +20,5 @@ import play.api.libs.json.{Json, OFormat}
 
 case class EoriHistoryResponse(eoriHistory: Seq[EoriPeriod])
 
-object EoriHistoryResponse {
+object EoriHistoryResponse:
   implicit val format: OFormat[EoriHistoryResponse] = Json.format[EoriHistoryResponse]
-}
