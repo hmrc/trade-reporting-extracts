@@ -14,17 +14,14 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.tradereportingextracts.config
+package uk.gov.hmrc.tradereportingextracts.models
 
-import javax.inject.{Inject, Singleton}
-import play.api.Configuration
-import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
+import play.api.libs.json.{Json, OFormat}
 
-@Singleton
-class AppConfig @Inject()(val config: Configuration, servicesConfig: ServicesConfig) {
+case class CompanyInformation(name: String,
+                              consent: String,
+                              address: AddressInformation)
 
-  val appName: String = config.get[String]("appName")
-
-  lazy val customsDataStore: String = servicesConfig.baseUrl("customs-data-store") +
-    config.get[String]("microservice.services.customs-data-store.context")
+object CompanyInformation {
+  implicit val format: OFormat[CompanyInformation] = Json.format[CompanyInformation]
 }

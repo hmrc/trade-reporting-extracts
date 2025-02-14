@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 HM Revenue & Customs
+ * Copyright 2023 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,17 +14,15 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.tradereportingextracts.config
+package uk.gov.hmrc.tradereportingextracts.models
 
-import javax.inject.{Inject, Singleton}
-import play.api.Configuration
-import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
+import play.api.libs.json.{Json, OFormat}
 
-@Singleton
-class AppConfig @Inject()(val config: Configuration, servicesConfig: ServicesConfig) {
+import java.time.LocalDateTime
 
-  val appName: String = config.get[String]("appName")
+case class NotificationEmail(address: String,
+                             timestamp: LocalDateTime)
 
-  lazy val customsDataStore: String = servicesConfig.baseUrl("customs-data-store") +
-    config.get[String]("microservice.services.customs-data-store.context")
+object NotificationEmail {
+  implicit val emailFormat: OFormat[NotificationEmail] = Json.format[NotificationEmail]
 }
