@@ -1,7 +1,9 @@
 
 # trade-reporting-extracts
 
-This is a placeholder README.md for a new repository
+A backend service for the Trade Reporting Extracts project, which serves to
+* Send requests to customs data store for fetching the trade reports requested by users.
+
 
 ### License
 
