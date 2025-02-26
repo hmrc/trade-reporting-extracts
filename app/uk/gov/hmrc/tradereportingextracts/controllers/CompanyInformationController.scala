@@ -30,7 +30,9 @@ class CompanyInformationController @Inject()(customsDataStoreConnector: CustomsD
   extends BackendController(cc):
 
   def companyInformation(eori: String): Action[AnyContent] = Action.async { implicit request =>
-    customsDataStoreConnector.getCompanyInformation(eori).map(companyInformation => {
-      Ok(Json.toJson(companyInformation))
-    })
+    Future {
+      customsDataStoreConnector.getCompanyInformation(eori).map { companyInformation =>
+        Ok(Json.toJson(companyInformation))
+      }
+    }.flatten
   }
