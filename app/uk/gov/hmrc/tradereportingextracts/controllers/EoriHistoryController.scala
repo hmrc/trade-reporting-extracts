@@ -16,22 +16,34 @@
 
 package uk.gov.hmrc.tradereportingextracts.controllers
 
+import play.api.Logger
 import play.api.libs.json.Json
 import play.api.mvc.{Action, AnyContent, ControllerComponents}
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 import uk.gov.hmrc.tradereportingextracts.connectors.CustomsDataStoreConnector
 
 import javax.inject.Inject
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.ExecutionContext
+import uk.gov.hmrc.http.HeaderCarrier
+
+import scala.util.control.NonFatal
 
 class EoriHistoryController @Inject()(customsDataStoreConnector: CustomsDataStoreConnector,
                                       cc: ControllerComponents)(implicit executionContext: ExecutionContext)
-  extends BackendController(cc):
+  extends BackendController(cc) {
+
+  private val log: Logger = Logger(this.getClass)
 
   def getEoriHistory(eori: String): Action[AnyContent] = Action.async { implicit request =>
-    Future {
-      customsDataStoreConnector.getEoriHistory(eori).map { eorihistory =>
-        Ok(Json.toJson(eorihistory))
+    implicit val hc: HeaderCarrier = HeaderCarrier()
+    customsDataStoreConnector.getEoriHistory(eori)
+      .map(response => Ok(Json.toJson(response)))
+      .recover { case NonFatal(error) =>
+        logErrorAndReturnServiceUnavailable(error)
       }
-    }.flatten
   }
+  private def logErrorAndReturnServiceUnavailable(error: Throwable) = {
+    log.error(s"getEoriHistory failed: ${error.getMessage}")
+    ServiceUnavailable
+  }
+}
