@@ -1,3 +1,4 @@
 # microservice specific routes
 
 GET        /eori/:eori/company-information                   uk.gov.hmrc.tradereportingextracts.controllers.CompanyInformationController.companyInformation(eori: String)
+GET        /eori/:eori/eori-history                          uk.gov.hmrc.tradereportingextracts.controllers.EoriHistoryController.getEoriHistory(eori: String)
