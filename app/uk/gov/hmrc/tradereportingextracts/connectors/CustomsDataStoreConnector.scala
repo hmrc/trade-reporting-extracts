@@ -39,7 +39,7 @@ class CustomsDataStoreConnector @Inject()(appConfig: AppConfig,
       .flatMap:
         response => Future.successful(response)
   
-  def getVerifiedEmail(eori: String)(implicit hc: HeaderCarrier): Future[NotificationEmail] =
+  def getVerifiedEmail(eori: String)(using hc: HeaderCarrier): Future[NotificationEmail] =
     httpClient.get(url"${appConfig.customsDataStore}/eori/$eori/verified-email")
       .execute[NotificationEmail]
       .flatMap:
