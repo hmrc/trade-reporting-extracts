@@ -29,7 +29,7 @@ import uk.gov.hmrc.http.HeaderCarrier
 import scala.util.control.NonFatal
 
 class EoriHistoryController @Inject()(customsDataStoreConnector: CustomsDataStoreConnector,
-                                      cc: ControllerComponents)(implicit executionContext: ExecutionContext)
+                                      cc: ControllerComponents)(using executionContext: ExecutionContext)
   extends BackendController(cc) {
 
   private val log: Logger = Logger(this.getClass)

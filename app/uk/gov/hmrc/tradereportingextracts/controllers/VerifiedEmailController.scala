@@ -16,27 +16,29 @@
 
 package uk.gov.hmrc.tradereportingextracts.controllers
 
+import play.api.Logging
 import play.api.libs.json.Json
 import play.api.mvc.{Action, AnyContent, ControllerComponents}
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 import uk.gov.hmrc.tradereportingextracts.connectors.CustomsDataStoreConnector
 
 import javax.inject.{Inject, Singleton}
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.ExecutionContext
 import scala.util.control.NonFatal
 
 @Singleton()
 class VerifiedEmailController @Inject()(customsDataStoreConnector: CustomsDataStoreConnector,
                                         cc: ControllerComponents)
                                        (using ec: ExecutionContext)
-  extends BackendController(cc):
+  extends BackendController(cc) with Logging:
 
   def getVerifiedEmail(eori: String): Action[AnyContent] = Action.async { implicit request =>
     customsDataStoreConnector.getVerifiedEmail(eori)
-      .map(notificationEmail => {Ok(Json.toJson(notificationEmail))})
-      .recover( {case NonFatal(error: Error) =>
-        ServiceUnavailable
-      })
+      .map(notificationEmail => Ok(Json.toJson(notificationEmail)))
+      .recover {case NonFatal(error) =>
+        logger.error(s"getVerifiedEmail failed: ${error.getMessage}")
+        InternalServerError
+      }
   }
 
 

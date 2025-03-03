@@ -24,6 +24,7 @@ import org.scalatest.wordspec.AnyWordSpec
 import org.scalatestplus.mockito.MockitoSugar.mock
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import play.api.http.Status
+import play.api.http.Status.{INTERNAL_SERVER_ERROR, OK}
 import play.api.test.Helpers.status
 import play.api.test.Helpers.defaultAwaitTimeout
 import play.api.test.{FakeRequest, Helpers}
@@ -48,17 +49,17 @@ class VerifiedEmailControllerSpec extends AnyWordSpec, GuiceOneAppPerSuite, Matc
       when(mockCustomsDataStoreConnector.getVerifiedEmail(any())(using any()))
         .thenReturn(Future.successful(notificationEmail))
 
-      val result = controller.getVerifiedEmail("EORI1234")(
-        fakeRequest
-      )
-      status(result) shouldBe Status.OK
+      val result = controller.getVerifiedEmail("EORI1234")(fakeRequest)
+
+      status(result) shouldBe OK
 
       verify(mockCustomsDataStoreConnector, times(1)).getVerifiedEmail(any)(using any)
 
-  "handle exceptions and return SERVICE_UNAVAILABLE" in:
+    "handle exceptions and return SERVICE_UNAVAILABLE" in:
 
-    when(mockCustomsDataStoreConnector.getVerifiedEmail(any())(using any())).thenReturn(Future.failed(new Exception("Service error")))
+      when(mockCustomsDataStoreConnector.getVerifiedEmail(any())(using any()))
+        .thenReturn(Future.failed(new Exception("Service error")))
 
-    val result = controller.getVerifiedEmail("EORI1234").apply(fakeRequest)
+      val result = controller.getVerifiedEmail("EORI1234").apply(fakeRequest)
 
-    status(result) mustBe Status.SERVICE_UNAVAILABLE
+      status(result) mustBe INTERNAL_SERVER_ERROR

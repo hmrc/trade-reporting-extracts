@@ -26,15 +26,15 @@ import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
 
 class CustomsDataStoreConnector @Inject()(appConfig: AppConfig,
-                                          httpClient: HttpClientV2)(implicit ec: ExecutionContext):
+                                          httpClient: HttpClientV2)(using ec: ExecutionContext):
 
-  def getCompanyInformation(eori: String)(implicit hc: HeaderCarrier): Future[CompanyInformation] =
+  def getCompanyInformation(eori: String)(using hc: HeaderCarrier): Future[CompanyInformation] =
     httpClient.get(url"${appConfig.customsDataStore}/eori/$eori/company-information")
       .execute[CompanyInformation]
       .flatMap:
         response => Future.successful(response)
 
-  def getEoriHistory(eori: String)(implicit hc: HeaderCarrier): Future[EoriHistoryResponse] =
+  def getEoriHistory(eori: String)(using hc: HeaderCarrier): Future[EoriHistoryResponse] =
     httpClient.get(url"${appConfig.customsDataStore}/eori/$eori/eori-history")
       .execute[EoriHistoryResponse]
       .flatMap:
