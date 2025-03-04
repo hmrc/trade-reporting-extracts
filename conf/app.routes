@@ -2,3 +2,4 @@
 
 GET        /eori/:eori/company-information                   uk.gov.hmrc.tradereportingextracts.controllers.CompanyInformationController.companyInformation(eori: String)
 GET        /eori/:eori/eori-history                          uk.gov.hmrc.tradereportingextracts.controllers.EoriHistoryController.getEoriHistory(eori: String)
+GET        /eori/:eori/verified-email                        uk.gov.hmrc.tradereportingextracts.controllers.VerifiedEmailController.getVerifiedEmail(eori: String)

@@ -1,3 +1,19 @@
+/*
+ * Copyright 2025 HM Revenue & Customs
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package uk.gov.hmrc.tradereportingextracts
 
 import org.scalatestplus.play._
@@ -25,7 +41,7 @@ class EoriHistoryControllerSpec extends PlaySpec with MockitoSugar with Results 
       val eori = "GB123456789000"
       val eoriHistoryResponse = EoriHistoryResponse(Seq(EoriPeriod(eori, Some("2020-01-01"), Some("2021-01-01"))))
 
-      when(mockCustomsDataStoreConnector.getEoriHistory(any[String])(any[HeaderCarrier])).thenReturn(Future.successful(eoriHistoryResponse))
+      when(mockCustomsDataStoreConnector.getEoriHistory(any())(using any())).thenReturn(Future.successful(eoriHistoryResponse))
 
       val controller = new EoriHistoryController(mockCustomsDataStoreConnector, mockControllerComponents)
       val result = controller.getEoriHistory(eori).apply(FakeRequest(GET, s"/eori/$eori/history"))
@@ -39,7 +55,7 @@ class EoriHistoryControllerSpec extends PlaySpec with MockitoSugar with Results 
       val mockControllerComponents = stubControllerComponents()
       val eori = "GB123456789000"
 
-      when(mockCustomsDataStoreConnector.getEoriHistory(any[String])(any[HeaderCarrier])).thenReturn(Future.failed(new Exception("Service error")))
+      when(mockCustomsDataStoreConnector.getEoriHistory(any())(using any())).thenReturn(Future.failed(new Exception("Service error")))
 
       val controller = new EoriHistoryController(mockCustomsDataStoreConnector, mockControllerComponents)
       val result = controller.getEoriHistory(eori).apply(FakeRequest(GET, s"/eori/$eori/history"))

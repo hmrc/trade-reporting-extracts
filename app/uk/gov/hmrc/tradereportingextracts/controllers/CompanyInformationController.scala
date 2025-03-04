@@ -26,7 +26,7 @@ import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton()
 class CompanyInformationController @Inject()(customsDataStoreConnector: CustomsDataStoreConnector,
-                                             cc: ControllerComponents)(implicit executionContext: ExecutionContext)
+                                             cc: ControllerComponents)(using executionContext: ExecutionContext)
   extends BackendController(cc):
 
   def companyInformation(eori: String): Action[AnyContent] = Action.async { implicit request =>
