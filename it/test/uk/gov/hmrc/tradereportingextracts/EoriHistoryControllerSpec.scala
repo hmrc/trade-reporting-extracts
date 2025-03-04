@@ -41,7 +41,7 @@ class EoriHistoryControllerSpec extends PlaySpec with MockitoSugar with Results 
       val eori = "GB123456789000"
       val eoriHistoryResponse = EoriHistoryResponse(Seq(EoriPeriod(eori, Some("2020-01-01"), Some("2021-01-01"))))
 
-      when(mockCustomsDataStoreConnector.getEoriHistory(any[String])(any[HeaderCarrier])).thenReturn(Future.successful(eoriHistoryResponse))
+      when(mockCustomsDataStoreConnector.getEoriHistory(any())(using any())).thenReturn(Future.successful(eoriHistoryResponse))
 
       val controller = new EoriHistoryController(mockCustomsDataStoreConnector, mockControllerComponents)
       val result = controller.getEoriHistory(eori).apply(FakeRequest(GET, s"/eori/$eori/history"))
@@ -55,7 +55,7 @@ class EoriHistoryControllerSpec extends PlaySpec with MockitoSugar with Results 
       val mockControllerComponents = stubControllerComponents()
       val eori = "GB123456789000"
 
-      when(mockCustomsDataStoreConnector.getEoriHistory(any[String])(any[HeaderCarrier])).thenReturn(Future.failed(new Exception("Service error")))
+      when(mockCustomsDataStoreConnector.getEoriHistory(any())(using any())).thenReturn(Future.failed(new Exception("Service error")))
 
       val controller = new EoriHistoryController(mockCustomsDataStoreConnector, mockControllerComponents)
       val result = controller.getEoriHistory(eori).apply(FakeRequest(GET, s"/eori/$eori/history"))
