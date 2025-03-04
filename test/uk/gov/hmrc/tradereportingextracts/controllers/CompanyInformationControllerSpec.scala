@@ -33,7 +33,7 @@ class CompanyInformationControllerSpec extends SpecBase {
   trait Setup {
 
     val addressInformation: AddressInformation =
-      AddressInformation("12 Example Street", "Example", Some("AA00 0AA"), "GB")
+      AddressInformation("12 Example Street", "Example", Some("G64 2SZ"), "GB")
 
     val companyInformation: CompanyInformation = CompanyInformation("Example Ltd", "1", addressInformation)
 
