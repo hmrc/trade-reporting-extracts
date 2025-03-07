@@ -39,27 +39,26 @@ class VerifiedEmailControllerSpec extends AnyWordSpec, GuiceOneAppPerSuite, Matc
 
   lazy val mockCustomsDataStoreConnector: CustomsDataStoreConnector = mock[CustomsDataStoreConnector]
 
-  private val eori = "GB123456789000"
-  private val fakeRequest = FakeRequest("GET", s"/eori/$eori/verified-email")
+  private val fakeRequest = FakeRequest("GET", s"/eori/verified-email")
   private val notificationEmail = NotificationEmail("example@test.com", LocalDateTime.now())
   private val controller = new VerifiedEmailController(mockCustomsDataStoreConnector, Helpers.stubControllerComponents())
 
   "GET /verified-email" should:
     "return a valid email address" in:
-      when(mockCustomsDataStoreConnector.getVerifiedEmail(any())(using any()))
+      when(mockCustomsDataStoreConnector.getVerifiedEmail()(using any()))
         .thenReturn(Future.successful(notificationEmail))
 
-      val result = controller.getVerifiedEmail("EORI1234")(fakeRequest)
+      val result = controller.getVerifiedEmail()(fakeRequest)
 
       status(result) shouldBe OK
 
-      verify(mockCustomsDataStoreConnector, times(1)).getVerifiedEmail(any)(using any)
+      verify(mockCustomsDataStoreConnector, times(1)).getVerifiedEmail()(using any)
 
     "handle exceptions and return SERVICE_UNAVAILABLE" in:
 
-      when(mockCustomsDataStoreConnector.getVerifiedEmail(any())(using any()))
+      when(mockCustomsDataStoreConnector.getVerifiedEmail()(using any()))
         .thenReturn(Future.failed(new Exception("Service error")))
 
-      val result = controller.getVerifiedEmail("EORI1234").apply(fakeRequest)
+      val result = controller.getVerifiedEmail().apply(fakeRequest)
 
       status(result) mustBe INTERNAL_SERVER_ERROR

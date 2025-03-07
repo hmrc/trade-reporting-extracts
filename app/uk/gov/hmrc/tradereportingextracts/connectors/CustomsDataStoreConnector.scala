@@ -28,20 +28,20 @@ import scala.concurrent.{ExecutionContext, Future}
 class CustomsDataStoreConnector @Inject()(appConfig: AppConfig,
                                           httpClient: HttpClientV2)(using ec: ExecutionContext):
 
-  def getCompanyInformation(eori: String)(using hc: HeaderCarrier): Future[CompanyInformation] =
-    httpClient.get(url"${appConfig.customsDataStore}/eori/$eori/company-information")
+  def getCompanyInformation()(using hc: HeaderCarrier): Future[CompanyInformation] =
+    httpClient.get(url"${appConfig.customsDataStore}/eori/company-information")
       .execute[CompanyInformation]
       .flatMap:
         response => Future.successful(response)
 
-  def getEoriHistory(eori: String)(using hc: HeaderCarrier): Future[EoriHistoryResponse] =
-    httpClient.get(url"${appConfig.customsDataStore}/eori/$eori/eori-history")
+  def getEoriHistory()(using hc: HeaderCarrier): Future[EoriHistoryResponse] =
+    httpClient.get(url"${appConfig.customsDataStore}/eori/eori-history")
       .execute[EoriHistoryResponse]
       .flatMap:
         response => Future.successful(response)
   
-  def getVerifiedEmail(eori: String)(using hc: HeaderCarrier): Future[NotificationEmail] =
-    httpClient.get(url"${appConfig.customsDataStore}/eori/$eori/verified-email")
+  def getVerifiedEmail()(using hc: HeaderCarrier): Future[NotificationEmail] =
+    httpClient.get(url"${appConfig.customsDataStore}/eori/verified-email")
       .execute[NotificationEmail]
       .flatMap:
         response => Future.successful(response)

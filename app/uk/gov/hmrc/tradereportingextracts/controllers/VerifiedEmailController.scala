@@ -32,8 +32,8 @@ class VerifiedEmailController @Inject()(customsDataStoreConnector: CustomsDataSt
                                        (using ec: ExecutionContext)
   extends BackendController(cc) with Logging:
 
-  def getVerifiedEmail(eori: String): Action[AnyContent] = Action.async { implicit request =>
-    customsDataStoreConnector.getVerifiedEmail(eori)
+  def getVerifiedEmail(): Action[AnyContent] = Action.async { implicit request =>
+    customsDataStoreConnector.getVerifiedEmail()
       .map(notificationEmail => Ok(Json.toJson(notificationEmail)))
       .recover {case NonFatal(error) =>
         logger.error(s"getVerifiedEmail failed: ${error.getMessage}")

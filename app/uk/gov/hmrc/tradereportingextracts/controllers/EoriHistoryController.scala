@@ -34,9 +34,9 @@ class EoriHistoryController @Inject()(customsDataStoreConnector: CustomsDataStor
 
   private val log: Logger = Logger(this.getClass)
 
-  def getEoriHistory(eori: String): Action[AnyContent] = Action.async { implicit request =>
+  def getEoriHistory(): Action[AnyContent] = Action.async { implicit request =>
     implicit val hc: HeaderCarrier = HeaderCarrier()
-    customsDataStoreConnector.getEoriHistory(eori)
+    customsDataStoreConnector.getEoriHistory()
       .map(response => Ok(Json.toJson(response)))
       .recover { case NonFatal(error) =>
         logErrorAndReturnServiceUnavailable(error)
