@@ -57,7 +57,7 @@ class UserRepository @Inject()(mongoComponent: MongoComponent)
       }
   }
 
-  def findByUserId(userid: String)(using ec: ExecutionContext): Future[Option[User]] =
+  def findByUserId(userid: Long)(using ec: ExecutionContext): Future[Option[User]] =
     collection.find(Filters.equal("userid", userid))
       .headOption()
       .recoverWith {
@@ -78,7 +78,7 @@ class UserRepository @Inject()(mongoComponent: MongoComponent)
           Future.failed(Throwable(s"failed to update user with userid: ${user.userid} into $collectionName table with ${e.getMessage}"))
       }
 
-  def deleteByUserId(userid: String): Future[Boolean] =
+  def deleteByUserId(userid: Long): Future[Boolean] =
     collection.deleteOne(Filters.equal("userid", userid))
       .head()
       .map(_ =>

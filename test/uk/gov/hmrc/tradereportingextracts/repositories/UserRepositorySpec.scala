@@ -32,8 +32,8 @@ class UserRepositorySpec extends AnyWordSpec,
   CleanMongoCollectionSupport,
   Matchers:
 
-  private val user = User("userid1", "EORI1234", Array("asd@gmail.com", "dfsf@gmail.com"), Array("asd@gmail.com", "dfsf@gmail.com"))
-  private val user2 = User("userid1", "EORI1434", Array("asd@gmail.com", "dfsf@gmail.com"), Array("asd@gmail.com", "dfsf@gmail.com"))
+  private val user = User(123, "EORI1234", Array(234, 346), Array("asd@gmail.com", "dfsf@gmail.com"))
+  private val user2 = User(123, "EORI1434", Array(654, 25), Array("asd@gmail.com", "dfsf@gmail.com"))
 
   val userRepository: UserRepository = UserRepository(mongoComponent)
 
@@ -62,7 +62,7 @@ class UserRepositorySpec extends AnyWordSpec,
     "must return none if uid not found" in {
 
       val insertResult = userRepository.insertUser(user).futureValue
-      val fetchedRecord = userRepository.findByUserId("123").futureValue
+      val fetchedRecord = userRepository.findByUserId(23).futureValue
 
       insertResult mustEqual true
       fetchedRecord must be(None)
