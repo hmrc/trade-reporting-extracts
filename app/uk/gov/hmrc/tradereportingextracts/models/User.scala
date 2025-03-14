@@ -18,7 +18,7 @@ package uk.gov.hmrc.tradereportingextracts.models
 
 import play.api.libs.json.{Format, Json}
 
-case class User(userid: Long, eori: String, thirdpartyIds: Array[Long], nudgeEmails: Array[String]):
+case class User(userid: Long, eori: String, nudgeEmails: Array[String]):
   override def equals(that: Any): Boolean = that match
     case a: User =>
       this.userid == a.userid

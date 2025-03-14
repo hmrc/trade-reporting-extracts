@@ -17,7 +17,7 @@
 package uk.gov.hmrc.tradereportingextracts.repositories
 
 import com.google.inject.{Inject, Singleton}
-import org.mongodb.scala.model.{Filters, IndexModel, IndexOptions, Indexes, Updates}
+import org.mongodb.scala.model.{Filters, IndexModel, IndexOptions, Indexes}
 import play.api.Logging
 import uk.gov.hmrc.mongo.MongoComponent
 import uk.gov.hmrc.mongo.play.json.PlayMongoRepository
