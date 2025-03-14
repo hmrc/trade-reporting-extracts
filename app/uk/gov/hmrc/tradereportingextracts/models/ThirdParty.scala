@@ -19,7 +19,7 @@ package uk.gov.hmrc.tradereportingextracts.models
 import play.api.libs.json.{Json, OFormat}
 
 case class ThirdParty(
-                       userId: String,
+                       userId: Long,
                        accessStart: String,
                        accessEnd: String,
                        declarationStart: String,
