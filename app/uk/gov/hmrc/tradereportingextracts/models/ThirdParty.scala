@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.tradereportingextracts.models
 
-import play.api.libs.json.{Json, OFormat}
+import play.api.libs.json.{Format, Json, OFormat}
 
 case class ThirdParty(
                        userId: Long,
@@ -28,5 +28,5 @@ case class ThirdParty(
                      )
 
 object ThirdParty {
-  implicit val format: OFormat[ThirdParty] = Json.format[ThirdParty]
+  given mongoFormat: Format[ThirdParty] = Json.format[ThirdParty]
 }
