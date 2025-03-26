@@ -53,7 +53,6 @@ class CompanyInformationControllerSpec extends SpecBase {
 
     val companyInformation: CompanyInformation = CompanyInformation("Example Ltd", "1", addressInformation)
 
-
     val mockCustomsDataStoreConnector: CustomsDataStoreConnector = mock[CustomsDataStoreConnector]
 
     val app: Application = application

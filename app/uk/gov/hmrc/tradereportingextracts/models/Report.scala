@@ -18,23 +18,24 @@ package uk.gov.hmrc.tradereportingextracts.models
 
 import play.api.libs.json.{Format, Json}
 
-case class Report(userid: Long,
-                  reportId: String,
-                  templateId: String,
-                  recipientEmails: Array[String],
-                  reportEORIs: Array[String],
-                  reportType: String,
-                  reportStart: String,
-                  reportEnd: String,
-                  status: String,
-                  statusDetails: String
-                 ) {
+case class Report(
+  userid: Long,
+  reportId: String,
+  templateId: String,
+  recipientEmails: Array[String],
+  reportEORIs: Array[String],
+  reportType: String,
+  reportStart: String,
+  reportEnd: String,
+  status: String,
+  statusDetails: String
+) {
   override def equals(obj: Any): Boolean = obj match {
     case that: Report =>
       this.userid == that.userid &&
-        this.reportId == that.reportId &&
-        this.templateId == that.templateId
-    case _ => false
+      this.reportId == that.reportId &&
+      this.templateId == that.templateId
+    case _            => false
   }
 }
 

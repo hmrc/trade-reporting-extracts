@@ -5,7 +5,7 @@ ThisBuild / majorVersion := 0
 ThisBuild / scalaVersion := "3.3.4"
 
 lazy val microservice = Project("trade-reporting-extracts", file("."))
-  .enablePlugins(play.sbt.PlayScala, SbtDistributablesPlugin)
+  .enablePlugins(play.sbt.PlayScala, SbtDistributablesPlugin, ScalafmtPlugin)
   .disablePlugins(JUnitXmlReportPlugin)
   .settings(
     libraryDependencies ++= AppDependencies.compile ++ AppDependencies.test,
@@ -15,14 +15,10 @@ lazy val microservice = Project("trade-reporting-extracts", file("."))
     scalacOptions += "-Wconf:msg=unused import&src=html/.*:s",
     scalacOptions += "-Wconf:msg=Flag.*repeatedly:s",
     PlayKeys.playDefaultPort := 2100,
-      ScoverageKeys.coverageExcludedFiles := "<empty>;Reverse.*;.*handlers.*;.*components.*;" +
-        ".*Routes.*;.*viewmodels.govuk.*;",
-      ScoverageKeys.coverageMinimumStmtTotal := 80,
-      ScoverageKeys.coverageFailOnMinimum := true,
-      ScoverageKeys.coverageHighlighting := true,
   )
   .settings(resolvers += Resolver.jcenterRepo)
-  .settings(CodeCoverageSettings.settings *)
+  .settings(CodeCoverageSettings.settings: _*)
+
 
 lazy val it = project
   .enablePlugins(PlayScala)

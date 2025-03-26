@@ -27,66 +27,78 @@ import uk.gov.hmrc.tradereportingextracts.models.User
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-class UserRepository @Inject()(mongoComponent: MongoComponent)
-                              (using ec: ExecutionContext) extends PlayMongoRepository[User](
-  collectionName = "tre_user",
-  mongoComponent = mongoComponent,
-  domainFormat = User.mongoFormat,
-  indexes = Seq(
-    IndexModel(
-      Indexes.ascending("userid"),
-      IndexOptions().name("useridx").unique(true)
-    )
-  ),
-  replaceIndexes = true
-), Logging:
+class UserRepository @Inject() (mongoComponent: MongoComponent)(using ec: ExecutionContext)
+    extends PlayMongoRepository[User](
+      collectionName = "tre_user",
+      mongoComponent = mongoComponent,
+      domainFormat = User.mongoFormat,
+      indexes = Seq(
+        IndexModel(
+          Indexes.ascending("userid"),
+          IndexOptions().name("useridx").unique(true)
+        )
+      ),
+      replaceIndexes = true
+    ),
+      Logging:
 
-  def insertUser(user: User)
-                (using ec: ExecutionContext): Future[Boolean] = {
+  def insertUser(user: User)(using ec: ExecutionContext): Future[Boolean] = {
     logger.info(s"Inserting a user in $collectionName table with userid: ${user.userid}")
-    collection.insertOne(user)
+    collection
+      .insertOne(user)
       .head()
       .map(_ =>
         logger.info(s"Inserted a user in $collectionName table with userid: ${user.userid}")
         true
       )
-      .recoverWith {
-        case e =>
-          logger.error(s"failed to insert user with userid: ${user.userid} into $collectionName table with ${e.getMessage}")
-          Future.failed(Throwable(s"failed to insert user with userid: ${user.userid} into $collectionName table with ${e.getMessage}"))
+      .recoverWith { case e =>
+        logger.error(
+          s"failed to insert user with userid: ${user.userid} into $collectionName table with ${e.getMessage}"
+        )
+        Future.failed(
+          Throwable(
+            s"failed to insert user with userid: ${user.userid} into $collectionName table with ${e.getMessage}"
+          )
+        )
       }
   }
 
   def findByUserId(userid: Long)(using ec: ExecutionContext): Future[Option[User]] =
-    collection.find(Filters.equal("userid", userid))
+    collection
+      .find(Filters.equal("userid", userid))
       .headOption()
-      .recoverWith {
-        case e =>
-          logger.error(s"failed to retrieve user with userid: $userid in $collectionName table with ${e.getMessage}")
-          Future.failed(Throwable(s"failed to retrieve user with userid: $userid in $collectionName table with ${e.getMessage}"))
+      .recoverWith { case e =>
+        logger.error(s"failed to retrieve user with userid: $userid in $collectionName table with ${e.getMessage}")
+        Future.failed(
+          Throwable(s"failed to retrieve user with userid: $userid in $collectionName table with ${e.getMessage}")
+        )
       }
 
   def updateByUserId(user: User): Future[Boolean] =
-    collection.replaceOne(
-      Filters.equal("userid", user.userid),
-      user)
+    collection
+      .replaceOne(Filters.equal("userid", user.userid), user)
       .toFuture()
       .map(_.wasAcknowledged())
-      .recoverWith {
-        case e =>
-          logger.info(s"failed to update user with userid: ${user.userid} in $collectionName table with ${e.getMessage}")
-          Future.failed(Throwable(s"failed to update user with userid: ${user.userid} into $collectionName table with ${e.getMessage}"))
+      .recoverWith { case e =>
+        logger.info(s"failed to update user with userid: ${user.userid} in $collectionName table with ${e.getMessage}")
+        Future.failed(
+          Throwable(
+            s"failed to update user with userid: ${user.userid} into $collectionName table with ${e.getMessage}"
+          )
+        )
       }
 
   def deleteByUserId(userid: Long): Future[Boolean] =
-    collection.deleteOne(Filters.equal("userid", userid))
+    collection
+      .deleteOne(Filters.equal("userid", userid))
       .head()
       .map(_ =>
         logger.info(s"Deleted a user in $collectionName table with userid: $userid")
         true
       )
-      .recoverWith {
-        case e =>
-          logger.error(s"failed to delete user with userid: $userid into $collectionName table with ${e.getMessage}")
-          Future.failed(Throwable(s"failed to delete user with userid: $userid into $collectionName table with ${e.getMessage}"))
+      .recoverWith { case e =>
+        logger.error(s"failed to delete user with userid: $userid into $collectionName table with ${e.getMessage}")
+        Future.failed(
+          Throwable(s"failed to delete user with userid: $userid into $collectionName table with ${e.getMessage}")
+        )
       }

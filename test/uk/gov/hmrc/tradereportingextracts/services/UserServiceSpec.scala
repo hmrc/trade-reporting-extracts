@@ -30,8 +30,7 @@ import uk.gov.hmrc.tradereportingextracts.repositories.UserRepository
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class UserServiceSpec extends AnyWordSpec,
-  GuiceOneAppPerSuite, Matchers, ScalaFutures:
+class UserServiceSpec extends AnyWordSpec, GuiceOneAppPerSuite, Matchers, ScalaFutures:
 
   given ExecutionContext = ExecutionContext.global
 

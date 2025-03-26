@@ -27,65 +27,87 @@ import uk.gov.hmrc.tradereportingextracts.models.ThirdParty
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-class ThirdPartyRepository @Inject()(mongoComponent: MongoComponent)
-                                    (using ec: ExecutionContext) extends PlayMongoRepository[ThirdParty](
-  collectionName = "tre_thirdParty",
-  mongoComponent = mongoComponent,
-  domainFormat = ThirdParty.mongoFormat,
-  indexes = Seq(
-    IndexModel(
-      Indexes.ascending("userId"),
-      IndexOptions().name("userIdx").unique(true)
-      )
+class ThirdPartyRepository @Inject() (mongoComponent: MongoComponent)(using ec: ExecutionContext)
+    extends PlayMongoRepository[ThirdParty](
+      collectionName = "tre_thirdParty",
+      mongoComponent = mongoComponent,
+      domainFormat = ThirdParty.mongoFormat,
+      indexes = Seq(
+        IndexModel(
+          Indexes.ascending("userId"),
+          IndexOptions().name("userIdx").unique(true)
+        )
+      ),
+      replaceIndexes = true
     ),
-  replaceIndexes = true
-  ), Logging:
-  def insertThirdParty(thirdParty: ThirdParty)
-                      (using ec: ExecutionContext): Future[Boolean] = {
+      Logging:
+  def insertThirdParty(thirdParty: ThirdParty)(using ec: ExecutionContext): Future[Boolean] = {
     logger.info(s"Inserting a third party in $collectionName table with userId: ${thirdParty.userId}")
-    collection.insertOne(thirdParty)
+    collection
+      .insertOne(thirdParty)
       .head()
       .map(_ =>
-             logger.info(s"Inserted a third party in $collectionName table with userId: ${thirdParty.userId}")
-             true
-           )
-      .recoverWith {
-        case e =>
-          logger.error(s"failed to insert third party with userId: ${thirdParty.userId} into $collectionName table with ${e.getMessage}")
-          Future.failed(Throwable(s"failed to insert third party with userId: ${thirdParty.userId} into $collectionName table with ${e.getMessage}"))
+        logger.info(s"Inserted a third party in $collectionName table with userId: ${thirdParty.userId}")
+        true
+      )
+      .recoverWith { case e =>
+        logger.error(
+          s"failed to insert third party with userId: ${thirdParty.userId} into $collectionName table with ${e.getMessage}"
+        )
+        Future.failed(
+          Throwable(
+            s"failed to insert third party with userId: ${thirdParty.userId} into $collectionName table with ${e.getMessage}"
+          )
+        )
       }
   }
 
   def findByUserId(userId: Long)(using ec: ExecutionContext): Future[Option[ThirdParty]] =
-    collection.find(Filters.equal("userId", userId))
+    collection
+      .find(Filters.equal("userId", userId))
       .headOption()
-      .recoverWith {
-        case e =>
-          logger.error(s"failed to retrieve third party with userId: $userId in $collectionName table with ${e.getMessage}")
-          Future.failed(Throwable(s"failed to retrieve third party with userId: $userId in $collectionName table with ${e.getMessage}"))
+      .recoverWith { case e =>
+        logger.error(
+          s"failed to retrieve third party with userId: $userId in $collectionName table with ${e.getMessage}"
+        )
+        Future.failed(
+          Throwable(
+            s"failed to retrieve third party with userId: $userId in $collectionName table with ${e.getMessage}"
+          )
+        )
       }
 
   def updateByUserId(thirdParty: ThirdParty): Future[Boolean] =
-    collection.replaceOne(
-        Filters.equal("userId", thirdParty.userId),
-        thirdParty)
+    collection
+      .replaceOne(Filters.equal("userId", thirdParty.userId), thirdParty)
       .toFuture()
       .map(_.wasAcknowledged())
-      .recoverWith {
-        case e =>
-          logger.info(s"failed to update third party with userId: ${thirdParty.userId} in $collectionName table with ${e.getMessage}")
-          Future.failed(Throwable(s"failed to update third party with userId: ${thirdParty.userId} into $collectionName table with ${e.getMessage}"))
+      .recoverWith { case e =>
+        logger.info(
+          s"failed to update third party with userId: ${thirdParty.userId} in $collectionName table with ${e.getMessage}"
+        )
+        Future.failed(
+          Throwable(
+            s"failed to update third party with userId: ${thirdParty.userId} into $collectionName table with ${e.getMessage}"
+          )
+        )
       }
 
   def deleteByUserId(userId: Long): Future[Boolean] =
-    collection.deleteOne(Filters.equal("userId", userId))
+    collection
+      .deleteOne(Filters.equal("userId", userId))
       .head()
       .map(_ =>
-             logger.info(s"Deleted a third party in $collectionName table with userId: $userId")
-             true
-           )
-      .recoverWith {
-        case e =>
-          logger.error(s"failed to delete third party with userId: $userId into $collectionName table with ${e.getMessage}")
-          Future.failed(Throwable(s"failed to delete third party with userId: $userId into $collectionName table with ${e.getMessage}"))
+        logger.info(s"Deleted a third party in $collectionName table with userId: $userId")
+        true
+      )
+      .recoverWith { case e =>
+        logger.error(
+          s"failed to delete third party with userId: $userId into $collectionName table with ${e.getMessage}"
+        )
+        Future.failed(
+          Throwable(
+            s"failed to delete third party with userId: $userId into $collectionName table with ${e.getMessage}"
+          )
+        )
       }

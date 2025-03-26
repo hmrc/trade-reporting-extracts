@@ -25,23 +25,25 @@ import uk.gov.hmrc.tradereportingextracts.models.{CompanyInformation, EoriHistor
 import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
 
-class CustomsDataStoreConnector @Inject()(appConfig: AppConfig,
-                                          httpClient: HttpClientV2)(using ec: ExecutionContext):
+class CustomsDataStoreConnector @Inject() (appConfig: AppConfig, httpClient: HttpClientV2)(using ec: ExecutionContext):
 
   def getCompanyInformation()(using hc: HeaderCarrier): Future[CompanyInformation] =
-    httpClient.get(url"${appConfig.customsDataStore}/eori/company-information")
+    httpClient
+      .get(url"${appConfig.customsDataStore}/eori/company-information")
       .execute[CompanyInformation]
       .flatMap:
-        response => Future.successful(response)
+      response => Future.successful(response)
 
   def getEoriHistory()(using hc: HeaderCarrier): Future[EoriHistoryResponse] =
-    httpClient.get(url"${appConfig.customsDataStore}/eori/eori-history")
+    httpClient
+      .get(url"${appConfig.customsDataStore}/eori/eori-history")
       .execute[EoriHistoryResponse]
       .flatMap:
-        response => Future.successful(response)
-  
+      response => Future.successful(response)
+
   def getVerifiedEmail()(using hc: HeaderCarrier): Future[NotificationEmail] =
-    httpClient.get(url"${appConfig.customsDataStore}/eori/verified-email")
+    httpClient
+      .get(url"${appConfig.customsDataStore}/eori/verified-email")
       .execute[NotificationEmail]
       .flatMap:
-        response => Future.successful(response)
+      response => Future.successful(response)

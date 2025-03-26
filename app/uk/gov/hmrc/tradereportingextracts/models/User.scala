@@ -24,9 +24,9 @@ case class User(userid: Long, eori: String, nudgeEmails: Array[String]):
       this.userid == a.userid
       &&
       this.eori == a.eori
-    case _ =>
+    case _       =>
       false
 
 object User:
   given mongoFormat: Format[User] = Json.format[User]
-  given CanEqual[User, User] = CanEqual.derived
+  given CanEqual[User, User]      = CanEqual.derived
