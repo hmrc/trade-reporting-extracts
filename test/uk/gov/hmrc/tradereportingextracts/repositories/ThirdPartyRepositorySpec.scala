@@ -26,13 +26,14 @@ import uk.gov.hmrc.tradereportingextracts.models.ThirdParty
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
-class ThirdPartyRepositorySpec extends AnyWordSpec,
-  MockitoSugar,
-  GuiceOneAppPerSuite,
-  CleanMongoCollectionSupport,
-  Matchers:
+class ThirdPartyRepositorySpec
+    extends AnyWordSpec,
+      MockitoSugar,
+      GuiceOneAppPerSuite,
+      CleanMongoCollectionSupport,
+      Matchers:
 
-  private val thirdParty = ThirdParty(123, "2025-01-01", "2025-12-31", "2025-01-01", "2025-12-31", Some("read"))
+  private val thirdParty  = ThirdParty(123, "2025-01-01", "2025-12-31", "2025-01-01", "2025-12-31", Some("read"))
   private val thirdParty2 = ThirdParty(123, "2025-01-01", "2025-12-31", "2025-01-01", "2025-12-31", Some("write"))
 
   val thirdPartyRepository: ThirdPartyRepository = ThirdPartyRepository(mongoComponent)
@@ -51,7 +52,7 @@ class ThirdPartyRepositorySpec extends AnyWordSpec,
 
     "must be able to retrieve a third party successfully using a userId" in {
 
-      val insertResult = thirdPartyRepository.insertThirdParty(thirdParty).futureValue
+      val insertResult  = thirdPartyRepository.insertThirdParty(thirdParty).futureValue
       val fetchedRecord = thirdPartyRepository.findByUserId(thirdParty.userId).futureValue
 
       insertResult mustEqual true
@@ -60,7 +61,7 @@ class ThirdPartyRepositorySpec extends AnyWordSpec,
 
     "must return none if userId not found" in {
 
-      val insertResult = thirdPartyRepository.insertThirdParty(thirdParty).futureValue
+      val insertResult  = thirdPartyRepository.insertThirdParty(thirdParty).futureValue
       val fetchedRecord = thirdPartyRepository.findByUserId(23).futureValue
 
       insertResult mustEqual true
@@ -72,10 +73,10 @@ class ThirdPartyRepositorySpec extends AnyWordSpec,
 
     "must be able to update an existing third party" in {
 
-      val insertResult = thirdPartyRepository.insertThirdParty(thirdParty).futureValue
+      val insertResult              = thirdPartyRepository.insertThirdParty(thirdParty).futureValue
       val fetchedBeforeUpdateRecord = thirdPartyRepository.findByUserId(thirdParty.userId).futureValue
-      val updatedRecord = thirdPartyRepository.updateByUserId(thirdParty2).futureValue
-      val fetchedRecord = thirdPartyRepository.findByUserId(thirdParty2.userId).futureValue
+      val updatedRecord             = thirdPartyRepository.updateByUserId(thirdParty2).futureValue
+      val fetchedRecord             = thirdPartyRepository.findByUserId(thirdParty2.userId).futureValue
 
       insertResult mustEqual true
       fetchedBeforeUpdateRecord.get mustEqual thirdParty
@@ -88,9 +89,9 @@ class ThirdPartyRepositorySpec extends AnyWordSpec,
 
     "must be able to delete an existing third party" in {
 
-      val insertResult = thirdPartyRepository.insertThirdParty(thirdParty).futureValue
+      val insertResult              = thirdPartyRepository.insertThirdParty(thirdParty).futureValue
       val fetchedBeforeDeleteRecord = thirdPartyRepository.findByUserId(thirdParty.userId).futureValue
-      val deletedRecord = thirdPartyRepository.deleteByUserId(thirdParty.userId).futureValue
+      val deletedRecord             = thirdPartyRepository.deleteByUserId(thirdParty.userId).futureValue
 
       insertResult mustEqual true
       fetchedBeforeDeleteRecord.get mustEqual thirdParty

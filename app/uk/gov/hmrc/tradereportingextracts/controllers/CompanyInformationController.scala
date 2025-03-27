@@ -25,12 +25,12 @@ import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton()
-class CompanyInformationController @Inject()(customsDataStoreConnector: CustomsDataStoreConnector,
-                                             cc: ControllerComponents)(using executionContext: ExecutionContext)
-  extends BackendController(cc):
+class CompanyInformationController @Inject() (
+  customsDataStoreConnector: CustomsDataStoreConnector,
+  cc: ControllerComponents
+)(using executionContext: ExecutionContext)
+    extends BackendController(cc):
 
   def companyInformation(): Action[AnyContent] = Action.async { implicit request =>
-    customsDataStoreConnector.getCompanyInformation().map(companyInformation => {
-      Ok(Json.toJson(companyInformation))
-    })
+    customsDataStoreConnector.getCompanyInformation().map(companyInformation => Ok(Json.toJson(companyInformation)))
   }

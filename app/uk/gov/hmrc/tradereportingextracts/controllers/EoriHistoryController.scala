@@ -28,15 +28,16 @@ import uk.gov.hmrc.http.HeaderCarrier
 
 import scala.util.control.NonFatal
 
-class EoriHistoryController @Inject()(customsDataStoreConnector: CustomsDataStoreConnector,
-                                      cc: ControllerComponents)(using executionContext: ExecutionContext)
-  extends BackendController(cc) {
+class EoriHistoryController @Inject() (customsDataStoreConnector: CustomsDataStoreConnector, cc: ControllerComponents)(
+  using executionContext: ExecutionContext
+) extends BackendController(cc) {
 
   private val log: Logger = Logger(this.getClass)
 
-  def getEoriHistory(): Action[AnyContent] = Action.async { implicit request =>
+  def getEoriHistory(): Action[AnyContent]                          = Action.async { implicit request =>
     implicit val hc: HeaderCarrier = HeaderCarrier()
-    customsDataStoreConnector.getEoriHistory()
+    customsDataStoreConnector
+      .getEoriHistory()
       .map(response => Ok(Json.toJson(response)))
       .recover { case NonFatal(error) =>
         logErrorAndReturnServiceUnavailable(error)

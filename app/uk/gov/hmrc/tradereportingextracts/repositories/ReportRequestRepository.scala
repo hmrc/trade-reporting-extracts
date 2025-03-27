@@ -27,67 +27,78 @@ import org.mongodb.scala.*
 import play.api.Logging
 
 @Singleton
-class ReportRequestRepository @Inject()(
-                                mongoComponent: MongoComponent,
-                                config: AppConfig
-                              )(implicit ec: ExecutionContext)
-  extends PlayMongoRepository[Report](
+class ReportRequestRepository @Inject() (
+  mongoComponent: MongoComponent,
+  config: AppConfig
+)(implicit ec: ExecutionContext)
+    extends PlayMongoRepository[Report](
       mongoComponent,
       collectionName = "tre_report",
       domainFormat = Report.mongoFormat,
       indexes = Seq(
-        IndexModel(Indexes.ascending("reportId"),
-        IndexOptions().name("reportidx").unique(true))
+        IndexModel(Indexes.ascending("reportId"), IndexOptions().name("reportidx").unique(true))
       ),
-      replaceIndexes = true),Logging {
+      replaceIndexes = true
+    ),
+      Logging {
 
-
-  def insertReportRequest(report: Report)
-                (using ec: ExecutionContext): Future[Boolean] = {
+  def insertReportRequest(report: Report)(using ec: ExecutionContext): Future[Boolean] = {
     logger.info(s"Inserting a report in $collectionName table with reportId: ${report.reportId}")
-    collection.insertOne(report)
+    collection
+      .insertOne(report)
       .head()
       .map(_ =>
         logger.info(s"Inserted a report in $collectionName table with reportId: ${report.reportId}")
         true
       )
-      .recoverWith {
-        case e =>
-          logger.error(s"failed to insert report with reportId: ${report.reportId} into $collectionName table with ${e.getMessage}")
-          Future.failed(Throwable(s"failed to insert report with reportId: ${report.reportId} into $collectionName table with ${e.getMessage}"))
+      .recoverWith { case e =>
+        logger.error(
+          s"failed to insert report with reportId: ${report.reportId} into $collectionName table with ${e.getMessage}"
+        )
+        Future.failed(
+          Throwable(
+            s"failed to insert report with reportId: ${report.reportId} into $collectionName table with ${e.getMessage}"
+          )
+        )
       }
   }
 
   def findByReportId(reportId: String)(using ec: ExecutionContext): Future[Option[Report]] =
-    collection.find(
-        Filters.equal("reportId", reportId))
+    collection
+      .find(Filters.equal("reportId", reportId))
       .headOption()
-      .recoverWith {
-        case e =>
-          logger.error(s"failed to retrieve user with userid: $reportId in $collectionName table with ${e.getMessage}")
-          Future.failed(Throwable(s"failed to retrieve user with userid: $reportId in $collectionName table with ${e.getMessage}"))
+      .recoverWith { case e =>
+        logger.error(s"failed to retrieve user with userid: $reportId in $collectionName table with ${e.getMessage}")
+        Future.failed(
+          Throwable(s"failed to retrieve user with userid: $reportId in $collectionName table with ${e.getMessage}")
+        )
       }
-    
+
   def updateByReportId(report: Report): Future[Boolean] =
-    collection.replaceOne(
-        Filters.equal("reportId", report.reportId),
-      report)
+    collection
+      .replaceOne(Filters.equal("reportId", report.reportId), report)
       .toFuture()
       .map(_.wasAcknowledged())
-      .recoverWith {
-        case e =>
-          logger.error(s"failed to update report with reportId: ${report.reportId} in $collectionName table with ${e.getMessage}")
-          Future.failed(Throwable(s"failed to update report with reportId: ${report.reportId} in $collectionName table with ${e.getMessage}"))
+      .recoverWith { case e =>
+        logger.error(
+          s"failed to update report with reportId: ${report.reportId} in $collectionName table with ${e.getMessage}"
+        )
+        Future.failed(
+          Throwable(
+            s"failed to update report with reportId: ${report.reportId} in $collectionName table with ${e.getMessage}"
+          )
+        )
       }
-  
+
   def deleteByReportId(reportId: String): Future[Boolean] =
-    collection.deleteOne(
-      Filters.equal("reportId", reportId))
+    collection
+      .deleteOne(Filters.equal("reportId", reportId))
       .toFuture()
       .map(_.wasAcknowledged())
-      .recoverWith {
-        case e =>
-          logger.error(s"failed to delete report with reportId: $reportId in $collectionName table with ${e.getMessage}")
-          Future.failed(Throwable(s"failed to delete report with reportId: $reportId in $collectionName table with ${e.getMessage}"))
+      .recoverWith { case e =>
+        logger.error(s"failed to delete report with reportId: $reportId in $collectionName table with ${e.getMessage}")
+        Future.failed(
+          Throwable(s"failed to delete report with reportId: $reportId in $collectionName table with ${e.getMessage}")
+        )
       }
 }

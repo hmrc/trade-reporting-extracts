@@ -19,13 +19,13 @@ package uk.gov.hmrc.tradereportingextracts.models
 import play.api.libs.json.{Format, Json, OFormat}
 
 case class ThirdParty(
-                       userId: Long,
-                       accessStart: String,
-                       accessEnd: String,
-                       declarationStart: String,
-                       declarationEnd: String,
-                       accessType: Option[String]
-                     )
+  userId: Long,
+  accessStart: String,
+  accessEnd: String,
+  declarationStart: String,
+  declarationEnd: String,
+  accessType: Option[String]
+)
 
 object ThirdParty {
   given mongoFormat: Format[ThirdParty] = Json.format[ThirdParty]

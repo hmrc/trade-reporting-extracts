@@ -20,6 +20,7 @@ import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito.{times, verify, when}
 import org.scalatest.matchers.must.Matchers.mustBe
 import org.scalatest.matchers.should.Matchers
+import org.scalatest.matchers.should.Matchers.shouldBe
 import org.scalatest.wordspec.AnyWordSpec
 import org.scalatestplus.mockito.MockitoSugar.mock
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
@@ -30,21 +31,23 @@ import play.api.test.Helpers.defaultAwaitTimeout
 import play.api.test.{FakeRequest, Helpers}
 import uk.gov.hmrc.tradereportingextracts.connectors.CustomsDataStoreConnector
 import uk.gov.hmrc.tradereportingextracts.models.NotificationEmail
+import uk.gov.hmrc.tradereportingextracts.utils.SpecBase
 
 import java.time.LocalDateTime
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-class VerifiedEmailControllerSpec extends AnyWordSpec, GuiceOneAppPerSuite, Matchers:
+class VerifiedEmailControllerSpec extends SpecBase:
 
   lazy val mockCustomsDataStoreConnector: CustomsDataStoreConnector = mock[CustomsDataStoreConnector]
 
-  private val fakeRequest = FakeRequest("GET", s"/eori/verified-email")
+  private val fakeRequest       = FakeRequest("GET", s"/eori/verified-email")
   private val notificationEmail = NotificationEmail("example@test.com", LocalDateTime.now())
-  private val controller = new VerifiedEmailController(mockCustomsDataStoreConnector, Helpers.stubControllerComponents())
+  private val controller        =
+    new VerifiedEmailController(mockCustomsDataStoreConnector, Helpers.stubControllerComponents())
 
-  "GET /verified-email" should:
-    "return a valid email address" in:
+  "GET /verified-email" should {
+    "return a valid email address" in {
       when(mockCustomsDataStoreConnector.getVerifiedEmail()(using any()))
         .thenReturn(Future.successful(notificationEmail))
 
@@ -53,12 +56,14 @@ class VerifiedEmailControllerSpec extends AnyWordSpec, GuiceOneAppPerSuite, Matc
       status(result) shouldBe OK
 
       verify(mockCustomsDataStoreConnector, times(1)).getVerifiedEmail()(using any)
+    }
 
-    "handle exceptions and return SERVICE_UNAVAILABLE" in:
-
+    "handle exceptions and return SERVICE_UNAVAILABLE" in {
       when(mockCustomsDataStoreConnector.getVerifiedEmail()(using any()))
         .thenReturn(Future.failed(new Exception("Service error")))
 
       val result = controller.getVerifiedEmail().apply(fakeRequest)
 
       status(result) mustBe INTERNAL_SERVER_ERROR
+    }
+  }

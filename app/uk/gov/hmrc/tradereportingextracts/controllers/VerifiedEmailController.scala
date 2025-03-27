@@ -27,18 +27,19 @@ import scala.concurrent.ExecutionContext
 import scala.util.control.NonFatal
 
 @Singleton()
-class VerifiedEmailController @Inject()(customsDataStoreConnector: CustomsDataStoreConnector,
-                                        cc: ControllerComponents)
-                                       (using ec: ExecutionContext)
-  extends BackendController(cc) with Logging:
+class VerifiedEmailController @Inject() (
+  customsDataStoreConnector: CustomsDataStoreConnector,
+  cc: ControllerComponents
+)(using ec: ExecutionContext)
+    extends BackendController(cc)
+    with Logging:
 
   def getVerifiedEmail(): Action[AnyContent] = Action.async { implicit request =>
-    customsDataStoreConnector.getVerifiedEmail()
+    customsDataStoreConnector
+      .getVerifiedEmail()
       .map(notificationEmail => Ok(Json.toJson(notificationEmail)))
-      .recover {case NonFatal(error) =>
+      .recover { case NonFatal(error) =>
         logger.error(s"getVerifiedEmail failed: ${error.getMessage}")
         InternalServerError
       }
   }
-
-

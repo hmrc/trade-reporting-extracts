@@ -24,12 +24,12 @@ import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-class UserService @Inject()(
-                             userRepository: UserRepository
-                           )(using ec: ExecutionContext) extends Logging:
+class UserService @Inject() (
+  userRepository: UserRepository
+)(using ec: ExecutionContext)
+    extends Logging:
 
-  def insertUser(user: User)
-                (using ec: ExecutionContext): Future[Boolean] =
+  def insertUser(user: User)(using ec: ExecutionContext): Future[Boolean] =
     userRepository.insertUser(user)
 
   def findByUserId(userid: Long)(using ec: ExecutionContext): Future[Option[User]] =

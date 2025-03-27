@@ -27,14 +27,37 @@ import uk.gov.hmrc.tradereportingextracts.models.Report
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
-class ReportRequestRepositorySpec extends AnyWordSpec,
-MockitoSugar,
-GuiceOneAppPerSuite,
-CleanMongoCollectionSupport,
-Matchers:
+class ReportRequestRepositorySpec
+    extends AnyWordSpec,
+      MockitoSugar,
+      GuiceOneAppPerSuite,
+      CleanMongoCollectionSupport,
+      Matchers:
 
-  private val report = Report(1L, "someReportId", "someTemplateId", Array("email1@example.com", "email2@example.com"), Array("EORI1", "EORI2"), "someReportType", "2023-01-01", "2023-12-31", "someStatus", "someStatusDetails")
-  private val report2 = Report(1L, "someReportId2", "someTemplateId2", Array("email3@example.com", "email4@example.com"), Array("EORI3", "EORI4"), "someReportType2", "2023-02-01", "2023-11-30", "someStatus2", "someStatusDetails2")
+  private val report  = Report(
+    1L,
+    "someReportId",
+    "someTemplateId",
+    Array("email1@example.com", "email2@example.com"),
+    Array("EORI1", "EORI2"),
+    "someReportType",
+    "2023-01-01",
+    "2023-12-31",
+    "someStatus",
+    "someStatusDetails"
+  )
+  private val report2 = Report(
+    1L,
+    "someReportId2",
+    "someTemplateId2",
+    Array("email3@example.com", "email4@example.com"),
+    Array("EORI3", "EORI4"),
+    "someReportType2",
+    "2023-02-01",
+    "2023-11-30",
+    "someStatus2",
+    "someStatusDetails2"
+  )
 
   val reportRequestRepository: ReportRequestRepository = new ReportRequestRepository(mongoComponent, mock[AppConfig])
 
@@ -49,7 +72,7 @@ Matchers:
   "findByReportId" should {
 
     "must be able to retrieve a report successfully using a reportId" in {
-      val insertResult = reportRequestRepository.insertReportRequest(report).futureValue
+      val insertResult  = reportRequestRepository.insertReportRequest(report).futureValue
       val fetchedRecord = reportRequestRepository.findByReportId(report.reportId).futureValue
 
       insertResult mustEqual true
@@ -57,7 +80,7 @@ Matchers:
     }
 
     "must return none if reportId not found" in {
-      val insertResult = reportRequestRepository.insertReportRequest(report).futureValue
+      val insertResult  = reportRequestRepository.insertReportRequest(report).futureValue
       val fetchedRecord = reportRequestRepository.findByReportId("nonExistentReportId").futureValue
 
       insertResult mustEqual true
@@ -67,7 +90,7 @@ Matchers:
   "updateByReportId" should {
 
     "must be able to update an existing report" in {
-      val insertResult = reportRequestRepository.insertReportRequest(report).futureValue
+      val insertResult              = reportRequestRepository.insertReportRequest(report).futureValue
       val fetchedBeforeUpdateRecord = reportRequestRepository.findByReportId(report.reportId).futureValue
 
       insertResult mustEqual true
@@ -84,9 +107,9 @@ Matchers:
   "deleteByReportId" should {
 
     "must be able to delete an existing report" in {
-      val insertResult = reportRequestRepository.insertReportRequest(report).futureValue
+      val insertResult              = reportRequestRepository.insertReportRequest(report).futureValue
       val fetchedBeforeDeleteRecord = reportRequestRepository.findByReportId(report.reportId).futureValue
-      val deletedRecord = reportRequestRepository.deleteByReportId(report.reportId).futureValue
+      val deletedRecord             = reportRequestRepository.deleteByReportId(report.reportId).futureValue
 
       insertResult mustEqual true
       fetchedBeforeDeleteRecord.get mustEqual report
