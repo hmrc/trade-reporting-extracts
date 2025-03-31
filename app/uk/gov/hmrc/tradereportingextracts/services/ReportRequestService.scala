@@ -30,7 +30,7 @@ class ReportRequestService @Inject() (
     extends Logging:
 
   def create(report: Report)(using ec: ExecutionContext): Future[Boolean] =
-    //Business Logic
+    // Business Logic
     reportRequestRepository.insertReportRequest(report)
 
   def get(reportId: String)(using ec: ExecutionContext): Future[Option[Report]] =
