@@ -14,11 +14,10 @@ lazy val microservice = Project("trade-reporting-extracts", file("."))
     scalacOptions += "-Wconf:src=routes/.*:s",
     scalacOptions += "-Wconf:msg=unused import&src=html/.*:s",
     scalacOptions += "-Wconf:msg=Flag.*repeatedly:s",
-    PlayKeys.playDefaultPort := 2100,
+    PlayKeys.playDefaultPort := 2100
   )
   .settings(resolvers += Resolver.jcenterRepo)
   .settings(CodeCoverageSettings.settings: _*)
-
 
 lazy val it = project
   .enablePlugins(PlayScala)
