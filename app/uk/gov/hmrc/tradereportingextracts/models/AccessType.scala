@@ -14,4 +14,4 @@ object AccessType:
         values.find(_.toString == value) match
           case Some(accessType) => JsSuccess(accessType)
           case None             => JsError(s"Unknown AccessType: $value")
-      case _ => JsError("AccessType must be a string")
+      case _               => JsError("AccessType must be a string")

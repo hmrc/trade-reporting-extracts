@@ -1,7 +1,7 @@
 package uk.gov.hmrc.tradereportingextracts.models
-  
+
 import play.api.libs.json.{Format, JsError, JsResult, JsString, JsSuccess, JsValue}
-  
+
 enum UserType:
   case Trader, Agent
 
@@ -14,4 +14,4 @@ object UserType:
         values.find(_.toString == value) match
           case Some(userType) => JsSuccess(userType)
           case None           => JsError(s"Unknown UserType: $value")
-      case _ => JsError("UserType must be a string")
+      case _               => JsError("UserType must be a string")

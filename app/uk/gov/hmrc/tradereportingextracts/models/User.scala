@@ -21,12 +21,12 @@ import play.api.libs.json.{Format, Json, Reads, Writes}
 import scala.reflect.ClassTag
 
 case class User(
-    userid: Long,
-    eoriArn: String,
-    userType: UserType,
-    additionalEmails: Array[String] = Array.empty,
-    authorisedAgents: Array[AuthorisedAgent] = Array.empty
-  ):
+  userid: Long,
+  eoriArn: String,
+  userType: UserType,
+  additionalEmails: Array[String] = Array.empty,
+  authorisedAgents: Array[AuthorisedAgent] = Array.empty
+):
   override def equals(that: Any): Boolean = that match
     case a: User =>
       this.userid == a.userid &&
@@ -40,5 +40,5 @@ object User:
       Reads.seq[A].map(_.toArray),
       Writes.seq[A].contramap(_.toSeq)
     )
-  given mongoFormat: Format[User] = Json.format[User]
-  given CanEqual[User, User]      = CanEqual.derived
+  given mongoFormat: Format[User]                                   = Json.format[User]
+  given CanEqual[User, User]                                        = CanEqual.derived
