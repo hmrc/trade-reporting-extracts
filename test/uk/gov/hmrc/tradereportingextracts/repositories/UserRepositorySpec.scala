@@ -22,14 +22,14 @@ import org.scalatest.wordspec.AnyWordSpec
 import org.scalatestplus.mockito.MockitoSugar
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import uk.gov.hmrc.mongo.test.CleanMongoCollectionSupport
-import uk.gov.hmrc.tradereportingextracts.models.User
+import uk.gov.hmrc.tradereportingextracts.models.{User, UserType}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
 class UserRepositorySpec extends AnyWordSpec, MockitoSugar, GuiceOneAppPerSuite, CleanMongoCollectionSupport, Matchers:
 
-  private val user  = User(123, "EORI1234", Array("asd@gmail.com", "dfsf@gmail.com"))
-  private val user2 = User(123, "EORI1434", Array("asd@gmail.com", "dfsf@gmail.com"))
+  private val user  = User(123, "EORI1234", UserType.Trader, Array("asd@gmail.com", "dfsf@gmail.com"))
+  private val user2 = User(123, "EORI1434", UserType.Trader, Array("asd@gmail.com", "dfsf@gmail.com"))
 
   val userRepository: UserRepository = UserRepository(mongoComponent)
 
