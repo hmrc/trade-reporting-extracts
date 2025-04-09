@@ -16,17 +16,29 @@
 
 package uk.gov.hmrc.tradereportingextracts.models
 
-import play.api.libs.json.{Format, Json}
+import play.api.libs.json.{Format, Json, Reads, Writes}
 
-case class User(userid: Long, eori: String, nudgeEmails: Array[String]):
+import scala.reflect.ClassTag
+
+case class User(
+  userid: Long,
+  eoriArn: String,
+  userType: UserType,
+  additionalEmails: Array[String] = Array.empty,
+  authorisedAgents: Array[AuthorisedAgent] = Array.empty
+):
   override def equals(that: Any): Boolean = that match
     case a: User =>
-      this.userid == a.userid
-      &&
-      this.eori == a.eori
+      this.userid == a.userid &&
+      this.eoriArn == a.eoriArn
     case _       =>
       false
 
 object User:
-  given mongoFormat: Format[User] = Json.format[User]
-  given CanEqual[User, User]      = CanEqual.derived
+  given arrayFormat[A: Format](using ClassTag[A]): Format[Array[A]] =
+    Format(
+      Reads.seq[A].map(_.toArray),
+      Writes.seq[A].contramap(_.toSeq)
+    )
+  given mongoFormat: Format[User]                                   = Json.format[User]
+  given CanEqual[User, User]                                        = CanEqual.derived

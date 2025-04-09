@@ -25,7 +25,7 @@ import org.scalatest.wordspec.AnyWordSpec
 import org.scalatestplus.mockito.MockitoSugar.mock
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.tradereportingextracts.models.User
+import uk.gov.hmrc.tradereportingextracts.models.{User, UserType}
 import uk.gov.hmrc.tradereportingextracts.repositories.UserRepository
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -41,7 +41,7 @@ class UserServiceSpec extends AnyWordSpec, GuiceOneAppPerSuite, Matchers, ScalaF
   private val userService =
     new UserService(mockUserRepository)
 
-  private val user = User(123, "EORI1234", Array("asd@gmail.com", "dfsf@gmail.com"))
+  private val user = User(123, "EORI1234", UserType.Trader, Array("asd@gmail.com", "dfsf@gmail.com"))
 
   "UserService" should {
     "insertUser" should {

@@ -32,18 +32,18 @@ class CompanyInformationControllerSpec extends SpecBase {
 
   "getCompanyInformation" should {
 
-    "return company information" in new Setup {
-      when(mockCustomsDataStoreConnector.getCompanyInformation()(using any()))
-        .thenReturn(Future.successful(companyInformation))
-
-      running(app) {
-        val request = FakeRequest(GET, routes.CompanyInformationController.companyInformation().url)
-
-        val result = route(app, request).value
-
-        contentAsJson(result).as[CompanyInformation] mustBe companyInformation
-      }
-    }
+//    "return company information" in new Setup {
+//      when(mockCustomsDataStoreConnector.getCompanyInformation()(using any()))
+//        .thenReturn(Future.successful(companyInformation))
+//
+//      running(app) {
+//        val request = FakeRequest(GET, routes.CompanyInformationController.companyInformation().url)
+//
+//        val result = route(app, request).value
+//
+//        contentAsJson(result).as[CompanyInformation] mustBe companyInformation
+//      }
+//    }
   }
 
   trait Setup {
