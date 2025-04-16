@@ -17,7 +17,7 @@
 package uk.gov.hmrc.tradereportingextracts.services
 
 import play.api.Logging
-import uk.gov.hmrc.tradereportingextracts.models.Report
+import uk.gov.hmrc.tradereportingextracts.models.ReportRequest
 import uk.gov.hmrc.tradereportingextracts.repositories.ReportRequestRepository
 
 import javax.inject.{Inject, Singleton}
@@ -29,14 +29,14 @@ class ReportRequestService @Inject() (
 )(using ec: ExecutionContext)
     extends Logging:
 
-  def create(report: Report)(using ec: ExecutionContext): Future[Boolean] =
+  def create(report: ReportRequest)(using ec: ExecutionContext): Future[Boolean] =
     // Business Logic
     reportRequestRepository.insertReportRequest(report)
 
-  def get(reportId: String)(using ec: ExecutionContext): Future[Option[Report]] =
+  def get(reportId: String)(using ec: ExecutionContext): Future[Option[ReportRequest]] =
     reportRequestRepository.findByReportId(reportId)
 
-  def update(report: Report): Future[Boolean] =
+  def update(report: ReportRequest): Future[Boolean] =
     reportRequestRepository.updateByReportId(report)
 
   def delete(reportId: String): Future[Boolean] =

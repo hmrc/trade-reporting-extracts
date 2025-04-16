@@ -18,26 +18,33 @@ package uk.gov.hmrc.tradereportingextracts.models
 
 import play.api.libs.json.{Format, Json}
 
-case class Report(
-  userid: Long,
+import java.time.Instant
+
+case class ReportRequest(
   reportId: String,
-  templateId: String,
-  recipientEmails: Array[String],
+  correlationId: String,
+  reportName: String,
+  requestorId: String,
+  eoriRole: String,
   reportEORIs: Array[String],
-  reportType: String,
-  reportStart: String,
-  reportEnd: String,
+  recipientEmails: Array[String],
+  reportTypeName: String,
+  reportStart: Instant,
+  reportEnd: Instant,
+  createDate: Instant,
   status: String,
-  statusDetails: String
+  statusDetails: String,
+  fileAvailableTime: Instant,
+  linkAvailableTime: Instant
 ) {
   override def equals(obj: Any): Boolean = obj match {
-    case that: Report =>
-      this.userid == that.userid &&
+    case that: ReportRequest =>
+      this.requestorId == that.requestorId &&
       this.reportId == that.reportId &&
-      this.templateId == that.templateId
-    case _            => false
+      this.correlationId == that.correlationId
+    case _                   => false
   }
 }
 
-object Report:
-  given mongoFormat: Format[Report] = Json.format[Report]
+object ReportRequest:
+  given mongoFormat: Format[ReportRequest] = Json.format[ReportRequest]

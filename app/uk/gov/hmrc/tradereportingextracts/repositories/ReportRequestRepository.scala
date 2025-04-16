@@ -21,7 +21,7 @@ import org.mongodb.scala.model.{Filters, IndexModel, IndexOptions, Indexes}
 import uk.gov.hmrc.mongo.MongoComponent
 import uk.gov.hmrc.mongo.play.json.PlayMongoRepository
 import uk.gov.hmrc.tradereportingextracts.config.AppConfig
-import uk.gov.hmrc.tradereportingextracts.models.Report
+import uk.gov.hmrc.tradereportingextracts.models.ReportRequest
 import scala.concurrent.{ExecutionContext, Future}
 import org.mongodb.scala.*
 import play.api.Logging
@@ -31,10 +31,10 @@ class ReportRequestRepository @Inject() (
   mongoComponent: MongoComponent,
   config: AppConfig
 )(implicit ec: ExecutionContext)
-    extends PlayMongoRepository[Report](
+    extends PlayMongoRepository[ReportRequest](
       mongoComponent,
       collectionName = "tre_report",
-      domainFormat = Report.mongoFormat,
+      domainFormat = ReportRequest.mongoFormat,
       indexes = Seq(
         IndexModel(Indexes.ascending("reportId"), IndexOptions().name("reportidx").unique(true))
       ),
@@ -42,7 +42,7 @@ class ReportRequestRepository @Inject() (
     ),
       Logging {
 
-  def insertReportRequest(report: Report)(using ec: ExecutionContext): Future[Boolean] = {
+  def insertReportRequest(report: ReportRequest)(using ec: ExecutionContext): Future[Boolean] = {
     logger.info(s"Inserting a report in $collectionName table with reportId: ${report.reportId}")
     collection
       .insertOne(report)
@@ -63,7 +63,7 @@ class ReportRequestRepository @Inject() (
       }
   }
 
-  def findByReportId(reportId: String)(using ec: ExecutionContext): Future[Option[Report]] =
+  def findByReportId(reportId: String)(using ec: ExecutionContext): Future[Option[ReportRequest]] =
     collection
       .find(Filters.equal("reportId", reportId))
       .headOption()
@@ -74,7 +74,7 @@ class ReportRequestRepository @Inject() (
         )
       }
 
-  def updateByReportId(report: Report): Future[Boolean] =
+  def updateByReportId(report: ReportRequest): Future[Boolean] =
     collection
       .replaceOne(Filters.equal("reportId", report.reportId), report)
       .toFuture()
