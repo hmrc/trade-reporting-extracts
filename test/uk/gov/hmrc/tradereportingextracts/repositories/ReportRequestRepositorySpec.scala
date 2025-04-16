@@ -23,8 +23,9 @@ import org.scalatestplus.mockito.MockitoSugar
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import uk.gov.hmrc.mongo.test.CleanMongoCollectionSupport
 import uk.gov.hmrc.tradereportingextracts.config.AppConfig
-import uk.gov.hmrc.tradereportingextracts.models.Report
+import uk.gov.hmrc.tradereportingextracts.models.ReportRequest
 
+import java.time.Instant
 import scala.concurrent.ExecutionContext.Implicits.global
 
 class ReportRequestRepositorySpec
@@ -34,29 +35,39 @@ class ReportRequestRepositorySpec
       CleanMongoCollectionSupport,
       Matchers:
 
-  private val report  = Report(
-    1L,
-    "someReportId",
-    "someTemplateId",
-    Array("email1@example.com", "email2@example.com"),
-    Array("EORI1", "EORI2"),
-    "someReportType",
-    "2023-01-01",
-    "2023-12-31",
-    "someStatus",
-    "someStatusDetails"
+  private val report  = ReportRequest(
+    reportId = "someReportId",
+    correlationId = "someCorrelationId",
+    reportName = "someReportName",
+    requestorId = "GB0019",
+    eoriRole = "someEORIRole",
+    reportEORIs = Array("EORI1", "EORI2"),
+    recipientEmails = Array("email1@example.com", "email2@example.com"),
+    reportTypeName = "someReportType",
+    reportStart = Instant.parse("2023-01-01T00:00:00Z"),
+    reportEnd = Instant.parse("2023-12-31T23:59:59Z"),
+    createDate = Instant.parse("2023-01-01T10:00:00Z"),
+    status = "someStatus",
+    statusDetails = "someStatusDetails",
+    fileAvailableTime = Instant.parse("2023-01-02T10:00:00Z"),
+    linkAvailableTime = Instant.parse("2023-01-03T10:00:00Z")
   )
-  private val report2 = Report(
-    1L,
-    "someReportId2",
-    "someTemplateId2",
-    Array("email3@example.com", "email4@example.com"),
-    Array("EORI3", "EORI4"),
-    "someReportType2",
-    "2023-02-01",
-    "2023-11-30",
-    "someStatus2",
-    "someStatusDetails2"
+  private val report2 = ReportRequest(
+    reportId = "uniqueReportId2",
+    correlationId = "uniqueCorrelationId2",
+    reportName = "anotherReportName",
+    requestorId = "GB0020",
+    eoriRole = "anotherEORIRole",
+    reportEORIs = Array("EORI5", "EORI6"),
+    recipientEmails = Array("email5@example.com", "email6@example.com"),
+    reportTypeName = "anotherReportType",
+    reportStart = Instant.parse("2023-03-01T00:00:00Z"),
+    reportEnd = Instant.parse("2023-10-31T23:59:59Z"),
+    createDate = Instant.parse("2023-03-01T10:00:00Z"),
+    status = "anotherStatus",
+    statusDetails = "anotherStatusDetails",
+    fileAvailableTime = Instant.parse("2023-03-02T10:00:00Z"),
+    linkAvailableTime = Instant.parse("2023-03-03T10:00:00Z")
   )
 
   val reportRequestRepository: ReportRequestRepository = new ReportRequestRepository(mongoComponent, mock[AppConfig])

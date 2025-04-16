@@ -1,0 +1,225 @@
+openapi: 3.0.3
+info:
+  title: Notify Report Available API (1.0.0)
+  description: This API is used by file management system like SDES, to notify when a requested report is available for download by the user
+  version: 1.0.0
+paths:
+  /notify-report-available:
+    put:
+      tags:
+        - Put report availability notification
+      parameters:
+        - description: Bearer token for access to EIS system
+          in: header
+          name: authorization
+          required: true
+          schema:
+            example: Bearer XXXXXXXXXXXXXXXXXXX
+            pattern: ^Bearer (.*)$
+            type: string
+        - description: Payload content type(s)
+          in: header
+          name: content-type
+          required: true
+          schema:
+            enum:
+              - application/json
+            example: application/json
+            type: string
+        - description: The date and time of the message
+          in: header
+          name: date
+          required: true
+          schema:
+            example: Fri, 01 Mar 2019 15:00:00 GMT
+            pattern: ^(Mon|Tue|Wed|Thu|Fri|Sat|Sun), [0-9]{2} (Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)
+              [0-9]{4} [0-9]{2}:[0-9]{2}:[0-9]{2} (UTC|GMT)$
+            type: string
+        - description: A UUID format string for the transaction used for traceability
+            purposes.
+          in: header
+          name: x-correlation-id
+          required: true
+          schema:
+            example: f92d12cd-7087-42b9-b7ae-b32665c5dc31
+            pattern: ^[0-9a-fA-F]{8}[-][0-9a-fA-F]{4}[-][0-9a-fA-F]{4}[-][0-9a-fA-F]{4}[-][0-9a-fA-F]{12}$
+            type: string
+        - description: The name or IP address of the application system that submitted
+            the message.
+          in: header
+          name: x-transmitting-system
+          required: true
+          schema:
+            example: SDES
+            pattern: ^[\w\-\.]{1,255}$
+            type: string
+        - description: The name or IP address of the application system that submitted
+            the message.
+          in: header
+          name: source-system
+          required: true
+          schema:
+            example: CDAP
+            pattern: ^[\w\-\.]{1,255}$
+            type: string
+      requestBody:
+        description: The payload of the API request.
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReportAvailablePayload'
+      responses:
+        "201":
+          description: Created Passed validation and response returned
+        "400":
+          description: Bad Request - The request could not be understood or was missing required parameters.
+        "403":
+          description: Forbidden - Authentication succeeded but the authenticated user does not have access to the resource.
+        "405":
+          description: Method Not Allowed
+        "408":
+          description: Request Timeout - The server timed out waiting for the request.
+        "500":
+          description: Internal Server Error - An error occurred on the server.
+        "502":
+          description: Bad Gateway - The server was acting as a gateway or proxy and received an invalid response from the upstream server.
+        "503":
+          description: Service Unavailable - The server is currently unable to handle the request.
+components:
+  schemas:
+    RetentionDaysMetadataItem:
+      type: object
+      properties:
+        key:
+          type: string
+          enum:
+            - RETENTION_DAYS
+          description: Metadata key representing specific attributes of the file.
+        value:
+          type: string
+          description: Metadata value associated with the key.
+      required:
+        - key
+        - value
+
+    FileTypeMetadataItem:
+      type: object
+      properties:
+        key:
+          type: string
+          enum:
+            - FileType
+          description: Metadata key representing the file type.
+        value:
+          type: string
+          description: Metadata value associated with the file type.
+      required:
+        - key
+        - value
+
+    EORIMetadataItem:
+      type: object
+      properties:
+        key:
+          type: string
+          enum:
+            - EORI
+          description: Metadata key representing the EORI.
+        value:
+          type: string
+          description: Metadata value associated with the EORI.
+      required:
+        - key
+        - value
+
+    MDTPReportXCorrelationIDMetadataItem:
+      type: object
+      properties:
+        key:
+          type: string
+          enum:
+            - MDTP-report-x-correlationID
+          description: Metadata key representing the correlation ID.
+        value:
+          type: string
+          description: Metadata value associated with the correlation ID.
+      required:
+        - key
+        - value
+
+    MDTPReportRequestIDMetadataItem:
+      type: object
+      properties:
+        key:
+          type: string
+          enum:
+            - MDTP-report-requestID
+          description: Metadata key representing the request ID.
+        value:
+          type: string
+          description: Metadata value associated with the request ID.
+      required:
+        - key
+        - value
+
+    MDTPReportTypeNameMetadataItem:
+      type: object
+      properties:
+        key:
+          type: string
+          enum:
+            - MDTP-reportTypeName
+          description: Metadata key representing the report type name.
+        value:
+          type: string
+          description: Metadata value associated with the report type name.
+      required:
+        - key
+        - value
+
+    ReportFilesPartsMetadataItem:
+      type: object
+      properties:
+        key:
+          type: string
+          enum:
+            - Report-files-parts
+          description: Metadata key representing the report file parts.
+        value:
+          type: string
+          description: Metadata value associated with the report file parts.
+      required:
+        - key
+        - value
+    ReportAvailablePayload:
+      type: object
+      properties:
+        eori:
+          type: string
+          description: Economic Operator Registration and Identification number.
+        fileName:
+          type: string
+          description: |
+            (Mandatory) The name of the CSV file included in the zip without the extension.
+            For example, for a file called xyz.csv, the sourceFileName value will be xyz.
+        fileSize:
+          type: integer
+          description: Size of the file in bytes.
+        metadata:
+          type: array
+          description: Additional metadata about the report.
+          items:
+            oneOf:
+              - $ref: '#/components/schemas/RetentionDaysMetadataItem'
+              - $ref: '#/components/schemas/FileTypeMetadataItem'
+              - $ref: '#/components/schemas/EORIMetadataItem'
+              - $ref: '#/components/schemas/MDTPReportXCorrelationIDMetadataItem'
+              - $ref: '#/components/schemas/MDTPReportRequestIDMetadataItem'
+              - $ref: '#/components/schemas/MDTPReportTypeNameMetadataItem'
+              - $ref: '#/components/schemas/ReportFilesPartsMetadataItem'
+      required:
+        - eori
+        - fileName
+        - fileSize
+        - metadata

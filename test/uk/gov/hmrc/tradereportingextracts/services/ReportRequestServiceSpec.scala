@@ -1,3 +1,19 @@
+/*
+ * Copyright 2025 HM Revenue & Customs
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package uk.gov.hmrc.tradereportingextracts.services
 
 import org.mockito.ArgumentMatchers.any
@@ -7,9 +23,10 @@ import org.scalatest.matchers.must.Matchers.{must, mustEqual}
 import org.scalatest.wordspec.AnyWordSpec
 import org.scalatestplus.mockito.MockitoSugar.mock
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
-import uk.gov.hmrc.tradereportingextracts.models.Report
+import uk.gov.hmrc.tradereportingextracts.models.ReportRequest
 import uk.gov.hmrc.tradereportingextracts.repositories.ReportRequestRepository
 
+import java.time.Instant
 import scala.concurrent.{ExecutionContext, Future}
 
 class ReportRequestServiceSpec extends AnyWordSpec, GuiceOneAppPerSuite, ScalaFutures:
@@ -20,17 +37,22 @@ class ReportRequestServiceSpec extends AnyWordSpec, GuiceOneAppPerSuite, ScalaFu
 
   private val reportRequestService = new ReportRequestService(mockReportRequestRepository)
 
-  private val report = Report(
-    userid = 12345L,
-    reportId = "reportId123",
-    templateId = "templateId123",
-    recipientEmails = Array("example1@example.com", "example2@example.com"),
-    reportEORIs = Array("EORI123", "EORI456"),
-    reportType = "TypeA",
-    reportStart = "2023-01-01",
-    reportEnd = "2023-12-31",
-    status = "Completed",
-    statusDetails = "Report generated successfully"
+  private val report = ReportRequest(
+    reportId = "someReportId",
+    correlationId = "someCorrelationId",
+    reportName = "someReportName",
+    requestorId = "GB0019",
+    eoriRole = "someEORIRole",
+    reportEORIs = Array("EORI1", "EORI2"),
+    recipientEmails = Array("email1@example.com", "email2@example.com"),
+    reportTypeName = "someReportType",
+    reportStart = Instant.parse("2023-01-01T00:00:00Z"),
+    reportEnd = Instant.parse("2023-12-31T23:59:59Z"),
+    createDate = Instant.parse("2023-01-01T10:00:00Z"),
+    status = "someStatus",
+    statusDetails = "someStatusDetails",
+    fileAvailableTime = Instant.parse("2023-01-02T10:00:00Z"),
+    linkAvailableTime = Instant.parse("2023-01-03T10:00:00Z")
   )
 
   "ReportRequestService" should {
