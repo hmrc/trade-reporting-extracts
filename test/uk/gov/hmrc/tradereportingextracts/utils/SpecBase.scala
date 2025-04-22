@@ -17,7 +17,7 @@
 package uk.gov.hmrc.tradereportingextracts.utils
 
 import com.codahale.metrics.MetricRegistry
-import org.scalatest.matchers.must.Matchers
+import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpecLike
 import org.scalatest.{BeforeAndAfterEach, OptionValues}
 import org.scalatestplus.mockito.MockitoSugar
