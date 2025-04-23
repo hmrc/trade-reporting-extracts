@@ -24,7 +24,8 @@ import scala.reflect.ClassTag
 case class User(
   eori: String,
   additionalEmails: Seq[String] = Seq.empty,
-  authorisedUsers: Seq[AuthorisedUser] = Seq.empty)
+  authorisedUsers: Seq[AuthorisedUser] = Seq.empty
+)
 
 case class AuthorisedUser(
   eori: String,
@@ -32,11 +33,12 @@ case class AuthorisedUser(
   accessEnd: Instant,
   reportDataStart: Instant,
   reportDataEnd: Instant,
-  accessType: AccessType)
+  accessType: AccessType
+)
 
 object User:
-  given format: Format[User]                                   = Json.format[User]
-  given CanEqual[User, User]                                   = CanEqual.derived
-  
+  given format: Format[User] = Json.format[User]
+  given CanEqual[User, User] = CanEqual.derived
+
 object AuthorisedUser:
   given Format[AuthorisedUser] = Json.format[AuthorisedUser]

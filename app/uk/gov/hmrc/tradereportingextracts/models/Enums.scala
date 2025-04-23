@@ -1,3 +1,19 @@
+/*
+ * Copyright 2025 HM Revenue & Customs
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package uk.gov.hmrc.tradereportingextracts.models
 
 import play.api.libs.json.*
@@ -13,8 +29,8 @@ object UserType:
       case JsString(value) =>
         values.find(_.toString == value) match
           case Some(userType) => JsSuccess(userType)
-          case None => JsError(s"Unknown UserType: $value")
-      case _ => JsError("UserType must be a string")
+          case None           => JsError(s"Unknown UserType: $value")
+      case _               => JsError("UserType must be a string")
 
 enum AccessType:
   case IMPORTS, EXPORTS, DECLARATIONS
@@ -27,8 +43,8 @@ object AccessType:
       case JsString(value) =>
         values.find(_.toString == value) match
           case Some(accessType) => JsSuccess(accessType)
-          case None => JsError(s"Unknown AccessType: $value")
-      case _ => JsError("AccessType must be a string")
+          case None             => JsError(s"Unknown AccessType: $value")
+      case _               => JsError("AccessType must be a string")
 
 enum EoriRole:
   case TRADER, DECLARANT, TRADER_DECLARANT
@@ -42,8 +58,8 @@ object EoriRole:
         case play.api.libs.json.JsString(value) =>
           values.find(_.toString == value) match
             case Some(role) => play.api.libs.json.JsSuccess(role)
-            case None => play.api.libs.json.JsError(s"Unknown EoriRole: $value")
-        case _ => play.api.libs.json.JsError("EoriRole must be a string")
+            case None       => play.api.libs.json.JsError(s"Unknown EoriRole: $value")
+        case _                                  => play.api.libs.json.JsError("EoriRole must be a string")
 
 enum ReportTypeName:
   case IMPORTS_ITEM_REPORT, IMPORTS_HEADER_REPORT, IMPORTS_TAXLINE_REPORT, EXPORTS_ITEM_REPORT
@@ -56,8 +72,8 @@ object ReportTypeName:
       case JsString(value) =>
         values.find(_.toString == value) match
           case Some(reportTypeName) => JsSuccess(reportTypeName)
-          case None => JsError(s"Unknown ReportTypeName: $value")
-      case _ => JsError("ReportTypeName must be a string")
+          case None                 => JsError(s"Unknown ReportTypeName: $value")
+      case _               => JsError("ReportTypeName must be a string")
 
 enum Component:
   case CDAP, EIS, SDES
@@ -70,8 +86,8 @@ object Component:
       case JsString(value) =>
         Component.values.find(_.toString == value) match
           case Some(component) => JsSuccess(component)
-          case None => JsError(s"Unknown Component: $value")
-      case _ => JsError("Component must be a string")
+          case None            => JsError(s"Unknown Component: $value")
+      case _               => JsError("Component must be a string")
 
 enum StatusType:
   case INFORMATION, ERROR
@@ -84,9 +100,8 @@ object StatusType:
       case JsString(value) =>
         StatusType.values.find(_.toString == value) match
           case Some(statusType) => JsSuccess(statusType)
-          case None => JsError(s"Unknown StatusType: $value")
-      case _ => JsError("StatusType must be a string")
-
+          case None             => JsError(s"Unknown StatusType: $value")
+      case _               => JsError("StatusType must be a string")
 
 enum StatusCode:
   case FILENOREC, FILEEXTFAIL, FILESENT
@@ -99,5 +114,5 @@ object StatusCode:
       case JsString(value) =>
         StatusCode.values.find(_.toString == value) match
           case Some(statusCode) => JsSuccess(statusCode)
-          case None => JsError(s"Unknown StatusCode: $value")
-      case _ => JsError("StatusCode must be a string")
+          case None             => JsError(s"Unknown StatusCode: $value")
+      case _               => JsError("StatusCode must be a string")

@@ -31,7 +31,9 @@ import scala.concurrent.ExecutionContext.Implicits.global
 class UserRepositorySpec extends AnyWordSpec, MockitoSugar, GuiceOneAppPerSuite, CleanMongoCollectionSupport, Matchers:
 
   val userRepository: UserRepository = UserRepository(mongoComponent)
-  val user: User = User(eori = "EORI1234", additionalEmails = Seq("asd@gmail.com", "dfsf@gmail.com"),
+  val user: User                     = User(
+    eori = "EORI1234",
+    additionalEmails = Seq("asd@gmail.com", "dfsf@gmail.com"),
     authorisedUsers = Seq(
       AuthorisedUser(
         eori = "EORI1234",
@@ -69,7 +71,7 @@ class UserRepositorySpec extends AnyWordSpec, MockitoSugar, GuiceOneAppPerSuite,
 
   "updateByUserEori" should {
     "must be able to update an existing user" in {
-      val eoriNew = "EORI-NEW"
+      val eoriNew                   = "EORI-NEW"
       val insertResult              = userRepository.insert(user).futureValue
       val fetchedBeforeUpdateRecord = userRepository.findByEori(user.eori).futureValue
       val updatedRecord             = userRepository.updateEori(user.eori, eoriNew).futureValue

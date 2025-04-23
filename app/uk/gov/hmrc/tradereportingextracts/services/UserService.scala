@@ -34,10 +34,10 @@ class UserService @Inject() (
 
   def findByEori(eori: String)(using ec: ExecutionContext): Future[Option[User]] =
     userRepository.findByEori(eori)
-    
-  def update(user: User): Future[Boolean] = 
+
+  def update(user: User): Future[Boolean] =
     userRepository.update(user)
-    
+
   def updateEori(oldEori: String, newEori: String): Future[Boolean] =
     userRepository.updateEori(oldEori, newEori)
 

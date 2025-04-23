@@ -68,7 +68,7 @@ class ReportRequestRepositorySpec
     }
   }
 
-  "findByReportId" should {
+  "findByReportId"   should {
     "must be able to retrieve a report successfully using a reportId" in {
       val insertResult  = reportRequestRepository.insert(reportRequest).futureValue
       val fetchedRecord = reportRequestRepository.findByReportRequestId(reportRequest.reportRequestId).futureValue
@@ -87,11 +87,13 @@ class ReportRequestRepositorySpec
 
     "must be able to update an existing report" in {
       val insertResult              = reportRequestRepository.insert(reportRequest).futureValue
-      val fetchedBeforeUpdateRecord = reportRequestRepository.findByReportRequestId(reportRequest.reportRequestId).futureValue
+      val fetchedBeforeUpdateRecord =
+        reportRequestRepository.findByReportRequestId(reportRequest.reportRequestId).futureValue
       insertResult mustEqual true
       fetchedBeforeUpdateRecord.get mustEqual reportRequest
 
-      val updatedRecord = reportRequestRepository.update(reportRequest.copy(reportRequestId = reportRequest.reportRequestId)).futureValue
+      val updatedRecord =
+        reportRequestRepository.update(reportRequest.copy(reportRequestId = reportRequest.reportRequestId)).futureValue
       val fetchedRecord = reportRequestRepository.findByReportRequestId(reportRequest.reportRequestId).futureValue
       updatedRecord mustEqual true
       fetchedRecord.get mustEqual reportRequest.copy(reportRequestId = reportRequest.reportRequestId)
@@ -102,7 +104,8 @@ class ReportRequestRepositorySpec
 
     "must be able to delete an existing report" in {
       val insertResult              = reportRequestRepository.insert(reportRequest).futureValue
-      val fetchedBeforeDeleteRecord = reportRequestRepository.findByReportRequestId(reportRequest.reportRequestId).futureValue
+      val fetchedBeforeDeleteRecord =
+        reportRequestRepository.findByReportRequestId(reportRequest.reportRequestId).futureValue
       val deletedRecord             = reportRequestRepository.delete(reportRequest).futureValue
       insertResult mustEqual true
       fetchedBeforeDeleteRecord.get mustEqual reportRequest

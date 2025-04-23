@@ -34,22 +34,15 @@ case class ReportRequest(
   createDate: Instant,
   notifications: Seq[Notification],
   fileAvailableTime: Instant,
-  linkAvailableTime: Instant)
+  linkAvailableTime: Instant
+)
 
-case class Notification(
-  component: Component,
-  statusType: StatusType,
-  statusCode: StatusCode,
-  statusMessage: String)
+case class Notification(component: Component, statusType: StatusType, statusCode: StatusCode, statusMessage: String)
 
 object ReportRequest:
-  given format: Format[ReportRequest] = Json.format[ReportRequest]
+  given format: Format[ReportRequest]          = Json.format[ReportRequest]
   given CanEqual[ReportRequest, ReportRequest] = CanEqual.derived
 
-
 object Notification:
-  given format: Format[Notification] = Json.format[Notification]
-    given CanEqual[Notification, Notification] = CanEqual.derived
-  
-  
-  
+  given format: Format[Notification]         = Json.format[Notification]
+  given CanEqual[Notification, Notification] = CanEqual.derived

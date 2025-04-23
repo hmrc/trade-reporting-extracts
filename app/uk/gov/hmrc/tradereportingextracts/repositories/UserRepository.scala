@@ -57,7 +57,7 @@ class UserRepository @Inject() (mongoComponent: MongoComponent)(using ec: Execut
       .replaceOne(Filters.equal("eori", user.eori), user)
       .toFuture()
       .map(_.wasAcknowledged())
-    
+
   def updateEori(oldEori: String, newEori: String): Future[Boolean] =
     val updateQuery  = Filters.equal("eori", oldEori)
     val updateAction = Updates.combine(
