@@ -23,7 +23,7 @@ import org.scalatestplus.mockito.MockitoSugar
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import uk.gov.hmrc.mongo.test.CleanMongoCollectionSupport
 import uk.gov.hmrc.tradereportingextracts.config.AppConfig
-import uk.gov.hmrc.tradereportingextracts.models.ReportRequest
+import uk.gov.hmrc.tradereportingextracts.models.{Component, EoriRole, Notification, ReportRequest, ReportTypeName, StatusCode, StatusType}
 
 import java.time.Instant
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -35,65 +35,50 @@ class ReportRequestRepositorySpec
       CleanMongoCollectionSupport,
       Matchers:
 
-  private val report  = ReportRequest(
-    reportId = "someReportId",
-    correlationId = "someCorrelationId",
-    reportName = "someReportName",
-    requestorId = "GB0019",
-    eoriRole = "someEORIRole",
+  private val reportRequest = ReportRequest(
+    reportRequestId = "REQ00001",
+    correlationId = "ABCD-DEFG",
+    reportName = "Jan Report",
+    requesterEORI = "GB0019",
+    eoriRole = EoriRole.TRADER,
     reportEORIs = Array("EORI1", "EORI2"),
     recipientEmails = Array("email1@example.com", "email2@example.com"),
-    reportTypeName = "someReportType",
+    reportTypeName = ReportTypeName.IMPORTS_ITEM_REPORT,
     reportStart = Instant.parse("2023-01-01T00:00:00Z"),
     reportEnd = Instant.parse("2023-12-31T23:59:59Z"),
     createDate = Instant.parse("2023-01-01T10:00:00Z"),
-    status = "someStatus",
-    statusDetails = "someStatusDetails",
+    notifications = Seq(
+      Notification(
+        component = Component.CDAP,
+        statusType = StatusType.INFORMATION,
+        statusCode = StatusCode.FILESENT,
+        statusMessage = "Message1"
+      )
+    ),
     fileAvailableTime = Instant.parse("2023-01-02T10:00:00Z"),
     linkAvailableTime = Instant.parse("2023-01-03T10:00:00Z")
-  )
-  private val report2 = ReportRequest(
-    reportId = "uniqueReportId2",
-    correlationId = "uniqueCorrelationId2",
-    reportName = "anotherReportName",
-    requestorId = "GB0020",
-    eoriRole = "anotherEORIRole",
-    reportEORIs = Array("EORI5", "EORI6"),
-    recipientEmails = Array("email5@example.com", "email6@example.com"),
-    reportTypeName = "anotherReportType",
-    reportStart = Instant.parse("2023-03-01T00:00:00Z"),
-    reportEnd = Instant.parse("2023-10-31T23:59:59Z"),
-    createDate = Instant.parse("2023-03-01T10:00:00Z"),
-    status = "anotherStatus",
-    statusDetails = "anotherStatusDetails",
-    fileAvailableTime = Instant.parse("2023-03-02T10:00:00Z"),
-    linkAvailableTime = Instant.parse("2023-03-03T10:00:00Z")
   )
 
   val reportRequestRepository: ReportRequestRepository = new ReportRequestRepository(mongoComponent, mock[AppConfig])
 
   "insertReportRequest" should {
-
     "must insert a report successfully" in {
-      val insertResult = reportRequestRepository.insertReportRequest(report).futureValue
+      val insertResult = reportRequestRepository.insert(reportRequest).futureValue
       insertResult mustEqual true
     }
   }
 
   "findByReportId" should {
-
     "must be able to retrieve a report successfully using a reportId" in {
-      val insertResult  = reportRequestRepository.insertReportRequest(report).futureValue
-      val fetchedRecord = reportRequestRepository.findByReportId(report.reportId).futureValue
-
+      val insertResult  = reportRequestRepository.insert(reportRequest).futureValue
+      val fetchedRecord = reportRequestRepository.findByReportRequestId(reportRequest.reportRequestId).futureValue
       insertResult mustEqual true
-      fetchedRecord.get mustEqual report
+      fetchedRecord.get mustEqual reportRequest
     }
 
     "must return none if reportId not found" in {
-      val insertResult  = reportRequestRepository.insertReportRequest(report).futureValue
-      val fetchedRecord = reportRequestRepository.findByReportId("nonExistentReportId").futureValue
-
+      val insertResult  = reportRequestRepository.insert(reportRequest).futureValue
+      val fetchedRecord = reportRequestRepository.findByReportRequestId("nonExistentReportId").futureValue
       insertResult mustEqual true
       fetchedRecord must be(None)
     }
@@ -101,29 +86,26 @@ class ReportRequestRepositorySpec
   "updateByReportId" should {
 
     "must be able to update an existing report" in {
-      val insertResult              = reportRequestRepository.insertReportRequest(report).futureValue
-      val fetchedBeforeUpdateRecord = reportRequestRepository.findByReportId(report.reportId).futureValue
-
+      val insertResult              = reportRequestRepository.insert(reportRequest).futureValue
+      val fetchedBeforeUpdateRecord = reportRequestRepository.findByReportRequestId(reportRequest.reportRequestId).futureValue
       insertResult mustEqual true
-      fetchedBeforeUpdateRecord.get mustEqual report
+      fetchedBeforeUpdateRecord.get mustEqual reportRequest
 
-      val updatedRecord = reportRequestRepository.updateByReportId(report.copy(reportId = report.reportId)).futureValue
-      val fetchedRecord = reportRequestRepository.findByReportId(report.reportId).futureValue
-
+      val updatedRecord = reportRequestRepository.update(reportRequest.copy(reportRequestId = reportRequest.reportRequestId)).futureValue
+      val fetchedRecord = reportRequestRepository.findByReportRequestId(reportRequest.reportRequestId).futureValue
       updatedRecord mustEqual true
-      fetchedRecord.get mustEqual report.copy(reportId = report.reportId)
+      fetchedRecord.get mustEqual reportRequest.copy(reportRequestId = reportRequest.reportRequestId)
     }
   }
 
   "deleteByReportId" should {
 
     "must be able to delete an existing report" in {
-      val insertResult              = reportRequestRepository.insertReportRequest(report).futureValue
-      val fetchedBeforeDeleteRecord = reportRequestRepository.findByReportId(report.reportId).futureValue
-      val deletedRecord             = reportRequestRepository.deleteByReportId(report.reportId).futureValue
-
+      val insertResult              = reportRequestRepository.insert(reportRequest).futureValue
+      val fetchedBeforeDeleteRecord = reportRequestRepository.findByReportRequestId(reportRequest.reportRequestId).futureValue
+      val deletedRecord             = reportRequestRepository.delete(reportRequest).futureValue
       insertResult mustEqual true
-      fetchedBeforeDeleteRecord.get mustEqual report
+      fetchedBeforeDeleteRecord.get mustEqual reportRequest
       deletedRecord mustEqual true
     }
   }

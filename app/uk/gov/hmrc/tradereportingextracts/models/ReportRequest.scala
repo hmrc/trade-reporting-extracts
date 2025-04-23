@@ -21,30 +21,35 @@ import play.api.libs.json.{Format, Json}
 import java.time.Instant
 
 case class ReportRequest(
-  reportId: String,
+  reportRequestId: String,
   correlationId: String,
   reportName: String,
-  requestorId: String,
-  eoriRole: String,
+  requesterEORI: String,
+  eoriRole: EoriRole,
   reportEORIs: Array[String],
   recipientEmails: Array[String],
-  reportTypeName: String,
+  reportTypeName: ReportTypeName,
   reportStart: Instant,
   reportEnd: Instant,
   createDate: Instant,
-  status: String,
-  statusDetails: String,
+  notifications: Seq[Notification],
   fileAvailableTime: Instant,
-  linkAvailableTime: Instant
-) {
-  override def equals(obj: Any): Boolean = obj match {
-    case that: ReportRequest =>
-      this.requestorId == that.requestorId &&
-      this.reportId == that.reportId &&
-      this.correlationId == that.correlationId
-    case _                   => false
-  }
-}
+  linkAvailableTime: Instant)
+
+case class Notification(
+  component: Component,
+  statusType: StatusType,
+  statusCode: StatusCode,
+  statusMessage: String)
 
 object ReportRequest:
-  given mongoFormat: Format[ReportRequest] = Json.format[ReportRequest]
+  given format: Format[ReportRequest] = Json.format[ReportRequest]
+  given CanEqual[ReportRequest, ReportRequest] = CanEqual.derived
+
+
+object Notification:
+  given format: Format[Notification] = Json.format[Notification]
+    given CanEqual[Notification, Notification] = CanEqual.derived
+  
+  
+  

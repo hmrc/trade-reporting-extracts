@@ -29,14 +29,17 @@ class UserService @Inject() (
 )(using ec: ExecutionContext)
     extends Logging:
 
-  def insertUser(user: User)(using ec: ExecutionContext): Future[Boolean] =
-    userRepository.insertUser(user)
+  def insert(user: User)(using ec: ExecutionContext): Future[Boolean] =
+    userRepository.insert(user)
 
-  def findByUserId(userid: Long)(using ec: ExecutionContext): Future[Option[User]] =
-    userRepository.findByUserId(userid)
+  def findByEori(eori: String)(using ec: ExecutionContext): Future[Option[User]] =
+    userRepository.findByEori(eori)
+    
+  def update(user: User): Future[Boolean] = 
+    userRepository.update(user)
+    
+  def updateEori(oldEori: String, newEori: String): Future[Boolean] =
+    userRepository.updateEori(oldEori, newEori)
 
-  def updateByUserId(user: User): Future[Boolean] =
-    userRepository.updateByUserId(user)
-
-  def deleteByUserId(userid: Long): Future[Boolean] =
-    userRepository.deleteByUserId(userid)
+  def deleteByEori(eori: String): Future[Boolean] =
+    userRepository.deleteByEori(eori)
