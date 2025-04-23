@@ -23,7 +23,7 @@ import org.scalatestplus.mockito.MockitoSugar
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import uk.gov.hmrc.mongo.test.CleanMongoCollectionSupport
 import uk.gov.hmrc.tradereportingextracts.models.AccessType.IMPORTS
-import uk.gov.hmrc.tradereportingextracts.models.{AuthorisedUser, User, UserType}
+import uk.gov.hmrc.tradereportingextracts.models.{AuthorisedUser, User}
 
 import java.time.Instant
 import scala.concurrent.ExecutionContext.Implicits.global
