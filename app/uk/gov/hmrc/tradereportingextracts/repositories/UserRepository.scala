@@ -17,12 +17,11 @@
 package uk.gov.hmrc.tradereportingextracts.repositories
 
 import com.google.inject.{Inject, Singleton}
-import org.mongodb.scala.model.{Filters, IndexModel, IndexOptions, Indexes, Updates}
-import play.api.Logging
+import org.mongodb.scala.*
+import org.mongodb.scala.model.*
 import uk.gov.hmrc.mongo.MongoComponent
 import uk.gov.hmrc.mongo.play.json.PlayMongoRepository
-import org.mongodb.scala.*
-import uk.gov.hmrc.tradereportingextracts.models.{ReportRequest, User}
+import uk.gov.hmrc.tradereportingextracts.models.User
 
 import scala.concurrent.{ExecutionContext, Future}
 

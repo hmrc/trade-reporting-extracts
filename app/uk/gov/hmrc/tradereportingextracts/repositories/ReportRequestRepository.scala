@@ -16,21 +16,17 @@
 
 package uk.gov.hmrc.tradereportingextracts.repositories
 
-import javax.inject.{Inject, Singleton}
+import org.mongodb.scala.*
 import org.mongodb.scala.model.{Filters, IndexModel, IndexOptions, Indexes}
 import uk.gov.hmrc.mongo.MongoComponent
 import uk.gov.hmrc.mongo.play.json.PlayMongoRepository
-import uk.gov.hmrc.tradereportingextracts.config.AppConfig
 import uk.gov.hmrc.tradereportingextracts.models.ReportRequest
+
+import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
-import org.mongodb.scala.*
-import play.api.Logging
 
 @Singleton
-class ReportRequestRepository @Inject() (
-  mongoComponent: MongoComponent,
-  config: AppConfig
-)(implicit ec: ExecutionContext)
+class ReportRequestRepository @Inject() (mongoComponent: MongoComponent)(implicit ec: ExecutionContext)
     extends PlayMongoRepository[ReportRequest](
       mongoComponent,
       collectionName = "tre-report-request",

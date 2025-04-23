@@ -16,7 +16,6 @@
 
 package uk.gov.hmrc.tradereportingextracts.services
 
-import play.api.Logging
 import uk.gov.hmrc.tradereportingextracts.models.User
 import uk.gov.hmrc.tradereportingextracts.repositories.UserRepository
 
@@ -24,11 +23,7 @@ import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-class UserService @Inject() (
-  userRepository: UserRepository
-)(using ec: ExecutionContext)
-    extends Logging:
-
+class UserService @Inject() (userRepository: UserRepository):
   def insert(user: User)(using ec: ExecutionContext): Future[Boolean] =
     userRepository.insert(user)
 

@@ -16,7 +16,6 @@
 
 package uk.gov.hmrc.tradereportingextracts.services
 
-import play.api.Logging
 import uk.gov.hmrc.tradereportingextracts.models.ReportRequest
 import uk.gov.hmrc.tradereportingextracts.repositories.ReportRequestRepository
 
@@ -24,9 +23,7 @@ import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-class ReportRequestService @Inject() (
-  reportRequestRepository: ReportRequestRepository
-)(using ec: ExecutionContext):
+class ReportRequestService @Inject() (reportRequestRepository: ReportRequestRepository):
 
   def create(reportRequest: ReportRequest)(using ec: ExecutionContext): Future[Boolean] =
     reportRequestRepository.insert(reportRequest)

@@ -59,7 +59,7 @@ class ReportRequestRepositorySpec
     linkAvailableTime = Instant.parse("2023-01-03T10:00:00Z")
   )
 
-  val reportRequestRepository: ReportRequestRepository = new ReportRequestRepository(mongoComponent, mock[AppConfig])
+  val reportRequestRepository: ReportRequestRepository = new ReportRequestRepository(mongoComponent)
 
   "insertReportRequest" should {
     "must insert a report successfully" in {
