@@ -23,4 +23,4 @@ import java.time.LocalDateTime
 case class NotificationEmail(address: String, timestamp: LocalDateTime)
 
 object NotificationEmail:
-  implicit val emailFormat: OFormat[NotificationEmail] = Json.format[NotificationEmail]
+  implicit val format: OFormat[NotificationEmail] = Json.format[NotificationEmail]

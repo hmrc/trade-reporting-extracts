@@ -1,0 +1,63 @@
+{
+        "eori": "GB169680322000-8407763",
+        "fileName": "DD1723_100005513104_csv.csv",
+        "fileSize": 2285,
+        "metadata": [
+            {
+                "metadata": "RETENTION_FILE_TYPE",
+                "value": "DutyDefermentStatement"
+            },
+            {
+                "metadata": "RETENTION_DAYS",
+                "value": "217"
+            },
+            {
+                "metadata": "EORI",
+                "value": "GB169680322000"
+            },
+            {
+                "metadata": "DAN",
+                "value": "8407763"
+            },
+            {
+                "metadata": "PeriodStartYear",
+                "value": "2025"
+            },
+            {
+                "metadata": "PeriodStartMonth",
+                "value": "01"
+            },
+            {
+                "metadata": "PeriodStartDay",
+                "value": "24"
+            },
+            {
+                "metadata": "PeriodEndYear",
+                "value": "2025"
+            },
+            {
+                "metadata": "PeriodEndMonth",
+                "value": "01"
+            },
+            {
+                "metadata": "PeriodEndDay",
+                "value": "31"
+            },
+            {
+                "metadata": "PeriodIssueNumber",
+                "value": "04"
+            },
+            {
+                "metadata": "FileType",
+                "value": "CSV"
+            },
+            {
+                "metadata": "FileRole",
+                "value": "DutyDefermentStatement"
+            },
+            {
+                "metadata": "DefermentStatementType",
+                "value": "Weekly"
+            }
+        ]
+    }

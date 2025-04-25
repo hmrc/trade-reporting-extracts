@@ -16,7 +16,6 @@
 
 package uk.gov.hmrc.tradereportingextracts.services
 
-import play.api.Logging
 import uk.gov.hmrc.tradereportingextracts.models.User
 import uk.gov.hmrc.tradereportingextracts.repositories.UserRepository
 
@@ -24,19 +23,18 @@ import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-class UserService @Inject() (
-  userRepository: UserRepository
-)(using ec: ExecutionContext)
-    extends Logging:
+class UserService @Inject() (userRepository: UserRepository):
+  def insert(user: User)(using ec: ExecutionContext): Future[Boolean] =
+    userRepository.insert(user)
 
-  def insertUser(user: User)(using ec: ExecutionContext): Future[Boolean] =
-    userRepository.insertUser(user)
+  def findByEori(eori: String)(using ec: ExecutionContext): Future[Option[User]] =
+    userRepository.findByEori(eori)
 
-  def findByUserId(userid: Long)(using ec: ExecutionContext): Future[Option[User]] =
-    userRepository.findByUserId(userid)
+  def update(user: User): Future[Boolean] =
+    userRepository.update(user)
 
-  def updateByUserId(user: User): Future[Boolean] =
-    userRepository.updateByUserId(user)
+  def updateEori(oldEori: String, newEori: String): Future[Boolean] =
+    userRepository.updateEori(oldEori, newEori)
 
-  def deleteByUserId(userid: Long): Future[Boolean] =
-    userRepository.deleteByUserId(userid)
+  def deleteByEori(eori: String): Future[Boolean] =
+    userRepository.deleteByEori(eori)

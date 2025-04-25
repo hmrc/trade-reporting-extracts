@@ -14,19 +14,24 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.tradereportingextracts.models
+package uk.gov.hmrc.tradereportingextracts.config
 
-import play.api.libs.json.{Format, Json, OFormat}
+import org.scalatest.matchers.should.Matchers
+import play.api.Application
+import play.api.inject.guice.GuiceApplicationBuilder
+import uk.gov.hmrc.tradereportingextracts.utils.SpecBase
 
-case class ThirdParty(
-  userId: Long,
-  accessStart: String,
-  accessEnd: String,
-  declarationStart: String,
-  declarationEnd: String,
-  accessType: Option[String]
-)
+class ModuleSpec extends SpecBase with Matchers {
 
-object ThirdParty {
-  given mongoFormat: Format[ThirdParty] = Json.format[ThirdParty]
+  "Module" should {
+
+    "bind AppConfig as an eager singleton" in new Setup {
+      val appConfig: AppConfig = app.injector.instanceOf[AppConfig]
+      appConfig should not be null
+    }
+  }
+
+  trait Setup {
+    val app: Application = application.build()
+  }
 }
