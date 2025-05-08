@@ -17,8 +17,8 @@
 package uk.gov.hmrc.tradereportingextracts.controllers
 
 import play.api.Logging
-import play.api.libs.json.Json
-import play.api.mvc.{Action, AnyContent, ControllerComponents}
+import play.api.libs.json.{JsValue, Json}
+import play.api.mvc.{Action, ControllerComponents, Request}
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 import uk.gov.hmrc.tradereportingextracts.connectors.CustomsDataStoreConnector
 
@@ -34,9 +34,11 @@ class VerifiedEmailController @Inject() (
     extends BackendController(cc)
     with Logging:
 
-  def getVerifiedEmail(): Action[AnyContent] = Action.async { implicit request =>
+  def getVerifiedEmail(): Action[JsValue] = Action.async(parse.json) { implicit request: Request[JsValue] =>
+    val jsonBody  = request.body
+    val eoriValue = (jsonBody \ "eori").asOpt[String].getOrElse("defaultValue")
     customsDataStoreConnector
-      .getVerifiedEmail()
+      .getVerifiedEmail(eoriValue)
       .map(notificationEmail => Ok(Json.toJson(notificationEmail)))
       .recover { case NonFatal(error) =>
         logger.error(s"getVerifiedEmail failed: ${error.getMessage}")

@@ -16,14 +16,16 @@
 
 package uk.gov.hmrc.tradereportingextracts.connectors
 
+import play.api.libs.json.Json
 import uk.gov.hmrc.http.client.HttpClientV2
 import uk.gov.hmrc.http.{HeaderCarrier, StringContextOps}
-import uk.gov.hmrc.http.HttpReads.Implicits._
+import uk.gov.hmrc.http.HttpReads.Implicits.*
 import uk.gov.hmrc.tradereportingextracts.config.AppConfig
 import uk.gov.hmrc.tradereportingextracts.models.{CompanyInformation, EoriHistoryResponse, NotificationEmail}
 
 import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
+import play.api.libs.ws.writeableOf_JsValue
 
 class CustomsDataStoreConnector @Inject() (appConfig: AppConfig, httpClient: HttpClientV2)(using ec: ExecutionContext):
 
@@ -41,9 +43,10 @@ class CustomsDataStoreConnector @Inject() (appConfig: AppConfig, httpClient: Htt
       .flatMap:
       response => Future.successful(response)
 
-  def getVerifiedEmail()(using hc: HeaderCarrier): Future[NotificationEmail] =
+  def getVerifiedEmail(eori: String)(using hc: HeaderCarrier): Future[NotificationEmail] =
     httpClient
       .get(url"${appConfig.customsDataStore}/eori/verified-email")
+      .withBody(Json.obj("eori" -> eori))
       .execute[NotificationEmail]
       .flatMap:
       response => Future.successful(response)

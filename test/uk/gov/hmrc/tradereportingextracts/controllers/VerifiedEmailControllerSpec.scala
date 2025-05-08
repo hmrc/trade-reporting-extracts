@@ -16,6 +16,7 @@
 
 package uk.gov.hmrc.tradereportingextracts.controllers
 
+import org.apache.pekko.stream.Materializer
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito.{times, verify, when}
 import org.scalatest.matchers.must.Matchers.mustBe
@@ -38,7 +39,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
 class VerifiedEmailControllerSpec extends SpecBase:
-
+  
   lazy val mockCustomsDataStoreConnector: CustomsDataStoreConnector = mock[CustomsDataStoreConnector]
 
   private val fakeRequest       = FakeRequest("GET", s"/eori/verified-email")
@@ -48,18 +49,20 @@ class VerifiedEmailControllerSpec extends SpecBase:
 
   "GET /verified-email" should {
     "return a valid email address" in {
-      when(mockCustomsDataStoreConnector.getVerifiedEmail()(using any()))
+      when(mockCustomsDataStoreConnector.getVerifiedEmail(any())(using any()))
         .thenReturn(Future.successful(notificationEmail))
 
       val result = controller.getVerifiedEmail()(fakeRequest)
 
-      status(result) shouldBe OK
+      result.mapFuture(status) { status =>
+        status mustBe OK
+      }
 
-      verify(mockCustomsDataStoreConnector, times(1)).getVerifiedEmail()(using any)
+      verify(mockCustomsDataStoreConnector, times(1)).getVerifiedEmail("")(using any)
     }
 
     "handle exceptions and return SERVICE_UNAVAILABLE" in {
-      when(mockCustomsDataStoreConnector.getVerifiedEmail()(using any()))
+      when(mockCustomsDataStoreConnector.getVerifiedEmail(any())(using any()))
         .thenReturn(Future.failed(new Exception("Service error")))
 
       val result = controller.getVerifiedEmail().apply(fakeRequest)

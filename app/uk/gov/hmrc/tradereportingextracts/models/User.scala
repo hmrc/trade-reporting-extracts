@@ -23,6 +23,7 @@ import scala.reflect.ClassTag
 
 case class User(
   eori: String,
+  @transient var notificationEmail: NotificationEmail = null,
   additionalEmails: Seq[String] = Seq.empty,
   authorisedUsers: Seq[AuthorisedUser] = Seq.empty
 )
