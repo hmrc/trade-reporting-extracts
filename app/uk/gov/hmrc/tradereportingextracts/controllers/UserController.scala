@@ -31,9 +31,9 @@ class UserController @Inject() (
 )(using executionContext: ExecutionContext)
     extends BackendController(cc):
 
-  def getAuthorisedEoris(mainEori: String) = Action.async {
+  def getAuthorisedEoris(eori: String) = Action.async {
     userService
-      .getAuthorisedEoris(mainEori)
+      .getAuthorisedEoris(eori)
       .map { authorisedEoris =>
         Ok(Json.toJson(authorisedEoris))
       }

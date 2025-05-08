@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.tradereportingextracts.repositories
 
-import org.scalatest.matchers.must.Matchers.{must, mustEqual}
+import org.scalatest.matchers.must.Matchers.{must, mustBe, mustEqual}
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 import org.scalatestplus.mockito.MockitoSugar
@@ -36,7 +36,15 @@ class UserRepositorySpec extends AnyWordSpec, MockitoSugar, GuiceOneAppPerSuite,
     additionalEmails = Seq("asd@gmail.com", "dfsf@gmail.com"),
     authorisedUsers = Seq(
       AuthorisedUser(
-        eori = "EORI1234",
+        eori = "AUTH-EORI-1",
+        accessStart = Instant.parse("2023-01-01T00:00:00Z"),
+        accessEnd = Instant.parse("2023-12-31T23:59:59Z"),
+        reportDataStart = Instant.parse("2023-01-01T10:00:00Z"),
+        reportDataEnd = Instant.parse("2023-12-31T23:59:59Z"),
+        accessType = IMPORTS
+      ),
+      AuthorisedUser(
+        eori = "AUTH-EORI-2",
         accessStart = Instant.parse("2023-01-01T00:00:00Z"),
         accessEnd = Instant.parse("2023-12-31T23:59:59Z"),
         reportDataStart = Instant.parse("2023-01-01T10:00:00Z"),
@@ -46,51 +54,72 @@ class UserRepositorySpec extends AnyWordSpec, MockitoSugar, GuiceOneAppPerSuite,
     )
   )
 
-  "insertUser" should {
-    "must insert a user successfully" in {
-      val insertResult = userRepository.insert(user).futureValue
-      insertResult mustEqual true
-    }
-  }
+  "UserRepositorySpec" should {
 
-  "findByUserid" should {
-    "must be able to retrieve a user successfully using a userid" in {
-      val insertResult  = userRepository.insert(user).futureValue
-      val fetchedRecord = userRepository.findByEori(user.eori).futureValue
-      insertResult mustEqual true
-      fetchedRecord.get mustEqual user
+    "insertUser" should {
+      "must insert a user successfully" in {
+        val insertResult = userRepository.insert(user).futureValue
+        insertResult mustEqual true
+      }
     }
 
-    "must return none if eori not found" in {
-      val insertResult  = userRepository.insert(user).futureValue
-      val fetchedRecord = userRepository.findByEori("nonExistingEori").futureValue
-      insertResult mustEqual true
-      fetchedRecord must be(None)
-    }
-  }
+    "findByUserid" should {
+      "must be able to retrieve a user successfully using a userid" in {
+        val insertResult  = userRepository.insert(user).futureValue
+        val fetchedRecord = userRepository.findByEori(user.eori).futureValue
+        insertResult mustEqual true
+        fetchedRecord.get mustEqual user
+      }
 
-  "updateByUserEori" should {
-    "must be able to update an existing user" in {
-      val eoriNew                   = "EORI-NEW"
-      val insertResult              = userRepository.insert(user).futureValue
-      val fetchedBeforeUpdateRecord = userRepository.findByEori(user.eori).futureValue
-      val updatedRecord             = userRepository.updateEori(user.eori, eoriNew).futureValue
-      val fetchedRecord             = userRepository.findByEori(eoriNew).futureValue
-      insertResult mustEqual true
-      fetchedBeforeUpdateRecord.get mustEqual user
-      updatedRecord mustEqual true
-      fetchedRecord.get.eori mustEqual eoriNew
-    }
-  }
-
-  "deleteByUserId" should {
-    "must be able to delete an existing user" in {
-      val insertResult              = userRepository.insert(user).futureValue
-      val fetchedBeforeUpdateRecord = userRepository.findByEori(user.eori).futureValue
-      val deletedRecord             = userRepository.deleteByEori(user.eori).futureValue
-      insertResult mustEqual true
-      fetchedBeforeUpdateRecord.get mustEqual user
-      deletedRecord mustEqual true
+      "must return none if eori not found" in {
+        val insertResult  = userRepository.insert(user).futureValue
+        val fetchedRecord = userRepository.findByEori("nonExistingEori").futureValue
+        insertResult mustEqual true
+        fetchedRecord must be(None)
+      }
     }
 
+    "updateByUserEori" should {
+      "must be able to update an existing user" in {
+        val eoriNew                   = "EORI-NEW"
+        val insertResult              = userRepository.insert(user).futureValue
+        val fetchedBeforeUpdateRecord = userRepository.findByEori(user.eori).futureValue
+        val updatedRecord             = userRepository.updateEori(user.eori, eoriNew).futureValue
+        val fetchedRecord             = userRepository.findByEori(eoriNew).futureValue
+        insertResult mustEqual true
+        fetchedBeforeUpdateRecord.get mustEqual user
+        updatedRecord mustEqual true
+        fetchedRecord.get.eori mustEqual eoriNew
+      }
+    }
+
+    "deleteByUserId" should {
+      "must be able to delete an existing user" in {
+        val insertResult              = userRepository.insert(user).futureValue
+        val fetchedBeforeUpdateRecord = userRepository.findByEori(user.eori).futureValue
+        val deletedRecord             = userRepository.deleteByEori(user.eori).futureValue
+        insertResult mustEqual true
+        fetchedBeforeUpdateRecord.get mustEqual user
+        deletedRecord mustEqual true
+      }
+    }
+
+    "getAuthorisedEoris" should {
+
+      "must return all authorised EORIs for a given user" in {
+        val insertResult = userRepository.insert(user).futureValue
+        val result       = userRepository.getAuthorisedEoris(user.eori).futureValue
+
+        result mustEqual Seq("AUTH-EORI-1", "AUTH-EORI-2")
+      }
+
+      "must fail if user is not found for given EORI" in {
+        val result = userRepository.getAuthorisedEoris("non-existent-eori")
+
+        whenReady(result.failed) { ex =>
+          ex mustBe an[Exception]
+          ex.getMessage mustEqual "User with EORI non-existent-eori not found"
+        }
+      }
+    }
   }
