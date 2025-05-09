@@ -37,24 +37,39 @@ class UserInformationControllerSpec extends SpecBase:
 
   lazy val mockUserInformationService: UserInformationService = mock[UserInformationService]
 
-  private val fakeRequest =
-    FakeRequest(
-      "GET",
-      s"/eori/user-information",
-      FakeHeaders(Seq(CONTENT_TYPE -> JSON)),
-      Json.obj("eori" -> "GB1234567890")
-    )
-  private val user        = User(eori = "GB1234567890")
-  private val controller  =
+  private val user       = User(eori = "GB1234567890")
+  private val controller =
     new UserInformationController(mockUserInformationService, Helpers.stubControllerComponents())
 
   "GET /user-information" should {
     "return a valid user information" in {
+      val fakeRequest =
+        FakeRequest(
+          "GET",
+          s"/eori/user-information",
+          FakeHeaders(Seq(CONTENT_TYPE -> JSON)),
+          Json.obj("eori" -> "GB123456789012")
+        )
       when(mockUserInformationService.getUserByEori(any())(using any(), any()))
-        .thenReturn(Future.successful(user))
+        .thenReturn(Future.successful(Right(user)))
 
       val result = controller.getUserInformation()(fakeRequest)
 
       status(result) mustBe OK
+    }
+    "return 403 forbidden" in {
+      val fakeRequest =
+        FakeRequest(
+          "GET",
+          s"/eori/user-information",
+          FakeHeaders(Seq(CONTENT_TYPE -> JSON)),
+          Json.obj("eori" -> "WRONG_EORI")
+        )
+      when(mockUserInformationService.getUserByEori(any())(using any(), any()))
+        .thenReturn(Future.successful(Left("EORI not allowed")))
+
+      val result = controller.getUserInformation()(fakeRequest)
+
+      status(result) mustBe 403
     }
   }

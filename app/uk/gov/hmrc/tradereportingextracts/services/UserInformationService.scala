@@ -18,7 +18,7 @@ package uk.gov.hmrc.tradereportingextracts.services
 
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.tradereportingextracts.connectors.CustomsDataStoreConnector
-import uk.gov.hmrc.tradereportingextracts.models.User
+import uk.gov.hmrc.tradereportingextracts.models.{AllowedEoris, User}
 import uk.gov.hmrc.tradereportingextracts.repositories.UserRepository
 
 import javax.inject.{Inject, Singleton}
@@ -28,24 +28,26 @@ import scala.concurrent.{ExecutionContext, Future}
 class UserInformationService @Inject() (
   userRepository: UserRepository,
   customsDataStoreConnector: CustomsDataStoreConnector
-):
+) extends AllowedEoris:
   def insert(user: User)(using ec: ExecutionContext): Future[Boolean] =
     userRepository.insert(user)
 
-  def getUserByEori(eori: String)(using ec: ExecutionContext, hc: HeaderCarrier): Future[User] =
-    userRepository
-      .getOrCreateUser(eori)
-      .flatMap { case Some(user) =>
-        customsDataStoreConnector
-          .getVerifiedEmail(user.eori)
-          .flatMap {
-            case Right(email) =>
-              user.notificationEmail.address = email.address
-              Future.successful(user)
-            case Left(error)  =>
-              Future.successful(user)
-          }
-      }
+  def getUserByEori(eori: String)(using ec: ExecutionContext, hc: HeaderCarrier): Future[Either[String, User]] =
+    if !allowedEoris.contains(eori) then Future.successful(Left("EORI not allowed"))
+    else
+      userRepository
+        .getOrCreateUser(eori)
+        .flatMap { case Some(user) =>
+          customsDataStoreConnector
+            .getVerifiedEmail(user.eori)
+            .flatMap {
+              case Left(error)  =>
+                Future.successful(Right(user))
+              case Right(email) =>
+                user.notificationEmail.address = email.address
+                Future.successful(Right(user))
+            }
+        }
 
   def update(user: User): Future[Boolean] =
     userRepository.update(user)
