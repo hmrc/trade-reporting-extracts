@@ -37,9 +37,8 @@ class UserInformationControllerSpec extends SpecBase:
 
   lazy val mockUserInformationService: UserInformationService = mock[UserInformationService]
 
-
-  private val user        = User(eori = "GB1234567890")
-  private val controller  =
+  private val user       = User(eori = "GB1234567890")
+  private val controller =
     new UserInformationController(mockUserInformationService, Helpers.stubControllerComponents())
 
   "GET /user-information" should {
