@@ -17,10 +17,12 @@
 package uk.gov.hmrc.tradereportingextracts.utils
 
 import com.codahale.metrics.MetricRegistry
+import org.apache.pekko.stream.Materializer
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpecLike
 import org.scalatest.{BeforeAndAfterEach, OptionValues}
 import org.scalatestplus.mockito.MockitoSugar
+import org.scalatestplus.play.guice.{GuiceOneAppPerSuite, GuiceOneAppPerTest}
 import play.api.inject.bind
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.test.{DefaultAwaitTimeout, FutureAwaits}
@@ -28,12 +30,15 @@ import uk.gov.hmrc.play.bootstrap.metrics.Metrics
 
 class SpecBase
     extends AnyWordSpecLike
+    with GuiceOneAppPerSuite
     with MockitoSugar
     with Matchers
     with FutureAwaits
     with DefaultAwaitTimeout
     with OptionValues
     with BeforeAndAfterEach {
+
+  implicit val mat: Materializer = app.materializer
 
   def application: GuiceApplicationBuilder = new GuiceApplicationBuilder()
     .overrides(

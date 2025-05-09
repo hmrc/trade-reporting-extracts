@@ -18,11 +18,12 @@ package uk.gov.hmrc.tradereportingextracts.models
 
 import play.api.libs.json.{Format, Json, Reads, Writes}
 
-import java.time.Instant
+import java.time.{Instant, LocalDateTime}
 import scala.reflect.ClassTag
 
 case class User(
   eori: String,
+  @transient var notificationEmail: NotificationEmail = NotificationEmail("", LocalDateTime.MIN),
   additionalEmails: Seq[String] = Seq.empty,
   authorisedUsers: Seq[AuthorisedUser] = Seq.empty
 )

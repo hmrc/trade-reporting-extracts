@@ -16,6 +16,8 @@
 
 package uk.gov.hmrc.tradereportingextracts.services
 
+import uk.gov.hmrc.http.HeaderCarrier
+import uk.gov.hmrc.tradereportingextracts.connectors.CustomsDataStoreConnector
 import uk.gov.hmrc.tradereportingextracts.models.User
 import uk.gov.hmrc.tradereportingextracts.repositories.UserRepository
 
@@ -23,12 +25,27 @@ import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-class UserService @Inject() (userRepository: UserRepository):
+class UserInformationService @Inject() (
+  userRepository: UserRepository,
+  customsDataStoreConnector: CustomsDataStoreConnector
+):
   def insert(user: User)(using ec: ExecutionContext): Future[Boolean] =
     userRepository.insert(user)
 
-  def findByEori(eori: String)(using ec: ExecutionContext): Future[Option[User]] =
-    userRepository.findByEori(eori)
+  def getUserByEori(eori: String)(using ec: ExecutionContext, hc: HeaderCarrier): Future[User] =
+    userRepository
+      .getOrCreateUser(eori)
+      .flatMap { case Some(user) =>
+        customsDataStoreConnector
+          .getVerifiedEmail(user.eori)
+          .flatMap {
+            case Right(email) =>
+              user.notificationEmail.address = email.address
+              Future.successful(user)
+            case Left(error)  =>
+              Future.successful(user)
+          }
+      }
 
   def update(user: User): Future[Boolean] =
     userRepository.update(user)

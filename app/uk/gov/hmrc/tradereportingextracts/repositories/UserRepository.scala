@@ -51,6 +51,13 @@ class UserRepository @Inject() (mongoComponent: MongoComponent)(using ec: Execut
       .find(Filters.equal("eori", eori))
       .headOption()
 
+  def getOrCreateUser(eori: String)(using ec: ExecutionContext): Future[Option[User]] =
+    findByEori(eori).flatMap {
+      case Some(user) => Future.successful(Some(user))
+      case None       =>
+        insert(User(eori)).flatMap(t => if t then findByEori(eori) else Future.successful(None))
+    }
+
   def update(user: User): Future[Boolean] =
     collection
       .replaceOne(Filters.equal("eori", user.eori), user)
