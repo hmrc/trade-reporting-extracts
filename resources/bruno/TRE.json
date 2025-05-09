@@ -1,0 +1,88 @@
+{
+  "name": "TRE",
+  "version": "1",
+  "items": [
+    {
+      "type": "http",
+      "name": "company-information",
+      "seq": 2,
+      "request": {
+        "url": "http://localhost:2101/trade-reporting-extracts-stub/eori/company-information",
+        "method": "GET",
+        "headers": [],
+        "params": [],
+        "body": {
+          "mode": "json",
+          "json": "{\n  \"eori\": \"GB123456789012\"\n}",
+          "formUrlEncoded": [],
+          "multipartForm": []
+        },
+        "script": {},
+        "vars": {},
+        "assertions": [],
+        "tests": "",
+        "auth": {
+          "mode": "none"
+        }
+      }
+    },
+    {
+      "type": "http",
+      "name": "verified-email",
+      "seq": 3,
+      "request": {
+        "url": "http://localhost:2101/trade-reporting-extracts-stub/eori/verified-email",
+        "method": "GET",
+        "headers": [],
+        "params": [],
+        "body": {
+          "mode": "json",
+          "json": "{\n  \"eori\": \"GB123456789012\"\n}",
+          "formUrlEncoded": [],
+          "multipartForm": []
+        },
+        "script": {},
+        "vars": {},
+        "assertions": [],
+        "tests": "",
+        "auth": {
+          "mode": "none"
+        }
+      }
+    },
+    {
+      "type": "http",
+      "name": "user-information",
+      "seq": 4,
+      "request": {
+        "url": "http://localhost:2100/trade-reporting-extracts/eori/user-information",
+        "method": "GET",
+        "headers": [],
+        "params": [],
+        "body": {
+          "mode": "json",
+          "json": "{\n  \"eori\": \"GB123456789012\"\n}",
+          "formUrlEncoded": [],
+          "multipartForm": []
+        },
+        "script": {},
+        "vars": {},
+        "assertions": [],
+        "tests": "",
+        "auth": {
+          "mode": "none"
+        }
+      }
+    }
+  ],
+  "environments": [],
+  "brunoConfig": {
+    "version": "1",
+    "name": "TRE",
+    "type": "collection",
+    "ignore": [
+      "node_modules",
+      ".git"
+    ]
+  }
+}
