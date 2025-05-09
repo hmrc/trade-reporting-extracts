@@ -23,7 +23,7 @@ import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 import uk.gov.hmrc.tradereportingextracts.connectors.CustomsDataStoreConnector
 
 import javax.inject.{Inject, Singleton}
-import scala.concurrent.ExecutionContext
+import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NonFatal
 
 @Singleton()
@@ -37,11 +37,13 @@ class VerifiedEmailController @Inject() (
   def getVerifiedEmail(): Action[JsValue] = Action.async(parse.json) { implicit request: Request[JsValue] =>
     val jsonBody  = request.body
     val eoriValue = (jsonBody \ "eori").asOpt[String].getOrElse("defaultValue")
+
     customsDataStoreConnector
       .getVerifiedEmail(eoriValue)
-      .map(notificationEmail => Ok(Json.toJson(notificationEmail)))
-      .recover { case NonFatal(error) =>
-        logger.error(s"getVerifiedEmail failed: ${error.getMessage}")
-        InternalServerError
+      .flatMap {
+        case Right(email) =>
+          Future.successful(Ok(Json.toJson(email)))
+        case Left(error)  =>
+          Future.failed(new RuntimeException(error))
       }
   }

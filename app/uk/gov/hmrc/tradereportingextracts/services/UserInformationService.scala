@@ -32,19 +32,20 @@ class UserInformationService @Inject() (
   def insert(user: User)(using ec: ExecutionContext): Future[Boolean] =
     userRepository.insert(user)
 
-  def findByEori(eori: String)(using ec: ExecutionContext, hc: HeaderCarrier): Future[User] =
+  def getUserByEori(eori: String)(using ec: ExecutionContext, hc: HeaderCarrier): Future[User] =
     userRepository
-      .findByEori(eori)
-      .flatMap {
-        case Some(user) => Future.successful(user)
-        case None       => Future.successful(User(eori))
+      .getOrCreateUser(eori)
+      .flatMap { case Some(user) =>
+        customsDataStoreConnector
+          .getVerifiedEmail(user.eori)
+          .flatMap {
+            case Right(email) =>
+              user.notificationEmail.address = email.address
+              Future.successful(user)
+            case Left(error)  =>
+              Future.successful(user)
+          }
       }
-      .flatMap(user =>
-        customsDataStoreConnector.getVerifiedEmail(user.eori).map { email =>
-          user.notificationEmail = email
-          user
-        }
-      )
 
   def update(user: User): Future[Boolean] =
     userRepository.update(user)

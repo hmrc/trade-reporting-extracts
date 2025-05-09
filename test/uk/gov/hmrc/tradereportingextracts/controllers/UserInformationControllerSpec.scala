@@ -25,34 +25,35 @@ import play.api.libs.json.Json
 import play.api.test.Helpers.{CONTENT_TYPE, JSON, status}
 import play.api.test.{FakeHeaders, FakeRequest, Helpers}
 import uk.gov.hmrc.tradereportingextracts.connectors.CustomsDataStoreConnector
-import uk.gov.hmrc.tradereportingextracts.models.NotificationEmail
+import uk.gov.hmrc.tradereportingextracts.models.{NotificationEmail, User}
+import uk.gov.hmrc.tradereportingextracts.services.UserInformationService
 import uk.gov.hmrc.tradereportingextracts.utils.SpecBase
 
 import java.time.LocalDateTime
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-class VerifiedEmailControllerSpec extends SpecBase:
+class UserInformationControllerSpec extends SpecBase:
 
-  lazy val mockCustomsDataStoreConnector: CustomsDataStoreConnector = mock[CustomsDataStoreConnector]
+  lazy val mockUserInformationService: UserInformationService = mock[UserInformationService]
 
-  private val fakeRequest       =
+  private val fakeRequest =
     FakeRequest(
       "GET",
-      s"/eori/verified-email",
+      s"/eori/user-information",
       FakeHeaders(Seq(CONTENT_TYPE -> JSON)),
       Json.obj("eori" -> "GB1234567890")
     )
-  private val notificationEmail = NotificationEmail("example@test.com", LocalDateTime.now())
-  private val controller        =
-    new VerifiedEmailController(mockCustomsDataStoreConnector, Helpers.stubControllerComponents())
+  private val user        = User(eori = "GB1234567890")
+  private val controller  =
+    new UserInformationController(mockUserInformationService, Helpers.stubControllerComponents())
 
-  "GET /verified-email" should {
-    "return a valid email address" in {
-      when(mockCustomsDataStoreConnector.getVerifiedEmail(any())(using any()))
-        .thenReturn(Future.successful(Right(notificationEmail)))
+  "GET /user-information" should {
+    "return a valid user information" in {
+      when(mockUserInformationService.getUserByEori(any())(using any(), any()))
+        .thenReturn(Future.successful(user))
 
-      val result = controller.getVerifiedEmail()(fakeRequest)
+      val result = controller.getUserInformation()(fakeRequest)
 
       status(result) mustBe OK
     }

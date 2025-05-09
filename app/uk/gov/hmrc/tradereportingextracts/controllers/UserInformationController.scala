@@ -37,7 +37,7 @@ class UserInformationController @Inject() (
         _ => Future.successful(BadRequest("Invalid JSON")),
         json => {
           val eori = (json \ "eori").as[String]
-          userService.findByEori(eori).map(user => Ok(Json.toJson(user)))
+          userService.getUserByEori(eori).map(user => Ok(Json.toJson(user)))
         }
       )
   }
