@@ -57,3 +57,6 @@ class UserInformationService @Inject() (
 
   def deleteByEori(eori: String): Future[Boolean] =
     userRepository.deleteByEori(eori)
+
+  def getAuthorisedEoris(eori: String): Future[Seq[String]] =
+    userRepository.getAuthorisedEoris(eori)
