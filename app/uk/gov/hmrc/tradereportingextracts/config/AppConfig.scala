@@ -27,6 +27,6 @@ class AppConfig @Inject() (val config: Configuration, servicesConfig: ServicesCo
 
   lazy val customsDataStore: String = servicesConfig.baseUrl("customs-data-store") +
     config.get[String]("microservice.services.customs-data-store.context")
-  
+
   lazy val eisRequestURL: String = servicesConfig.baseUrl("eis") +
     config.get[String]("microservice.services.eis.context")

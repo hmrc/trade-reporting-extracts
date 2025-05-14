@@ -22,7 +22,7 @@ import uk.gov.hmrc.tradereportingextracts.utils.Constants.*
 case class SuccessResponse(
   reportRequestId: String,
   code: Int,
-  message: String,
+  message: String
 )
 
 object SuccessResponse {

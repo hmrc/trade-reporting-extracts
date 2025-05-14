@@ -17,10 +17,9 @@
 package uk.gov.hmrc.tradereportingextracts.controllers
 
 import play.api.libs.json.{JsValue, Json}
-import play.api.mvc.{Action, AnyContent, ControllerComponents}
+import play.api.mvc.{Action, ControllerComponents}
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
-import uk.gov.hmrc.tradereportingextracts.connectors.{CustomsDataStoreConnector, EISConnector}
 import uk.gov.hmrc.tradereportingextracts.models.ReportRequest
 import uk.gov.hmrc.tradereportingextracts.services.ReportRequestService
 
@@ -28,7 +27,7 @@ import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton()
-class ReportRequestController @Inject()(
+class ReportRequestController @Inject() (
   reportRequestService: ReportRequestService,
   cc: ControllerComponents
 )(using executionContext: ExecutionContext, headerCarrier: HeaderCarrier)
@@ -40,7 +39,7 @@ class ReportRequestController @Inject()(
       Future.successful(BadRequest(Json.toJson(reportRequest.asOpt)))
     } else {
       reportRequestService.submitReportRequest(reportRequest.get).map {
-        case Left(errorResponse) =>
+        case Left(errorResponse)    =>
           InternalServerError
         case Right(successResponse) =>
           Created(Json.toJson(successResponse))

@@ -28,7 +28,7 @@ trait EisHttpErrorHandler extends Logging {
 
   def handleErrorResponse(httpResponse: HttpResponse, correlationId: String): EisHttpErrorResponse =
     httpResponse.status match {
-      
+
       case FORBIDDEN =>
         EisHttpErrorResponse(
           FORBIDDEN,

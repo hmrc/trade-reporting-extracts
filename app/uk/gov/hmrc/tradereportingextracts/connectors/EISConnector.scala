@@ -29,13 +29,14 @@ import uk.gov.hmrc.tradereportingextracts.models.{CompanyInformation, ReportRequ
 import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
 
-class EISConnector @Inject()(appConfig: AppConfig, httpClient: HttpClientV2)
-  (using ec: ExecutionContext) extends EisHttpErrorHandler:
+class EISConnector @Inject() (appConfig: AppConfig, httpClient: HttpClientV2)(using ec: ExecutionContext)
+    extends EisHttpErrorHandler:
 
-  def submitReportRequest(reportRequest: ReportRequest)(using hc: HeaderCarrier): 
-    Future[Either[EisHttpErrorResponse, HttpResponse]] =
-      httpClient
-        .get(url"${appConfig.eisRequestURL}")
-        .execute(StatusHttpReader(reportRequest.correlationId, handleErrorResponse), ec)
-        .flatMap:
-        response => Future.successful(response)
+  def submitReportRequest(
+    reportRequest: ReportRequest
+  )(using hc: HeaderCarrier): Future[Either[EisHttpErrorResponse, HttpResponse]] =
+    httpClient
+      .get(url"${appConfig.eisRequestURL}")
+      .execute(StatusHttpReader(reportRequest.correlationId, handleErrorResponse), ec)
+      .flatMap:
+      response => Future.successful(response)

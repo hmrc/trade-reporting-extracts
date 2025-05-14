@@ -31,16 +31,17 @@ case class ErrorDetail(
 
 object ErrorDetail {
   implicit val errorDetail: Reads[ErrorDetail] = (json: JsValue) =>
-    try JsSuccess(
-      ErrorDetail(
-        (json \ "errorDetail" \ "timestamp").as[Instant],
-        (json \ "errorDetail" \ "correlationId").as[String],
-        (json \ "errorDetail" \ "errorCode").as[String],
-        (json \ "errorDetail" \ "errorMessage").as[String],
-        (json \ "errorDetail" \ "source").asOpt[String],
-        (json \ "errorDetail" \ "sourceFaultDetail").asOpt[SourceFaultDetail]
+    try
+      JsSuccess(
+        ErrorDetail(
+          (json \ "errorDetail" \ "timestamp").as[Instant],
+          (json \ "errorDetail" \ "correlationId").as[String],
+          (json \ "errorDetail" \ "errorCode").as[String],
+          (json \ "errorDetail" \ "errorMessage").as[String],
+          (json \ "errorDetail" \ "source").asOpt[String],
+          (json \ "errorDetail" \ "sourceFaultDetail").asOpt[SourceFaultDetail]
+        )
       )
-    )
     catch {
       case e: Exception => JsError("Invalid json")
     }
