@@ -16,14 +16,19 @@
 
 package uk.gov.hmrc.tradereportingextracts.services
 
+import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse}
+import uk.gov.hmrc.tradereportingextracts.connectors.EISConnector
 import uk.gov.hmrc.tradereportingextracts.models.ReportRequest
+import uk.gov.hmrc.tradereportingextracts.models.eis.{ErrorResponse, SuccessResponse}
 import uk.gov.hmrc.tradereportingextracts.repositories.ReportRequestRepository
 
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-class ReportRequestService @Inject() (reportRequestRepository: ReportRequestRepository):
+class ReportRequestService @Inject() 
+(reportRequestRepository: ReportRequestRepository,
+ eisConnector: EISConnector):
 
   def create(reportRequest: ReportRequest)(using ec: ExecutionContext): Future[Boolean] =
     reportRequestRepository.insert(reportRequest)
@@ -36,3 +41,11 @@ class ReportRequestService @Inject() (reportRequestRepository: ReportRequestRepo
 
   def delete(reportRequest: ReportRequest): Future[Boolean] =
     reportRequestRepository.delete(reportRequest)
+    
+  def submitReportRequest(reportRequest: ReportRequest)
+    (using ec: ExecutionContext, hc: HeaderCarrier): Future[Either[ErrorResponse, SuccessResponse]] =
+    eisConnector.submitReportRequest(reportRequest).map {
+      case Left(errorResponse) => Left(errorResponse.errorResponse)
+      case Right(successResponse) => 
+        Right(SuccessResponse(reportRequest.reportRequestId, successResponse.status, successResponse.body))
+    }
