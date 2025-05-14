@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.tradereportingextracts.controllers
 
-import play.api.libs.json.{JsValue, Json}
+import play.api.libs.json.{JsError, JsValue, Json}
 import play.api.mvc.{Action, ControllerComponents}
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
@@ -27,22 +27,21 @@ import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton()
-class ReportRequestController @Inject() (
-  reportRequestService: ReportRequestService,
-  cc: ControllerComponents
-)(using executionContext: ExecutionContext, headerCarrier: HeaderCarrier)
-    extends BackendController(cc):
+class ReportRequestController @Inject() (reportRequestService: ReportRequestService, cc: ControllerComponents)(using
+  ec: ExecutionContext,
+  hc: HeaderCarrier
+) extends BackendController(cc):
 
   def submitReportRequest(): Action[JsValue] = Action.async(parse.json) { implicit request =>
     val reportRequest = request.body.validate[ReportRequest]
-    if (reportRequest.isError) {
-      Future.successful(BadRequest(Json.toJson(reportRequest.asOpt)))
-    } else {
-      reportRequestService.submitReportRequest(reportRequest.get).map {
-        case Left(errorResponse)    =>
-          InternalServerError
-        case Right(successResponse) =>
-          Created(Json.toJson(successResponse))
-      }
-    }
+    reportRequest.fold(
+      errors => Future(BadRequest(JsError.toJson(errors))),
+      validRequest =>
+        reportRequestService.submitReportRequest(reportRequest.get).map {
+          case Left(errorResponse)    =>
+            InternalServerError(Json.toJson(errorResponse))
+          case Right(successResponse) =>
+            Created(Json.toJson(successResponse))
+        }
+    )
   }
