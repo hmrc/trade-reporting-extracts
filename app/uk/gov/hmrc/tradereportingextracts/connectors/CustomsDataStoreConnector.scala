@@ -16,9 +16,11 @@
 
 package uk.gov.hmrc.tradereportingextracts.connectors
 
+import play.api.Logging
+import play.api.http.Status.OK
 import play.api.libs.json.Json
 import uk.gov.hmrc.http.client.HttpClientV2
-import uk.gov.hmrc.http.{HeaderCarrier, StringContextOps}
+import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse, StringContextOps, UpstreamErrorResponse}
 import uk.gov.hmrc.http.HttpReads.Implicits.*
 import uk.gov.hmrc.tradereportingextracts.config.AppConfig
 import uk.gov.hmrc.tradereportingextracts.models.{CompanyInformation, EoriHistory, EoriHistoryResponse, NotificationEmail}
@@ -27,8 +29,31 @@ import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
 import play.api.libs.ws.writeableOf_JsValue
 
-class CustomsDataStoreConnector @Inject() (appConfig: AppConfig, httpClient: HttpClientV2)(using ec: ExecutionContext):
+class CustomsDataStoreConnector @Inject() (appConfig: AppConfig, httpClient: HttpClientV2)(using ec: ExecutionContext)
+    extends Logging {
+
   implicit val hc: HeaderCarrier = HeaderCarrier()
+
+  def getVerifiedEmailForReport(eori: String): Future[NotificationEmail] =
+    httpClient
+      .get(url"${appConfig.customsDataStore}/eori/verified-email")
+      .withBody(Json.obj("eori" -> eori))
+      .execute[HttpResponse]
+      .flatMap { response =>
+        response.status match {
+          case OK => Future.successful(response.json.as[NotificationEmail])
+          case _  =>
+            logger.error(
+              s"Unexpected response from call to /trade-reporting-extracts/eori/verified-email status : ${response.status}"
+            )
+            Future.failed(
+              UpstreamErrorResponse(
+                "Unexpected response from /trade-reporting-extracts/eori/verified-email",
+                response.status
+              )
+            )
+        }
+      }
 
   def getCompanyInformation()(using hc: HeaderCarrier): Future[CompanyInformation] =
     httpClient
@@ -54,3 +79,4 @@ class CustomsDataStoreConnector @Inject() (appConfig: AppConfig, httpClient: Htt
       .recover { case ex: Exception =>
         Left("Failed to retrieve verified email")
       }
+}

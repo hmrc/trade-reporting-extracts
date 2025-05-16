@@ -38,12 +38,10 @@ class VerifiedEmailController @Inject() (
     val jsonBody  = request.body
     val eoriValue = (jsonBody \ "eori").asOpt[String].getOrElse("defaultValue")
 
-    customsDataStoreConnector
-      .getVerifiedEmail(eoriValue)
-      .flatMap {
-        case Right(email) =>
-          Future.successful(Ok(Json.toJson(email)))
-        case Left(error)  =>
-          Future.failed(new RuntimeException(error))
-      }
+    customsDataStoreConnector.getVerifiedEmail(eoriValue).flatMap {
+      case Right(email) =>
+        Future.successful(Ok(Json.toJson(email)))
+      case Left(error)  =>
+        Future.failed(new RuntimeException(error))
+    }
   }

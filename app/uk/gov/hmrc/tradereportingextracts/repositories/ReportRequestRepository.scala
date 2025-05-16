@@ -37,13 +37,13 @@ class ReportRequestRepository @Inject() (mongoComponent: MongoComponent)(implici
       replaceIndexes = true
     ):
 
-  def insert(reportRequest: ReportRequest)(using ec: ExecutionContext): Future[Boolean] =
+  def insert(reportRequest: ReportRequest)(implicit ec: ExecutionContext): Future[Boolean] =
     collection
       .insertOne(reportRequest)
       .head()
       .map(_.wasAcknowledged())
 
-  def findByReportRequestId(reportRequestId: String)(using ec: ExecutionContext): Future[Option[ReportRequest]] =
+  def findByReportRequestId(reportRequestId: String)(implicit ec: ExecutionContext): Future[Option[ReportRequest]] =
     collection
       .find(Filters.equal("reportRequestId", reportRequestId))
       .headOption()
