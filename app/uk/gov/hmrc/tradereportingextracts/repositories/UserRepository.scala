@@ -82,3 +82,13 @@ class UserRepository @Inject() (mongoComponent: MongoComponent)(using ec: Execut
       .deleteOne(Filters.equal("eori", eori))
       .toFuture()
       .map(_.wasAcknowledged())
+
+  def getAuthorisedEoris(eori: String): Future[Seq[String]] =
+    findByEori(eori).flatMap {
+      case Some(user) =>
+        val authorisedEoris = user.authorisedUsers.map(_.eori)
+        Future.successful(authorisedEoris)
+
+      case None =>
+        Future.failed(new Exception(s"User with EORI $eori not found"))
+    }

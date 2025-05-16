@@ -97,6 +97,65 @@
           "mode": "none"
         }
       }
+    },
+    {
+      "type": "http",
+      "name": "authorised-eoris",
+      "filename": "authorised-eoris.bru",
+      "seq": 2,
+      "request": {
+        "url": "http://localhost:2100/trade-reporting-extracts/user/GB123456789000/authorised-eoris",
+        "method": "GET",
+        "headers": [],
+        "params": [],
+        "body": {
+          "mode": "none",
+          "formUrlEncoded": [],
+          "multipartForm": [],
+          "file": []
+        },
+        "script": {},
+        "vars": {},
+        "assertions": [],
+        "tests": "",
+        "docs": "",
+        "auth": {
+          "mode": "inherit"
+        }
+      }
+    },
+    {
+      "type": "http",
+      "name": "authorised-eoris",
+      "filename": "authorised-eoris.bru",
+      "seq": 2,
+      "request": {
+        "url": "http://localhost:2100/trade-reporting-extracts/user/:eori/authorised-eoris",
+        "method": "GET",
+        "headers": [],
+        "params": [
+          {
+            "name": "eori",
+            "value": "GB123456789012",
+            "type": "path",
+            "enabled": true
+          }
+        ],
+        "body": {
+          "mode": "none",
+          "formUrlEncoded": [],
+          "multipartForm": [],
+          "file": []
+        },
+        "script": {},
+        "vars": {},
+        "assertions": [],
+        "tests": "",
+        "docs": "",
+        "auth": {
+          "mode": "inherit"
+        }
+      }
     }
   ],
   "environments": [],
