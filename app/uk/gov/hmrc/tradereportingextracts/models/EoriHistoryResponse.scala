@@ -18,7 +18,16 @@ package uk.gov.hmrc.tradereportingextracts.models
 
 import play.api.libs.json.{Json, OFormat}
 
-case class EoriHistoryResponse(eoriHistory: Seq[EoriPeriod])
+import java.time.LocalDate
+
+case class EoriHistoryResponse(eoriHistory: Seq[EoriHistory]) {
+  def filterByDateRange(from: LocalDate, until: LocalDate): Seq[EoriHistory] =
+    eoriHistory.filter { h =>
+      val validFrom  = h.validFrom.getOrElse(LocalDate.MIN)
+      val validUntil = h.validUntil.getOrElse(LocalDate.MAX)
+      !validUntil.isBefore(from) && !validFrom.isAfter(until)
+    }
+}
 
 object EoriHistoryResponse:
   implicit val format: OFormat[EoriHistoryResponse] = Json.format[EoriHistoryResponse]

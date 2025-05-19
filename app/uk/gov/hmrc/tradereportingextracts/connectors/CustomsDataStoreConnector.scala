@@ -21,13 +21,14 @@ import uk.gov.hmrc.http.client.HttpClientV2
 import uk.gov.hmrc.http.{HeaderCarrier, StringContextOps}
 import uk.gov.hmrc.http.HttpReads.Implicits.*
 import uk.gov.hmrc.tradereportingextracts.config.AppConfig
-import uk.gov.hmrc.tradereportingextracts.models.{CompanyInformation, EoriHistoryResponse, NotificationEmail}
+import uk.gov.hmrc.tradereportingextracts.models.{CompanyInformation, EoriHistory, EoriHistoryResponse, NotificationEmail}
 
 import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
 import play.api.libs.ws.writeableOf_JsValue
 
 class CustomsDataStoreConnector @Inject() (appConfig: AppConfig, httpClient: HttpClientV2)(using ec: ExecutionContext):
+  implicit val hc: HeaderCarrier = HeaderCarrier()
 
   def getCompanyInformation()(using hc: HeaderCarrier): Future[CompanyInformation] =
     httpClient
@@ -36,9 +37,10 @@ class CustomsDataStoreConnector @Inject() (appConfig: AppConfig, httpClient: Htt
       .flatMap:
       response => Future.successful(response)
 
-  def getEoriHistory()(using hc: HeaderCarrier): Future[EoriHistoryResponse] =
+  def getEoriHistory(eori: String): Future[EoriHistoryResponse] =
     httpClient
       .get(url"${appConfig.customsDataStore}/eori/eori-history")
+      .withBody(Json.obj("eori" -> eori))
       .execute[EoriHistoryResponse]
       .flatMap:
       response => Future.successful(response)
