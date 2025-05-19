@@ -22,7 +22,7 @@ case class ReportAvailablePayload(
   eori: String,
   fileName: String,
   fileSize: Int,
-  metadata: List[ReportAvailablePayloadMetadataInner]
+  metadata: List[ReportAvailablePayloadMetadata]
 )
 
 object ReportAvailablePayload {

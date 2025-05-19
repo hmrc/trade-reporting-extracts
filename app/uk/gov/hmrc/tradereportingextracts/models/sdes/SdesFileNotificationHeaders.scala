@@ -17,7 +17,6 @@
 package uk.gov.hmrc.tradereportingextracts.models.sdes
 
 object SdesFileNotificationHeaders extends Enumeration {
-  type SdesFileNotificationHeaders = Value
 
   val Authorization: Value       = Value("authorization")
   val ContentType: Value         = Value("content-type")

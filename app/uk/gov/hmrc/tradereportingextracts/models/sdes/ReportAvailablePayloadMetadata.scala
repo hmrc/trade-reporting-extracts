@@ -19,36 +19,36 @@ package uk.gov.hmrc.tradereportingextracts.models.sdes
 import play.api.libs.json._
 
 // Sealed trait for all metadata item types
-sealed trait ReportAvailablePayloadMetadataInner {
+sealed trait ReportAvailablePayloadMetadata {
   def key: String
   def value: String
 }
 
-object ReportAvailablePayloadMetadataInner {
-  case class RetentionDaysMetadataItem(value: String) extends ReportAvailablePayloadMetadataInner {
+object ReportAvailablePayloadMetadata {
+  case class RetentionDaysMetadataItem(value: String) extends ReportAvailablePayloadMetadata {
     val key = "RETENTION_DAYS"
   }
-  case class FileTypeMetadataItem(value: String) extends ReportAvailablePayloadMetadataInner {
+  case class FileTypeMetadataItem(value: String) extends ReportAvailablePayloadMetadata {
     val key = "FILE_TYPE"
   }
-  case class EORIMetadataItem(value: String) extends ReportAvailablePayloadMetadataInner {
+  case class EORIMetadataItem(value: String) extends ReportAvailablePayloadMetadata {
     val key = "EORI"
   }
-  case class MDTPReportXCorrelationIDMetadataItem(value: String) extends ReportAvailablePayloadMetadataInner {
+  case class MDTPReportXCorrelationIDMetadataItem(value: String) extends ReportAvailablePayloadMetadata {
     val key = "MDTP-report-x-correlationID"
   }
-  case class MDTPReportRequestIDMetadataItem(value: String) extends ReportAvailablePayloadMetadataInner {
+  case class MDTPReportRequestIDMetadataItem(value: String) extends ReportAvailablePayloadMetadata {
     val key = "MDTP-report-requestID"
   }
-  case class MDTPReportTypeNameMetadataItem(value: String) extends ReportAvailablePayloadMetadataInner {
+  case class MDTPReportTypeNameMetadataItem(value: String) extends ReportAvailablePayloadMetadata {
     val key = "MDTP-reportTypeName"
   }
-  case class ReportFilesPartsMetadataItem(value: String) extends ReportAvailablePayloadMetadataInner {
+  case class ReportFilesPartsMetadataItem(value: String) extends ReportAvailablePayloadMetadata {
     val key = "Report-files-parts"
   }
 
   // JSON Reads/Writes
-  implicit val reads: Reads[ReportAvailablePayloadMetadataInner] = Reads { json =>
+  implicit val reads: Reads[ReportAvailablePayloadMetadata] = Reads { json =>
     (json \ "key").validate[String].flatMap {
       case "RETENTION_DAYS"              => (json \ "value").validate[String].map(RetentionDaysMetadataItem(_))
       case "FILE_TYPE"                   => (json \ "value").validate[String].map(FileTypeMetadataItem(_))
@@ -62,7 +62,7 @@ object ReportAvailablePayloadMetadataInner {
     }
   }
 
-  implicit val writes: Writes[ReportAvailablePayloadMetadataInner] = Writes {
+  implicit val writes: Writes[ReportAvailablePayloadMetadata] = Writes {
     case RetentionDaysMetadataItem(value)            => Json.obj("key" -> "RETENTION_DAYS", "value" -> value)
     case FileTypeMetadataItem(value)                 => Json.obj("key" -> "FILE_TYPE", "value" -> value)
     case EORIMetadataItem(value)                     => Json.obj("key" -> "EORI", "value" -> value)
@@ -73,5 +73,5 @@ object ReportAvailablePayloadMetadataInner {
     case ReportFilesPartsMetadataItem(value)         => Json.obj("key" -> "Report-files-parts", "value" -> value)
   }
 
-  implicit val format: Format[ReportAvailablePayloadMetadataInner] = Format(reads, writes)
+  implicit val format: Format[ReportAvailablePayloadMetadata] = Format(reads, writes)
 }

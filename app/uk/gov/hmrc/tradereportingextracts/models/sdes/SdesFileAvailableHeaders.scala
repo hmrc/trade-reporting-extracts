@@ -16,22 +16,14 @@
 
 package uk.gov.hmrc.tradereportingextracts.models.sdes
 
-import play.api.libs.json.*
+object SdesFileAvailableHeaders extends Enumeration {
 
-case class MDTPReportRequestIDMetadataItem(
-  key: MDTPReportRequestIDMetadataItem.Key.Value,
-  value: String
-)
+  val Authorization: Value       = Value("authorization")
+  val ContentType: Value         = Value("content-type")
+  val Date: Value                = Value("date")
+  val XCorrelationID: Value      = Value("x-correlation-id")
+  val XTransmittingSystem: Value = Value("x-transmitting-system")
+  val SourceSystem: Value        = Value("source-system")
 
-object MDTPReportRequestIDMetadataItem {
-  implicit lazy val mDTPReportRequestIDMetadataItemJsonFormat: Format[MDTPReportRequestIDMetadataItem] =
-    Json.format[MDTPReportRequestIDMetadataItem]
-
-  object Key extends Enumeration {
-    val MDTPReportRequestID = Value("MDTP-report-requestID")
-
-    type Key = Value
-    implicit lazy val KeyJsonFormat: Format[Value] =
-      Format(Reads.enumNameReads(this), Writes.enumNameWrites[MDTPReportRequestIDMetadataItem.Key.type])
-  }
+  def allHeaders: List[String] = values.map(_.toString).toList
 }
