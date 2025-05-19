@@ -50,25 +50,27 @@ object ReportAvailablePayloadMetadataInner {
   // JSON Reads/Writes
   implicit val reads: Reads[ReportAvailablePayloadMetadataInner] = Reads { json =>
     (json \ "key").validate[String].flatMap {
-      case "RETENTION_DAYS" => (json \ "value").validate[String].map(RetentionDaysMetadataItem(_))
-      case "FILE_TYPE" => (json \ "value").validate[String].map(FileTypeMetadataItem(_))
-      case "EORI" => (json \ "value").validate[String].map(EORIMetadataItem(_))
-      case "MDTP-report-x-correlationID" => (json \ "value").validate[String].map(MDTPReportXCorrelationIDMetadataItem(_))
-      case "MDTP-report-requestID" => (json \ "value").validate[String].map(MDTPReportRequestIDMetadataItem(_))
-      case "MDTP-reportTypeName" => (json \ "value").validate[String].map(MDTPReportTypeNameMetadataItem(_))
-      case "Report-files-parts" => (json \ "value").validate[String].map(ReportFilesPartsMetadataItem(_))
-      case other => JsError(s"Unknown metadata key: $other")
+      case "RETENTION_DAYS"              => (json \ "value").validate[String].map(RetentionDaysMetadataItem(_))
+      case "FILE_TYPE"                   => (json \ "value").validate[String].map(FileTypeMetadataItem(_))
+      case "EORI"                        => (json \ "value").validate[String].map(EORIMetadataItem(_))
+      case "MDTP-report-x-correlationID" =>
+        (json \ "value").validate[String].map(MDTPReportXCorrelationIDMetadataItem(_))
+      case "MDTP-report-requestID"       => (json \ "value").validate[String].map(MDTPReportRequestIDMetadataItem(_))
+      case "MDTP-reportTypeName"         => (json \ "value").validate[String].map(MDTPReportTypeNameMetadataItem(_))
+      case "Report-files-parts"          => (json \ "value").validate[String].map(ReportFilesPartsMetadataItem(_))
+      case other                         => JsError(s"Unknown metadata key: $other")
     }
   }
 
   implicit val writes: Writes[ReportAvailablePayloadMetadataInner] = Writes {
-    case RetentionDaysMetadataItem(value) => Json.obj("key" -> "RETENTION_DAYS", "value" -> value)
-    case FileTypeMetadataItem(value) => Json.obj("key" -> "FILE_TYPE", "value" -> value)
-    case EORIMetadataItem(value) => Json.obj("key" -> "EORI", "value" -> value)
-    case MDTPReportXCorrelationIDMetadataItem(value) => Json.obj("key" -> "MDTP-report-x-correlationID", "value" -> value)
-    case MDTPReportRequestIDMetadataItem(value) => Json.obj("key" -> "MDTP-report-requestID", "value" -> value)
-    case MDTPReportTypeNameMetadataItem(value) => Json.obj("key" -> "MDTP-reportTypeName", "value" -> value)
-    case ReportFilesPartsMetadataItem(value) => Json.obj("key" -> "Report-files-parts", "value" -> value)
+    case RetentionDaysMetadataItem(value)            => Json.obj("key" -> "RETENTION_DAYS", "value" -> value)
+    case FileTypeMetadataItem(value)                 => Json.obj("key" -> "FILE_TYPE", "value" -> value)
+    case EORIMetadataItem(value)                     => Json.obj("key" -> "EORI", "value" -> value)
+    case MDTPReportXCorrelationIDMetadataItem(value) =>
+      Json.obj("key" -> "MDTP-report-x-correlationID", "value" -> value)
+    case MDTPReportRequestIDMetadataItem(value)      => Json.obj("key" -> "MDTP-report-requestID", "value" -> value)
+    case MDTPReportTypeNameMetadataItem(value)       => Json.obj("key" -> "MDTP-reportTypeName", "value" -> value)
+    case ReportFilesPartsMetadataItem(value)         => Json.obj("key" -> "Report-files-parts", "value" -> value)
   }
 
   implicit val format: Format[ReportAvailablePayloadMetadataInner] = Format(reads, writes)
