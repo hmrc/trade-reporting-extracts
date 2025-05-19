@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.tradereportingextracts.connectors
+package uk.gov.hmrc.tradereportingextracts.controllers
 
 import play.api.libs.json.*
 import play.api.mvc.*
@@ -34,7 +34,7 @@ class ReportAvailabilityNotificationController @Inject() (
 )(using ec: ExecutionContext)
     extends AbstractController(cc) {
 
-  def notifyReportAvailablePut(): Action[AnyContent] = Action.async { request =>
+  def notifyReportAvailable(): Action[AnyContent] = Action.async { request =>
     implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromRequest(request)
 
     def missingHeaders: Seq[String] =
