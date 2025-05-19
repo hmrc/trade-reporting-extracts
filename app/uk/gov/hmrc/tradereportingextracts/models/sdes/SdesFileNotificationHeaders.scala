@@ -14,18 +14,17 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.tradereportingextracts.config
+package uk.gov.hmrc.tradereportingextracts.models.sdes
 
-import javax.inject.{Inject, Singleton}
-import play.api.Configuration
-import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
+object SdesFileNotificationHeaders extends Enumeration {
+  type SdesFileNotificationHeaders = Value
 
-@Singleton
-class AppConfig @Inject() (val config: Configuration, servicesConfig: ServicesConfig):
+  val Authorization: Value       = Value("authorization")
+  val ContentType: Value         = Value("content-type")
+  val Date: Value                = Value("date")
+  val XCorrelationID: Value      = Value("x-correlation-id")
+  val XTransmittingSystem: Value = Value("x-transmitting-system")
+  val SourceSystem: Value        = Value("source-system")
 
-  val appName: String = config.get[String]("appName")
-
-  lazy val customsDataStore: String = servicesConfig.baseUrl("customs-data-store") +
-    config.get[String]("microservice.services.customs-data-store.context")
-
-  lazy val sdesAuthToken: String = config.get[String]("sdes.auth.token")
+  def allHeaders: List[String] = values.map(_.toString).toList
+}

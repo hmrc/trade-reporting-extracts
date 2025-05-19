@@ -14,18 +14,23 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.tradereportingextracts.config
+package uk.gov.hmrc.tradereportingextracts.models.sdes
 
-import javax.inject.{Inject, Singleton}
-import play.api.Configuration
-import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
+import play.api.libs.json.*
 
-@Singleton
-class AppConfig @Inject() (val config: Configuration, servicesConfig: ServicesConfig):
+case class FileTypeMetadataItem(
+  key: FileTypeMetadataItem.Key.Value,
+  value: String
+)
 
-  val appName: String = config.get[String]("appName")
+object FileTypeMetadataItem {
+  implicit lazy val fileTypeMetadataItemJsonFormat: Format[FileTypeMetadataItem] = Json.format[FileTypeMetadataItem]
 
-  lazy val customsDataStore: String = servicesConfig.baseUrl("customs-data-store") +
-    config.get[String]("microservice.services.customs-data-store.context")
+  object Key extends Enumeration {
+    val FileType = Value("FileType")
 
-  lazy val sdesAuthToken: String = config.get[String]("sdes.auth.token")
+    type Key = Value
+    implicit lazy val KeyJsonFormat: Format[Value] =
+      Format(Reads.enumNameReads(this), Writes.enumNameWrites[FileTypeMetadataItem.Key.type])
+  }
+}

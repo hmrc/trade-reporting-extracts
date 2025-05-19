@@ -14,18 +14,18 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.tradereportingextracts.config
+package uk.gov.hmrc.tradereportingextracts.models.sdes
 
-import javax.inject.{Inject, Singleton}
-import play.api.Configuration
-import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
+import play.api.libs.json.*
 
-@Singleton
-class AppConfig @Inject() (val config: Configuration, servicesConfig: ServicesConfig):
+case class ReportAvailablePayload(
+  eori: String,
+  fileName: String,
+  fileSize: Int,
+  metadata: List[ReportAvailablePayloadMetadataInner]
+)
 
-  val appName: String = config.get[String]("appName")
-
-  lazy val customsDataStore: String = servicesConfig.baseUrl("customs-data-store") +
-    config.get[String]("microservice.services.customs-data-store.context")
-
-  lazy val sdesAuthToken: String = config.get[String]("sdes.auth.token")
+object ReportAvailablePayload {
+  implicit lazy val reportAvailablePayloadJsonFormat: Format[ReportAvailablePayload] =
+    Json.format[ReportAvailablePayload]
+}
