@@ -18,7 +18,6 @@ package uk.gov.hmrc.tradereportingextracts.models.sdes
 
 import play.api.libs.json._
 
-// Sealed trait for all metadata item types
 sealed trait ReportAvailablePayloadMetadata {
   def key: String
   def value: String
@@ -53,8 +52,7 @@ object ReportAvailablePayloadMetadata {
       case "RETENTION_DAYS"              => (json \ "value").validate[String].map(RetentionDaysMetadataItem(_))
       case "FILE_TYPE"                   => (json \ "value").validate[String].map(FileTypeMetadataItem(_))
       case "EORI"                        => (json \ "value").validate[String].map(EORIMetadataItem(_))
-      case "MDTP-report-x-correlationID" =>
-        (json \ "value").validate[String].map(MDTPReportXCorrelationIDMetadataItem(_))
+      case "MDTP-report-x-correlationID" => (json \ "value").validate[String].map(MDTPReportXCorrelationIDMetadataItem(_))
       case "MDTP-report-requestID"       => (json \ "value").validate[String].map(MDTPReportRequestIDMetadataItem(_))
       case "MDTP-reportTypeName"         => (json \ "value").validate[String].map(MDTPReportTypeNameMetadataItem(_))
       case "Report-files-parts"          => (json \ "value").validate[String].map(ReportFilesPartsMetadataItem(_))
