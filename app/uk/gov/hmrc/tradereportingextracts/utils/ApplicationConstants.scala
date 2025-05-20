@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 HM Revenue & Customs
+ * Copyright 2025 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,13 +14,9 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.tradereportingextracts.models
+package uk.gov.hmrc.tradereportingextracts.utils
 
-import play.api.libs.json.{Json, OFormat, OWrites}
+object ApplicationConstants {
 
-case class EoriPeriod(eori: String, validFrom: Option[String], validUntil: Option[String]):
-  def definedDates: Boolean = validFrom.isDefined || validUntil.isDefined
-
-object EoriPeriod:
-  implicit val writes: OWrites[EoriPeriod] = Json.writes[EoriPeriod]
-  implicit val format: OFormat[EoriPeriod] = Json.format[EoriPeriod]
+  val eori: String = "eori"
+}

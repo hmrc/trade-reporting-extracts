@@ -25,24 +25,36 @@ import uk.gov.hmrc.tradereportingextracts.connectors.CustomsDataStoreConnector
 import javax.inject.Inject
 import scala.concurrent.ExecutionContext
 import uk.gov.hmrc.http.HeaderCarrier
+import uk.gov.hmrc.tradereportingextracts.models.EoriHistoryResponse
+import uk.gov.hmrc.tradereportingextracts.services.EoriHistoryService
+import uk.gov.hmrc.tradereportingextracts.utils.ApplicationConstants.eori
 
+import scala.concurrent.Future
 import scala.util.control.NonFatal
 
-class EoriHistoryController @Inject() (customsDataStoreConnector: CustomsDataStoreConnector, cc: ControllerComponents)(
-  using executionContext: ExecutionContext
-) extends BackendController(cc) {
+class EoriHistoryController @Inject() (
+  eoriHistoryService: EoriHistoryService,
+  cc: ControllerComponents
+)(using executionContext: ExecutionContext)
+    extends BackendController(cc) {
 
   private val log: Logger = Logger(this.getClass)
 
-  def getEoriHistory(): Action[AnyContent]                          = Action.async { implicit request =>
+  def getEoriHistory(): Action[AnyContent] = Action.async { implicit request =>
     implicit val hc: HeaderCarrier = HeaderCarrier()
-    customsDataStoreConnector
-      .getEoriHistory()
-      .map(response => Ok(Json.toJson(response)))
-      .recover { case NonFatal(error) =>
-        logErrorAndReturnServiceUnavailable(error)
-      }
+    request.body.asJson.flatMap(json => (json \ eori).asOpt[String]) match {
+      case Some(eoriValue) =>
+        eoriHistoryService
+          .fetchEoriHistory(eoriValue)
+          .map(histories => Ok(Json.toJson(histories)))
+          .recover { case NonFatal(error) =>
+            logErrorAndReturnServiceUnavailable(error)
+          }
+      case _               =>
+        Future.successful(BadRequest("Missing or invalid EORI in request body"))
+    }
   }
+
   private def logErrorAndReturnServiceUnavailable(error: Throwable) = {
     log.error(s"getEoriHistory failed: ${error.getMessage}")
     ServiceUnavailable

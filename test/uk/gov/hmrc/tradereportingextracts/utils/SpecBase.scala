@@ -18,6 +18,7 @@ package uk.gov.hmrc.tradereportingextracts.utils
 
 import com.codahale.metrics.MetricRegistry
 import org.apache.pekko.stream.Materializer
+import org.mockito.Mockito.when
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpecLike
 import org.scalatest.{BeforeAndAfterEach, OptionValues}
@@ -26,7 +27,13 @@ import org.scalatestplus.play.guice.{GuiceOneAppPerSuite, GuiceOneAppPerTest}
 import play.api.inject.bind
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.test.{DefaultAwaitTimeout, FutureAwaits}
+import uk.gov.hmrc.http.{HeaderCarrier, HttpReads}
+import uk.gov.hmrc.http.client.{HttpClientV2, RequestBuilder}
 import uk.gov.hmrc.play.bootstrap.metrics.Metrics
+import java.net.URL
+import org.mockito.ArgumentMatchers.{any, argThat}
+
+import scala.concurrent.{ExecutionContext, Future}
 
 class SpecBase
     extends AnyWordSpecLike
@@ -38,13 +45,21 @@ class SpecBase
     with OptionValues
     with BeforeAndAfterEach {
 
-  implicit val mat: Materializer = app.materializer
+  implicit val mat: Materializer   = app.materializer
+  val mockHttpClient: HttpClientV2 = mock[HttpClientV2]
 
   def application: GuiceApplicationBuilder = new GuiceApplicationBuilder()
     .overrides(
       bind[Metrics].toInstance(new FakeMetrics)
     )
     .configure("metrics.enabled" -> "false")
+
+  def executeGet[A]: Future[A] = {
+    val mockGetRequestBuilder: RequestBuilder = mock[RequestBuilder]
+    when(mockGetRequestBuilder.setHeader(any[(String, String)])).thenReturn(mockGetRequestBuilder)
+    when(mockHttpClient.get(any[URL])(any[HeaderCarrier])).thenReturn(mockGetRequestBuilder)
+    mockGetRequestBuilder.execute[A](any[HttpReads[A]], any[ExecutionContext])
+  }
 
   class FakeMetrics extends Metrics {
     override val defaultRegistry: MetricRegistry = new MetricRegistry
