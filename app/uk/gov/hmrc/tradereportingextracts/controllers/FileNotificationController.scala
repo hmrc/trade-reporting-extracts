@@ -21,27 +21,27 @@ import play.api.mvc.*
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.http.HeaderCarrierConverter
 import uk.gov.hmrc.tradereportingextracts.config.AppConfig
-import uk.gov.hmrc.tradereportingextracts.models.sdes.ReportAvailablePayload
-import uk.gov.hmrc.tradereportingextracts.models.sdes.SdesFileNotificationHeaders.*
+import uk.gov.hmrc.tradereportingextracts.models.sdes.FileNotification
+import uk.gov.hmrc.tradereportingextracts.models.sdes.FileNotificationHeaders.*
 
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-class ReportAvailabilityNotificationController @Inject() (
+class FileNotificationController @Inject() (
   cc: ControllerComponents,
   appConfig: AppConfig
 )(using ec: ExecutionContext)
     extends AbstractController(cc) {
 
-  def notifyReportAvailable(): Action[AnyContent] = Action.async { request =>
+  def fileNotification(): Action[AnyContent] = Action.async { request =>
     implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromRequest(request)
 
     def missingHeaders: Seq[String] =
       allHeaders.filterNot(header => request.headers.get(header).isDefined)
 
     def isAuthorized: Boolean =
-      request.headers.get(Authorization.toString).contains(appConfig.sdesAuthToken)
+      request.headers.get(Authorization.toString).get.equals(appConfig.sdesAuthToken)
 
     (missingHeaders, isAuthorized, request.body.asJson) match {
       case (headers, _, _) if headers.nonEmpty =>
@@ -51,7 +51,7 @@ class ReportAvailabilityNotificationController @Inject() (
       case (_, _, None)                        =>
         Future.successful(BadRequest("Expected application/json request body"))
       case (_, _, Some(json))                  =>
-        json.validate[ReportAvailablePayload] match {
+        json.validate[FileNotification] match {
           case JsSuccess(_, _) => Future.successful(Created)
           case JsError(errors) =>
             val errorMessage = errors

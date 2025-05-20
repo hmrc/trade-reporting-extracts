@@ -8,4 +8,4 @@ GET        /eori/user-information                       uk.gov.hmrc.tradereporti
 
 GET        /user/:eori/authorised-eoris                 uk.gov.hmrc.tradereportingextracts.controllers.UserController.getAuthorisedEoris(eori: String)
 
-PUT        /notify-report-available                     uk.gov.hmrc.tradereportingextracts.controllers.ReportAvailabilityNotificationController.notifyReportAvailable()
+PUT        /notify-report-available                     uk.gov.hmrc.tradereportingextracts.controllers.FileNotificationController.fileNotification()
