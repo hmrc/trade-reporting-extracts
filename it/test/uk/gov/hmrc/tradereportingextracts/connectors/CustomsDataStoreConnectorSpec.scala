@@ -2,7 +2,7 @@ package uk.gov.hmrc.tradereportingextracts.connectors
 
 import com.github.tomakehurst.wiremock.client.WireMock
 import uk.gov.hmrc.tradereportingextracts.utils.WireMockHelper
-import org.scalatest.concurrent.ScalaFutures
+import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}
 import org.scalatest.freespec.AnyFreeSpec
 import org.scalatest.matchers.must.Matchers.mustBe
 import play.api.inject.guice.GuiceApplicationBuilder
@@ -14,6 +14,7 @@ import org.scalatestplus.play.*
 import play.api.test.*
 import play.api.test.Helpers.*
 import com.github.tomakehurst.wiremock.client.WireMock.*
+import org.scalatest.concurrent.PatienceConfiguration.Timeout
 import org.scalatest.matchers.should.Matchers
 import org.scalatestplus.mockito.MockitoSugar
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
@@ -25,7 +26,8 @@ class CustomsDataStoreConnectorSpec extends AnyFreeSpec with ScalaFutures
   with GuiceOneAppPerSuite
   with MockitoSugar
   with Matchers
-  with WireMockHelper {
+  with WireMockHelper
+  with IntegrationPatience {
 
   val appConfig: AppConfig = app.injector.instanceOf[AppConfig]
   val baseUrlCDS: String = appConfig.customsDataStore

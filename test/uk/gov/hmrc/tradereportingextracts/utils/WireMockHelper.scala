@@ -23,7 +23,7 @@ import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, Suite}
 trait WireMockHelper extends BeforeAndAfterAll with BeforeAndAfterEach {
   this: Suite =>
 
-  val wiremockStubPort = 1235
+  val wiremockStubPort = 1234
 
   val server: WireMockServer = new WireMockServer(wireMockConfig().port(wiremockStubPort))
 
