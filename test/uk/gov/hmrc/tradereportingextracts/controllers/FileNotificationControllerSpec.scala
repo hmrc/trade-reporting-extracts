@@ -80,6 +80,14 @@ class FileNotificationControllerSpec extends SpecBase {
       status(result) shouldBe CREATED
     }
   }
+    "FileNotificationController" should {
+        "return 405 MethodNotAllowed" in new Setup {
+        val request = FakeRequest(GET, routes.FileNotificationController.fileNotification().url)
+    
+        val result = route(app, request).value
+        status(result) shouldBe METHOD_NOT_ALLOWED
+        }
+    }
 
   trait Setup {
     val app: Application = application.build()
