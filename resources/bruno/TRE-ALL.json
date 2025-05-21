@@ -1,0 +1,247 @@
+{
+  "name": "TRE-ALL",
+  "version": "1",
+  "items": [
+    {
+      "type": "http",
+      "name": "company-information",
+      "seq": 1,
+      "request": {
+        "url": "http://localhost:2101/trade-reporting-extracts-stub/eori/company-information",
+        "method": "GET",
+        "headers": [],
+        "params": [],
+        "body": {
+          "mode": "json",
+          "json": "{\n  \"eori\": \"GB123456789012\"\n}",
+          "formUrlEncoded": [],
+          "multipartForm": []
+        },
+        "script": {},
+        "vars": {},
+        "assertions": [],
+        "tests": "",
+        "auth": {
+          "mode": "none"
+        }
+      }
+    },
+    {
+      "type": "http",
+      "name": "eori-history",
+      "seq": 2,
+      "request": {
+        "url": "http://localhost:2101/trade-reporting-extracts-stub/eori/eori-history",
+        "method": "GET",
+        "headers": [],
+        "params": [],
+        "body": {
+          "mode": "json",
+          "json": "{\n  \"eori\": \"GB123456789012\"\n}",
+          "formUrlEncoded": [],
+          "multipartForm": []
+        },
+        "script": {},
+        "vars": {},
+        "assertions": [],
+        "tests": "",
+        "auth": {
+          "mode": "none"
+        }
+      }
+    },
+    {
+      "type": "http",
+      "name": "verified-email",
+      "seq": 3,
+      "request": {
+        "url": "http://localhost:2101/trade-reporting-extracts-stub/eori/verified-email",
+        "method": "GET",
+        "headers": [],
+        "params": [],
+        "body": {
+          "mode": "json",
+          "json": "{\n  \"eori\": \"GB123456789012\"\n}",
+          "formUrlEncoded": [],
+          "multipartForm": []
+        },
+        "script": {},
+        "vars": {},
+        "assertions": [],
+        "tests": "",
+        "auth": {
+          "mode": "none"
+        }
+      }
+    },
+    {
+      "type": "http",
+      "name": "report-request",
+      "seq": 5,
+      "request": {
+        "url": "http://localhost:2101/trade-reporting-extracts-stub/gbe/requesttraderreport/v1",
+        "method": "PUT",
+        "headers": [
+          {
+            "name": "authorization",
+            "value": "EisAuthToken",
+            "enabled": true
+          },
+          {
+            "name": "date",
+            "value": "Mon, 02 Oct 2023 14:30:00 GMT",
+            "enabled": true
+          },
+          {
+            "name": "x-correlation-id",
+            "value": "ada-Dd--adadasd-aDSD",
+            "enabled": true
+          },
+          {
+            "name": "x-forwarded-host",
+            "value": "MDTP",
+            "enabled": true
+          }
+        ],
+        "params": [],
+        "body": {
+          "mode": "json",
+          "json": "{\n  \"endDate\": \"2025-12-31\",\n  \"eori\": [\"GB123456789000\", \"GB987654321000\"],\n  \"eoriRole\": \"TRADER\",\n  \"reportTypeName\": \"IMPORTS-ITEM-REPORT\",\n  \"requestID\": \"RE00000022\",\n  \"requestTimestamp\": \"2025-01-01T12:00:00Z\",\n  \"requesterEori\": \"GB123456789000\",\n  \"startDate\": \"2025-01-01\"\n}",
+          "formUrlEncoded": [],
+          "multipartForm": []
+        },
+        "script": {},
+        "vars": {},
+        "assertions": [],
+        "tests": "",
+        "auth": {
+          "mode": "none"
+        }
+      }
+    },
+    {
+      "type": "http",
+      "name": "file-notification",
+      "seq": 6,
+      "request": {
+        "url": "http://localhost:2100/trade-reporting-extracts/notify-report-available",
+        "method": "PUT",
+        "headers": [
+          {
+            "name": "content-type",
+            "value": "application/json",
+            "enabled": true
+          },
+          {
+            "name": "authorization",
+            "value": "SdesAuthToken",
+            "enabled": true
+          },
+          {
+            "name": "date",
+            "value": "Mon, 02 Oct 2023 14:30:00 GMT",
+            "enabled": true
+          },
+          {
+            "name": "source-system",
+            "value": "SDES",
+            "enabled": true
+          },
+          {
+            "name": "x-correlation-id",
+            "value": "asfd-asdf-asdf",
+            "enabled": true
+          },
+          {
+            "name": "x-transmitting-system",
+            "value": "SDES",
+            "enabled": true
+          }
+        ],
+        "params": [],
+        "body": {
+          "mode": "json",
+          "json": "{\n  \"eori\": \"GB123456789000\",\n  \"fileName\": \"report-2024-06-01.csv\",\n  \"fileSize\": 1024,\n  \"metadata\": [\n    { \"key\": \"RETENTION_DAYS\", \"value\": \"30\" },\n    { \"key\": \"FILE_TYPE\", \"value\": \"CSV\" },\n    { \"key\": \"EORI\", \"value\": \"GB123456789000\" },\n    { \"key\": \"MDTP-report-x-correlationID\", \"value\": \"corr-id-123\" },\n    { \"key\": \"MDTP-report-requestID\", \"value\": \"req-id-456\" },\n    { \"key\": \"MDTP-reportTypeName\", \"value\": \"monthly-report\" },\n    { \"key\": \"Report-files-parts\", \"value\": \"part-1\" }\n  ]\n}",
+          "formUrlEncoded": [],
+          "multipartForm": []
+        },
+        "script": {},
+        "vars": {},
+        "assertions": [],
+        "tests": "",
+        "auth": {
+          "mode": "none"
+        }
+      }
+    },
+    {
+      "type": "http",
+      "name": "user-information",
+      "seq": 4,
+      "request": {
+        "url": "http://localhost:2100/trade-reporting-extracts/eori/user-information",
+        "method": "GET",
+        "headers": [],
+        "params": [],
+        "body": {
+          "mode": "json",
+          "json": "{\n  \"eori\": \"GB123456789012\"\n}",
+          "formUrlEncoded": [],
+          "multipartForm": []
+        },
+        "script": {},
+        "vars": {},
+        "assertions": [],
+        "tests": "",
+        "auth": {
+          "mode": "none"
+        }
+      }
+    },
+    {
+      "type": "http",
+      "name": "files-list",
+      "seq": 8,
+      "request": {
+        "url": "http://localhost:2101/trade-reporting-extracts-stub/files-available/list/TRE",
+        "method": "GET",
+        "headers": [
+          {
+            "name": "x-client-id",
+            "value": "TRE-CLIENT-ID",
+            "enabled": true
+          },
+          {
+            "name": "x-sdes-key",
+            "value": "GB123456789012",
+            "enabled": true
+          }
+        ],
+        "params": [],
+        "body": {
+          "mode": "json",
+          "json": "{\n  \"endDate\": \"2025-12-31\",\n  \"eori\": [\"GB123456789000\", \"GB987654321000\"],\n  \"eoriRole\": \"TRADER\",\n  \"reportTypeName\": \"IMPORTS-ITEM-REPORT\",\n  \"requestID\": \"RE00000022\",\n  \"requestTimestamp\": \"2025-01-01T12:00:00Z\",\n  \"requesterEori\": \"GB123456789000\",\n  \"startDate\": \"2025-01-01\"\n}",
+          "formUrlEncoded": [],
+          "multipartForm": []
+        },
+        "script": {},
+        "vars": {},
+        "assertions": [],
+        "tests": "",
+        "auth": {
+          "mode": "none"
+        }
+      }
+    }
+  ],
+  "environments": [],
+  "brunoConfig": {
+    "version": "1",
+    "name": "TRE-ALL",
+    "type": "collection",
+    "ignore": [
+      "node_modules",
+      ".git"
+    ]
+  }
+}

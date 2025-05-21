@@ -1,0 +1,15 @@
+{
+  "filename": "pvat-2018-06.csv",
+  "downloadURL": "https://some.sdes.domain?token=abc123",
+  "fileSize": 1234,
+  "metadata": [
+    { "metadata": "RETENTION_DAYS", "value": "(optional) SDES can use a default value" },
+    { "metadata": "FileType", "value": "CSV (Mandatory) - this is the extension of the file created" },
+    { "metadata": "EORI", "value": "Requester EORI (Mandatory)" },
+    { "metadata": "MdtpReportXCorrelationId", "value": "2409398b-ee8f-47cd-b873-ac7ac099c28b" },
+    { "metadata": "MdtpReportRequestId", "value": "" },
+    { "metadata": "MdtpReportTypeName", "value": "Imports-Header" },
+    { "metadata": "ReportFileCounter", "value": "1of2" },
+    { "metadata": "ReportLastFile", "value": "true" }
+  ]
+}

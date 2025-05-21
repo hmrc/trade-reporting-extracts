@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mdg:BatchFileInterfaceMetadata xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:mdg="http://www.hmrc.gsi.gov.uk/mdg/batchFileInterfaceMetadataSchema">
+    <mdg:correlationID></mdg:correlationID>
+
+    <mdg:properties>
+
+        <mdg:property>
+            <mdg:name>RETENTION_DAYS</mdg:name>
+            <mdg:value>(optional) SDES can use a default value</mdg:value>
+        </mdg:property>
+
+        <mdg:property>
+            <mdg:name>FileType</mdg:name>
+            <mdg:value>CSV (Mandatory) - this is the extension of the file created</mdg:value>
+        </mdg:property>
+
+        <mdg:property>
+            <mdg:name>EORI</mdg:name>
+            <mdg:value>Requester EORI (Mandatory)</mdg:value>
+        </mdg:property>
+
+
+        <mdg:property>
+            <mdg:name>MdtpReportXCorrelationId</mdg:name>
+            <mdg:value>2409398b-ee8f-47cd-b873-ac7ac099c28b</mdg:value>
+        </mdg:property>
+
+        <mdg:property>
+            <mdg:name>MdtpReportRequestId</mdg:name>
+            <mdg:value></mdg:value>
+        </mdg:property>
+
+        <mdg:property>
+            <mdg:name>MdtpReportTypeName</mdg:name>
+            <mdg:value>Imports-Header</mdg:value>
+        </mdg:property>
+
+        <mdg:property>
+            <mdg:name>ReportFileCounter</mdg:name>
+            <mdg:value> 1of2 </mdg:value>
+        </mdg:property>
+
+        <mdg:property>
+            <mdg:name>ReportLastFile</mdg:name>
+            <mdg:value>true</mdg:value>
+        </mdg:property>
+
+    </mdg:properties>
+    <mdg:sourceFileName>(Mandatory)- The name of the CSV file included in the zip without the extension e.g for file called xyz.csv the sourceFileName value will be xyz</mdg:sourceFileName>
+</mdg:BatchFileInterfaceMetadata>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
