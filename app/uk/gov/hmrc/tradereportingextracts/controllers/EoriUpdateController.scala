@@ -55,17 +55,21 @@ class EoriUpdateController @Inject() (
           )
         )
       case (_, false, _)                       =>
-        Future.successful(Forbidden.withHeaders(
-          date.toString           -> getCurrentHttpDate,
-          xCorrelationID.toString -> request.headers.get(xCorrelationID.toString).getOrElse("")
-        ))
-      case (_, _, None)                        =>
-        Future.successful(BadRequest(buildBadRequestBodyResponse(request, List("Expected application/json request body")))
-          .withHeaders(
-            contentType.toString    -> ApplicationJson.toString(),
+        Future.successful(
+          Forbidden.withHeaders(
             date.toString           -> getCurrentHttpDate,
             xCorrelationID.toString -> request.headers.get(xCorrelationID.toString).getOrElse("")
-          ))
+          )
+        )
+      case (_, _, None)                        =>
+        Future.successful(
+          BadRequest(buildBadRequestBodyResponse(request, List("Expected application/json request body")))
+            .withHeaders(
+              contentType.toString    -> ApplicationJson.toString(),
+              date.toString           -> getCurrentHttpDate,
+              xCorrelationID.toString -> request.headers.get(xCorrelationID.toString).getOrElse("")
+            )
+        )
       case (_, _, Some(json))                  =>
         json.validate[EoriUpdate] match {
           case JsError(errors) =>
@@ -74,16 +78,20 @@ class EoriUpdateController @Inject() (
                 s"Invalid value at path $path: ${validationErrors.map(_.message).mkString(", ")}"
               }
               .mkString(", ")
-            Future.successful(BadRequest(buildBadRequestBodyResponse(request, List(errorMessage))).withHeaders(
-              contentType.toString -> ApplicationJson.toString(),
-              date.toString           -> getCurrentHttpDate,
-              xCorrelationID.toString -> request.headers.get(xCorrelationID.toString).getOrElse("")
-            ))
+            Future.successful(
+              BadRequest(buildBadRequestBodyResponse(request, List(errorMessage))).withHeaders(
+                contentType.toString    -> ApplicationJson.toString(),
+                date.toString           -> getCurrentHttpDate,
+                xCorrelationID.toString -> request.headers.get(xCorrelationID.toString).getOrElse("")
+              )
+            )
           case JsSuccess(_, _) =>
-            Future.successful(Created.withHeaders(
-              date.toString           -> getCurrentHttpDate,
-              xCorrelationID.toString -> request.headers.get(xCorrelationID.toString).getOrElse("")
-            ))
+            Future.successful(
+              Created.withHeaders(
+                date.toString           -> getCurrentHttpDate,
+                xCorrelationID.toString -> request.headers.get(xCorrelationID.toString).getOrElse("")
+              )
+            )
         }
     }
   }
