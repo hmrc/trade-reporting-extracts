@@ -21,8 +21,7 @@ import play.api.mvc.{Action, ControllerComponents}
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 import uk.gov.hmrc.tradereportingextracts.connectors.CustomsDataStoreConnector
 import uk.gov.hmrc.tradereportingextracts.models.{EoriRole, ReportRequest, ReportRequestUserAnswersModel, ReportTypeName}
-import uk.gov.hmrc.tradereportingextracts.repositories.ReportRequestRepository
-import uk.gov.hmrc.tradereportingextracts.services.RequestReferenceService
+import uk.gov.hmrc.tradereportingextracts.services.{ReportRequestService, RequestReferenceService}
 
 import java.time.format.DateTimeFormatter
 import java.time.{Instant, LocalDate, ZoneOffset}
@@ -34,7 +33,7 @@ class ReportRequestController @Inject() (
   cc: ControllerComponents,
   customsDataStoreConnector: CustomsDataStoreConnector,
   requestReferenceService: RequestReferenceService,
-  reportRequestRepository: ReportRequestRepository
+  reportRequestService: ReportRequestService
 )(implicit executionContext: ExecutionContext)
     extends BackendController(cc) {
 
@@ -50,7 +49,7 @@ class ReportRequestController @Inject() (
                            .getEoriHistory(value.whichEori.get)
                            .map(i => i.filterByDateRange(startEndDate._1, startEndDate._2).map(j => j.eori))
           newRequest   = transformReportRequest(value.eori, value, eoriHistory, userEmail)
-          _           <- reportRequestRepository.insert(newRequest)
+          _           <- reportRequestService.create(newRequest)
         } yield Ok(Json.obj("references" -> Seq(newRequest.reportRequestId)))
       case JsError(errors)     =>
         Future.successful(BadRequest)

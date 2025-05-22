@@ -27,8 +27,7 @@ import org.scalatest.matchers.must.Matchers.{must, mustBe}
 import play.api.inject.guice.GuiceApplicationBuilder
 import uk.gov.hmrc.tradereportingextracts.connectors.CustomsDataStoreConnector
 import uk.gov.hmrc.tradereportingextracts.models.{EoriHistory, EoriHistoryResponse, NotificationEmail, ReportRequest}
-import uk.gov.hmrc.tradereportingextracts.repositories.ReportRequestRepository
-import uk.gov.hmrc.tradereportingextracts.services.RequestReferenceService
+import uk.gov.hmrc.tradereportingextracts.services.{ReportRequestService, RequestReferenceService}
 import uk.gov.hmrc.tradereportingextracts.utils.SpecBase
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -38,13 +37,13 @@ class ReportRequestControllerSpec extends SpecBase {
 
   val ec: ExecutionContext                                     = ExecutionContext.global
   val mockCustomsDataStoreConnector: CustomsDataStoreConnector = mock[CustomsDataStoreConnector]
-  val mockReportRequestRepository: ReportRequestRepository     = mock[ReportRequestRepository]
+  val mockReportRequestService: ReportRequestService           = mock[ReportRequestService]
   val mockRequestReferenceService: RequestReferenceService     = mock[RequestReferenceService]
 
   private val app = new GuiceApplicationBuilder()
     .overrides(
       bind[CustomsDataStoreConnector].toInstance(mockCustomsDataStoreConnector),
-      bind[ReportRequestRepository].toInstance(mockReportRequestRepository),
+      bind[ReportRequestService].toInstance(mockReportRequestService),
       bind[RequestReferenceService].toInstance(mockRequestReferenceService)
     )
     .build()
@@ -80,7 +79,7 @@ class ReportRequestControllerSpec extends SpecBase {
 
       when(mockRequestReferenceService.random()).thenReturn("RE-00000001")
 
-      when(mockReportRequestRepository.insert(any())(any()))
+      when(mockReportRequestService.create(any())(any()))
         .thenReturn(Future.successful(true))
 
       val request = FakeRequest(POST, "/trade-reporting-extracts/create-report-request")
@@ -93,7 +92,7 @@ class ReportRequestControllerSpec extends SpecBase {
       contentAsJson(result) mustBe Json.obj("references" -> Seq("RE-00000001"))
 
       val captor = ArgumentCaptor.forClass(classOf[ReportRequest])
-      verify(mockReportRequestRepository).insert(captor.capture())(any())
+      verify(mockReportRequestService).create(captor.capture())(any())
 
       val persistedRequest: ReportRequest = captor.getValue
 
@@ -126,7 +125,7 @@ class ReportRequestControllerSpec extends SpecBase {
 
       when(mockRequestReferenceService.random()).thenReturn("RE-00000001")
 
-      when(mockReportRequestRepository.insert(any())(using any()))
+      when(mockReportRequestService.create(any())(any()))
         .thenReturn(Future.successful(true))
 
       val request = FakeRequest(POST, "/trade-reporting-extracts/create-report-request")

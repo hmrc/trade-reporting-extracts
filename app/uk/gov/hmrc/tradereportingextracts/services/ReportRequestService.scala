@@ -25,10 +25,10 @@ import scala.concurrent.{ExecutionContext, Future}
 @Singleton
 class ReportRequestService @Inject() (reportRequestRepository: ReportRequestRepository):
 
-  def create(reportRequest: ReportRequest)(using ec: ExecutionContext): Future[Boolean] =
+  def create(reportRequest: ReportRequest)(implicit ec: ExecutionContext): Future[Boolean] =
     reportRequestRepository.insert(reportRequest)
 
-  def get(reportRequestId: String)(using ec: ExecutionContext): Future[Option[ReportRequest]] =
+  def get(reportRequestId: String)(implicit ec: ExecutionContext): Future[Option[ReportRequest]] =
     reportRequestRepository.findByReportRequestId(reportRequestId)
 
   def update(reportRequest: ReportRequest): Future[Boolean] =
