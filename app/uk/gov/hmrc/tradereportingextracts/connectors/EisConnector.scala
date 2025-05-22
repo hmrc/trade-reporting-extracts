@@ -35,20 +35,19 @@ class EisConnector @Inject() (
   appConfig: AppConfig,
   httpClient: HttpClientV2
 )(implicit ec: ExecutionContext) {
-
-  private val requestTraderReportUrl = url"${appConfig.eis}/gbe/requesttraderreport/v1"
-
   def requestTraderReport(
     payload: EisReportRequest,
     correlationId: String
   )(implicit hc: HeaderCarrier): Future[HttpResponse] = {
+    val requestTraderReportUrl = url"${appConfig.eis}/gbe/requesttraderreport/v1"
     val currentDate = DateTimeFormatter.RFC_1123_DATE_TIME.format(ZonedDateTime.now(ZoneOffset.UTC))
+    val eisAuthToken = appConfig.eisAuthToken
 
     httpClient
       .put(requestTraderReportUrl)
       .withBody(Json.toJson(payload))
       .setHeader(
-        "authorization"    -> "EisAuthToken",
+        "authorization"    -> eisAuthToken,
         "date"             -> currentDate,
         "x-correlation-id" -> correlationId,
         "x-forwarded-host" -> "MDTP"
