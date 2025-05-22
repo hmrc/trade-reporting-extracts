@@ -30,8 +30,10 @@ import play.api.test.{DefaultAwaitTimeout, FutureAwaits}
 import uk.gov.hmrc.http.{HeaderCarrier, HttpReads}
 import uk.gov.hmrc.http.client.{HttpClientV2, RequestBuilder}
 import uk.gov.hmrc.play.bootstrap.metrics.Metrics
+
 import java.net.URL
 import org.mockito.ArgumentMatchers.{any, argThat}
+import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -43,7 +45,9 @@ class SpecBase
     with FutureAwaits
     with DefaultAwaitTimeout
     with OptionValues
-    with BeforeAndAfterEach {
+    with BeforeAndAfterEach
+    with ScalaFutures
+    with IntegrationPatience {
 
   implicit val mat: Materializer   = app.materializer
   val mockHttpClient: HttpClientV2 = mock[HttpClientV2]

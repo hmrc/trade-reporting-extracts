@@ -33,8 +33,8 @@ case class ReportRequest(
   reportEnd: Instant,
   createDate: Instant,
   notifications: Seq[Notification],
-  fileAvailableTime: Instant,
-  linkAvailableTime: Instant
+  fileAvailableTime: Option[Instant],
+  linkAvailableTime: Option[Instant]
 )
 
 case class Notification(component: Component, statusType: StatusType, statusCode: StatusCode, statusMessage: String)

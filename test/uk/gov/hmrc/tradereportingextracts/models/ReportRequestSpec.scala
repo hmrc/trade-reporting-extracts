@@ -42,8 +42,8 @@ class ReportRequestSpec extends AnyWordSpec with Matchers {
         statusMessage = "Message1"
       )
     ),
-    fileAvailableTime = Instant.parse("2023-01-02T10:00:00Z"),
-    linkAvailableTime = Instant.parse("2023-01-03T10:00:00Z")
+    fileAvailableTime = Some(Instant.parse("2023-01-02T10:00:00Z")),
+    linkAvailableTime = Some(Instant.parse("2023-01-03T10:00:00Z"))
   )
 
   "ReportRequest equality" should {
