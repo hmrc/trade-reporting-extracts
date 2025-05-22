@@ -48,13 +48,13 @@ class ReportRequestRepository @Inject() (mongoComponent: MongoComponent)(implici
       .find(Filters.equal("reportRequestId", reportRequestId))
       .headOption()
 
-  def update(reportRequest: ReportRequest): Future[Boolean] =
+  def update(reportRequest: ReportRequest)(implicit ec: ExecutionContext): Future[Boolean] =
     collection
       .replaceOne(Filters.equal("reportRequestId", reportRequest.reportRequestId), reportRequest)
       .toFuture()
       .map(_.wasAcknowledged())
 
-  def delete(reportRequest: ReportRequest): Future[Boolean] =
+  def delete(reportRequest: ReportRequest)(implicit ec: ExecutionContext): Future[Boolean] =
     collection
       .deleteOne(Filters.equal("reportRequestId", reportRequest.reportRequestId))
       .toFuture()

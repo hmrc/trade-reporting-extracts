@@ -31,10 +31,10 @@ class ReportRequestService @Inject() (reportRequestRepository: ReportRequestRepo
   def get(reportRequestId: String)(implicit ec: ExecutionContext): Future[Option[ReportRequest]] =
     reportRequestRepository.findByReportRequestId(reportRequestId)
 
-  def update(reportRequest: ReportRequest): Future[Boolean] =
+  def update(reportRequest: ReportRequest)(implicit ec: ExecutionContext): Future[Boolean] =
     reportRequestRepository.update(reportRequest)
 
-  def delete(reportRequest: ReportRequest): Future[Boolean] =
+  def delete(reportRequest: ReportRequest)(implicit ec: ExecutionContext): Future[Boolean] =
     reportRequestRepository.delete(reportRequest)
 
   def getByRequesterEORI(requesterEORI: String)(using ec: ExecutionContext): Future[Seq[ReportRequest]] =

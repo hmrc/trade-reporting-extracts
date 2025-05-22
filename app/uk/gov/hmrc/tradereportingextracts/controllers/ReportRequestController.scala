@@ -52,8 +52,8 @@ class ReportRequestController @Inject() (
                            .map(i => i.filterByDateRange(startEndDate._1, startEndDate._2).map(j => j.eori))
           newRequest   = transformReportRequest(value.eori, value, eoriHistory, userEmail)
           _           <- reportRequestService.create(newRequest)
-          eisRequest = toEisReportRequest(newRequest)
-          _         <- eisService.requestTraderReport(eisRequest, newRequest)
+          eisRequest   = toEisReportRequest(newRequest)
+          _           <- eisService.requestTraderReport(eisRequest, newRequest)
         } yield Ok(Json.obj("references" -> Seq(newRequest.reportRequestId)))
       case JsError(errors)     =>
         Future.successful(BadRequest)
@@ -109,15 +109,15 @@ class ReportRequestController @Inject() (
       endDate = DateTimeFormatter.ISO_LOCAL_DATE.format(reportRequest.reportEnd.atZone(ZoneOffset.UTC)),
       eori = reportRequest.reportEORIs.toList,
       eoriRole = reportRequest.eoriRole match {
-        case EoriRole.TRADER => EisReportRequest.EoriRole.TRADER
-        case EoriRole.DECLARANT => EisReportRequest.EoriRole.DECLARANT
+        case EoriRole.TRADER           => EisReportRequest.EoriRole.TRADER
+        case EoriRole.DECLARANT        => EisReportRequest.EoriRole.DECLARANT
         case EoriRole.TRADER_DECLARANT => EisReportRequest.EoriRole.TRADERDECLARANT
       },
       reportTypeName = reportRequest.reportTypeName match {
-        case ReportTypeName.IMPORTS_ITEM_REPORT => EisReportRequest.ReportTypeName.IMPORTSITEMREPORT
-        case ReportTypeName.IMPORTS_HEADER_REPORT => EisReportRequest.ReportTypeName.IMPORTSHEADERREPORT
+        case ReportTypeName.IMPORTS_ITEM_REPORT    => EisReportRequest.ReportTypeName.IMPORTSITEMREPORT
+        case ReportTypeName.IMPORTS_HEADER_REPORT  => EisReportRequest.ReportTypeName.IMPORTSHEADERREPORT
         case ReportTypeName.IMPORTS_TAXLINE_REPORT => EisReportRequest.ReportTypeName.IMPORTSTAXLINEREPORT
-        case ReportTypeName.EXPORTS_ITEM_REPORT => EisReportRequest.ReportTypeName.EXPORTSITEMREPORT
+        case ReportTypeName.EXPORTS_ITEM_REPORT    => EisReportRequest.ReportTypeName.EXPORTSITEMREPORT
       },
       requestID = reportRequest.reportRequestId,
       requestTimestamp = DateTimeFormatter.ISO_INSTANT.format(reportRequest.createDate),
