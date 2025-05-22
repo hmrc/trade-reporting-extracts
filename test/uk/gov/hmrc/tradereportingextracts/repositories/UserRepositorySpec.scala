@@ -23,6 +23,7 @@ import org.scalatestplus.mockito.MockitoSugar
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import uk.gov.hmrc.mongo.test.CleanMongoCollectionSupport
 import uk.gov.hmrc.tradereportingextracts.models.AccessType.IMPORTS
+import uk.gov.hmrc.tradereportingextracts.models.etmp.EoriUpdate
 import uk.gov.hmrc.tradereportingextracts.models.{AuthorisedUser, User}
 
 import java.time.Instant
@@ -84,7 +85,7 @@ class UserRepositorySpec extends AnyWordSpec, MockitoSugar, GuiceOneAppPerSuite,
         val eoriNew                   = "EORI-NEW"
         val insertResult              = userRepository.insert(user).futureValue
         val fetchedBeforeUpdateRecord = userRepository.findByEori(user.eori).futureValue
-        val updatedRecord             = userRepository.updateEori(user.eori, eoriNew).futureValue
+        val updatedRecord             = userRepository.updateEori(EoriUpdate(eoriNew, user.eori)).futureValue
         val fetchedRecord             = userRepository.findByEori(eoriNew).futureValue
         insertResult mustEqual true
         fetchedBeforeUpdateRecord.get mustEqual user
