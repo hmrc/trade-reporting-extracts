@@ -24,6 +24,7 @@ import uk.gov.hmrc.play.http.HeaderCarrierConverter
 import uk.gov.hmrc.tradereportingextracts.config.AppConfig
 import uk.gov.hmrc.tradereportingextracts.models.etmp.*
 import uk.gov.hmrc.tradereportingextracts.models.etmp.EoriUpdateHeaders.*
+import uk.gov.hmrc.tradereportingextracts.services.UserInformationService
 import uk.gov.hmrc.tradereportingextracts.utils.HttpDateFormatter.getCurrentHttpDate
 
 import javax.inject.{Inject, Singleton}
@@ -32,6 +33,7 @@ import scala.concurrent.{ExecutionContext, Future}
 @Singleton
 class EoriUpdateController @Inject() (
   cc: ControllerComponents,
+  userInformationService: UserInformationService,
   appConfig: AppConfig
 )(using ec: ExecutionContext)
     extends AbstractController(cc) {
@@ -86,6 +88,7 @@ class EoriUpdateController @Inject() (
               )
             )
           case JsSuccess(_, _) =>
+            userInformationService.updateEori(json.as[EoriUpdate])
             Future.successful(
               Created.withHeaders(
                 date.toString           -> getCurrentHttpDate,

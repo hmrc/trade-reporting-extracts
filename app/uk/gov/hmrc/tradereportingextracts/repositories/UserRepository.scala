@@ -22,6 +22,7 @@ import org.mongodb.scala.model.*
 import uk.gov.hmrc.mongo.MongoComponent
 import uk.gov.hmrc.mongo.play.json.PlayMongoRepository
 import uk.gov.hmrc.tradereportingextracts.models.User
+import uk.gov.hmrc.tradereportingextracts.models.etmp.EoriUpdate
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -64,10 +65,10 @@ class UserRepository @Inject() (mongoComponent: MongoComponent)(using ec: Execut
       .toFuture()
       .map(_.wasAcknowledged())
 
-  def updateEori(oldEori: String, newEori: String): Future[Boolean] =
-    val updateQuery  = Filters.equal("eori", oldEori)
+  def updateEori(eoriUpdate: EoriUpdate): Future[Boolean] =
+    val updateQuery  = Filters.equal("eori", eoriUpdate.oldEori)
     val updateAction = Updates.combine(
-      Updates.set("eori", newEori)
+      Updates.set("eori", eoriUpdate.newEori)
     )
     collection
       .updateOne(

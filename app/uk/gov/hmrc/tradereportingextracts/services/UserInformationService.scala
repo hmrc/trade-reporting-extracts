@@ -18,6 +18,7 @@ package uk.gov.hmrc.tradereportingextracts.services
 
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.tradereportingextracts.connectors.CustomsDataStoreConnector
+import uk.gov.hmrc.tradereportingextracts.models.etmp.EoriUpdate
 import uk.gov.hmrc.tradereportingextracts.models.{AllowedEoris, User}
 import uk.gov.hmrc.tradereportingextracts.repositories.UserRepository
 
@@ -52,8 +53,8 @@ class UserInformationService @Inject() (
   def update(user: User): Future[Boolean] =
     userRepository.update(user)
 
-  def updateEori(oldEori: String, newEori: String): Future[Boolean] =
-    userRepository.updateEori(oldEori, newEori)
+  def updateEori(eoriUpdate: EoriUpdate): Future[Boolean] =
+    userRepository.updateEori(eoriUpdate)
 
   def deleteByEori(eori: String): Future[Boolean] =
     userRepository.deleteByEori(eori)
