@@ -32,6 +32,9 @@ import uk.gov.hmrc.tradereportingextracts.models.eis.EisReportRequest
 import uk.gov.hmrc.tradereportingextracts.models.{EoriRole, Notification, ReportRequest, ReportTypeName}
 import uk.gov.hmrc.tradereportingextracts.services.{EisService, ReportRequestService}
 import uk.gov.hmrc.tradereportingextracts.config.AppConfig
+import uk.gov.hmrc.tradereportingextracts.models.Component.{EIS, TRE}
+import uk.gov.hmrc.tradereportingextracts.models.StatusCode.{FAILED, INITIATED}
+import uk.gov.hmrc.tradereportingextracts.models.StatusType.{ERROR, INFORMATION}
 
 import java.time.Instant
 import scala.concurrent.{ExecutionContext, Future}
@@ -98,8 +101,9 @@ class EisServiceSpec extends AnyWordSpec with Matchers with MockitoSugar with Sc
           verify(mockReportRequestService).update(captor.capture())(any())
 
           val persistedReportRequestAfterEis: ReportRequest = captor.getValue
-          persistedReportRequestAfterEis.requesterEORI mustBe "GB123456789000"
-          persistedReportRequestAfterEis.reportRequestId mustBe "testEisReportSuccess"
+          persistedReportRequestAfterEis.notifications mustBe Seq(
+            Notification(TRE, INFORMATION, INITIATED, "Report sent to EIS successfully")
+          )
 
           verify(mockConnector, times(1))
             .requestTraderReport(eqTo(eisReportRequest), eqTo(reportRequest.correlationId))(any())
@@ -125,8 +129,9 @@ class EisServiceSpec extends AnyWordSpec with Matchers with MockitoSugar with Sc
         verify(mockReportRequestService).update(captor.capture())(any())
 
         val persistedReportRequestAfterEis: ReportRequest = captor.getValue
-        persistedReportRequestAfterEis.requesterEORI mustBe "GB123456789000"
-        persistedReportRequestAfterEis.reportRequestId mustBe "testEisReportSuccess"
+        persistedReportRequestAfterEis.notifications mustBe Seq(
+          Notification(TRE, INFORMATION, INITIATED, "Report sent to EIS successfully")
+        )
 
         verify(mockConnector, times(3)).requestTraderReport(eqTo(eisReportRequest), eqTo(reportRequest.correlationId))(
           any()
@@ -152,8 +157,9 @@ class EisServiceSpec extends AnyWordSpec with Matchers with MockitoSugar with Sc
         verify(mockReportRequestService).update(captor.capture())(any())
 
         val persistedReportRequestAfterEis: ReportRequest = captor.getValue
-        persistedReportRequestAfterEis.requesterEORI mustBe "GB123456789000"
-        persistedReportRequestAfterEis.reportRequestId mustBe "testEisReportFail"
+        persistedReportRequestAfterEis.notifications mustBe Seq(
+          Notification(TRE, ERROR, FAILED, "Report failed to send to EIS")
+        )
 
         ex                                              shouldBe a[UpstreamErrorResponse]
         ex.asInstanceOf[UpstreamErrorResponse].reportAs shouldBe INTERNAL_SERVER_ERROR

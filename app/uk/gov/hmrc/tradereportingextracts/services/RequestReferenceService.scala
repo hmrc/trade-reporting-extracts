@@ -23,7 +23,7 @@ import scala.util.Random
 class RequestReferenceService @Inject() {
 
   def random(): String = {
-    val prefix       = "RE-"
+    val prefix       = "RE"
     val randomDigits = f"${Random.nextInt(100000000)}%08d"
     prefix + randomDigits
   }

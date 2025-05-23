@@ -23,6 +23,9 @@ import uk.gov.hmrc.tradereportingextracts.config.AppConfig
 import uk.gov.hmrc.tradereportingextracts.connectors.EisConnector
 import uk.gov.hmrc.tradereportingextracts.models.{Notification, ReportRequest}
 import uk.gov.hmrc.tradereportingextracts.models.eis.EisReportRequest
+import uk.gov.hmrc.tradereportingextracts.models.Component._
+import uk.gov.hmrc.tradereportingextracts.models.StatusCode._
+import uk.gov.hmrc.tradereportingextracts.models.StatusType._
 
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
@@ -46,7 +49,9 @@ class EisService @Inject() (connector: EisConnector, reportRequestService: Repor
             case OK | ACCEPTED | NO_CONTENT                     =>
               val updatedRequest: ReportRequest =
                 reportRequest
-                  .copy(reportRequestId = "testEisReportSuccess") // TODO: copy in notifications when model is updated
+                  .copy(notifications =
+                    Seq(Notification(TRE, INFORMATION, INITIATED, "Report sent to EIS successfully"))
+                  )
               reportRequestService.update(updatedRequest).flatMap { _ =>
                 Future.successful(Done)
               }
@@ -55,7 +60,7 @@ class EisService @Inject() (connector: EisConnector, reportRequestService: Repor
             case status                                         =>
               val updatedRequest: ReportRequest =
                 reportRequest
-                  .copy(reportRequestId = "testEisReportFail") // TODO: copy in notifications when model is updated
+                  .copy(notifications = Seq(Notification(TRE, ERROR, FAILED, "Report failed to send to EIS")))
               reportRequestService.update(updatedRequest).flatMap { _ =>
                 Future.failed(UpstreamErrorResponse(response.body, status))
               }

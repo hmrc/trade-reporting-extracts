@@ -23,14 +23,14 @@ class RequestReferenceServiceSpec extends AnyFreeSpec {
 
   "RequestReferenceService" - {
     val service = new RequestReferenceService()
-    "generate a random reference with 'RE-' prefix and 8 digits" in {
+    "generate a random reference with 8 digits" in {
 
       val reference = service.random()
 
-      reference must startWith("RE-")
-      reference.length mustBe 11
+      reference must startWith("RE")
+      reference.length mustBe 10
 
-      val digitsPart = reference.stripPrefix("RE-")
+      val digitsPart = reference.stripPrefix("RE")
       all(digitsPart.toList) must (be >= '0' and be <= '9')
     }
   }

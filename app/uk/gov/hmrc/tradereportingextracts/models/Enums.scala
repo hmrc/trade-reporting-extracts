@@ -62,7 +62,7 @@ object ReportTypeName:
       case _               => JsError("ReportTypeName must be a string")
 
 enum Component:
-  case CDAP, EIS, SDES
+  case CDAP, EIS, SDES, TRE
 
 object Component:
   given Format[Component] with
@@ -90,7 +90,7 @@ object StatusType:
       case _               => JsError("StatusType must be a string")
 
 enum StatusCode:
-  case FILENOREC, FILEEXTFAIL, FILESENT
+  case FILENOREC, FILEEXTFAIL, FILESENT, FAILED, INITIATED
 
 object StatusCode:
   given Format[StatusCode] with

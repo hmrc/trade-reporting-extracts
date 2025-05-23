@@ -81,7 +81,7 @@ class ReportRequestControllerSpec extends SpecBase {
           )
         )
 
-      when(mockRequestReferenceService.random()).thenReturn("RE-00000001")
+      when(mockRequestReferenceService.random()).thenReturn("RE00000001")
 
       when(mockReportRequestService.create(any())(any()))
         .thenReturn(Future.successful(true))
@@ -95,7 +95,7 @@ class ReportRequestControllerSpec extends SpecBase {
       val result = route(app, request).value
 
       status(result) mustBe OK
-      contentAsJson(result) mustBe Json.obj("references" -> Seq("RE-00000001"))
+      contentAsJson(result) mustBe Json.obj("references" -> Seq("RE00000001"))
 
       val captor = ArgumentCaptor.forClass(classOf[ReportRequest])
       verify(mockReportRequestService).create(captor.capture())(any())
@@ -129,7 +129,7 @@ class ReportRequestControllerSpec extends SpecBase {
       when(mockCustomsDataStoreConnector.getEoriHistory(any()))
         .thenReturn(Future.failed(Throwable("error")))
 
-      when(mockRequestReferenceService.random()).thenReturn("RE-00000001")
+      when(mockRequestReferenceService.random()).thenReturn("RE00000001")
 
       when(mockReportRequestService.create(any())(any()))
         .thenReturn(Future.successful(true))
