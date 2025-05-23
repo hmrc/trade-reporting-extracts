@@ -16,6 +16,7 @@
 
 package uk.gov.hmrc.tradereportingextracts.controllers
 
+import org.apache.pekko.Done
 import org.mockito.ArgumentCaptor
 import org.mockito.ArgumentMatchers.any
 import play.api.test.Helpers.*
@@ -26,8 +27,9 @@ import org.mockito.Mockito.*
 import org.scalatest.matchers.must.Matchers.{must, mustBe}
 import play.api.inject.guice.GuiceApplicationBuilder
 import uk.gov.hmrc.tradereportingextracts.connectors.CustomsDataStoreConnector
+import uk.gov.hmrc.tradereportingextracts.models.eis.EisReportRequest
 import uk.gov.hmrc.tradereportingextracts.models.{EoriHistory, EoriHistoryResponse, NotificationEmail, ReportRequest}
-import uk.gov.hmrc.tradereportingextracts.services.{ReportRequestService, RequestReferenceService}
+import uk.gov.hmrc.tradereportingextracts.services.{EisService, ReportRequestService, RequestReferenceService}
 import uk.gov.hmrc.tradereportingextracts.utils.SpecBase
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -39,12 +41,14 @@ class ReportRequestControllerSpec extends SpecBase {
   val mockCustomsDataStoreConnector: CustomsDataStoreConnector = mock[CustomsDataStoreConnector]
   val mockReportRequestService: ReportRequestService           = mock[ReportRequestService]
   val mockRequestReferenceService: RequestReferenceService     = mock[RequestReferenceService]
+  val mockEisService: EisService                               = mock[EisService]
 
   private val app = new GuiceApplicationBuilder()
     .overrides(
       bind[CustomsDataStoreConnector].toInstance(mockCustomsDataStoreConnector),
       bind[ReportRequestService].toInstance(mockReportRequestService),
-      bind[RequestReferenceService].toInstance(mockRequestReferenceService)
+      bind[RequestReferenceService].toInstance(mockRequestReferenceService),
+      bind[EisService].toInstance(mockEisService)
     )
     .build()
 
@@ -77,10 +81,12 @@ class ReportRequestControllerSpec extends SpecBase {
           )
         )
 
-      when(mockRequestReferenceService.random()).thenReturn("RE-00000001")
+      when(mockRequestReferenceService.random()).thenReturn("RE00000001")
 
       when(mockReportRequestService.create(any())(any()))
         .thenReturn(Future.successful(true))
+
+      when(mockEisService.requestTraderReport(any(), any())(any())).thenReturn(Future.successful(Done))
 
       val request = FakeRequest(POST, "/trade-reporting-extracts/create-report-request")
         .withHeaders("Content-Type" -> "application/json")
@@ -89,7 +95,7 @@ class ReportRequestControllerSpec extends SpecBase {
       val result = route(app, request).value
 
       status(result) mustBe OK
-      contentAsJson(result) mustBe Json.obj("references" -> Seq("RE-00000001"))
+      contentAsJson(result) mustBe Json.obj("references" -> Seq("RE00000001"))
 
       val captor = ArgumentCaptor.forClass(classOf[ReportRequest])
       verify(mockReportRequestService).create(captor.capture())(any())
@@ -123,7 +129,7 @@ class ReportRequestControllerSpec extends SpecBase {
       when(mockCustomsDataStoreConnector.getEoriHistory(any()))
         .thenReturn(Future.failed(Throwable("error")))
 
-      when(mockRequestReferenceService.random()).thenReturn("RE-00000001")
+      when(mockRequestReferenceService.random()).thenReturn("RE00000001")
 
       when(mockReportRequestService.create(any())(any()))
         .thenReturn(Future.successful(true))
