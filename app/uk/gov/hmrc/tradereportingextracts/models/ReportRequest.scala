@@ -17,7 +17,7 @@
 package uk.gov.hmrc.tradereportingextracts.models
 
 import play.api.libs.json.{Format, Json}
-
+import uk.gov.hmrc.mongo.play.json.formats.MongoJavatimeFormats.Implicits._
 import java.time.Instant
 
 case class ReportRequest(
