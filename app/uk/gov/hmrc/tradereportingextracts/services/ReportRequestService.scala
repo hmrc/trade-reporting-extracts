@@ -36,3 +36,6 @@ class ReportRequestService @Inject() (reportRequestRepository: ReportRequestRepo
 
   def delete(reportRequest: ReportRequest): Future[Boolean] =
     reportRequestRepository.delete(reportRequest)
+
+  def getByRequesterEORI(requesterEORI: String)(using ec: ExecutionContext): Future[Seq[ReportRequest]] =
+    reportRequestRepository.findByRequesterEORI(requesterEORI)
