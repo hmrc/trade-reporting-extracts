@@ -18,25 +18,20 @@ package uk.gov.hmrc.tradereportingextracts.controllers
 
 import play.api.libs.json.*
 import play.api.mvc.*
-import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.play.http.HeaderCarrierConverter
 import uk.gov.hmrc.tradereportingextracts.config.AppConfig
 import uk.gov.hmrc.tradereportingextracts.models.sdes.FileNotification
 import uk.gov.hmrc.tradereportingextracts.models.sdes.FileNotificationHeaders.*
 
 import javax.inject.{Inject, Singleton}
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.Future
 
 @Singleton
 class FileNotificationController @Inject() (
   cc: ControllerComponents,
   appConfig: AppConfig
-)(using ec: ExecutionContext)
-    extends AbstractController(cc) {
+) extends AbstractController(cc) {
 
   def fileNotification(): Action[AnyContent] = Action.async { request =>
-    implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromRequest(request)
-
     def missingHeaders: Seq[String] =
       allHeaders.filterNot(header => request.headers.get(header).isDefined)
 

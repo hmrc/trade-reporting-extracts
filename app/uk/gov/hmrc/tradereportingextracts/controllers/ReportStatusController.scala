@@ -18,25 +18,20 @@ package uk.gov.hmrc.tradereportingextracts.controllers
 
 import play.api.libs.json.*
 import play.api.mvc.*
-import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.play.http.HeaderCarrierConverter
 import uk.gov.hmrc.tradereportingextracts.config.AppConfig
-import uk.gov.hmrc.tradereportingextracts.models.eis.{EisReportStatusHeaders, EisReportStatusRequest}
 import uk.gov.hmrc.tradereportingextracts.models.eis.EisReportStatusHeaders.*
+import uk.gov.hmrc.tradereportingextracts.models.eis.{EisReportStatusHeaders, EisReportStatusRequest}
 
 import javax.inject.{Inject, Singleton}
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.Future
 
 @Singleton
 class ReportStatusController @Inject() (
   cc: ControllerComponents,
   appConfig: AppConfig
-)(using ec: ExecutionContext)
-    extends AbstractController(cc) {
+) extends AbstractController(cc) {
 
   def notifyReportAvailable(): Action[AnyContent] = Action.async { request =>
-    implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromRequest(request)
-
     def missingHeaders: Seq[String] =
       EisReportStatusHeaders.allHeaders.filterNot(header => request.headers.get(header).isDefined)
 

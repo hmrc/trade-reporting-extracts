@@ -20,7 +20,7 @@ import play.api.libs.json.{Json, OFormat}
 
 import java.time.LocalDate
 
-case class EoriHistoryResponse(eoriHistory: Seq[EoriHistory]) {
+case class EoriHistoryResponse(var eoriHistory: Seq[EoriHistory]) {
   def filterByDateRange(from: LocalDate, until: LocalDate): Seq[EoriHistory] =
     eoriHistory.filter { h =>
       val validFrom  = h.validFrom.getOrElse(LocalDate.MIN)

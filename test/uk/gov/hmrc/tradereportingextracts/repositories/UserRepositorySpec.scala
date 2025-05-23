@@ -24,7 +24,7 @@ import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import uk.gov.hmrc.mongo.test.CleanMongoCollectionSupport
 import uk.gov.hmrc.tradereportingextracts.models.AccessType.IMPORTS
 import uk.gov.hmrc.tradereportingextracts.models.etmp.EoriUpdate
-import uk.gov.hmrc.tradereportingextracts.models.{AuthorisedUser, User}
+import uk.gov.hmrc.tradereportingextracts.models.{AuthorisedUser, User, UserDetails}
 
 import java.time.Instant
 import scala.concurrent.ExecutionContext.Implicits.global

@@ -16,22 +16,29 @@
 
 package uk.gov.hmrc.tradereportingextracts.controllers
 
-import play.api.libs.json.Json
-import play.api.mvc.ControllerComponents
+import play.api.libs.json.{JsValue, Json}
+import play.api.mvc.{Action, AnyContent, ControllerComponents}
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
-import uk.gov.hmrc.tradereportingextracts.services.UserInformationService
+import uk.gov.hmrc.tradereportingextracts.services.UserService
 
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext
 
 @Singleton()
 class UserController @Inject() (
-  userService: UserInformationService,
+  userService: UserService,
   cc: ControllerComponents
 )(using executionContext: ExecutionContext)
     extends BackendController(cc):
 
-  def getAuthorisedEoris(eori: String) = Action.async {
+  def setupUser(): Action[JsValue] = Action.async(parse.json) { implicit request =>
+    val eori = (request.body \ "eori").as[String]
+    userService.getOrCreateUser(eori).map { userDetails =>
+      Created(Json.toJson(userDetails))
+    }
+  }
+
+  def getAuthorisedEoris(eori: String): Action[AnyContent] = Action.async {
     userService
       .getAuthorisedEoris(eori)
       .map { authorisedEoris =>

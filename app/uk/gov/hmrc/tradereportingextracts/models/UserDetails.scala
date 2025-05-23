@@ -18,26 +18,15 @@ package uk.gov.hmrc.tradereportingextracts.models
 
 import play.api.libs.json.{Format, Json, Reads, Writes}
 
-import java.time.Instant
 import scala.reflect.ClassTag
 
-case class User(
+case class UserDetails(
   eori: String,
-  additionalEmails: Seq[String] = Seq.empty,
-  authorisedUsers: Seq[AuthorisedUser] = Seq.empty
+  additionalEmails: Seq[String],
+  authorisedUsers: Seq[AuthorisedUser],
+  companyInformation: CompanyInformation,
+  notificationEmail: NotificationEmail
 )
 
-case class AuthorisedUser(
-  eori: String,
-  accessStart: Instant,
-  accessEnd: Instant,
-  reportDataStart: Instant,
-  reportDataEnd: Instant,
-  accessType: AccessType
-)
-
-object User:
-  given format: Format[User] = Json.format[User]
-
-object AuthorisedUser:
-  given Format[AuthorisedUser] = Json.format[AuthorisedUser]
+object UserDetails:
+  given format: Format[UserDetails] = Json.format[UserDetails]

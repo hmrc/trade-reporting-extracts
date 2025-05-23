@@ -18,7 +18,12 @@ package uk.gov.hmrc.tradereportingextracts.models
 
 import play.api.libs.json.{Json, OFormat}
 
-case class AddressInformation(streetAndNumber: String, city: String, postalCode: Option[String], countryCode: String)
+case class AddressInformation(
+  var streetAndNumber: String = "",
+  var city: String = "",
+  var postalCode: Option[String] = None,
+  var countryCode: String = ""
+)
 
 object AddressInformation:
   implicit val format: OFormat[AddressInformation] = Json.format[AddressInformation]

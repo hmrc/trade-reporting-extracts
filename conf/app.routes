@@ -1,10 +1,6 @@
 # microservice specific routes
 
-GET        /eori/company-information                    uk.gov.hmrc.tradereportingextracts.controllers.CompanyInformationController.companyInformation()
-GET        /eori/eori-history                           uk.gov.hmrc.tradereportingextracts.controllers.EoriHistoryController.getEoriHistory()
-GET        /eori/verified-email                         uk.gov.hmrc.tradereportingextracts.controllers.VerifiedEmailController.getVerifiedEmail()
-
-GET        /eori/user-information                       uk.gov.hmrc.tradereportingextracts.controllers.UserInformationController.getUserInformation()
+GET        /eori/setup-user                             uk.gov.hmrc.tradereportingextracts.controllers.UserController.setupUser()
 
 GET        /user/:eori/authorised-eoris                 uk.gov.hmrc.tradereportingextracts.controllers.UserController.getAuthorisedEoris(eori: String)
 
