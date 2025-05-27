@@ -1,22 +1,22 @@
-package uk.gov.hmrc.tradereportingextracts
+package uk.gov.hmrc.tradereportingextracts.connectors
 
 import com.github.tomakehurst.wiremock.client.WireMock.*
-import org.scalatestplus.mockito.MockitoSugar
-import org.scalatest.concurrent.ScalaFutures
+import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}
 import org.scalatest.freespec.AnyFreeSpec
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
+import org.scalatestplus.mockito.MockitoSugar
 import play.api.Application
 import play.api.http.Status.{BAD_REQUEST, INTERNAL_SERVER_ERROR, NO_CONTENT, OK}
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.Json
-import uk.gov.hmrc.tradereportingextracts.models.eis.EisReportRequest
 import uk.gov.hmrc.http.{HeaderCarrier, UpstreamErrorResponse}
 import uk.gov.hmrc.tradereportingextracts.connectors.EisConnector
-import uk.gov.hmrc.tradereportingextracts.it.utils.WireMockHelper
+import uk.gov.hmrc.tradereportingextracts.utils.WireMockHelper
+import uk.gov.hmrc.tradereportingextracts.models.eis.EisReportRequest
 
-import java.time.{ZoneOffset, ZonedDateTime}
 import java.time.format.DateTimeFormatter
+import java.time.{ZoneOffset, ZonedDateTime}
 import java.util.UUID
 
 class EisConnectorSpec
@@ -26,34 +26,21 @@ class EisConnectorSpec
     with Matchers
     with WireMockHelper
     with BeforeAndAfterEach
-    with BeforeAndAfterAll {
+    with BeforeAndAfterAll
+    with IntegrationPatience {
 
-  override def beforeAll(): Unit = {
-    super.beforeAll()
-    startWireMock()
-  }
-
-  override def afterAll(): Unit = {
-    stopWireMock()
-    super.afterAll()
-  }
-
-  override def beforeEach(): Unit = {
-    super.beforeEach()
-    resetWireMock()
-  }
-
+  
   implicit private lazy val hc: HeaderCarrier = HeaderCarrier()
 
   private lazy val app: Application = new GuiceApplicationBuilder()
     .configure(
-      "microservice.services.eis.port" -> wireMockServer.port
+      "microservice.services.eis.port" -> server.port
     )
     .build()
 
   private lazy val connector: EisConnector = app.injector.instanceOf[EisConnector]
 
-  private val requestUrl = "/gbe/requesttraderreport/v1"
+  private val requestUrl = "/trade-reporting-extracts-stub/gbe/requesttraderreport/v1"
 
   private def sampleRequest: EisReportRequest = EisReportRequest(
     endDate = "2024-06-01",
@@ -71,7 +58,7 @@ class EisConnectorSpec
       val correlationId = UUID.randomUUID().toString
       val responseBody = Json.obj("result" -> "success").toString()
 
-      wireMockServer.stubFor(
+      server.stubFor(
         put(urlEqualTo(requestUrl))
           .willReturn(aResponse().withStatus(OK).withBody(responseBody))
       )
@@ -84,7 +71,7 @@ class EisConnectorSpec
     "should return HttpResponse with NO_CONTENT when EIS responds with 204" in {
       val correlationId = UUID.randomUUID().toString
 
-      wireMockServer.stubFor(
+      server.stubFor(
         put(urlEqualTo(requestUrl))
           .willReturn(aResponse().withStatus(NO_CONTENT))
       )
@@ -96,7 +83,7 @@ class EisConnectorSpec
     "should return INTERNAL_SERVER_ERROR when EIS responds with error" in {
       val correlationId = UUID.randomUUID().toString
 
-      wireMockServer.stubFor(
+      server.stubFor(
         put(urlEqualTo(requestUrl))
           .willReturn(aResponse().withStatus(INTERNAL_SERVER_ERROR))
       )
