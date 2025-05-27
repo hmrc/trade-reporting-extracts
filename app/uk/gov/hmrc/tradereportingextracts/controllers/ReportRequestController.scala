@@ -20,8 +20,9 @@ import play.api.libs.json.{JsError, JsSuccess, JsValue, Json}
 import play.api.mvc.{Action, ControllerComponents}
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 import uk.gov.hmrc.tradereportingextracts.connectors.CustomsDataStoreConnector
+import uk.gov.hmrc.tradereportingextracts.models.eis.EisReportRequest
 import uk.gov.hmrc.tradereportingextracts.models.{EoriRole, ReportRequest, ReportRequestUserAnswersModel, ReportTypeName}
-import uk.gov.hmrc.tradereportingextracts.services.{ReportRequestService, RequestReferenceService}
+import uk.gov.hmrc.tradereportingextracts.services.{EisService, ReportRequestService, RequestReferenceService}
 
 import java.time.format.DateTimeFormatter
 import java.time.{Instant, LocalDate, ZoneOffset}
@@ -33,7 +34,8 @@ class ReportRequestController @Inject() (
   cc: ControllerComponents,
   customsDataStoreConnector: CustomsDataStoreConnector,
   requestReferenceService: RequestReferenceService,
-  reportRequestService: ReportRequestService
+  reportRequestService: ReportRequestService,
+  eisService: EisService
 )(implicit executionContext: ExecutionContext)
     extends BackendController(cc) {
 
@@ -50,6 +52,8 @@ class ReportRequestController @Inject() (
                            .map(i => i.filterByDateRange(startEndDate._1, startEndDate._2).map(j => j.eori))
           newRequest   = transformReportRequest(value.eori, value, eoriHistory, userEmail)
           _           <- reportRequestService.create(newRequest)
+          eisRequest   = toEisReportRequest(newRequest)
+          _           <- eisService.requestTraderReport(eisRequest, newRequest)
         } yield Ok(Json.obj("references" -> Seq(newRequest.reportRequestId)))
       case JsError(errors)     =>
         Future.successful(BadRequest)
@@ -99,4 +103,25 @@ class ReportRequestController @Inject() (
       fileAvailableTime = None
     )
   }
+
+  private def toEisReportRequest(reportRequest: ReportRequest): EisReportRequest =
+    EisReportRequest(
+      endDate = DateTimeFormatter.ISO_LOCAL_DATE.format(reportRequest.reportEnd.atZone(ZoneOffset.UTC)),
+      eori = reportRequest.reportEORIs.toList,
+      eoriRole = reportRequest.eoriRole match {
+        case EoriRole.TRADER           => EisReportRequest.EoriRole.TRADER
+        case EoriRole.DECLARANT        => EisReportRequest.EoriRole.DECLARANT
+        case EoriRole.TRADER_DECLARANT => EisReportRequest.EoriRole.TRADERDECLARANT
+      },
+      reportTypeName = reportRequest.reportTypeName match {
+        case ReportTypeName.IMPORTS_ITEM_REPORT    => EisReportRequest.ReportTypeName.IMPORTSITEMREPORT
+        case ReportTypeName.IMPORTS_HEADER_REPORT  => EisReportRequest.ReportTypeName.IMPORTSHEADERREPORT
+        case ReportTypeName.IMPORTS_TAXLINE_REPORT => EisReportRequest.ReportTypeName.IMPORTSTAXLINEREPORT
+        case ReportTypeName.EXPORTS_ITEM_REPORT    => EisReportRequest.ReportTypeName.EXPORTSITEMREPORT
+      },
+      requestID = reportRequest.reportRequestId,
+      requestTimestamp = DateTimeFormatter.ISO_INSTANT.format(reportRequest.createDate),
+      requesterEori = reportRequest.requesterEORI,
+      startDate = DateTimeFormatter.ISO_LOCAL_DATE.format(reportRequest.reportStart.atZone(ZoneOffset.UTC))
+    )
 }

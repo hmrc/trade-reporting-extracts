@@ -14,17 +14,20 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.tradereportingextracts.services
+package uk.gov.hmrc.tradereportingextracts.models.eis
 
-import javax.inject.{Inject, Singleton}
-import scala.util.Random
+import play.api.libs.json.*
 
-@Singleton
-class RequestReferenceService @Inject() {
+case class EisReportResponseErrorDetail(
+  correlationId: String,
+  errorCode: Option[String],
+  errorMessage: Option[String],
+  source: Option[String],
+  sourceFaultDetail: Option[EisReportResponseErrorDetailSourceFaultDetail],
+  timestamp: String
+)
 
-  def random(): String = {
-    val prefix       = "RE"
-    val randomDigits = f"${Random.nextInt(100000000)}%08d"
-    prefix + randomDigits
-  }
+object EisReportResponseErrorDetail {
+  implicit lazy val eisReportResponseErrorDetailJsonFormat: Format[EisReportResponseErrorDetail] =
+    Json.format[EisReportResponseErrorDetail]
 }
