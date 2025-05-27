@@ -59,3 +59,8 @@ class ReportRequestRepository @Inject() (mongoComponent: MongoComponent)(implici
       .deleteOne(Filters.equal("reportRequestId", reportRequest.reportRequestId))
       .toFuture()
       .map(_.wasAcknowledged())
+
+  def findByRequesterEORI(requesterEORI: String)(using ec: ExecutionContext): Future[Seq[ReportRequest]] =
+    collection
+      .find(Filters.equal("requesterEORI", requesterEORI))
+      .toFuture()

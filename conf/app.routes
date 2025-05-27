@@ -4,6 +4,7 @@ GET        /eori/setup-user                             uk.gov.hmrc.tradereporti
 
 GET        /user/:eori/authorised-eoris                 uk.gov.hmrc.tradereportingextracts.controllers.UserController.getAuthorisedEoris(eori: String)
 
+POST       /requested-reports                           uk.gov.hmrc.tradereportingextracts.controllers.RequestedReportsController.getRequestedReports()
 POST       /create-report-request                      uk.gov.hmrc.tradereportingextracts.controllers.ReportRequestController.createReportRequest
 
 PUT        /notify-report-available                     uk.gov.hmrc.tradereportingextracts.controllers.FileNotificationController.fileNotification()
