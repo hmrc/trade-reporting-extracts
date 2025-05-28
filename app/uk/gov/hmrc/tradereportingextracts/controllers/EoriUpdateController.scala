@@ -19,26 +19,23 @@ package uk.gov.hmrc.tradereportingextracts.controllers
 import play.api.libs.json.*
 import play.api.mvc.*
 import sttp.model.MediaType.ApplicationJson
-import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.play.http.HeaderCarrierConverter
 import uk.gov.hmrc.tradereportingextracts.config.AppConfig
 import uk.gov.hmrc.tradereportingextracts.models.etmp.*
 import uk.gov.hmrc.tradereportingextracts.models.etmp.EoriUpdateHeaders.*
+import uk.gov.hmrc.tradereportingextracts.services.UserService
 import uk.gov.hmrc.tradereportingextracts.utils.HttpDateFormatter.getCurrentHttpDate
 
 import javax.inject.{Inject, Singleton}
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.Future
 
 @Singleton
 class EoriUpdateController @Inject() (
   cc: ControllerComponents,
+  userService: UserService,
   appConfig: AppConfig
-)(using ec: ExecutionContext)
-    extends AbstractController(cc) {
+) extends AbstractController(cc) {
 
   def eoriUpdate(): Action[AnyContent] = Action.async { request =>
-    implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromRequest(request)
-
     def missingHeaders: Seq[String] =
       EoriUpdateHeaders.allHeaders.filterNot(header => request.headers.get(header).isDefined)
 
@@ -86,6 +83,7 @@ class EoriUpdateController @Inject() (
               )
             )
           case JsSuccess(_, _) =>
+            userService.updateEori(json.as[EoriUpdate])
             Future.successful(
               Created.withHeaders(
                 date.toString           -> getCurrentHttpDate,

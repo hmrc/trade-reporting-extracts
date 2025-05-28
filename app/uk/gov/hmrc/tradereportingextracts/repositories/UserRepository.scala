@@ -22,6 +22,7 @@ import org.mongodb.scala.model.*
 import uk.gov.hmrc.mongo.MongoComponent
 import uk.gov.hmrc.mongo.play.json.PlayMongoRepository
 import uk.gov.hmrc.tradereportingextracts.models.User
+import uk.gov.hmrc.tradereportingextracts.models.etmp.EoriUpdate
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -51,11 +52,12 @@ class UserRepository @Inject() (mongoComponent: MongoComponent)(using ec: Execut
       .find(Filters.equal("eori", eori))
       .headOption()
 
-  def getOrCreateUser(eori: String)(using ec: ExecutionContext): Future[Option[User]] =
+  def getOrCreateUser(eori: String): Future[User] =
     findByEori(eori).flatMap {
-      case Some(user) => Future.successful(Some(user))
-      case None       =>
-        insert(User(eori)).flatMap(t => if t then findByEori(eori) else Future.successful(None))
+      case Some(existingUser) => Future.successful(existingUser)
+      case None               =>
+        val newUser = User(eori)
+        insert(newUser).map(_ => newUser)
     }
 
   def update(user: User): Future[Boolean] =
@@ -64,10 +66,10 @@ class UserRepository @Inject() (mongoComponent: MongoComponent)(using ec: Execut
       .toFuture()
       .map(_.wasAcknowledged())
 
-  def updateEori(oldEori: String, newEori: String): Future[Boolean] =
-    val updateQuery  = Filters.equal("eori", oldEori)
+  def updateEori(eoriUpdate: EoriUpdate): Future[Boolean] =
+    val updateQuery  = Filters.equal("eori", eoriUpdate.oldEori)
     val updateAction = Updates.combine(
-      Updates.set("eori", newEori)
+      Updates.set("eori", eoriUpdate.newEori)
     )
     collection
       .updateOne(
