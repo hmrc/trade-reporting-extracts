@@ -77,7 +77,7 @@ class EisServiceSpec extends AnyWordSpec with Matchers with MockitoSugar with Sc
     reportEnd = Instant.now,
     createDate = Instant.now,
     notifications = Seq.empty,
-    fileAvailableTime = null,
+    fileNotifications = null,
     linkAvailableTime = null
   )
 
@@ -101,8 +101,8 @@ class EisServiceSpec extends AnyWordSpec with Matchers with MockitoSugar with Sc
           verify(mockReportRequestService).update(captor.capture())(any())
 
           val persistedReportRequestAfterEis: ReportRequest = captor.getValue
-          persistedReportRequestAfterEis.notifications mustBe Seq(
-            Notification(TRE, INFORMATION, INITIATED, "Report sent to EIS successfully")
+          persistedReportRequestAfterEis.notifications.head.copy(statusTimestamp = null) mustBe (
+            Notification(TRE, INFORMATION, INITIATED, "Report sent to EIS successfully", null)
           )
 
           verify(mockConnector, times(1))
@@ -129,9 +129,8 @@ class EisServiceSpec extends AnyWordSpec with Matchers with MockitoSugar with Sc
         verify(mockReportRequestService).update(captor.capture())(any())
 
         val persistedReportRequestAfterEis: ReportRequest = captor.getValue
-        persistedReportRequestAfterEis.notifications mustBe Seq(
-          Notification(TRE, INFORMATION, INITIATED, "Report sent to EIS successfully")
-        )
+        persistedReportRequestAfterEis.notifications.head.copy(statusTimestamp = null) mustBe
+          Notification(TRE, INFORMATION, INITIATED, "Report sent to EIS successfully", null)
 
         verify(mockConnector, times(3)).requestTraderReport(eqTo(eisReportRequest), eqTo(reportRequest.correlationId))(
           any()
@@ -157,9 +156,8 @@ class EisServiceSpec extends AnyWordSpec with Matchers with MockitoSugar with Sc
         verify(mockReportRequestService).update(captor.capture())(any())
 
         val persistedReportRequestAfterEis: ReportRequest = captor.getValue
-        persistedReportRequestAfterEis.notifications mustBe Seq(
-          Notification(TRE, ERROR, FAILED, "Report failed to send to EIS")
-        )
+        persistedReportRequestAfterEis.notifications.head.copy(statusTimestamp = null) mustBe
+          Notification(TRE, ERROR, FAILED, "Report failed to send to EIS", null)
 
         ex                                              shouldBe a[UpstreamErrorResponse]
         ex.asInstanceOf[UpstreamErrorResponse].reportAs shouldBe INTERNAL_SERVER_ERROR

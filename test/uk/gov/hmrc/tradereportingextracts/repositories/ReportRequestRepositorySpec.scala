@@ -23,7 +23,7 @@ import org.scalatestplus.mockito.MockitoSugar
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import uk.gov.hmrc.mongo.test.CleanMongoCollectionSupport
 import uk.gov.hmrc.tradereportingextracts.config.AppConfig
-import uk.gov.hmrc.tradereportingextracts.models.{Component, EoriRole, Notification, ReportRequest, ReportTypeName, StatusCode, StatusType}
+import uk.gov.hmrc.tradereportingextracts.models.{Component, EoriRole, FileNotification, FileType, Notification, ReportRequest, ReportTypeName, StatusCode, StatusType}
 
 import java.time.Instant
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -52,14 +52,29 @@ class ReportRequestRepositorySpec
         component = Component.CDAP,
         statusType = StatusType.INFORMATION,
         statusCode = StatusCode.FILESENT,
-        statusMessage = "Message1"
+        statusMessage = "Message1",
+        statusTimestamp = Instant.parse("2023-01-01T10:00:00Z")
       )
     ),
-    fileAvailableTime = Some(Instant.parse("2023-01-02T10:00:00Z")),
+    fileNotifications = Some(
+      Seq(
+        FileNotification(
+          fileName = "example.txt",
+          fileSize = 1024,
+          retentionDays = 30,
+          fileType = FileType.CSV,
+          mDTPReportXCorrelationID = "X-Correlation-ID",
+          mDTPReportRequestID = "Request-ID",
+          mDTPReportTypeName = ReportTypeName.IMPORTS_ITEM_REPORT,
+          reportFilesParts = "Part1"
+        )
+      )
+    ),
     linkAvailableTime = Some(Instant.parse("2023-01-03T10:00:00Z"))
   )
+  val appConfig: AppConfig  = app.injector.instanceOf[AppConfig]
 
-  val reportRequestRepository: ReportRequestRepository = new ReportRequestRepository(mongoComponent)
+  val reportRequestRepository: ReportRequestRepository = new ReportRequestRepository(appConfig, mongoComponent)
 
   "insertReportRequest" should {
     "must insert a report successfully" in {

@@ -33,15 +33,36 @@ case class ReportRequest(
   reportEnd: Instant,
   createDate: Instant,
   notifications: Seq[Notification],
-  fileAvailableTime: Option[Instant],
+  fileNotifications: Option[Seq[FileNotification]],
   linkAvailableTime: Option[Instant]
 )
 
-case class Notification(component: Component, statusType: StatusType, statusCode: StatusCode, statusMessage: String)
+case class Notification(
+  component: Component,
+  statusType: StatusType,
+  statusCode: StatusCode,
+  statusMessage: String,
+  statusTimestamp: Instant
+)
+
+case class FileNotification(
+  fileName: String,
+  fileSize: Long,
+  retentionDays: Int,
+  fileType: FileType,
+  mDTPReportXCorrelationID: String,
+  mDTPReportRequestID: String,
+  mDTPReportTypeName: ReportTypeName,
+  reportFilesParts: String
+)
 
 object ReportRequest:
   given format: Format[ReportRequest]          = Json.format[ReportRequest]
   given CanEqual[ReportRequest, ReportRequest] = CanEqual.derived
+
+object FileNotification:
+  given format: Format[FileNotification]             = Json.format[FileNotification]
+  given CanEqual[FileNotification, FileNotification] = CanEqual.derived
 
 object Notification:
   given format: Format[Notification]         = Json.format[Notification]
