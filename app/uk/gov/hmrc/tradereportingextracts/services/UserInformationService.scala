@@ -16,44 +16,47 @@
 
 package uk.gov.hmrc.tradereportingextracts.services
 
+import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.tradereportingextracts.connectors.CustomsDataStoreConnector
-import uk.gov.hmrc.tradereportingextracts.models.etmp.EoriUpdate
-import uk.gov.hmrc.tradereportingextracts.models.{User, UserDetails}
+import uk.gov.hmrc.tradereportingextracts.models.{AllowedEoris, User}
 import uk.gov.hmrc.tradereportingextracts.repositories.UserRepository
 
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-class UserService @Inject() (
+class UserInformationService @Inject() (
   userRepository: UserRepository,
   customsDataStoreConnector: CustomsDataStoreConnector
-)(using ec: ExecutionContext):
-
-  def insert(user: User): Future[Boolean] =
+) extends AllowedEoris:
+  def insert(user: User)(using ec: ExecutionContext): Future[Boolean] =
     userRepository.insert(user)
+
+  def getUserByEori(eori: String)(using ec: ExecutionContext, hc: HeaderCarrier): Future[Either[String, User]] =
+    if !allowedEoris.contains(eori) then Future.successful(Left("EORI not allowed"))
+    else
+      userRepository
+        .getOrCreateUser(eori)
+        .flatMap { case Some(user) =>
+          customsDataStoreConnector
+            .getVerifiedEmail(user.eori)
+            .flatMap {
+              case Left(error)  =>
+                Future.successful(Right(user))
+              case Right(email) =>
+                user.notificationEmail.address = email.address
+                Future.successful(Right(user))
+            }
+        }
 
   def update(user: User): Future[Boolean] =
     userRepository.update(user)
 
-  def updateEori(eoriUpdate: EoriUpdate): Future[Boolean] =
-    userRepository.updateEori(eoriUpdate)
+  def updateEori(oldEori: String, newEori: String): Future[Boolean] =
+    userRepository.updateEori(oldEori, newEori)
 
   def deleteByEori(eori: String): Future[Boolean] =
     userRepository.deleteByEori(eori)
-
-  def getOrCreateUser(eori: String): Future[UserDetails] =
-    for {
-      user               <- userRepository.getOrCreateUser(eori)
-      companyInformation <- customsDataStoreConnector.getCompanyInformation(eori)
-      notificationEmail  <- customsDataStoreConnector.getNotificationEmail(eori)
-    } yield UserDetails(
-      eori = user.eori,
-      additionalEmails = user.additionalEmails,
-      authorisedUsers = user.authorisedUsers,
-      companyInformation = companyInformation,
-      notificationEmail = notificationEmail
-    )
 
   def getAuthorisedEoris(eori: String): Future[Seq[String]] =
     userRepository.getAuthorisedEoris(eori)

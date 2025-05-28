@@ -19,15 +19,15 @@ package uk.gov.hmrc.tradereportingextracts.connectors
 import play.api.Logging
 import play.api.http.Status.OK
 import play.api.libs.json.Json
-import play.api.libs.ws.writeableOf_JsValue
-import uk.gov.hmrc.http.HttpReads.Implicits.*
 import uk.gov.hmrc.http.client.HttpClientV2
 import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse, StringContextOps, UpstreamErrorResponse}
+import uk.gov.hmrc.http.HttpReads.Implicits.*
 import uk.gov.hmrc.tradereportingextracts.config.AppConfig
 import uk.gov.hmrc.tradereportingextracts.models.{CompanyInformation, EoriHistory, EoriHistoryResponse, NotificationEmail}
 
 import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
+import play.api.libs.ws.writeableOf_JsValue
 
 class CustomsDataStoreConnector @Inject() (appConfig: AppConfig, httpClient: HttpClientV2)(using ec: ExecutionContext)
     extends Logging {
@@ -55,45 +55,28 @@ class CustomsDataStoreConnector @Inject() (appConfig: AppConfig, httpClient: Htt
         }
       }
 
-  def getCompanyInformation(eori: String): Future[CompanyInformation] =
+  def getCompanyInformation()(using hc: HeaderCarrier): Future[CompanyInformation] =
     httpClient
       .get(url"${appConfig.customsDataStore}/eori/company-information")
-      .withBody(Json.obj("eori" -> eori))
-      .execute[HttpResponse]
-      .flatMap { response =>
-        response.status match {
-          case OK => Future.successful(response.json.as[CompanyInformation])
-          case _  =>
-            logger.error(s"Unexpected response from call to /eori/company-information status : ${response.status}")
-            Future.successful(CompanyInformation())
-        }
-      }
+      .execute[CompanyInformation]
+      .flatMap:
+      response => Future.successful(response)
 
   def getEoriHistory(eori: String): Future[EoriHistoryResponse] =
     httpClient
       .get(url"${appConfig.customsDataStore}/eori/eori-history")
       .withBody(Json.obj("eori" -> eori))
-      .execute[HttpResponse]
-      .flatMap { response =>
-        response.status match {
-          case OK => Future.successful(response.json.as[EoriHistoryResponse])
-          case _  =>
-            logger.error(s"Unexpected response from call to /eori/eori-history status : ${response.status}")
-            Future.successful(EoriHistoryResponse(Seq.empty[EoriHistory]))
-        }
-      }
+      .execute[EoriHistoryResponse]
+      .flatMap:
+      response => Future.successful(response)
 
-  def getNotificationEmail(eori: String): Future[NotificationEmail] =
+  def getVerifiedEmail(eori: String)(using hc: HeaderCarrier): Future[Either[String, NotificationEmail]] =
     httpClient
       .get(url"${appConfig.customsDataStore}/eori/verified-email")
       .withBody(Json.obj("eori" -> eori))
-      .execute[HttpResponse]
-      .flatMap { response =>
-        response.status match {
-          case OK => Future.successful(response.json.as[NotificationEmail])
-          case _  =>
-            logger.error(s"Unexpected response from call to /eori/verified-email status : ${response.status}")
-            Future.successful(NotificationEmail())
-        }
+      .execute[NotificationEmail]
+      .map(response => Right(response))
+      .recover { case ex: Exception =>
+        Left("Failed to retrieve verified email")
       }
 }

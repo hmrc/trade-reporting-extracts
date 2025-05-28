@@ -23,7 +23,7 @@ import org.scalatestplus.mockito.MockitoSugar
 import play.api.libs.json.Json
 import play.api.test.*
 import play.api.test.Helpers.*
-import uk.gov.hmrc.tradereportingextracts.services.UserService
+import uk.gov.hmrc.tradereportingextracts.services.UserInformationService
 
 import scala.concurrent.Future
 
@@ -31,7 +31,7 @@ class UserControllerSpec extends AnyFreeSpec with Matchers with MockitoSugar {
   "UserControllerSpec" - {
     "getAuthorisedEoris" - {
 
-      val mockUserService = mock[UserService]
+      val mockUserService = mock[UserInformationService]
       val cc              = Helpers.stubControllerComponents()
       val controller      = new UserController(mockUserService, cc)(using cc.executionContext)
 

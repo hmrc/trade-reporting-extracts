@@ -16,28 +16,33 @@
 
 package uk.gov.hmrc.tradereportingextracts.controllers
 
-import play.api.libs.json.Json
-import play.api.mvc.ControllerComponents
+import play.api.libs.json.{JsValue, Json}
+import play.api.mvc.{Action, ControllerComponents}
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 import uk.gov.hmrc.tradereportingextracts.services.UserInformationService
 
-import javax.inject.{Inject, Singleton}
-import scala.concurrent.ExecutionContext
+import javax.inject.Inject
+import scala.concurrent.{ExecutionContext, Future}
 
-@Singleton()
-class UserController @Inject() (
+class UserInformationController @Inject() (
   userService: UserInformationService,
   cc: ControllerComponents
 )(using executionContext: ExecutionContext)
     extends BackendController(cc):
 
-  def getAuthorisedEoris(eori: String) = Action.async {
-    userService
-      .getAuthorisedEoris(eori)
-      .map { authorisedEoris =>
-        Ok(Json.toJson(authorisedEoris))
-      }
-      .recover { case e: Exception =>
-        InternalServerError(e.getMessage)
-      }
+  def getUserInformation(): Action[JsValue] = Action.async(parse.json) { implicit request =>
+    request.body
+      .validate[JsValue]
+      .fold(
+        _ => Future.successful(BadRequest("Invalid JSON")),
+        json => {
+          val eori = (json \ "eori").as[String]
+          userService.getUserByEori(eori).flatMap {
+            case Left(error) =>
+              Future.successful(Forbidden(error))
+            case Right(user) =>
+              Future.successful(Ok(Json.toJson(user)))
+          }
+        }
+      )
   }

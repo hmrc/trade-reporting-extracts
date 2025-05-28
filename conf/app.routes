@@ -1,6 +1,10 @@
 # microservice specific routes
 
-GET        /eori/setup-user                             uk.gov.hmrc.tradereportingextracts.controllers.UserController.setupUser()
+GET        /eori/company-information                    uk.gov.hmrc.tradereportingextracts.controllers.CompanyInformationController.companyInformation()
+GET        /eori/eori-history                           uk.gov.hmrc.tradereportingextracts.controllers.EoriHistoryController.getEoriHistory()
+GET        /eori/verified-email                         uk.gov.hmrc.tradereportingextracts.controllers.VerifiedEmailController.getVerifiedEmail()
+
+GET        /eori/user-information                       uk.gov.hmrc.tradereportingextracts.controllers.UserInformationController.getUserInformation()
 
 GET        /user/:eori/authorised-eoris                 uk.gov.hmrc.tradereportingextracts.controllers.UserController.getAuthorisedEoris(eori: String)
 
@@ -11,6 +15,9 @@ PUT        /notify-report-available                     uk.gov.hmrc.tradereporti
 GET        /notify-report-available                     uk.gov.hmrc.tradereportingextracts.controllers.FileNotificationController.serverOtherMethods()
 POST       /notify-report-available                     uk.gov.hmrc.tradereportingextracts.controllers.FileNotificationController.serverOtherMethods()
 DELETE     /notify-report-available                     uk.gov.hmrc.tradereportingextracts.controllers.FileNotificationController.serverOtherMethods()
+
+GET        /api/available-reports                       uk.gov.hmrc.tradereportingextracts.controllers.AvailableReportController.getAvailableReports()
+GET        /api/available-reports-count                 uk.gov.hmrc.tradereportingextracts.controllers.AvailableReportController.getAvailableReportsCount()
 
 PUT        /gbe/updateeori/v1                           uk.gov.hmrc.tradereportingextracts.controllers.EoriUpdateController.eoriUpdate()
 GET        /gbe/updateeori/v1                           uk.gov.hmrc.tradereportingextracts.controllers.EoriUpdateController.serverOtherMethods()

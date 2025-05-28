@@ -20,14 +20,16 @@ import org.mongodb.scala.*
 import org.mongodb.scala.model.{Filters, IndexModel, IndexOptions, Indexes}
 import uk.gov.hmrc.mongo.MongoComponent
 import uk.gov.hmrc.mongo.play.json.PlayMongoRepository
+import uk.gov.hmrc.tradereportingextracts.config.AppConfig
 import uk.gov.hmrc.tradereportingextracts.models.ReportRequest
 
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-class ReportRequestRepository @Inject() (mongoComponent: MongoComponent)(implicit ec: ExecutionContext)
-    extends PlayMongoRepository[ReportRequest](
+class ReportRequestRepository @Inject() (appConfig: AppConfig, mongoComponent: MongoComponent)(implicit
+  ec: ExecutionContext
+) extends PlayMongoRepository[ReportRequest](
       mongoComponent,
       collectionName = "tre-report-request",
       domainFormat = ReportRequest.format,
@@ -63,4 +65,24 @@ class ReportRequestRepository @Inject() (mongoComponent: MongoComponent)(implici
   def findByRequesterEORI(requesterEORI: String)(using ec: ExecutionContext): Future[Seq[ReportRequest]] =
     collection
       .find(Filters.equal("requesterEORI", requesterEORI))
+      .toFuture()
+
+  def getAvailableReports(eori: String)(using ec: ExecutionContext): Future[Seq[ReportRequest]] =
+    collection
+      .find(
+        Filters.and(
+          Filters.equal("requesterEORI", eori),
+          Filters.elemMatch("fileNotifications", Filters.equal("reportFilesParts", appConfig.reportFilesPart))
+        )
+      )
+      .toFuture()
+
+  def countAvailableReports(eori: String): Future[Long] =
+    collection
+      .countDocuments(
+        Filters.and(
+          Filters.equal("requesterEORI", eori),
+          Filters.elemMatch("fileNotifications", Filters.equal("reportFilesParts", appConfig.reportFilesPart))
+        )
+      )
       .toFuture()

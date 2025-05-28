@@ -18,11 +18,12 @@ package uk.gov.hmrc.tradereportingextracts.models
 
 import play.api.libs.json.{Format, Json, Reads, Writes}
 
-import java.time.Instant
+import java.time.{Instant, LocalDateTime}
 import scala.reflect.ClassTag
 
 case class User(
   eori: String,
+  @transient var notificationEmail: NotificationEmail = NotificationEmail("", LocalDateTime.MIN),
   additionalEmails: Seq[String] = Seq.empty,
   authorisedUsers: Seq[AuthorisedUser] = Seq.empty
 )
@@ -38,6 +39,7 @@ case class AuthorisedUser(
 
 object User:
   given format: Format[User] = Json.format[User]
+  given CanEqual[User, User] = CanEqual.derived
 
 object AuthorisedUser:
   given Format[AuthorisedUser] = Json.format[AuthorisedUser]

@@ -28,7 +28,7 @@ import uk.gov.hmrc.tradereportingextracts.repositories.UserRepository
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class UserServiceSpec
+class UserInformationServiceSpec
     extends AnyFreeSpec
     with Matchers
     with TryValues
@@ -42,7 +42,7 @@ class UserServiceSpec
     val mockRepository                = mock[UserRepository]
     val mockCustomsDataStoreConnector = mock[CustomsDataStoreConnector]
 
-    val service = new UserService(mockRepository, mockCustomsDataStoreConnector)(using ec: ExecutionContext)
+    val service = new UserInformationService(mockRepository, mockCustomsDataStoreConnector)
 
     val eori            = "EORI1234"
     val authorisedEoris = Seq("AUTH-EORI-1", "AUTH-EORI-2")
