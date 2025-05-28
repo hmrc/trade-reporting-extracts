@@ -39,3 +39,9 @@ class ReportRequestService @Inject() (reportRequestRepository: ReportRequestRepo
 
   def getByRequesterEORI(requesterEORI: String)(using ec: ExecutionContext): Future[Seq[ReportRequest]] =
     reportRequestRepository.findByRequesterEORI(requesterEORI)
+
+  def getAvailableReports(eori: String)(using ec: ExecutionContext): Future[Seq[ReportRequest]] =
+    reportRequestRepository.getAvailableReports(eori)
+
+  def countAvailableReports(eori: String)(using ec: ExecutionContext): Future[Long] =
+    reportRequestRepository.countAvailableReports(eori)

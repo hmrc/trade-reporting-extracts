@@ -51,7 +51,7 @@ class RequestedReportsControllerSpec extends SpecBase:
     reportEnd = Instant.parse("2024-06-30T23:59:59Z"),
     createDate = Instant.parse("2024-07-01T10:00:00Z"),
     notifications = Seq.empty,
-    fileAvailableTime = Some(Instant.parse("2024-07-01T10:10:00Z")),
+    fileNotifications = None,
     linkAvailableTime = Some(Instant.parse("2024-07-01T10:15:00Z"))
   )
 

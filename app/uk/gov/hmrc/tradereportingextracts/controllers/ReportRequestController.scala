@@ -100,7 +100,7 @@ class ReportRequestController @Inject() (
       createDate = Instant.now,
       notifications = Seq(),
       linkAvailableTime = None,
-      fileAvailableTime = None
+      fileNotifications = None
     )
   }
 

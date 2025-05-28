@@ -102,3 +102,17 @@ object StatusCode:
           case Some(statusCode) => JsSuccess(statusCode)
           case None             => JsError(s"Unknown StatusCode: $value")
       case _               => JsError("StatusCode must be a string")
+
+enum FileType:
+  case CSV, XML
+
+object FileType:
+  given Format[FileType] with
+    def writes(fileType: FileType): JsValue = JsString(fileType.toString)
+
+    def reads(json: JsValue): JsResult[FileType] = json match
+      case JsString(value) =>
+        FileType.values.find(_.toString == value) match
+          case Some(fileType) => JsSuccess(fileType)
+          case None           => JsError(s"Unknown FileType: $value")
+      case _               => JsError("FileType must be a string")

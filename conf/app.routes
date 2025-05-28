@@ -12,6 +12,9 @@ GET        /notify-report-available                     uk.gov.hmrc.tradereporti
 POST       /notify-report-available                     uk.gov.hmrc.tradereportingextracts.controllers.FileNotificationController.serverOtherMethods()
 DELETE     /notify-report-available                     uk.gov.hmrc.tradereportingextracts.controllers.FileNotificationController.serverOtherMethods()
 
+GET        /api/available-reports                       uk.gov.hmrc.tradereportingextracts.controllers.AvailableReportController.getAvailableReports()
+GET        /api/available-reports-count                 uk.gov.hmrc.tradereportingextracts.controllers.AvailableReportController.getAvailableReportsCount()
+
 PUT        /gbe/updateeori/v1                           uk.gov.hmrc.tradereportingextracts.controllers.EoriUpdateController.eoriUpdate()
 GET        /gbe/updateeori/v1                           uk.gov.hmrc.tradereportingextracts.controllers.EoriUpdateController.serverOtherMethods()
 POST       /gbe/updateeori/v1                           uk.gov.hmrc.tradereportingextracts.controllers.EoriUpdateController.serverOtherMethods()

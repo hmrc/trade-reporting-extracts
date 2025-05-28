@@ -39,10 +39,24 @@ class ReportRequestSpec extends AnyWordSpec with Matchers {
         component = Component.CDAP,
         statusType = StatusType.INFORMATION,
         statusCode = StatusCode.FILESENT,
-        statusMessage = "Message1"
+        statusMessage = "Message1",
+        statusTimestamp = Instant.parse("2023-01-01T10:00:00Z")
       )
     ),
-    fileAvailableTime = Some(Instant.parse("2023-01-02T10:00:00Z")),
+    fileNotifications = Some(
+      Seq(
+        FileNotification(
+          fileName = "example.txt",
+          fileSize = 1024,
+          retentionDays = 30,
+          fileType = FileType.CSV,
+          mDTPReportXCorrelationID = "X-Correlation-ID",
+          mDTPReportRequestID = "Request-ID",
+          mDTPReportTypeName = ReportTypeName.IMPORTS_ITEM_REPORT,
+          reportFilesParts = "Part1"
+        )
+      )
+    ),
     linkAvailableTime = Some(Instant.parse("2023-01-03T10:00:00Z"))
   )
 
