@@ -39,13 +39,13 @@ class RequestedReportsController @Inject() (
     eoriOpt match {
       case Some(eori) =>
         reportRequestService
-          .getByRequesterEORI(eori)
-          .map { reports =>
-            if (reports.isEmpty) {
+          .getReportRequestsForUser(eori)
+          .map { response =>
+            if (response.userReports.isEmpty && response.thirdPartyReports.isEmpty) {
               logger.info(s"No reports found for EORI: $eori")
               NoContent
             } else {
-              Ok(Json.toJson(reports))
+              Ok(Json.toJson(response))
             }
           }
           .recover { case ex: Exception =>
