@@ -21,7 +21,7 @@ import org.scalatest.matchers.must.Matchers.mustBe
 import play.api.http.Status.*
 import play.api.libs.json.{JsValue, Json}
 import play.api.mvc.{Request, Result}
-import play.api.test.Helpers.{POST, contentAsJson, status}
+import play.api.test.Helpers.{GET, contentAsJson, status}
 import play.api.test.{FakeRequest, Helpers}
 import uk.gov.hmrc.tradereportingextracts.models.ReportTypeName.EXPORTS_ITEM_REPORT
 import uk.gov.hmrc.tradereportingextracts.models.{GetReportRequestsResponse, UserReport}
@@ -62,7 +62,7 @@ class RequestedReportsControllerSpec extends SpecBase:
       when(mockReportRequestService.getReportRequestsForUser(eori))
         .thenReturn(Future.successful(expectedResponse))
 
-      val request: Request[JsValue] = FakeRequest(POST, "/requested-reports")
+      val request: Request[JsValue] = FakeRequest(GET, "/requested-reports")
         .withBody(Json.obj("eori" -> eori))
 
       val result: Future[Result] = controller.getRequestedReports()(request)
@@ -77,7 +77,7 @@ class RequestedReportsControllerSpec extends SpecBase:
       when(mockReportRequestService.getReportRequestsForUser(eori))
         .thenReturn(Future.successful(GetReportRequestsResponse(None, None)))
 
-      val request: Request[JsValue] = FakeRequest(POST, "/requested-reports")
+      val request: Request[JsValue] = FakeRequest(GET, "/requested-reports")
         .withBody(Json.obj("eori" -> eori))
 
       val result: Future[Result] = controller.getRequestedReports()(request)
@@ -86,7 +86,7 @@ class RequestedReportsControllerSpec extends SpecBase:
     }
 
     "return 400 BadRequest when EORI is missing" in {
-      val request: Request[JsValue] = FakeRequest(POST, "/requested-reports")
+      val request: Request[JsValue] = FakeRequest(GET, "/requested-reports")
         .withBody(Json.obj())
 
       val result: Future[Result] = controller.getRequestedReports()(request)
