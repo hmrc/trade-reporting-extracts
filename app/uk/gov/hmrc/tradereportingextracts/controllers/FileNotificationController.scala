@@ -21,15 +21,21 @@ import play.api.mvc.*
 import uk.gov.hmrc.tradereportingextracts.config.AppConfig
 import uk.gov.hmrc.tradereportingextracts.models.sdes.FileNotification
 import uk.gov.hmrc.tradereportingextracts.models.sdes.FileNotificationHeaders.*
+import uk.gov.hmrc.tradereportingextracts.models.FileNotification as TreFileNotication
 
 import javax.inject.{Inject, Singleton}
-import scala.concurrent.Future
-
+import scala.concurrent.{ExecutionContext, Future}
+import uk.gov.hmrc.tradereportingextracts.models.{FileType, ReportTypeName}
+import uk.gov.hmrc.tradereportingextracts.models.sdes.FileNotificationMetadata
+import uk.gov.hmrc.tradereportingextracts.services.{FileNotificationService, ReportRequestService}
 @Singleton
 class FileNotificationController @Inject() (
   cc: ControllerComponents,
-  appConfig: AppConfig
-) extends AbstractController(cc) {
+  appConfig: AppConfig,
+  reportRequestService: ReportRequestService,
+  fileNotificationService: FileNotificationService
+)(implicit ec: ExecutionContext)
+    extends AbstractController(cc) {
 
   def fileNotification(): Action[AnyContent] = Action.async { request =>
     def missingHeaders: Seq[String] =
@@ -47,8 +53,11 @@ class FileNotificationController @Inject() (
         Future.successful(BadRequest("Expected application/json request body"))
       case (_, _, Some(json))                  =>
         json.validate[FileNotification] match {
-          case JsSuccess(_, _) => Future.successful(Created)
-          case JsError(errors) =>
+          case JsSuccess(fileNotification, _) =>
+            fileNotificationService.processFileNotification(fileNotification).map { (status, message) =>
+              Status(status)(message)
+            }
+          case JsError(errors)                =>
             val errorMessage = errors
               .map { case (path, validationErrors) =>
                 s"Invalid value at path $path: ${validationErrors.map(_.message).mkString(", ")}"
