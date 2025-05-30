@@ -18,7 +18,7 @@ package uk.gov.hmrc.tradereportingextracts.utils
 
 object ApplicationConstants {
 
-  val eori: String = "eori"
-  val xClientId : String = "x-client-id"
-  val xSDESKey : String =  "x-sdes-key"
+  val eori: String      = "eori"
+  val xClientId: String = "x-client-id"
+  val xSDESKey: String  = "x-sdes-key"
 }

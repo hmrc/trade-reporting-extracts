@@ -29,14 +29,13 @@ import scala.concurrent.{ExecutionContext, Future}
 
 class SDESConnector @Inject() (appConfig: AppConfig, httpClient: HttpClientV2)(using ec: ExecutionContext) {
 
-  def fetchAvailableReportFileUrl(eori : String
-                         )(implicit hc: HeaderCarrier): Future[Seq[FileAvailableResponse]] = {
+  def fetchAvailableReportFileUrl(eori: String)(implicit hc: HeaderCarrier): Future[Seq[FileAvailableResponse]] = {
     val requestAvailableReportFileUrl = url"${appConfig.sdes}/files-available/list/${appConfig.sdesInformationType}"
     httpClient
       .get(requestAvailableReportFileUrl)
       .setHeader(
         xClientId -> appConfig.treXClientId,
-        xSDESKey -> eori
+        xSDESKey  -> eori
       )
       .execute[Seq[FileAvailableResponse]]
       .logFailureReason(connectorName = "SDESConnector on fetchAvailableReportFileUrl")

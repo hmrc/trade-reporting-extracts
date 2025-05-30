@@ -20,19 +20,21 @@ import play.api.Logger
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.tradereportingextracts.connectors.SDESConnector
 import uk.gov.hmrc.tradereportingextracts.models.{AvailableReportAction, AvailableReportResponse, AvailableUserReportResponse, FileNotification, ReportRequest}
-import uk.gov.hmrc.tradereportingextracts.models.sdes.{FileAvailableResponse, FileAvailableMetadataItem}
+import uk.gov.hmrc.tradereportingextracts.models.sdes.{FileAvailableMetadataItem, FileAvailableResponse}
 import java.time.Instant
 import scala.concurrent.{ExecutionContext, Future}
 import javax.inject.Inject
 
-class AvailableReportService @Inject() (reportRequestService: ReportRequestService, sdesConnector: SDESConnector)(implicit ec: ExecutionContext) {
-  val logger: Logger                                                          = Logger(this.getClass)
+class AvailableReportService @Inject() (reportRequestService: ReportRequestService, sdesConnector: SDESConnector)(
+  implicit ec: ExecutionContext
+) {
+  val logger: Logger = Logger(this.getClass)
 
   def getAvailableReports(eoriValue: String)(implicit
-                                             hc: HeaderCarrier
-  ): Future[AvailableReportResponse] = {
+    hc: HeaderCarrier
+  ): Future[AvailableReportResponse] =
     for {
-      sdesResponse <- sdesConnector.fetchAvailableReportFileUrl(eoriValue)
+      sdesResponse   <- sdesConnector.fetchAvailableReportFileUrl(eoriValue)
       reportRequests <- reportRequestService.getAvailableReports(eoriValue)
     } yield
       if (reportRequests.isEmpty) {
@@ -44,9 +46,11 @@ class AvailableReportService @Inject() (reportRequestService: ReportRequestServi
       } else {
         toAvailableReportResponses(reportRequests, sdesResponse)
       }
-  }
 
-  private def toAvailableReportActions(fileDetails: FileNotification, sdesResponse : Seq[FileAvailableResponse]): Seq[AvailableReportAction] =
+  private def toAvailableReportActions(
+    fileDetails: FileNotification,
+    sdesResponse: Seq[FileAvailableResponse]
+  ): Seq[AvailableReportAction] =
     sdesResponse.map { sdesFile =>
       AvailableReportAction(
         fileURL = sdesFile.downloadURL,
@@ -56,7 +60,10 @@ class AvailableReportService @Inject() (reportRequestService: ReportRequestServi
       )
     }
 
-  private def toAvailableReportResponses(reportRequests: Seq[ReportRequest] , sdesResponse : Seq[FileAvailableResponse]): AvailableReportResponse = {
+  private def toAvailableReportResponses(
+    reportRequests: Seq[ReportRequest],
+    sdesResponse: Seq[FileAvailableResponse]
+  ): AvailableReportResponse = {
     val availableUserReports = reportRequests.flatMap { req =>
       req.fileNotifications.getOrElse(Seq.empty).map { fileNotify =>
         AvailableUserReportResponse(
@@ -70,13 +77,13 @@ class AvailableReportService @Inject() (reportRequestService: ReportRequestServi
             sdesResponse.filter(_.metadata.exists {
               case FileAvailableMetadataItem.MDTPReportRequestIDMetadataItem(value) =>
                 value == req.reportRequestId
-              case _ => false
+              case _                                                                => false
             })
           )
         )
       }
     }
-    AvailableReportResponse(Some(availableUserReports),None)
+    AvailableReportResponse(Some(availableUserReports), None)
   }
 
   def getAvailableReportsCount(eoriValue: String): Future[Long] =

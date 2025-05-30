@@ -18,13 +18,12 @@ package uk.gov.hmrc.tradereportingextracts.models.sdes
 
 import play.api.libs.json.{Format, JsError, Json, Reads, Writes}
 
-
 case class FileAvailableResponse(
-                          filename: String,
-                          downloadURL: String,
-                          fileSize: Long,
-                          metadata: Seq[FileAvailableMetadataItem]
-                        )
+  filename: String,
+  downloadURL: String,
+  fileSize: Long,
+  metadata: Seq[FileAvailableMetadataItem]
+)
 
 object FileAvailableResponse {
   implicit val format: Format[FileAvailableResponse] =
@@ -82,7 +81,8 @@ object FileAvailableMetadataItem {
     case RetentionDaysMetadataItem(value)            => Json.obj("metadata" -> "RETENTION_DAYS", "value" -> value)
     case FileTypeMetadataItem(value)                 => Json.obj("metadata" -> "FileType", "value" -> value)
     case EORIMetadataItem(value)                     => Json.obj("metadata" -> "EORI", "value" -> value)
-    case MDTPReportXCorrelationIDMetadataItem(value) => Json.obj("metadata" -> "MdtpReportXCorrelationId", "value" -> value)
+    case MDTPReportXCorrelationIDMetadataItem(value) =>
+      Json.obj("metadata" -> "MdtpReportXCorrelationId", "value" -> value)
     case MDTPReportRequestIDMetadataItem(value)      => Json.obj("metadata" -> "MdtpReportRequestId", "value" -> value)
     case MDTPReportTypeNameMetadataItem(value)       => Json.obj("metadata" -> "MdtpReportTypeName", "value" -> value)
     case ReportFileCounterMetadataItem(value)        => Json.obj("metadata" -> "ReportFileCounter", "value" -> value)
