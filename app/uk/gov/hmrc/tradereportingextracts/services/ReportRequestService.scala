@@ -16,14 +16,19 @@
 
 package uk.gov.hmrc.tradereportingextracts.services
 
+import uk.gov.hmrc.tradereportingextracts.connectors.CustomsDataStoreConnector
 import uk.gov.hmrc.tradereportingextracts.models.ReportRequest
+import uk.gov.hmrc.tradereportingextracts.models.{GetReportRequestsResponse, ThirdPartyReport, UserReport}
 import uk.gov.hmrc.tradereportingextracts.repositories.ReportRequestRepository
 
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-class ReportRequestService @Inject() (reportRequestRepository: ReportRequestRepository):
+class ReportRequestService @Inject() (
+  reportRequestRepository: ReportRequestRepository,
+  customsDataStoreConnector: CustomsDataStoreConnector
+):
 
   def create(reportRequest: ReportRequest)(implicit ec: ExecutionContext): Future[Boolean] =
     reportRequestRepository.insert(reportRequest)
@@ -39,6 +44,48 @@ class ReportRequestService @Inject() (reportRequestRepository: ReportRequestRepo
 
   def getByRequesterEORI(requesterEORI: String)(using ec: ExecutionContext): Future[Seq[ReportRequest]] =
     reportRequestRepository.findByRequesterEORI(requesterEORI)
+
+  def getReportRequestsForUser(eori: String)(using ec: ExecutionContext): Future[GetReportRequestsResponse] =
+    reportRequestRepository.findByRequesterEORI(eori).flatMap { reportRequests =>
+      val (userRequests, thirdPartyRequests) = reportRequests.partition(_.requesterEORI == eori)
+
+      val userReports = userRequests.map(toUserReport)
+
+      val thirdPartyReportsFutures: Seq[Future[ThirdPartyReport]] = thirdPartyRequests.map { req =>
+        customsDataStoreConnector
+          .getCompanyInformation(req.requesterEORI)
+          .map { companyInfo =>
+            toThirdPartyReport(req, companyInfo.name)
+          }
+          .recover { case _ =>
+            toThirdPartyReport(req, s"Unknown company (${req.requesterEORI})")
+          }
+      }
+
+      Future.sequence(thirdPartyReportsFutures).map { thirdPartyReports =>
+        GetReportRequestsResponse(
+          userReports = if (userReports.nonEmpty) Some(userReports) else None,
+          thirdPartyReports = if (thirdPartyReports.nonEmpty) Some(thirdPartyReports) else None
+        )
+      }
+    }
+
+  private def toUserReport(req: ReportRequest): UserReport =
+    UserReport(
+      referenceNumber = req.reportRequestId,
+      reportName = req.reportName,
+      requestedDate = req.createDate,
+      reportType = req.reportTypeName
+    )
+
+  private def toThirdPartyReport(req: ReportRequest, companyName: String): ThirdPartyReport =
+    ThirdPartyReport(
+      referenceNumber = req.reportRequestId,
+      reportName = req.reportName,
+      requestedDate = req.createDate,
+      reportType = req.reportTypeName,
+      companyName = companyName
+    )
 
   def getAvailableReports(eori: String)(using ec: ExecutionContext): Future[Seq[ReportRequest]] =
     reportRequestRepository.getAvailableReports(eori)
