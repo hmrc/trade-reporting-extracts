@@ -39,14 +39,13 @@ class FileAvailableResponseSpec extends AnyWordSpec with Matchers {
           FileAvailableMetadataItem.ReportLastFileMetadataItem("true")
         )
       )
-      val json = Json.toJson(response)
-      val parsed = json.as[FileAvailableResponse]
+      val json     = Json.toJson(response)
+      val parsed   = json.as[FileAvailableResponse]
       parsed shouldBe response
     }
 
     "fail to deserialize unknown metadata type" in {
-      val json = Json.parse(
-        """
+      val json   = Json.parse("""
           |{
           |  "filename": "file.csv",
           |  "downloadURL": "http://example.com/file.csv",
@@ -63,14 +62,14 @@ class FileAvailableResponseSpec extends AnyWordSpec with Matchers {
 
   "FileAvailableMetadataItem" should {
     "correctly extract metadata and value for each subtype" in {
-      FileAvailableMetadataItem.RetentionDaysMetadataItem("10").metadata shouldBe "RETENTION_DAYS"
-      FileAvailableMetadataItem.FileTypeMetadataItem("PDF").metadata shouldBe "FileType"
-      FileAvailableMetadataItem.EORIMetadataItem("GB123").metadata shouldBe "EORI"
+      FileAvailableMetadataItem.RetentionDaysMetadataItem("10").metadata             shouldBe "RETENTION_DAYS"
+      FileAvailableMetadataItem.FileTypeMetadataItem("PDF").metadata                 shouldBe "FileType"
+      FileAvailableMetadataItem.EORIMetadataItem("GB123").metadata                   shouldBe "EORI"
       FileAvailableMetadataItem.MDTPReportXCorrelationIDMetadataItem("xid").metadata shouldBe "MdtpReportXCorrelationId"
-      FileAvailableMetadataItem.MDTPReportRequestIDMetadataItem("rid").metadata shouldBe "MdtpReportRequestId"
-      FileAvailableMetadataItem.MDTPReportTypeNameMetadataItem("type").metadata shouldBe "MdtpReportTypeName"
-      FileAvailableMetadataItem.ReportFileCounterMetadataItem("2").metadata shouldBe "ReportFileCounter"
-      FileAvailableMetadataItem.ReportLastFileMetadataItem("false").metadata shouldBe "ReportLastFile"
+      FileAvailableMetadataItem.MDTPReportRequestIDMetadataItem("rid").metadata      shouldBe "MdtpReportRequestId"
+      FileAvailableMetadataItem.MDTPReportTypeNameMetadataItem("type").metadata      shouldBe "MdtpReportTypeName"
+      FileAvailableMetadataItem.ReportFileCounterMetadataItem("2").metadata          shouldBe "ReportFileCounter"
+      FileAvailableMetadataItem.ReportLastFileMetadataItem("false").metadata         shouldBe "ReportLastFile"
     }
   }
 
@@ -87,7 +86,7 @@ class FileAvailableResponseSpec extends AnyWordSpec with Matchers {
         FileAvailableMetadataItem.ReportLastFileMetadataItem("false")
       )
       items.foreach { item =>
-        val json = Json.toJson(item)
+        val json   = Json.toJson(item)
         val parsed = json.as[FileAvailableMetadataItem]
         parsed shouldBe item
       }
