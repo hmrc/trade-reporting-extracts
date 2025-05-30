@@ -27,12 +27,13 @@ import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 import uk.gov.hmrc.tradereportingextracts.models.{FileType, ReportTypeName}
 import uk.gov.hmrc.tradereportingextracts.models.sdes.FileNotificationMetadata
-import uk.gov.hmrc.tradereportingextracts.services.ReportRequestService
+import uk.gov.hmrc.tradereportingextracts.services.{FileNotificationService, ReportRequestService}
 @Singleton
 class FileNotificationController @Inject() (
   cc: ControllerComponents,
   appConfig: AppConfig,
-  reportRequestService: ReportRequestService
+  reportRequestService: ReportRequestService,
+  fileNotificationService: FileNotificationService
 )(implicit ec: ExecutionContext) extends AbstractController(cc) {
 
   def fileNotification(): Action[AnyContent] = Action.async { request =>
@@ -51,27 +52,9 @@ class FileNotificationController @Inject() (
         Future.successful(BadRequest("Expected application/json request body"))
       case (_, _, Some(json))                  =>
         json.validate[FileNotification] match {
-          case JsSuccess(fileNotification, _) => val maybeReportRequestId = fileNotification.metadata.collectFirst {
-            case FileNotificationMetadata.MDTPReportRequestIDMetadataItem(value) => value
+          case JsSuccess(fileNotification, _) => fileNotificationService.processFileNotification(fileNotification).map { (status, message) =>
+            Status(status)(message)
           }
-            maybeReportRequestId match {
-              case Some(reportRequestId) =>
-                reportRequestService.get(reportRequestId).flatMap {
-                  case Some(reportRequest) =>
-                    val updatedFileNotifications = reportRequest.fileNotifications match {
-                      case Some(existing) => Some(existing :+ convertToTreFileNotification(fileNotification))
-                      case None => Some(Seq(convertToTreFileNotification(fileNotification)))
-                    }
-                    val updatedReportRequest = reportRequest.copy(fileNotifications = updatedFileNotifications)
-                    reportRequestService.update(updatedReportRequest).map { _ =>
-                      Created
-                    }
-                  case None =>
-                    Future.successful(NotFound( s"ReportRequest not found for reportRequestId: $reportRequestId"))
-                }
-              case None =>
-                Future.successful(BadRequest("report-requestID not found in FileNotification metadata"))
-            }
           case JsError(errors) =>
             val errorMessage = errors
               .map { case (path, validationErrors) =>
