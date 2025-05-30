@@ -28,9 +28,9 @@ class FileNotificationControllerSpec extends SpecBase {
   "FileNotificationController" should {
     "return 400 BadRequest when headers are missing" in new Setup {
       val request = FakeRequest(PUT, routes.FileNotificationController.fileNotification().url)
-      val result = route(app, request).value
-      status(result) shouldBe BAD_REQUEST
-      contentAsString(result) should include ("Failed header validation")
+      val result  = route(app, request).value
+      status(result)        shouldBe BAD_REQUEST
+      contentAsString(result) should include("Failed header validation")
     }
 
     "return 400 BadRequest when body is not JSON" in new Setup {
@@ -43,14 +43,14 @@ class FileNotificationControllerSpec extends SpecBase {
           "x-transmitting-system" -> "SDES"
         )
         .withBody("not-json")
-      val result = route(app, request).value
-      status(result) shouldBe BAD_REQUEST
-      contentAsString(result) should include ("Expected application/json request body")
+      val result  = route(app, request).value
+      status(result)        shouldBe BAD_REQUEST
+      contentAsString(result) should include("Expected application/json request body")
     }
 
     "return 400 BadRequest when JSON is invalid" in new Setup {
       val invalidJson = Json.obj("foo" -> "bar")
-      val request = FakeRequest(PUT, routes.FileNotificationController.fileNotification().url)
+      val request     = FakeRequest(PUT, routes.FileNotificationController.fileNotification().url)
         .withHeaders(
           "authorization"         -> "SdesAuthToken",
           "date"                  -> "Mon, 02 Oct 2023 14:30:00 GMT",
@@ -59,9 +59,9 @@ class FileNotificationControllerSpec extends SpecBase {
           "x-transmitting-system" -> "SDES"
         )
         .withBody(invalidJson)
-      val result = route(app, request).value
-      status(result) shouldBe BAD_REQUEST
-      contentAsString(result) should include ("Invalid value at path")
+      val result      = route(app, request).value
+      status(result)        shouldBe BAD_REQUEST
+      contentAsString(result) should include("Invalid value at path")
     }
 
     "return 400 BadRequest when report-requestID is missing in metadata" in new Setup {
@@ -74,7 +74,7 @@ class FileNotificationControllerSpec extends SpecBase {
           FileNotificationMetadata.FileTypeMetadataItem("CSV")
         )
       )
-      val request = FakeRequest(PUT, routes.FileNotificationController.fileNotification().url)
+      val request          = FakeRequest(PUT, routes.FileNotificationController.fileNotification().url)
         .withHeaders(
           "authorization"         -> "SdesAuthToken",
           "date"                  -> "Mon, 02 Oct 2023 14:30:00 GMT",
@@ -83,9 +83,9 @@ class FileNotificationControllerSpec extends SpecBase {
           "x-transmitting-system" -> "SDES"
         )
         .withBody(Json.toJson(fileNotification))
-      val result = route(app, request).value
-      status(result) shouldBe BAD_REQUEST
-      contentAsString(result) should include ("report-requestID not found")
+      val result           = route(app, request).value
+      status(result)        shouldBe BAD_REQUEST
+      contentAsString(result) should include("report-requestID not found")
     }
 
     "return 404 NotFound when reportRequest is not found" in new Setup {
@@ -99,7 +99,7 @@ class FileNotificationControllerSpec extends SpecBase {
           FileNotificationMetadata.MDTPReportRequestIDMetadataItem("NOT-FOUND")
         )
       )
-      val request = FakeRequest(PUT, routes.FileNotificationController.fileNotification().url)
+      val request          = FakeRequest(PUT, routes.FileNotificationController.fileNotification().url)
         .withHeaders(
           "authorization"         -> "SdesAuthToken",
           "date"                  -> "Mon, 02 Oct 2023 14:30:00 GMT",
@@ -108,9 +108,9 @@ class FileNotificationControllerSpec extends SpecBase {
           "x-transmitting-system" -> "SDES"
         )
         .withBody(Json.toJson(fileNotification))
-      val result = route(app, request).value
-      status(result) shouldBe NOT_FOUND
-      contentAsString(result) should include ("ReportRequest not found")
+      val result           = route(app, request).value
+      status(result)        shouldBe NOT_FOUND
+      contentAsString(result) should include("ReportRequest not found")
     }
 
     "return 403 Forbidden" in new Setup {
@@ -123,7 +123,7 @@ class FileNotificationControllerSpec extends SpecBase {
           "source-system"         -> "SDES",
           "x-transmitting-system" -> "SDES"
         )
-      val result = route(app, request).value
+      val result  = route(app, request).value
       status(result) shouldBe FORBIDDEN
     }
 
@@ -142,7 +142,7 @@ class FileNotificationControllerSpec extends SpecBase {
           FileNotificationMetadata.ReportFilesPartsMetadataItem("1of2")
         )
       )
-      val request = FakeRequest(PUT, routes.FileNotificationController.fileNotification().url)
+      val request          = FakeRequest(PUT, routes.FileNotificationController.fileNotification().url)
         .withHeaders(
           "authorization"         -> "SdesAuthToken",
           "date"                  -> "Mon, 02 Oct 2023 14:30:00 GMT",
@@ -151,13 +151,13 @@ class FileNotificationControllerSpec extends SpecBase {
           "x-transmitting-system" -> "SDES"
         )
         .withBody(Json.toJson(fileNotification))
-      val result = route(app, request).value
+      val result           = route(app, request).value
       status(result) shouldBe CREATED
     }
 
     "return 405 MethodNotAllowed" in new Setup {
       val request = FakeRequest(GET, routes.FileNotificationController.fileNotification().url)
-      val result = route(app, request).value
+      val result  = route(app, request).value
       status(result) shouldBe METHOD_NOT_ALLOWED
     }
   }

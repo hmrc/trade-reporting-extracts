@@ -19,7 +19,7 @@ package uk.gov.hmrc.tradereportingextracts.services
 import play.api.http.Status
 import play.api.http.Status.{BAD_REQUEST, CREATED, NOT_FOUND}
 import uk.gov.hmrc.tradereportingextracts.models.sdes.{FileNotification, FileNotificationMetadata}
-import uk.gov.hmrc.tradereportingextracts.models.{FileType, ReportTypeName, FileNotification as TreFileNotification}
+import uk.gov.hmrc.tradereportingextracts.models.{FileNotification as TreFileNotification, FileType, ReportTypeName}
 
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
@@ -40,14 +40,12 @@ class FileNotificationService @Inject() (reportRequestService: ReportRequestServ
               case Some(existing) => Some(existing :+ convertToTreFileNotification(fileNotification))
               case None           => Some(Seq(convertToTreFileNotification(fileNotification)))
             }
-            val updatedReportRequest = reportRequest.copy(fileNotifications = updatedFileNotifications)
-            reportRequestService.update(updatedReportRequest).map(_ =>
-             (CREATED, "Created")
-            )
-          case None =>
+            val updatedReportRequest     = reportRequest.copy(fileNotifications = updatedFileNotifications)
+            reportRequestService.update(updatedReportRequest).map(_ => (CREATED, "Created"))
+          case None                =>
             Future.successful((NOT_FOUND, s"ReportRequest not found for reportRequestId: $reportRequestId"))
         }
-      case None =>
+      case None                  =>
         Future.successful((BAD_REQUEST, "report-requestID not found in FileNotification metadata"))
     }
   }
@@ -59,11 +57,14 @@ class FileNotificationService @Inject() (reportRequestService: ReportRequestServ
     TreFileNotification(
       fileName = sdes.fileName,
       fileSize = sdes.fileSize,
-      retentionDays = getValue { case FileNotificationMetadata.RetentionDaysMetadataItem(v: String) => v }.toIntOption.getOrElse(0),
+      retentionDays =
+        getValue { case FileNotificationMetadata.RetentionDaysMetadataItem(v: String) => v }.toIntOption.getOrElse(0),
       fileType = FileType.valueOf(
         getValue { case FileNotificationMetadata.FileTypeMetadataItem(v: String) => v }
       ),
-      mDTPReportXCorrelationID = getValue { case FileNotificationMetadata.MDTPReportXCorrelationIDMetadataItem(v: String) => v },
+      mDTPReportXCorrelationID = getValue {
+        case FileNotificationMetadata.MDTPReportXCorrelationIDMetadataItem(v: String) => v
+      },
       mDTPReportRequestID = getValue { case FileNotificationMetadata.MDTPReportRequestIDMetadataItem(v: String) => v },
       mDTPReportTypeName = ReportTypeName.valueOf(
         getValue { case FileNotificationMetadata.MDTPReportTypeNameMetadataItem(v: String) => v }

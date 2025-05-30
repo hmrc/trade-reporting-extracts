@@ -34,7 +34,8 @@ class FileNotificationController @Inject() (
   appConfig: AppConfig,
   reportRequestService: ReportRequestService,
   fileNotificationService: FileNotificationService
-)(implicit ec: ExecutionContext) extends AbstractController(cc) {
+)(implicit ec: ExecutionContext)
+    extends AbstractController(cc) {
 
   def fileNotification(): Action[AnyContent] = Action.async { request =>
     def missingHeaders: Seq[String] =
@@ -52,10 +53,11 @@ class FileNotificationController @Inject() (
         Future.successful(BadRequest("Expected application/json request body"))
       case (_, _, Some(json))                  =>
         json.validate[FileNotification] match {
-          case JsSuccess(fileNotification, _) => fileNotificationService.processFileNotification(fileNotification).map { (status, message) =>
-            Status(status)(message)
-          }
-          case JsError(errors) =>
+          case JsSuccess(fileNotification, _) =>
+            fileNotificationService.processFileNotification(fileNotification).map { (status, message) =>
+              Status(status)(message)
+            }
+          case JsError(errors)                =>
             val errorMessage = errors
               .map { case (path, validationErrors) =>
                 s"Invalid value at path $path: ${validationErrors.map(_.message).mkString(", ")}"
@@ -71,26 +73,6 @@ class FileNotificationController @Inject() (
       MethodNotAllowed(
         s"Method ${request.method} not allowed. Only POST is allowed for this endpoint."
       )
-    )
-  }
-
-  private def convertToTreFileNotification(sdes: FileNotification): TreFileNotication = {
-    def getValue[A <: FileNotificationMetadata](pf: PartialFunction[FileNotificationMetadata, String]): String =
-      sdes.metadata.collectFirst(pf).getOrElse("")
-
-    TreFileNotication(
-      fileName = sdes.fileName,
-      fileSize = sdes.fileSize,
-      retentionDays = getValue { case FileNotificationMetadata.RetentionDaysMetadataItem(v: String) => v }.toIntOption.getOrElse(0),
-      fileType = FileType.valueOf(
-        getValue { case FileNotificationMetadata.FileTypeMetadataItem(v: String) => v }
-      ),
-      mDTPReportXCorrelationID = getValue { case FileNotificationMetadata.MDTPReportXCorrelationIDMetadataItem(v: String) => v },
-      mDTPReportRequestID = getValue { case FileNotificationMetadata.MDTPReportRequestIDMetadataItem(v: String) => v },
-      mDTPReportTypeName = ReportTypeName.valueOf(
-        getValue { case FileNotificationMetadata.MDTPReportTypeNameMetadataItem(v: String) => v }
-      ),
-      reportFilesParts = getValue { case FileNotificationMetadata.ReportFilesPartsMetadataItem(v: String) => v }
     )
   }
 }
