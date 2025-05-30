@@ -37,7 +37,7 @@ class AvailableReportControllerSpec extends PlaySpec with MockitoSugar {
 
   "getAvailableReports" should {
     "return Ok with reports when EORI is present" in {
-      when(mockService.getAvailableReports(any[String]))
+      when(mockService.getAvailableReports(any[String])(any()))
         .thenReturn(
           Future.successful(
             AvailableReportResponse(
