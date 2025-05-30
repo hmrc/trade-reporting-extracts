@@ -21,15 +21,19 @@ import play.api.mvc.*
 import uk.gov.hmrc.tradereportingextracts.config.AppConfig
 import uk.gov.hmrc.tradereportingextracts.models.sdes.FileNotification
 import uk.gov.hmrc.tradereportingextracts.models.sdes.FileNotificationHeaders.*
+import uk.gov.hmrc.tradereportingextracts.models.FileNotification as TreFileNotication
 
 import javax.inject.{Inject, Singleton}
-import scala.concurrent.Future
-
+import scala.concurrent.{ExecutionContext, Future}
+import uk.gov.hmrc.tradereportingextracts.models.{FileType, ReportTypeName}
+import uk.gov.hmrc.tradereportingextracts.models.sdes.FileNotificationMetadata
+import uk.gov.hmrc.tradereportingextracts.services.ReportRequestService
 @Singleton
 class FileNotificationController @Inject() (
   cc: ControllerComponents,
-  appConfig: AppConfig
-) extends AbstractController(cc) {
+  appConfig: AppConfig,
+  reportRequestService: ReportRequestService
+)(implicit ec: ExecutionContext) extends AbstractController(cc) {
 
   def fileNotification(): Action[AnyContent] = Action.async { request =>
     def missingHeaders: Seq[String] =
@@ -47,7 +51,27 @@ class FileNotificationController @Inject() (
         Future.successful(BadRequest("Expected application/json request body"))
       case (_, _, Some(json))                  =>
         json.validate[FileNotification] match {
-          case JsSuccess(_, _) => Future.successful(Created)
+          case JsSuccess(fileNotification, _) => val maybeReportRequestId = fileNotification.metadata.collectFirst {
+            case FileNotificationMetadata.MDTPReportRequestIDMetadataItem(value) => value
+          }
+            maybeReportRequestId match {
+              case Some(reportRequestId) =>
+                reportRequestService.get(reportRequestId).flatMap {
+                  case Some(reportRequest) =>
+                    val updatedFileNotifications = reportRequest.fileNotifications match {
+                      case Some(existing) => Some(existing :+ convertToTreFileNotification(fileNotification))
+                      case None => Some(Seq(convertToTreFileNotification(fileNotification)))
+                    }
+                    val updatedReportRequest = reportRequest.copy(fileNotifications = updatedFileNotifications)
+                    reportRequestService.update(updatedReportRequest).map { _ =>
+                      Created
+                    }
+                  case None =>
+                    Future.successful(NotFound( s"ReportRequest not found for reportRequestId: $reportRequestId"))
+                }
+              case None =>
+                Future.successful(BadRequest("report-requestID not found in FileNotification metadata"))
+            }
           case JsError(errors) =>
             val errorMessage = errors
               .map { case (path, validationErrors) =>
@@ -64,6 +88,26 @@ class FileNotificationController @Inject() (
       MethodNotAllowed(
         s"Method ${request.method} not allowed. Only POST is allowed for this endpoint."
       )
+    )
+  }
+
+  private def convertToTreFileNotification(sdes: FileNotification): TreFileNotication = {
+    def getValue[A <: FileNotificationMetadata](pf: PartialFunction[FileNotificationMetadata, String]): String =
+      sdes.metadata.collectFirst(pf).getOrElse("")
+
+    TreFileNotication(
+      fileName = sdes.fileName,
+      fileSize = sdes.fileSize,
+      retentionDays = getValue { case FileNotificationMetadata.RetentionDaysMetadataItem(v: String) => v }.toIntOption.getOrElse(0),
+      fileType = FileType.valueOf(
+        getValue { case FileNotificationMetadata.FileTypeMetadataItem(v: String) => v }
+      ),
+      mDTPReportXCorrelationID = getValue { case FileNotificationMetadata.MDTPReportXCorrelationIDMetadataItem(v: String) => v },
+      mDTPReportRequestID = getValue { case FileNotificationMetadata.MDTPReportRequestIDMetadataItem(v: String) => v },
+      mDTPReportTypeName = ReportTypeName.valueOf(
+        getValue { case FileNotificationMetadata.MDTPReportTypeNameMetadataItem(v: String) => v }
+      ),
+      reportFilesParts = getValue { case FileNotificationMetadata.ReportFilesPartsMetadataItem(v: String) => v }
     )
   }
 }
