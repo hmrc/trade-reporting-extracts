@@ -16,9 +16,11 @@
 
 package uk.gov.hmrc.tradereportingextracts.services
 
+import play.api.mvc.Headers
 import uk.gov.hmrc.tradereportingextracts.connectors.CustomsDataStoreConnector
-import uk.gov.hmrc.tradereportingextracts.models.ReportRequest
-import uk.gov.hmrc.tradereportingextracts.models.{GetReportRequestsResponse, ThirdPartyReport, UserReport}
+import uk.gov.hmrc.tradereportingextracts.models.eis.EisReportStatusHeaders.XCorrelationID
+import uk.gov.hmrc.tradereportingextracts.models.eis.EisReportStatusRequest
+import uk.gov.hmrc.tradereportingextracts.models.{GetReportRequestsResponse, ReportRequest, ThirdPartyReport, UserReport}
 import uk.gov.hmrc.tradereportingextracts.repositories.ReportRequestRepository
 
 import javax.inject.{Inject, Singleton}
@@ -92,3 +94,18 @@ class ReportRequestService @Inject() (
 
   def countAvailableReports(eori: String)(using ec: ExecutionContext): Future[Long] =
     reportRequestRepository.countAvailableReports(eori)
+
+  def processReportStatus(headers: Headers, eisReportStatusRequest: EisReportStatusRequest)(using
+    ec: ExecutionContext
+  ): Unit = {
+    val correlationId = headers.get(XCorrelationID.toString).getOrElse("unknown-correlation-id")
+    val reportRequest = reportRequestRepository.findByCorrelationId(correlationId)
+    reportRequest.map {
+      case Some(req) =>
+        val updatedNotifications = req.notifications :+ eisReportStatusRequest
+        val updatedReportRequest = req.copy(notifications = updatedNotifications)
+        reportRequestRepository.update(updatedReportRequest)
+      case None      =>
+    }
+
+  }

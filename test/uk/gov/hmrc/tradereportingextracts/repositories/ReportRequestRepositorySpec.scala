@@ -23,6 +23,7 @@ import org.scalatestplus.mockito.MockitoSugar
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import uk.gov.hmrc.mongo.test.CleanMongoCollectionSupport
 import uk.gov.hmrc.tradereportingextracts.config.AppConfig
+import uk.gov.hmrc.tradereportingextracts.models.eis.EisReportStatusRequest
 import uk.gov.hmrc.tradereportingextracts.models.{Component, EoriRole, FileNotification, FileType, Notification, ReportRequest, ReportTypeName, StatusCode, StatusType}
 
 import java.time.Instant
@@ -48,12 +49,12 @@ class ReportRequestRepositorySpec
     reportEnd = Instant.parse("2023-12-31T23:59:59Z"),
     createDate = Instant.parse("2023-01-01T10:00:00Z"),
     notifications = Seq(
-      Notification(
-        component = Component.CDAP,
-        statusType = StatusType.INFORMATION,
-        statusCode = StatusCode.FILESENT,
+      EisReportStatusRequest(
+        applicationComponent = EisReportStatusRequest.ApplicationComponent.CDAP,
+        statusCode = StatusCode.FILESENT.toString,
         statusMessage = "Message1",
-        statusTimestamp = Instant.parse("2023-01-01T10:00:00Z")
+        statusTimestamp = "2023-01-01T10:00:00Z",
+        statusType = EisReportStatusRequest.StatusType.INFORMATION
       )
     ),
     fileNotifications = Some(

@@ -17,7 +17,9 @@
 package uk.gov.hmrc.tradereportingextracts.models
 
 import play.api.libs.json.{Format, Json}
-import uk.gov.hmrc.mongo.play.json.formats.MongoJavatimeFormats.Implicits._
+import uk.gov.hmrc.mongo.play.json.formats.MongoJavatimeFormats.Implicits.*
+import uk.gov.hmrc.tradereportingextracts.models.eis.EisReportStatusRequest
+
 import java.time.Instant
 
 case class ReportRequest(
@@ -32,17 +34,9 @@ case class ReportRequest(
   reportStart: Instant,
   reportEnd: Instant,
   createDate: Instant,
-  notifications: Seq[Notification],
+  notifications: Seq[EisReportStatusRequest],
   fileNotifications: Option[Seq[FileNotification]],
   linkAvailableTime: Option[Instant]
-)
-
-case class Notification(
-  component: Component,
-  statusType: StatusType,
-  statusCode: StatusCode,
-  statusMessage: String,
-  statusTimestamp: Instant
 )
 
 case class FileNotification(
@@ -65,5 +59,5 @@ object FileNotification:
   given CanEqual[FileNotification, FileNotification] = CanEqual.derived
 
 object Notification:
-  given format: Format[Notification]         = Json.format[Notification]
-  given CanEqual[Notification, Notification] = CanEqual.derived
+  given format: Format[EisReportStatusRequest]                   = Json.format[EisReportStatusRequest]
+  given CanEqual[EisReportStatusRequest, EisReportStatusRequest] = CanEqual.derived
