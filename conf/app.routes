@@ -12,6 +12,11 @@ GET        /notify-report-available                     uk.gov.hmrc.tradereporti
 POST       /notify-report-available                     uk.gov.hmrc.tradereportingextracts.controllers.FileNotificationController.serverOtherMethods()
 DELETE     /notify-report-available                     uk.gov.hmrc.tradereportingextracts.controllers.FileNotificationController.serverOtherMethods()
 
+PUT        /gbe/notifyreportstatus/v1                   uk.gov.hmrc.tradereportingextracts.controllers.ReportStatusController.notifyReportStatus()
+GET        /gbe/notifyreportstatus/v1                   uk.gov.hmrc.tradereportingextracts.controllers.ReportStatusController.serverOtherMethods()
+POST       /gbe/notifyreportstatus/v1                   uk.gov.hmrc.tradereportingextracts.controllers.ReportStatusController.serverOtherMethods()
+DELETE     /gbe/notifyreportstatus/v1                   uk.gov.hmrc.tradereportingextracts.controllers.ReportStatusController.serverOtherMethods()
+
 GET        /api/available-reports                       uk.gov.hmrc.tradereportingextracts.controllers.AvailableReportController.getAvailableReports()
 GET        /api/available-reports-count                 uk.gov.hmrc.tradereportingextracts.controllers.AvailableReportController.getAvailableReportsCount()
 

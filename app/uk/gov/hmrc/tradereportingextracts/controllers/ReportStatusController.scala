@@ -31,12 +31,12 @@ class ReportStatusController @Inject() (
   appConfig: AppConfig
 ) extends AbstractController(cc) {
 
-  def notifyReportAvailable(): Action[AnyContent] = Action.async { request =>
+  def notifyReportStatus(): Action[AnyContent] = Action.async { request =>
     def missingHeaders: Seq[String] =
       EisReportStatusHeaders.allHeaders.filterNot(header => request.headers.get(header).isDefined)
 
     def isAuthorized: Boolean =
-      request.headers.get(Authorization.toString).contains(appConfig.eisAuthToken)
+      request.headers.get(Authorization.toString).contains(appConfig.eisAPI6AuthToken)
 
     (missingHeaders, isAuthorized, request.body.asJson) match {
       case (headers, _, _) if headers.nonEmpty =>
@@ -57,5 +57,13 @@ class ReportStatusController @Inject() (
             Future.successful(BadRequest(errorMessage))
         }
     }
+  }
+
+  def serverOtherMethods(): Action[AnyContent] = Action.async { request =>
+    Future.successful(
+      MethodNotAllowed(
+        s"Method ${request.method} not allowed. Only PUT is allowed for this endpoint."
+      )
+    )
   }
 }

@@ -52,39 +52,20 @@
     },
     {
       "type": "http",
-      "name": "verified-email",
-      "seq": 3,
+      "name": "eori-update",
+      "seq": 9,
       "request": {
-        "url": "http://localhost:2101/trade-reporting-extracts-stub/eori/verified-email",
-        "method": "GET",
-        "headers": [],
-        "params": [],
-        "body": {
-          "mode": "json",
-          "json": "{\n  \"eori\": \"GB123456789012\"\n}",
-          "formUrlEncoded": [],
-          "multipartForm": []
-        },
-        "script": {},
-        "vars": {},
-        "assertions": [],
-        "tests": "",
-        "auth": {
-          "mode": "none"
-        }
-      }
-    },
-    {
-      "type": "http",
-      "name": "report-request",
-      "seq": 5,
-      "request": {
-        "url": "http://localhost:2101/trade-reporting-extracts-stub/gbe/requesttraderreport/v1",
+        "url": "http://localhost:2100/trade-reporting-extracts/gbe/updateeori/v1",
         "method": "PUT",
         "headers": [
           {
             "name": "authorization",
-            "value": "EisAuthToken",
+            "value": "EtmpAuthToken",
+            "enabled": true
+          },
+          {
+            "name": "content-type",
+            "value": "application/json",
             "enabled": true
           },
           {
@@ -94,19 +75,19 @@
           },
           {
             "name": "x-correlation-id",
-            "value": "ada-Dd--adadasd-aDSD",
+            "value": "asfd-asdf-asdf",
             "enabled": true
           },
           {
             "name": "x-forwarded-host",
-            "value": "MDTP",
+            "value": "ETMP",
             "enabled": true
           }
         ],
         "params": [],
         "body": {
           "mode": "json",
-          "json": "{\n  \"endDate\": \"2025-12-31\",\n  \"eori\": [\"GB123456789000\", \"GB987654321000\"],\n  \"eoriRole\": \"TRADER\",\n  \"reportTypeName\": \"IMPORTS-ITEM-REPORT\",\n  \"requestID\": \"RE00000022\",\n  \"requestTimestamp\": \"2025-01-01T12:00:00Z\",\n  \"requesterEori\": \"GB123456789000\",\n  \"startDate\": \"2025-01-01\"\n}",
+          "json": "{\n  \"newEori\": \"GB987654321098\",\n  \"oldEori\": \"GB123456789012\"\n}",
           "formUrlEncoded": [],
           "multipartForm": []
         },
@@ -176,30 +157,6 @@
     },
     {
       "type": "http",
-      "name": "user-information",
-      "seq": 4,
-      "request": {
-        "url": "http://localhost:2100/trade-reporting-extracts/eori/user-information",
-        "method": "GET",
-        "headers": [],
-        "params": [],
-        "body": {
-          "mode": "json",
-          "json": "{\n  \"eori\": \"GB123456789012\"\n}",
-          "formUrlEncoded": [],
-          "multipartForm": []
-        },
-        "script": {},
-        "vars": {},
-        "assertions": [],
-        "tests": "",
-        "auth": {
-          "mode": "none"
-        }
-      }
-    },
-    {
-      "type": "http",
       "name": "files-list",
       "seq": 8,
       "request": {
@@ -234,20 +191,108 @@
     },
     {
       "type": "http",
-      "name": "eori-update",
-      "seq": 9,
+      "name": "report-request",
+      "seq": 5,
       "request": {
-        "url": "http://localhost:2100/trade-reporting-extracts/gbe/updateeori/v1",
+        "url": "http://localhost:2101/trade-reporting-extracts-stub/gbe/requesttraderreport/v1",
         "method": "PUT",
         "headers": [
           {
             "name": "authorization",
-            "value": "EtmpAuthToken",
+            "value": "EisAuthToken",
             "enabled": true
           },
           {
-            "name": "content-type",
-            "value": "application/json",
+            "name": "date",
+            "value": "Mon, 02 Oct 2023 14:30:00 GMT",
+            "enabled": true
+          },
+          {
+            "name": "x-correlation-id",
+            "value": "ada-Dd--adadasd-aDSD",
+            "enabled": true
+          },
+          {
+            "name": "x-forwarded-host",
+            "value": "MDTP",
+            "enabled": true
+          }
+        ],
+        "params": [],
+        "body": {
+          "mode": "json",
+          "json": "{\n  \"endDate\": \"2025-12-31\",\n  \"eori\": [\"GB123456789000\", \"GB987654321000\"],\n  \"eoriRole\": \"TRADER\",\n  \"reportTypeName\": \"IMPORTS-ITEM-REPORT\",\n  \"requestID\": \"RE00000022\",\n  \"requestTimestamp\": \"2025-01-01T12:00:00Z\",\n  \"requesterEori\": \"GB123456789000\",\n  \"startDate\": \"2025-01-01\"\n}",
+          "formUrlEncoded": [],
+          "multipartForm": []
+        },
+        "script": {},
+        "vars": {},
+        "assertions": [],
+        "tests": "",
+        "auth": {
+          "mode": "none"
+        }
+      }
+    },
+    {
+      "type": "http",
+      "name": "user-information",
+      "seq": 4,
+      "request": {
+        "url": "http://localhost:2100/trade-reporting-extracts/eori/user-information",
+        "method": "GET",
+        "headers": [],
+        "params": [],
+        "body": {
+          "mode": "json",
+          "json": "{\n  \"eori\": \"GB123456789012\"\n}",
+          "formUrlEncoded": [],
+          "multipartForm": []
+        },
+        "script": {},
+        "vars": {},
+        "assertions": [],
+        "tests": "",
+        "auth": {
+          "mode": "none"
+        }
+      }
+    },
+    {
+      "type": "http",
+      "name": "verified-email",
+      "seq": 3,
+      "request": {
+        "url": "http://localhost:2101/trade-reporting-extracts-stub/eori/verified-email",
+        "method": "GET",
+        "headers": [],
+        "params": [],
+        "body": {
+          "mode": "json",
+          "json": "{\n  \"eori\": \"GB123456789012\"\n}",
+          "formUrlEncoded": [],
+          "multipartForm": []
+        },
+        "script": {},
+        "vars": {},
+        "assertions": [],
+        "tests": "",
+        "auth": {
+          "mode": "none"
+        }
+      }
+    },
+    {
+      "type": "http",
+      "name": "status-notification",
+      "seq": 10,
+      "request": {
+        "url": "http://localhost:2100/trade-reporting-extracts/gbe/notifyreportstatus/v1",
+        "method": "PUT",
+        "headers": [
+          {
+            "name": "authorization",
+            "value": "EisAuthToken",
             "enabled": true
           },
           {
@@ -262,14 +307,14 @@
           },
           {
             "name": "x-forwarded-host",
-            "value": "ETMP",
+            "value": "CDAP",
             "enabled": true
           }
         ],
         "params": [],
         "body": {
           "mode": "json",
-          "json": "{\n  \"newEori\": \"GB987654321098\",\n  \"oldEori\": \"GB123456789012\"\n}",
+          "json": "{\n  \"applicationComponent\": \"EIS\",\n  \"statusCode\": \"200\",\n  \"statusMessage\": \"Report processed successfully\",\n  \"statusTimestamp\": \"2024-06-20T12:34:56Z\",\n  \"statusType\": \"INFORMATION\"\n}",
           "formUrlEncoded": [],
           "multipartForm": []
         },
