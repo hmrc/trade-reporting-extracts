@@ -21,15 +21,18 @@ import play.api.mvc.*
 import uk.gov.hmrc.tradereportingextracts.config.AppConfig
 import uk.gov.hmrc.tradereportingextracts.models.eis.EisReportStatusHeaders.*
 import uk.gov.hmrc.tradereportingextracts.models.eis.{EisReportStatusHeaders, EisReportStatusRequest}
+import uk.gov.hmrc.tradereportingextracts.services.ReportRequestService
 
 import javax.inject.{Inject, Singleton}
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
 class ReportStatusController @Inject() (
+  reportRequestService: ReportRequestService,
   cc: ControllerComponents,
   appConfig: AppConfig
-) extends AbstractController(cc) {
+)(using ec: ExecutionContext)
+    extends AbstractController(cc) {
 
   def notifyReportStatus(): Action[AnyContent] = Action.async { request =>
     def missingHeaders: Seq[String] =
@@ -47,7 +50,9 @@ class ReportStatusController @Inject() (
         Future.successful(BadRequest("Expected application/json request body"))
       case (_, _, Some(json))                  =>
         json.validate[EisReportStatusRequest] match {
-          case JsSuccess(_, _) => Future.successful(Created)
+          case JsSuccess(_, _) =>
+            reportRequestService.processReportStatus(request.headers, json.as[EisReportStatusRequest])
+            Future.successful(Created)
           case JsError(errors) =>
             val errorMessage = errors
               .map { case (path, validationErrors) =>

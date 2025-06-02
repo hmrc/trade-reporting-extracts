@@ -19,6 +19,7 @@ package uk.gov.hmrc.tradereportingextracts.models
 import org.scalatest.wordspec.AnyWordSpec
 import org.scalatest.matchers.must.Matchers
 import java.time.Instant
+import uk.gov.hmrc.tradereportingextracts.models.eis.EisReportStatusRequest
 
 class ReportRequestSpec extends AnyWordSpec with Matchers {
 
@@ -35,12 +36,12 @@ class ReportRequestSpec extends AnyWordSpec with Matchers {
     reportEnd = Instant.parse("2023-12-31T23:59:59Z"),
     createDate = Instant.parse("2023-01-01T10:00:00Z"),
     notifications = Seq(
-      Notification(
-        component = Component.CDAP,
-        statusType = StatusType.INFORMATION,
-        statusCode = StatusCode.FILESENT,
-        statusMessage = "Message1",
-        statusTimestamp = Instant.parse("2023-01-01T10:00:00Z")
+      EisReportStatusRequest(
+        applicationComponent = EisReportStatusRequest.ApplicationComponent.CDAP,
+        statusCode = StatusCode.FILESENT.toString,
+        statusMessage = "Report generated successfully",
+        statusTimestamp = "2023-01-01T10:00:00Z",
+        statusType = EisReportStatusRequest.StatusType.INFORMATION
       )
     ),
     fileNotifications = Some(

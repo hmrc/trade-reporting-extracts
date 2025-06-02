@@ -31,9 +31,10 @@ object EisReportStatusRequest {
     Json.format[EisReportStatusRequest]
 
   object ApplicationComponent extends Enumeration {
-    val CDAP = Value("CDAP")
-    val EIS  = Value("EIS")
-    val SDES = Value("SDES")
+    val TRE: Value  = Value("TRE")
+    val CDAP: Value = Value("CDAP")
+    val EIS: Value  = Value("EIS")
+    val SDES: Value = Value("SDES")
 
     type ApplicationComponent = Value
     implicit lazy val ApplicationComponentJsonFormat: Format[Value] =
@@ -41,8 +42,8 @@ object EisReportStatusRequest {
   }
 
   object StatusType extends Enumeration {
-    val INFORMATION = Value("INFORMATION")
-    val ERROR       = Value("ERROR")
+    val INFORMATION: Value = Value("INFORMATION")
+    val ERROR: Value       = Value("ERROR")
 
     type StatusType = Value
     implicit lazy val StatusTypeJsonFormat: Format[Value] =

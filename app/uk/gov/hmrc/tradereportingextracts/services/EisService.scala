@@ -17,16 +17,13 @@
 package uk.gov.hmrc.tradereportingextracts.services
 
 import org.apache.pekko.Done
-import play.api.http.Status.{ACCEPTED, BAD_REQUEST, INTERNAL_SERVER_ERROR, NO_CONTENT, OK}
+import play.api.http.Status.{ACCEPTED, INTERNAL_SERVER_ERROR, NO_CONTENT, OK}
 import uk.gov.hmrc.http.{HeaderCarrier, UpstreamErrorResponse}
 import uk.gov.hmrc.tradereportingextracts.config.AppConfig
 import uk.gov.hmrc.tradereportingextracts.connectors.EisConnector
-import uk.gov.hmrc.tradereportingextracts.models.{Notification, ReportRequest}
-import uk.gov.hmrc.tradereportingextracts.models.eis.EisReportRequest
-import uk.gov.hmrc.tradereportingextracts.models.Component.*
+import uk.gov.hmrc.tradereportingextracts.models.ReportRequest
+import uk.gov.hmrc.tradereportingextracts.models.eis.{EisReportRequest, EisReportStatusRequest}
 import uk.gov.hmrc.tradereportingextracts.models.StatusCode.*
-import uk.gov.hmrc.tradereportingextracts.models.StatusType.*
-
 import java.time.{Clock, LocalDate}
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
@@ -52,7 +49,15 @@ class EisService @Inject() (connector: EisConnector, reportRequestService: Repor
               val updatedRequest: ReportRequest =
                 reportRequest
                   .copy(notifications =
-                    Seq(Notification(TRE, INFORMATION, INITIATED, "Report sent to EIS successfully", clock.instant()))
+                    Seq(
+                      EisReportStatusRequest(
+                        applicationComponent = EisReportStatusRequest.ApplicationComponent.TRE,
+                        statusCode = INITIATED.toString,
+                        statusMessage = "Report sent to EIS successfully",
+                        statusTimestamp = LocalDate.now(clock).toString,
+                        statusType = EisReportStatusRequest.StatusType.INFORMATION
+                      )
+                    )
                   )
               reportRequestService.update(updatedRequest).flatMap { _ =>
                 Future.successful(Done)
@@ -63,7 +68,15 @@ class EisService @Inject() (connector: EisConnector, reportRequestService: Repor
               val updatedRequest: ReportRequest =
                 reportRequest
                   .copy(notifications =
-                    Seq(Notification(TRE, ERROR, FAILED, "Report failed to send to EIS", clock.instant()))
+                    Seq(
+                      EisReportStatusRequest(
+                        applicationComponent = EisReportStatusRequest.ApplicationComponent.TRE,
+                        statusCode = FAILED.toString,
+                        statusMessage = "Report failed to send to EIS",
+                        statusTimestamp = LocalDate.now(clock).toString,
+                        statusType = EisReportStatusRequest.StatusType.ERROR
+                      )
+                    )
                   )
               reportRequestService.update(updatedRequest).flatMap { _ =>
                 Future.failed(UpstreamErrorResponse(response.body, status))
