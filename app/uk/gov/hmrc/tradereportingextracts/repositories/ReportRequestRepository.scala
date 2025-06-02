@@ -50,6 +50,11 @@ class ReportRequestRepository @Inject() (appConfig: AppConfig, mongoComponent: M
       .find(Filters.equal("reportRequestId", reportRequestId))
       .headOption()
 
+  def findByCorrelationId(correlationId: String)(implicit ec: ExecutionContext): Future[Option[ReportRequest]] =
+    collection
+      .find(Filters.equal("correlationId", correlationId))
+      .headOption()
+
   def update(reportRequest: ReportRequest)(implicit ec: ExecutionContext): Future[Boolean] =
     collection
       .replaceOne(Filters.equal("reportRequestId", reportRequest.reportRequestId), reportRequest)

@@ -33,6 +33,7 @@ class AppConfig @Inject() (val config: Configuration, servicesConfig: ServicesCo
   lazy val sdesAuthToken: String       = config.get[String]("sdes.auth-token")
   lazy val sdesInformationType: String = config.get[String]("sdes.information-type")
   lazy val treXClientId: String        = config.get[String]("sdes.x-client-id")
+  lazy val eisAPI6AuthToken: String = config.get[String]("eis.auth-token")
 
   lazy val eis: String  = servicesConfig.baseUrl("eis") + config.get[String]("microservice.services.eis.context")
   lazy val sdes: String = servicesConfig.baseUrl("sdes") + config.get[String]("microservice.services.sdes.context")

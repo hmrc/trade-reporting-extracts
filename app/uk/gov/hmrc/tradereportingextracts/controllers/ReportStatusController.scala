@@ -21,22 +21,25 @@ import play.api.mvc.*
 import uk.gov.hmrc.tradereportingextracts.config.AppConfig
 import uk.gov.hmrc.tradereportingextracts.models.eis.EisReportStatusHeaders.*
 import uk.gov.hmrc.tradereportingextracts.models.eis.{EisReportStatusHeaders, EisReportStatusRequest}
+import uk.gov.hmrc.tradereportingextracts.services.ReportRequestService
 
 import javax.inject.{Inject, Singleton}
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
 class ReportStatusController @Inject() (
+  reportRequestService: ReportRequestService,
   cc: ControllerComponents,
   appConfig: AppConfig
-) extends AbstractController(cc) {
+)(using ec: ExecutionContext)
+    extends AbstractController(cc) {
 
-  def notifyReportAvailable(): Action[AnyContent] = Action.async { request =>
+  def notifyReportStatus(): Action[AnyContent] = Action.async { request =>
     def missingHeaders: Seq[String] =
       EisReportStatusHeaders.allHeaders.filterNot(header => request.headers.get(header).isDefined)
 
     def isAuthorized: Boolean =
-      request.headers.get(Authorization.toString).contains(appConfig.eisAuthToken)
+      request.headers.get(Authorization.toString).contains(appConfig.eisAPI6AuthToken)
 
     (missingHeaders, isAuthorized, request.body.asJson) match {
       case (headers, _, _) if headers.nonEmpty =>
@@ -47,7 +50,9 @@ class ReportStatusController @Inject() (
         Future.successful(BadRequest("Expected application/json request body"))
       case (_, _, Some(json))                  =>
         json.validate[EisReportStatusRequest] match {
-          case JsSuccess(_, _) => Future.successful(Created)
+          case JsSuccess(_, _) =>
+            reportRequestService.processReportStatus(request.headers, json.as[EisReportStatusRequest])
+            Future.successful(Created)
           case JsError(errors) =>
             val errorMessage = errors
               .map { case (path, validationErrors) =>
@@ -57,5 +62,13 @@ class ReportStatusController @Inject() (
             Future.successful(BadRequest(errorMessage))
         }
     }
+  }
+
+  def serverOtherMethods(): Action[AnyContent] = Action.async { request =>
+    Future.successful(
+      MethodNotAllowed(
+        s"Method ${request.method} not allowed. Only PUT is allowed for this endpoint."
+      )
+    )
   }
 }

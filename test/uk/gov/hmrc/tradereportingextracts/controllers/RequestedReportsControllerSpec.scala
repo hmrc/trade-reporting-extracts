@@ -21,11 +21,10 @@ import org.scalatest.matchers.must.Matchers.mustBe
 import play.api.http.Status.*
 import play.api.libs.json.{JsValue, Json}
 import play.api.mvc.{Request, Result}
-import play.api.test.Helpers.{POST, contentAsJson, status}
+import play.api.test.Helpers.{GET, contentAsJson, status}
 import play.api.test.{FakeRequest, Helpers}
-import uk.gov.hmrc.tradereportingextracts.models.EoriRole.TRADER
-import uk.gov.hmrc.tradereportingextracts.models.ReportRequest
 import uk.gov.hmrc.tradereportingextracts.models.ReportTypeName.EXPORTS_ITEM_REPORT
+import uk.gov.hmrc.tradereportingextracts.models.{GetReportRequestsResponse, UserReport}
 import uk.gov.hmrc.tradereportingextracts.services.ReportRequestService
 import uk.gov.hmrc.tradereportingextracts.utils.SpecBase
 
@@ -35,47 +34,51 @@ import scala.concurrent.Future
 
 class RequestedReportsControllerSpec extends SpecBase:
 
-  private val mockReportRequestService: ReportRequestService = mock[ReportRequestService]
-  private val controller                                     = new RequestedReportsController(Helpers.stubControllerComponents(), mockReportRequestService)
+  private val mockReportRequestService: ReportRequestService =
+    mock[ReportRequestService]
 
-  private val sampleReport: ReportRequest = ReportRequest(
-    reportRequestId = "REQ123",
-    correlationId = "CORR001",
-    reportName = "Monthly Report",
-    requesterEORI = "GB123456789000",
-    eoriRole = TRADER,
-    reportEORIs = Seq("GB123456789000"),
-    recipientEmails = Seq("user@example.com"),
-    reportTypeName = EXPORTS_ITEM_REPORT,
-    reportStart = Instant.parse("2024-06-01T00:00:00Z"),
-    reportEnd = Instant.parse("2024-06-30T23:59:59Z"),
-    createDate = Instant.parse("2024-07-01T10:00:00Z"),
-    notifications = Seq.empty,
-    fileNotifications = None,
-    linkAvailableTime = Some(Instant.parse("2024-07-01T10:15:00Z"))
+  private val controller =
+    new RequestedReportsController(Helpers.stubControllerComponents(), mockReportRequestService)
+
+  private val expectedResponse = GetReportRequestsResponse(
+    userReports = Some(
+      Seq(
+        UserReport(
+          referenceNumber = "REQ123",
+          reportName = "Monthly Report",
+          requestedDate = Instant.parse("2024-07-01T10:00:00Z"),
+          reportType = EXPORTS_ITEM_REPORT
+        )
+      )
+    ),
+    thirdPartyReports = None
   )
 
   "POST /requested-reports" should {
 
     "return 200 OK with reports when EORI is provided" in {
-      when(mockReportRequestService.getByRequesterEORI("GB123456789000"))
-        .thenReturn(Future.successful(Seq(sampleReport)))
+      val eori = "GB123456789000"
 
-      val request: Request[JsValue] = FakeRequest(POST, "/requested-reports")
-        .withBody(Json.obj("eori" -> "GB123456789000"))
+      when(mockReportRequestService.getReportRequestsForUser(eori))
+        .thenReturn(Future.successful(expectedResponse))
+
+      val request: Request[JsValue] = FakeRequest(GET, "/requested-reports")
+        .withBody(Json.obj("eori" -> eori))
 
       val result: Future[Result] = controller.getRequestedReports()(request)
 
       status(result) mustBe OK
-      contentAsJson(result) mustBe Json.toJson(Seq(sampleReport))
+      contentAsJson(result) mustBe Json.toJson(expectedResponse)
     }
 
     "return 204 NoContent when no reports are found for the given EORI" in {
-      when(mockReportRequestService.getByRequesterEORI("GB000000000000"))
-        .thenReturn(Future.successful(Seq.empty))
+      val eori = "GB000000000000"
 
-      val request: Request[JsValue] = FakeRequest(POST, "/requested-reports")
-        .withBody(Json.obj("eori" -> "GB000000000000"))
+      when(mockReportRequestService.getReportRequestsForUser(eori))
+        .thenReturn(Future.successful(GetReportRequestsResponse(None, None)))
+
+      val request: Request[JsValue] = FakeRequest(GET, "/requested-reports")
+        .withBody(Json.obj("eori" -> eori))
 
       val result: Future[Result] = controller.getRequestedReports()(request)
 
@@ -83,12 +86,11 @@ class RequestedReportsControllerSpec extends SpecBase:
     }
 
     "return 400 BadRequest when EORI is missing" in {
-      val request: Request[JsValue] = FakeRequest(POST, "/requested-reports")
+      val request: Request[JsValue] = FakeRequest(GET, "/requested-reports")
         .withBody(Json.obj())
 
       val result: Future[Result] = controller.getRequestedReports()(request)
 
       status(result) mustBe BAD_REQUEST
     }
-
   }

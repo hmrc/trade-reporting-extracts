@@ -4,13 +4,18 @@ GET        /eori/setup-user                             uk.gov.hmrc.tradereporti
 
 GET        /user/:eori/authorised-eoris                 uk.gov.hmrc.tradereportingextracts.controllers.UserController.getAuthorisedEoris(eori: String)
 
-POST       /requested-reports                           uk.gov.hmrc.tradereportingextracts.controllers.RequestedReportsController.getRequestedReports()
+GET        /requested-reports                           uk.gov.hmrc.tradereportingextracts.controllers.RequestedReportsController.getRequestedReports()
 POST       /create-report-request                      uk.gov.hmrc.tradereportingextracts.controllers.ReportRequestController.createReportRequest
 
 PUT        /notify-report-available                     uk.gov.hmrc.tradereportingextracts.controllers.FileNotificationController.fileNotification()
 GET        /notify-report-available                     uk.gov.hmrc.tradereportingextracts.controllers.FileNotificationController.serverOtherMethods()
 POST       /notify-report-available                     uk.gov.hmrc.tradereportingextracts.controllers.FileNotificationController.serverOtherMethods()
 DELETE     /notify-report-available                     uk.gov.hmrc.tradereportingextracts.controllers.FileNotificationController.serverOtherMethods()
+
+PUT        /gbe/notifyreportstatus/v1                   uk.gov.hmrc.tradereportingextracts.controllers.ReportStatusController.notifyReportStatus()
+GET        /gbe/notifyreportstatus/v1                   uk.gov.hmrc.tradereportingextracts.controllers.ReportStatusController.serverOtherMethods()
+POST       /gbe/notifyreportstatus/v1                   uk.gov.hmrc.tradereportingextracts.controllers.ReportStatusController.serverOtherMethods()
+DELETE     /gbe/notifyreportstatus/v1                   uk.gov.hmrc.tradereportingextracts.controllers.ReportStatusController.serverOtherMethods()
 
 GET        /api/available-reports                       uk.gov.hmrc.tradereportingextracts.controllers.AvailableReportController.getAvailableReports()
 GET        /api/available-reports-count                 uk.gov.hmrc.tradereportingextracts.controllers.AvailableReportController.getAvailableReportsCount()
