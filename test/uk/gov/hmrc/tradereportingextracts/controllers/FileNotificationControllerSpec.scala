@@ -20,6 +20,7 @@ import play.api.Application
 import play.api.libs.json.Json
 import play.api.test.Helpers.*
 import play.api.test.{FakeRequest, Helpers}
+import uk.gov.hmrc.tradereportingextracts.models.FileNotification
 import uk.gov.hmrc.tradereportingextracts.models.sdes.*
 import uk.gov.hmrc.tradereportingextracts.utils.SpecBase
 
@@ -52,7 +53,7 @@ class FileNotificationControllerSpec extends SpecBase {
   }
   "FileNotificationController" should {
     "return 201 Created" in new Setup {
-      val fileNotification = FileNotification(
+      val fileNotification = FileNotificationResponse(
         eori = "GB123456789012",
         fileName = "testFileName",
         fileSize = 12345,

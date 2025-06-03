@@ -18,14 +18,14 @@ package uk.gov.hmrc.tradereportingextracts.models.sdes
 
 import play.api.libs.json.*
 
-case class FileNotification(
+case class FileNotificationResponse(
   eori: String,
   fileName: String,
-  fileSize: Int,
+  fileSize: Long,
   metadata: List[FileNotificationMetadata]
 )
 
-object FileNotification {
-  implicit lazy val reportAvailablePayloadJsonFormat: Format[FileNotification] =
-    Json.format[FileNotification]
+object FileNotificationResponse {
+  implicit lazy val reportAvailablePayloadJsonFormat: Format[FileNotificationResponse] =
+    Json.format[FileNotificationResponse]
 }
