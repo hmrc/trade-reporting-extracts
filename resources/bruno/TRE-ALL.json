@@ -142,7 +142,7 @@
         "params": [],
         "body": {
           "mode": "json",
-          "json": "{\n  \"eori\": \"GB123456789000\",\n  \"fileName\": \"report-2024-06-01.csv\",\n  \"fileSize\": 1024,\n  \"metadata\": [\n    { \"key\": \"RETENTION_DAYS\", \"value\": \"30\" },\n    { \"key\": \"FILE_TYPE\", \"value\": \"CSV\" },\n    { \"key\": \"EORI\", \"value\": \"GB123456789000\" },\n    { \"key\": \"MDTP-report-x-correlationID\", \"value\": \"corr-id-123\" },\n    { \"key\": \"MDTP-report-requestID\", \"value\": \"req-id-456\" },\n    { \"key\": \"MDTP-reportTypeName\", \"value\": \"monthly-report\" },\n    { \"key\": \"Report-files-parts\", \"value\": \"part-1\" }\n  ]\n}",
+          "json": "{\n  \"eori\": \"GB123456789012\",\n  \"fileName\": \"report-2024-06-01.csv\",\n  \"fileSize\": 1024,\n  \"metadata\": [\n    { \"key\": \"RETENTION_DAYS\", \"value\": \"30\" },\n    { \"key\": \"FILE_TYPE\", \"value\": \"CSV\" },\n    { \"key\": \"EORI\", \"value\": \"GB123456789012\" },\n    { \"key\": \"MDTP-report-x-correlationID\", \"value\": \"corr-id-123\" },\n    { \"key\": \"MDTP-report-requestID\", \"value\": \"RE40704118\" },\n    { \"key\": \"MDTP-reportTypeName\", \"value\": \"IMPORTS_ITEM_REPORT\" },\n    { \"key\": \"Report-files-parts\", \"value\": \"part-1\" }\n  ]\n}",
           "formUrlEncoded": [],
           "multipartForm": []
         },
