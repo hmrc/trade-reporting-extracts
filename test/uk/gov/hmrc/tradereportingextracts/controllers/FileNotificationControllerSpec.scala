@@ -22,6 +22,7 @@ import play.api.{Application, inject}
 import play.api.libs.json.{JsObject, Json}
 import play.api.test.Helpers.*
 import play.api.test.{FakeRequest, Helpers}
+import uk.gov.hmrc.tradereportingextracts.models.FileNotification
 import uk.gov.hmrc.tradereportingextracts.models.sdes.*
 import uk.gov.hmrc.tradereportingextracts.services.FileNotificationService
 import uk.gov.hmrc.tradereportingextracts.utils.SpecBase
@@ -68,7 +69,7 @@ class FileNotificationControllerSpec extends SpecBase with MockitoSugar {
     }
 
     "return 400 BadRequest when report-requestID is missing in metadata" in new Setup {
-      val fileNotification = FileNotification(
+      val fileNotification = FileNotificationResponse(
         eori = "GB123456789012",
         fileName = "testFileName",
         fileSize = 12345,
@@ -98,7 +99,7 @@ class FileNotificationControllerSpec extends SpecBase with MockitoSugar {
     }
 
     "return 404 NotFound when reportRequest is not found" in new Setup {
-      val fileNotification = FileNotification(
+      val fileNotification = FileNotificationResponse(
         eori = "GB123456789012",
         fileName = "testFileName",
         fileSize = 12345,
@@ -143,7 +144,7 @@ class FileNotificationControllerSpec extends SpecBase with MockitoSugar {
     }
 
     "return 201 Created" in new Setup {
-      val fileNotification = FileNotification(
+      val fileNotification = FileNotificationResponse(
         eori = "GB123456789012",
         fileName = "testFileName",
         fileSize = 12345,

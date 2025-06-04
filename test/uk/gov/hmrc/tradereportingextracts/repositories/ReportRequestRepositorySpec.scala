@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.tradereportingextracts.repositories
 
-import org.scalatest.matchers.must.Matchers.{must, mustEqual}
+import org.scalatest.matchers.must.Matchers.{must, mustBe, mustEqual}
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 import org.scalatestplus.mockito.MockitoSugar
@@ -126,5 +126,179 @@ class ReportRequestRepositorySpec
       insertResult mustEqual true
       fetchedBeforeDeleteRecord.get mustEqual reportRequest
       deletedRecord mustEqual true
+    }
+  }
+
+  "getAvailableReports" should {
+    "return only ReportRequests where all parts are present" in {
+      val reqId          = "REQ123"
+      val reportRequests = Seq(
+        // Complete set: 1Of3, 2Of3, 3Of3
+        ReportRequest(
+          reportRequestId = reqId,
+          correlationId = "C1",
+          reportName = "Report1",
+          requesterEORI = "EORI-1",
+          eoriRole = EoriRole.TRADER,
+          reportEORIs = Array("EORI-1"),
+          recipientEmails = Array("a@b.com"),
+          reportTypeName = ReportTypeName.IMPORTS_ITEM_REPORT,
+          reportStart = Instant.now,
+          reportEnd = Instant.now,
+          createDate = Instant.now,
+          notifications = Seq.empty,
+          fileNotifications = Some(
+            Seq(
+              FileNotification("f1", 1, 1, FileType.CSV, "x", "y", ReportTypeName.IMPORTS_ITEM_REPORT, "1Of3"),
+              FileNotification("f2", 1, 1, FileType.CSV, "x", "y", ReportTypeName.IMPORTS_ITEM_REPORT, "2Of3"),
+              FileNotification("f3", 1, 1, FileType.CSV, "x", "y", ReportTypeName.IMPORTS_ITEM_REPORT, "3Of3")
+            )
+          ),
+          linkAvailableTime = Some(Instant.now)
+        ),
+        // Incomplete set: only 1Of2
+        ReportRequest(
+          reportRequestId = "REQ124",
+          correlationId = "C2",
+          reportName = "Report2",
+          requesterEORI = "EORI-1",
+          eoriRole = EoriRole.TRADER,
+          reportEORIs = Array("EORI-1"),
+          recipientEmails = Array("a@b.com"),
+          reportTypeName = ReportTypeName.IMPORTS_ITEM_REPORT,
+          reportStart = Instant.now,
+          reportEnd = Instant.now,
+          createDate = Instant.now,
+          notifications = Seq.empty,
+          fileNotifications = Some(
+            Seq(
+              FileNotification("f4", 1, 1, FileType.CSV, "x", "y", ReportTypeName.IMPORTS_ITEM_REPORT, "1Of2")
+            )
+          ),
+          linkAvailableTime = Some(Instant.now)
+        )
+      )
+
+      reportRequests.foreach(r => reportRequestRepository.insert(r).futureValue)
+
+      val result = reportRequestRepository.getAvailableReports("EORI-1").futureValue
+      result.map(_.reportRequestId) must contain only reqId
+    }
+
+    "not return ReportRequest if not all parts are present" in {
+      val reqId             = "REQ125"
+      val incompleteRequest = ReportRequest(
+        reportRequestId = reqId,
+        correlationId = "C3",
+        reportName = "Report3",
+        requesterEORI = "EORI-2",
+        eoriRole = EoriRole.TRADER,
+        reportEORIs = Array("EORI-2"),
+        recipientEmails = Array("a@b.com"),
+        reportTypeName = ReportTypeName.IMPORTS_ITEM_REPORT,
+        reportStart = Instant.now,
+        reportEnd = Instant.now,
+        createDate = Instant.now,
+        notifications = Seq.empty,
+        fileNotifications = Some(
+          Seq(
+            FileNotification("f5", 1, 1, FileType.CSV, "x", "y", ReportTypeName.IMPORTS_ITEM_REPORT, "1Of2")
+            // Missing 2Of2
+          )
+        ),
+        linkAvailableTime = Some(Instant.now)
+      )
+
+      reportRequestRepository.insert(incompleteRequest).futureValue
+
+      val result = reportRequestRepository.getAvailableReports("EORI-2").futureValue
+      result mustBe empty
+    }
+  }
+
+  "countAvailableReports" should {
+    "return the correct count of ReportRequests where all parts are present" in {
+      val reqId          = "REQ126"
+      val reportRequests = Seq(
+        // Complete set: 1Of3, 2Of3, 3Of3
+        ReportRequest(
+          reportRequestId = reqId,
+          correlationId = "C4",
+          reportName = "Report4",
+          requesterEORI = "EORI-3",
+          eoriRole = EoriRole.TRADER,
+          reportEORIs = Array("EORI-3"),
+          recipientEmails = Array("a@b.com"),
+          reportTypeName = ReportTypeName.IMPORTS_ITEM_REPORT,
+          reportStart = Instant.now,
+          reportEnd = Instant.now,
+          createDate = Instant.now,
+          notifications = Seq.empty,
+          fileNotifications = Some(
+            Seq(
+              FileNotification("f6", 1, 1, FileType.CSV, "x", "y", ReportTypeName.IMPORTS_ITEM_REPORT, "1Of3"),
+              FileNotification("f7", 1, 1, FileType.CSV, "x", "y", ReportTypeName.IMPORTS_ITEM_REPORT, "2Of3"),
+              FileNotification("f8", 1, 1, FileType.CSV, "x", "y", ReportTypeName.IMPORTS_ITEM_REPORT, "3Of3")
+            )
+          ),
+          linkAvailableTime = Some(Instant.now)
+        ),
+        // Incomplete set: only 1Of2
+        ReportRequest(
+          reportRequestId = "REQ127",
+          correlationId = "C5",
+          reportName = "Report5",
+          requesterEORI = "EORI-3",
+          eoriRole = EoriRole.TRADER,
+          reportEORIs = Array("EORI-3"),
+          recipientEmails = Array("a@b.com"),
+          reportTypeName = ReportTypeName.IMPORTS_ITEM_REPORT,
+          reportStart = Instant.now,
+          reportEnd = Instant.now,
+          createDate = Instant.now,
+          notifications = Seq.empty,
+          fileNotifications = Some(
+            Seq(
+              FileNotification("f9", 1, 1, FileType.CSV, "x", "y", ReportTypeName.IMPORTS_ITEM_REPORT, "1Of2")
+            )
+          ),
+          linkAvailableTime = Some(Instant.now)
+        )
+      )
+
+      reportRequests.foreach(r => reportRequestRepository.insert(r).futureValue)
+
+      val count = reportRequestRepository.countAvailableReports("EORI-3").futureValue
+      count mustEqual 1
+    }
+
+    "return zero if not all parts are present" in {
+      val reqId             = "REQ128"
+      val incompleteRequest = ReportRequest(
+        reportRequestId = reqId,
+        correlationId = "C6",
+        reportName = "Report6",
+        requesterEORI = "EORI-4",
+        eoriRole = EoriRole.TRADER,
+        reportEORIs = Array("EORI-4"),
+        recipientEmails = Array("a@b.com"),
+        reportTypeName = ReportTypeName.IMPORTS_ITEM_REPORT,
+        reportStart = Instant.now,
+        reportEnd = Instant.now,
+        createDate = Instant.now,
+        notifications = Seq.empty,
+        fileNotifications = Some(
+          Seq(
+            FileNotification("f10", 1, 1, FileType.CSV, "x", "y", ReportTypeName.IMPORTS_ITEM_REPORT, "1Of2")
+            // Missing 2Of2
+          )
+        ),
+        linkAvailableTime = Some(Instant.now)
+      )
+
+      reportRequestRepository.insert(incompleteRequest).futureValue
+
+      val count = reportRequestRepository.countAvailableReports("EORI-4").futureValue
+      count mustEqual 0
     }
   }

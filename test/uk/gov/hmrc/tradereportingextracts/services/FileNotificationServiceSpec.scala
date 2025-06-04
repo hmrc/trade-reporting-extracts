@@ -24,7 +24,7 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatestplus.mockito.MockitoSugar
 import org.scalatest.wordspec.AnyWordSpec
 import play.api.http.Status.{BAD_REQUEST, CREATED, NOT_FOUND}
-import uk.gov.hmrc.tradereportingextracts.models.sdes.{FileNotification, FileNotificationMetadata}
+import uk.gov.hmrc.tradereportingextracts.models.sdes.{FileNotificationMetadata, FileNotificationResponse}
 import uk.gov.hmrc.tradereportingextracts.models.{FileNotification => TreFileNotification, FileType, ReportTypeName}
 import uk.gov.hmrc.tradereportingextracts.models.ReportRequest
 import scala.concurrent.{ExecutionContext, Future}
@@ -36,7 +36,7 @@ class FileNotificationServiceSpec extends AnyWordSpec with Matchers with Mockito
   val mockReportRequestService: ReportRequestService = mock[ReportRequestService]
   val service                                        = new FileNotificationService(mockReportRequestService)
 
-  val fileNotification = FileNotification(
+  val fileNotification = FileNotificationResponse(
     eori = "GB123456789012",
     fileName = "testFileName",
     fileSize = 12345,

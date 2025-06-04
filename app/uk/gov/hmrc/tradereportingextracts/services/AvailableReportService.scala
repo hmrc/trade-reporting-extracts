@@ -17,54 +17,76 @@
 package uk.gov.hmrc.tradereportingextracts.services
 
 import play.api.Logger
-import uk.gov.hmrc.tradereportingextracts.models.{AvailableReportAction, AvailableReportResponse, AvailableUserReportResponse, FileNotification, ReportRequest}
+import uk.gov.hmrc.http.HeaderCarrier
+import uk.gov.hmrc.tradereportingextracts.connectors.SDESConnector
+import uk.gov.hmrc.tradereportingextracts.models.{AvailableReportAction, AvailableReportResponse, AvailableUserReportResponse, FileType, ReportRequest}
+import uk.gov.hmrc.tradereportingextracts.models.sdes.{FileAvailableMetadataItem, FileAvailableResponse}
 
 import java.time.Instant
 import scala.concurrent.{ExecutionContext, Future}
 import javax.inject.Inject
 
-class AvailableReportService @Inject() (reportRequestService: ReportRequestService)(implicit ec: ExecutionContext) {
-  val logger: Logger                                                          = Logger(this.getClass)
-  def getAvailableReports(eoriValue: String): Future[AvailableReportResponse] =
-    reportRequestService
-      .getAvailableReports(eoriValue: String)
-      .map(toAvailableReportResponses)
-      .recover { case ex: Exception =>
-        logger.error(ex.getMessage, ex)
+class AvailableReportService @Inject() (reportRequestService: ReportRequestService, sdesConnector: SDESConnector)(
+  implicit ec: ExecutionContext
+) {
+  val logger: Logger = Logger(this.getClass)
+
+  def getAvailableReports(eoriValue: String)(implicit
+    hc: HeaderCarrier
+  ): Future[AvailableReportResponse] =
+    for {
+      sdesResponse   <- sdesConnector.fetchAvailableReportFileUrl(eoriValue)
+      reportRequests <- reportRequestService.getAvailableReports(eoriValue)
+    } yield
+      if (reportRequests.isEmpty) {
+        logger.warn(s"No available reports found for EORI: $eoriValue")
         AvailableReportResponse(
           availableUserReports = Some(Seq.empty[AvailableUserReportResponse]),
           availableThirdPartyReports = None
         )
+      } else {
+        toAvailableReportResponses(reportRequests, sdesResponse)
       }
 
-  // TODO : Implement the logic to fetch the available reports link from SDES.
-  private def toAvailableReportActions(fileDetails: FileNotification): Seq[AvailableReportAction] =
-    Seq.fill(2) {
+  private def toAvailableReportActions(
+    sdesResponse: Seq[FileAvailableResponse]
+  ): Seq[AvailableReportAction] =
+    sdesResponse.map { sdesFile =>
       AvailableReportAction(
-        fileURL = s"https://files.example.com/${java.util.UUID.randomUUID().toString}.csv",
-        size = fileDetails.fileSize,
-        fileType = fileDetails.fileType,
-        fileName = fileDetails.fileName
+        fileURL = sdesFile.downloadURL,
+        size = sdesFile.fileSize,
+        fileType = sdesFile.metadata
+          .collectFirst { case FileAvailableMetadataItem.FileTypeMetadataItem(value) =>
+            FileType.valueOf(value)
+          }
+          .getOrElse(FileType.CSV),
+        fileName = sdesFile.filename
       )
     }
 
-  private def toAvailableReportResponses(reportRequests: Seq[ReportRequest]): AvailableReportResponse = {
-    val availableUserReports = reportRequests.flatMap { req =>
-      req.fileNotifications.getOrElse(Seq.empty).map { fileNotify =>
-        AvailableUserReportResponse(
-          referenceNumber = req.reportRequestId,
-          reportName = req.reportName,
-          reportType = req.reportTypeName,
-          expiryDate =
-            req.linkAvailableTime.getOrElse(java.time.Instant.EPOCH).plusSeconds(fileNotify.retentionDays * 86400),
-          action = toAvailableReportActions(fileNotify)
+  private def toAvailableReportResponses(
+    reportRequests: Seq[ReportRequest],
+    sdesResponse: Seq[FileAvailableResponse]
+  ): AvailableReportResponse = {
+    val availableUserReports = reportRequests.map { req =>
+      val fileNotifyOpt = req.fileNotifications.flatMap(_.headOption)
+      AvailableUserReportResponse(
+        referenceNumber = req.reportRequestId,
+        reportName = req.reportName,
+        reportType = req.reportTypeName,
+        expiryDate = req.linkAvailableTime
+          .getOrElse(java.time.Instant.EPOCH)
+          .plusSeconds(fileNotifyOpt.map(_.retentionDays.toLong).getOrElse(0L) * 86400),
+        action = toAvailableReportActions(
+          sdesResponse.filter(_.metadata.exists {
+            case FileAvailableMetadataItem.MDTPReportRequestIDMetadataItem(value) =>
+              fileNotifyOpt.exists(_.mDTPReportRequestID == value)
+            case _                                                                => false
+          })
         )
-      }
+      )
     }
-    AvailableReportResponse(
-      availableUserReports = Some(availableUserReports),
-      availableThirdPartyReports = None
-    )
+    AvailableReportResponse(Some(availableUserReports), None)
   }
 
   def getAvailableReportsCount(eoriValue: String): Future[Long] =

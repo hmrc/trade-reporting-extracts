@@ -25,6 +25,7 @@ import uk.gov.hmrc.tradereportingextracts.models.ReportRequest
 
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util.matching.Regex
 
 @Singleton
 class ReportRequestRepository @Inject() (appConfig: AppConfig, mongoComponent: MongoComponent)(implicit
@@ -74,20 +75,52 @@ class ReportRequestRepository @Inject() (appConfig: AppConfig, mongoComponent: M
 
   def getAvailableReports(eori: String)(using ec: ExecutionContext): Future[Seq[ReportRequest]] =
     collection
-      .find(
-        Filters.and(
-          Filters.equal("requesterEORI", eori),
-          Filters.elemMatch("fileNotifications", Filters.equal("reportFilesParts", appConfig.reportFilesPart))
-        )
-      )
+      .find(Filters.equal("requesterEORI", eori))
       .toFuture()
+      .map { reportRequests =>
+        val notificationsWithParent = for {
+          req   <- reportRequests
+          notif <- req.fileNotifications.getOrElse(Seq.empty)
+        } yield (req, notif)
+        val partPattern: Regex      = """(\d+)Of(\d+)""".r
+        val grouped                 = notificationsWithParent
+          .flatMap { case (req, notif) =>
+            notif.reportFilesParts match {
+              case partPattern(part, total) =>
+                Some(((req.reportRequestId, total.toInt), part.toInt, req))
+              case _                        => None
+            }
+          }
+          .groupBy(_._1)
+          .collect {
+            case (key @ (reportRequestId, total), values) if values.map(_._2).distinct.sorted == (1 to total) =>
+              values.head._3
+          }
+          .toSeq
+          .distinctBy(_.reportRequestId)
+        grouped
+      }
 
-  def countAvailableReports(eori: String): Future[Long] =
+  def countAvailableReports(eori: String)(using ec: ExecutionContext): Future[Long] =
     collection
-      .countDocuments(
-        Filters.and(
-          Filters.equal("requesterEORI", eori),
-          Filters.elemMatch("fileNotifications", Filters.equal("reportFilesParts", appConfig.reportFilesPart))
-        )
-      )
+      .find(Filters.equal("requesterEORI", eori))
       .toFuture()
+      .map { reportRequests =>
+        val notificationsWithParent = for {
+          req   <- reportRequests
+          notif <- req.fileNotifications.getOrElse(Seq.empty)
+        } yield (req, notif)
+        val partPattern: Regex      = """(\d+)Of(\d+)""".r
+        notificationsWithParent
+          .flatMap { case (req, notif) =>
+            notif.reportFilesParts match {
+              case partPattern(part, total) =>
+                Some(((req.reportRequestId, total.toInt), part.toInt))
+              case _                        => None
+            }
+          }
+          .groupBy(_._1)
+          .count { case ((_, total), values) =>
+            values.map(_._2).distinct.sorted == (1 to total)
+          }
+      }

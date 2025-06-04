@@ -19,9 +19,9 @@ package uk.gov.hmrc.tradereportingextracts.controllers
 import play.api.libs.json.*
 import play.api.mvc.*
 import uk.gov.hmrc.tradereportingextracts.config.AppConfig
-import uk.gov.hmrc.tradereportingextracts.models.sdes.FileNotification
-import uk.gov.hmrc.tradereportingextracts.models.sdes.FileNotificationHeaders.*
 import uk.gov.hmrc.tradereportingextracts.models.FileNotification as TreFileNotication
+import uk.gov.hmrc.tradereportingextracts.models.sdes.FileNotificationHeaders.*
+import uk.gov.hmrc.tradereportingextracts.models.sdes.FileNotificationResponse
 
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
@@ -52,7 +52,7 @@ class FileNotificationController @Inject() (
       case (_, _, None)                        =>
         Future.successful(BadRequest("Expected application/json request body"))
       case (_, _, Some(json))                  =>
-        json.validate[FileNotification] match {
+        json.validate[FileNotificationResponse] match {
           case JsSuccess(fileNotification, _) =>
             fileNotificationService.processFileNotification(fileNotification).map { (status, message) =>
               Status(status)(message)
