@@ -69,7 +69,7 @@ class FileNotificationControllerSpec extends SpecBase with MockitoSugar {
     }
 
     "return 400 BadRequest when report-requestID is missing in metadata" in new Setup {
-      val fileNotification = FileNotification(
+      val fileNotification = FileNotificationResponse(
         eori = "GB123456789012",
         fileName = "testFileName",
         fileSize = 12345,
@@ -99,7 +99,7 @@ class FileNotificationControllerSpec extends SpecBase with MockitoSugar {
     }
 
     "return 404 NotFound when reportRequest is not found" in new Setup {
-      val fileNotification = FileNotification(
+      val fileNotification = FileNotificationResponse(
         eori = "GB123456789012",
         fileName = "testFileName",
         fileSize = 12345,

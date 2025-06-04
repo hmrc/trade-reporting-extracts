@@ -19,9 +19,9 @@ package uk.gov.hmrc.tradereportingextracts.controllers
 import play.api.libs.json.*
 import play.api.mvc.*
 import uk.gov.hmrc.tradereportingextracts.config.AppConfig
-import uk.gov.hmrc.tradereportingextracts.models.sdes.FileNotificationResponse
+import uk.gov.hmrc.tradereportingextracts.models.FileNotification as TreFileNotication
 import uk.gov.hmrc.tradereportingextracts.models.sdes.FileNotificationHeaders.*
-import uk.gov.hmrc.tradereportingextracts.models.FileNotificationResponse as TreFileNotication
+import uk.gov.hmrc.tradereportingextracts.models.sdes.FileNotificationResponse
 
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}

@@ -18,7 +18,7 @@ package uk.gov.hmrc.tradereportingextracts.services
 
 import play.api.http.Status
 import play.api.http.Status.{BAD_REQUEST, CREATED, NOT_FOUND}
-import uk.gov.hmrc.tradereportingextracts.models.sdes.{FileNotification, FileNotificationMetadata}
+import uk.gov.hmrc.tradereportingextracts.models.sdes.{FileNotificationMetadata, FileNotificationResponse}
 import uk.gov.hmrc.tradereportingextracts.models.{FileNotification as TreFileNotification, FileType, ReportTypeName}
 
 import javax.inject.{Inject, Singleton}
@@ -27,7 +27,7 @@ import scala.concurrent.{ExecutionContext, Future}
 @Singleton
 class FileNotificationService @Inject() (reportRequestService: ReportRequestService)(implicit ec: ExecutionContext) {
 
-  def processFileNotification(fileNotification: FileNotification): Future[(Int, String)] = {
+  def processFileNotification(fileNotification: FileNotificationResponse): Future[(Int, String)] = {
     val maybeReportRequestId = fileNotification.metadata.collectFirst {
       case FileNotificationMetadata.MDTPReportRequestIDMetadataItem(value) => value
     }
@@ -50,7 +50,7 @@ class FileNotificationService @Inject() (reportRequestService: ReportRequestServ
     }
   }
 
-  private def convertToTreFileNotification(sdes: FileNotification): TreFileNotification = {
+  private def convertToTreFileNotification(sdes: FileNotificationResponse): TreFileNotification = {
     def getValue[A <: FileNotificationMetadata](pf: PartialFunction[FileNotificationMetadata, String]): String =
       sdes.metadata.collectFirst(pf).getOrElse("")
 
