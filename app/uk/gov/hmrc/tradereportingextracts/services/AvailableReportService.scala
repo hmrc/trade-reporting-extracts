@@ -68,23 +68,23 @@ class AvailableReportService @Inject() (reportRequestService: ReportRequestServi
     reportRequests: Seq[ReportRequest],
     sdesResponse: Seq[FileAvailableResponse]
   ): AvailableReportResponse = {
-    val availableUserReports = reportRequests.flatMap { req =>
-      req.fileNotifications.getOrElse(Seq.empty).map { fileNotify =>
-        AvailableUserReportResponse(
-          referenceNumber = req.reportRequestId,
-          reportName = req.reportName,
-          reportType = req.reportTypeName,
-          expiryDate =
-            req.linkAvailableTime.getOrElse(java.time.Instant.EPOCH).plusSeconds(fileNotify.retentionDays * 86400),
-          action = toAvailableReportActions(
-            sdesResponse.filter(_.metadata.exists {
-              case FileAvailableMetadataItem.MDTPReportRequestIDMetadataItem(value) =>
-                value == fileNotify.mDTPReportRequestID
-              case _                                                                => false
-            })
-          )
+    val availableUserReports = reportRequests.map { req =>
+      val fileNotifyOpt = req.fileNotifications.flatMap(_.headOption)
+      AvailableUserReportResponse(
+        referenceNumber = req.reportRequestId,
+        reportName = req.reportName,
+        reportType = req.reportTypeName,
+        expiryDate = req.linkAvailableTime
+          .getOrElse(java.time.Instant.EPOCH)
+          .plusSeconds(fileNotifyOpt.map(_.retentionDays.toLong).getOrElse(0L) * 86400),
+        action = toAvailableReportActions(
+          sdesResponse.filter(_.metadata.exists {
+            case FileAvailableMetadataItem.MDTPReportRequestIDMetadataItem(value) =>
+              fileNotifyOpt.exists(_.mDTPReportRequestID == value)
+            case _                                                                => false
+          })
         )
-      }
+      )
     }
     AvailableReportResponse(Some(availableUserReports), None)
   }

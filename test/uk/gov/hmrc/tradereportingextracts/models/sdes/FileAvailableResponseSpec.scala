@@ -35,8 +35,7 @@ class FileAvailableResponseSpec extends AnyWordSpec with Matchers {
           FileAvailableMetadataItem.MDTPReportXCorrelationIDMetadataItem("corr-id"),
           FileAvailableMetadataItem.MDTPReportRequestIDMetadataItem("req-id"),
           FileAvailableMetadataItem.MDTPReportTypeNameMetadataItem("type"),
-          FileAvailableMetadataItem.ReportFileCounterMetadataItem("1"),
-          FileAvailableMetadataItem.ReportLastFileMetadataItem("true")
+          FileAvailableMetadataItem.ReportFileCounterMetadataItem("1")
         )
       )
       val json     = Json.toJson(response)
@@ -69,7 +68,6 @@ class FileAvailableResponseSpec extends AnyWordSpec with Matchers {
       FileAvailableMetadataItem.MDTPReportRequestIDMetadataItem("rid").metadata      shouldBe "MdtpReportRequestId"
       FileAvailableMetadataItem.MDTPReportTypeNameMetadataItem("type").metadata      shouldBe "MdtpReportTypeName"
       FileAvailableMetadataItem.ReportFileCounterMetadataItem("2").metadata          shouldBe "ReportFileCounter"
-      FileAvailableMetadataItem.ReportLastFileMetadataItem("false").metadata         shouldBe "ReportLastFile"
     }
   }
 
@@ -82,8 +80,7 @@ class FileAvailableResponseSpec extends AnyWordSpec with Matchers {
         FileAvailableMetadataItem.MDTPReportXCorrelationIDMetadataItem("xid"),
         FileAvailableMetadataItem.MDTPReportRequestIDMetadataItem("rid"),
         FileAvailableMetadataItem.MDTPReportTypeNameMetadataItem("type"),
-        FileAvailableMetadataItem.ReportFileCounterMetadataItem("2"),
-        FileAvailableMetadataItem.ReportLastFileMetadataItem("false")
+        FileAvailableMetadataItem.ReportFileCounterMetadataItem("2")
       )
       items.foreach { item =>
         val json   = Json.toJson(item)

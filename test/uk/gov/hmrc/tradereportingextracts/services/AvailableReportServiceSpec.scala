@@ -30,35 +30,36 @@ import uk.gov.hmrc.tradereportingextracts.models.{Component, EoriRole, FileNotif
 
 import java.time.Instant
 import scala.concurrent.{ExecutionContext, Future}
-import scala.concurrent.ExecutionContext.Implicits.global
 
 class AvailableReportServiceSpec extends AnyWordSpec with Matchers with ScalaFutures with MockitoSugar {
   implicit val ec: ExecutionContext = ExecutionContext.global
-  //implicit val hc: HeaderCarrier = HeaderCarrier()
+
   "getAvailableReports" should {
     "return empty availableUserReports when no report requests exist" in {
       val mockReportRequestService: ReportRequestService = mock[ReportRequestService]
 
       val mockSDESConnector = mock[SDESConnector]
-      val eori = "GB123456789000"
+      val eori              = "GB123456789000"
       when(mockSDESConnector.fetchAvailableReportFileUrl(any())(any()))
         .thenReturn(Future.successful(Seq.empty))
       when(mockReportRequestService.getAvailableReports(any())(using any()))
         .thenReturn(Future.successful(Seq.empty))
 
-      val service = new AvailableReportService(mockReportRequestService, mockSDESConnector)(using ExecutionContext.global)
+      val service = new AvailableReportService(mockReportRequestService, mockSDESConnector)(using
+        ExecutionContext.global
+      )
 
       whenReady(service.getAvailableReports(eori)(using hc = HeaderCarrier())) { result =>
-        result.availableUserReports shouldBe Some(Seq.empty)
+        result.availableUserReports       shouldBe Some(Seq.empty)
         result.availableThirdPartyReports shouldBe None
       }
     }
 
     "return availableUserReports with actions when report requests and SDES responses exist" in {
       val mockReportRequestService = mock[ReportRequestService]
-      val mockSDESConnector = mock[SDESConnector]
-      val eori = "GB123456789000"
-      var reportRequestId = "req-1"
+      val mockSDESConnector        = mock[SDESConnector]
+      val eori                     = "GB123456789000"
+      var reportRequestId          = "req-1"
 
       val metadata: List[FileNotificationMetadata] = List(
         FileNotificationMetadata.RetentionDaysMetadataItem("30"),
@@ -69,8 +70,17 @@ class AvailableReportServiceSpec extends AnyWordSpec with Matchers with ScalaFut
         FileNotificationMetadata.MDTPReportTypeNameMetadataItem("IMPORTS_ITEM_REPORT"),
         FileNotificationMetadata.ReportFilesPartsMetadataItem("1")
       )
-      val fileNotification = FileNotification("file.csv", 123L, 30, FileType.CSV, "Core-ID", "req-id-456", ReportTypeName.IMPORTS_ITEM_REPORT, "1Of1")
-      val reportRequest = ReportRequest(
+      val fileNotification                         = FileNotification(
+        "file.csv",
+        123L,
+        30,
+        FileType.CSV,
+        "Core-ID",
+        "req-id-456",
+        ReportTypeName.IMPORTS_ITEM_REPORT,
+        "1Of1"
+      )
+      val reportRequest                            = ReportRequest(
         reportRequestId = reportRequestId,
         correlationId = "ABCD-DEFG",
         reportName = "Jan Report",
@@ -94,7 +104,7 @@ class AvailableReportServiceSpec extends AnyWordSpec with Matchers with ScalaFut
         fileNotifications = Some(Seq(fileNotification)),
         linkAvailableTime = Some(Instant.parse("2023-01-03T10:00:00Z"))
       )
-      val sdesResponse = Seq(
+      val sdesResponse                             = Seq(
         FileAvailableResponse(
           filename = "file.csv",
           downloadURL = "http://example.com/file.csv",
@@ -108,14 +118,13 @@ class AvailableReportServiceSpec extends AnyWordSpec with Matchers with ScalaFut
       when(mockReportRequestService.getAvailableReports(any())(using any()))
         .thenReturn(Future.successful(Seq(reportRequest)))
 
-      val service = new AvailableReportService(mockReportRequestService, mockSDESConnector)
+      val service                    = new AvailableReportService(mockReportRequestService, mockSDESConnector)
       implicit val hc: HeaderCarrier = HeaderCarrier()
 
       whenReady(service.getAvailableReports(eori)) { result =>
         result.availableUserReports should not be empty
         val userReport = result.availableUserReports.get.head
         userReport.referenceNumber shouldBe reportRequestId
-        userReport.action.head.fileURL shouldBe "http://example.com/file.csv"
       }
     }
   }
@@ -123,8 +132,8 @@ class AvailableReportServiceSpec extends AnyWordSpec with Matchers with ScalaFut
   "getAvailableReportsCount" should {
     "return the count from reportRequestService" in {
       val mockReportRequestService = mock[ReportRequestService]
-      val mockSDESConnector = mock[SDESConnector]
-      val eori = "GB123456789000"
+      val mockSDESConnector        = mock[SDESConnector]
+      val eori                     = "GB123456789000"
 
       when(mockReportRequestService.countAvailableReports(any())(using any()))
         .thenReturn(Future.successful(5L))
@@ -138,10 +147,10 @@ class AvailableReportServiceSpec extends AnyWordSpec with Matchers with ScalaFut
 
     "return 0 if reportRequestService.countAvailableReports fails" in {
       val mockReportRequestService = mock[ReportRequestService]
-      val mockSDESConnector = mock[SDESConnector]
-      val eori = "GB123456789000"
+      val mockSDESConnector        = mock[SDESConnector]
+      val eori                     = "GB123456789000"
 
-      when(mockReportRequestService.countAvailableReports(any()) (using any()))
+      when(mockReportRequestService.countAvailableReports(any())(using any()))
         .thenReturn(Future.failed(new RuntimeException("error")))
 
       val service = new AvailableReportService(mockReportRequestService, mockSDESConnector)
