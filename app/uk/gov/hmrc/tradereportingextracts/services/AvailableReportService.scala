@@ -19,7 +19,7 @@ package uk.gov.hmrc.tradereportingextracts.services
 import play.api.Logger
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.tradereportingextracts.connectors.SDESConnector
-import uk.gov.hmrc.tradereportingextracts.models.{AvailableReportAction, AvailableReportResponse, AvailableUserReportResponse, FileNotification, ReportRequest}
+import uk.gov.hmrc.tradereportingextracts.models.{AvailableReportAction, AvailableReportResponse, AvailableUserReportResponse, FileType, ReportRequest}
 import uk.gov.hmrc.tradereportingextracts.models.sdes.{FileAvailableMetadataItem, FileAvailableResponse}
 
 import java.time.Instant
@@ -49,15 +49,18 @@ class AvailableReportService @Inject() (reportRequestService: ReportRequestServi
       }
 
   private def toAvailableReportActions(
-    fileDetails: FileNotification,
     sdesResponse: Seq[FileAvailableResponse]
   ): Seq[AvailableReportAction] =
     sdesResponse.map { sdesFile =>
       AvailableReportAction(
         fileURL = sdesFile.downloadURL,
-        size = fileDetails.fileSize,
-        fileType = fileDetails.fileType,
-        fileName = fileDetails.fileName
+        size = sdesFile.fileSize,
+        fileType = sdesFile.metadata
+          .collectFirst { case FileAvailableMetadataItem.FileTypeMetadataItem(value) =>
+            FileType.valueOf(value)
+          }
+          .getOrElse(FileType.CSV),
+        fileName = sdesFile.filename
       )
     }
 
@@ -74,10 +77,9 @@ class AvailableReportService @Inject() (reportRequestService: ReportRequestServi
           expiryDate =
             req.linkAvailableTime.getOrElse(java.time.Instant.EPOCH).plusSeconds(fileNotify.retentionDays * 86400),
           action = toAvailableReportActions(
-            fileNotify,
             sdesResponse.filter(_.metadata.exists {
               case FileAvailableMetadataItem.MDTPReportRequestIDMetadataItem(value) =>
-                value == req.reportRequestId
+                value == fileNotify.mDTPReportRequestID
               case _                                                                => false
             })
           )
