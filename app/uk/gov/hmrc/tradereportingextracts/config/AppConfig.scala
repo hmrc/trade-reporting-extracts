@@ -40,6 +40,3 @@ class AppConfig @Inject() (val config: Configuration, servicesConfig: ServicesCo
 
   lazy val eisRequestTraderReportMaxRetries: Int =
     config.get[Int]("microservice.services.eis.request-trader-report.max-retries")
-
-  // need to remove once we have a correct way to find end of report download
-  lazy val reportFilesPart: String = config.get[String]("report-files.part")
