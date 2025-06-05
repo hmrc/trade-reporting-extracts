@@ -21,7 +21,7 @@ import org.mongodb.scala.model.{Filters, IndexModel, IndexOptions, Indexes}
 import uk.gov.hmrc.mongo.MongoComponent
 import uk.gov.hmrc.mongo.play.json.PlayMongoRepository
 import uk.gov.hmrc.tradereportingextracts.config.AppConfig
-import uk.gov.hmrc.tradereportingextracts.models.ReportRequest
+import uk.gov.hmrc.tradereportingextracts.models.{ReportRequest, StringFieldRegex}
 
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
@@ -82,13 +82,12 @@ class ReportRequestRepository @Inject() (appConfig: AppConfig, mongoComponent: M
           req   <- reportRequests
           notif <- req.fileNotifications.getOrElse(Seq.empty)
         } yield (req, notif)
-        val partPattern: Regex      = """(\d+)Of(\d+)""".r
         val grouped                 = notificationsWithParent
           .flatMap { case (req, notif) =>
             notif.reportFilesParts match {
-              case partPattern(part, total) =>
+              case StringFieldRegex.filePartPattern(part, total) =>
                 Some(((req.reportRequestId, total.toInt), part.toInt, req))
-              case _                        => None
+              case _                                             => None
             }
           }
           .groupBy(_._1)
@@ -110,13 +109,12 @@ class ReportRequestRepository @Inject() (appConfig: AppConfig, mongoComponent: M
           req   <- reportRequests
           notif <- req.fileNotifications.getOrElse(Seq.empty)
         } yield (req, notif)
-        val partPattern: Regex      = """(\d+)Of(\d+)""".r
         notificationsWithParent
           .flatMap { case (req, notif) =>
             notif.reportFilesParts match {
-              case partPattern(part, total) =>
+              case StringFieldRegex.filePartPattern(part, total) =>
                 Some(((req.reportRequestId, total.toInt), part.toInt))
-              case _                        => None
+              case _                                             => None
             }
           }
           .groupBy(_._1)

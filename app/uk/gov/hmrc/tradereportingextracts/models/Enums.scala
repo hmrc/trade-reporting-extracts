@@ -116,3 +116,17 @@ object FileType:
           case Some(fileType) => JsSuccess(fileType)
           case None           => JsError(s"Unknown FileType: $value")
       case _               => JsError("FileType must be a string")
+
+enum ReportStatus:
+  case COMPLETE, ERROR, IN_PROGRESS
+
+object ReportStatus:
+  given Format[ReportStatus] with
+    def writes(status: ReportStatus): JsValue = JsString(status.toString)
+
+    def reads(json: JsValue): JsResult[ReportStatus] = json match
+      case JsString(value) =>
+        ReportStatus.values.find(_.toString == value) match
+          case Some(status) => JsSuccess(status)
+          case None         => JsError(s"Unknown ReportStatus: $value")
+      case _               => JsError("ReportStatus must be a string")

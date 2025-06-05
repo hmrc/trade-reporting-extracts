@@ -23,6 +23,7 @@ import play.api.libs.json.{JsValue, Json}
 import play.api.mvc.{Request, Result}
 import play.api.test.Helpers.{GET, contentAsJson, status}
 import play.api.test.{FakeRequest, Helpers}
+import uk.gov.hmrc.tradereportingextracts.models.ReportStatus.IN_PROGRESS
 import uk.gov.hmrc.tradereportingextracts.models.ReportTypeName.EXPORTS_ITEM_REPORT
 import uk.gov.hmrc.tradereportingextracts.models.{GetReportRequestsResponse, UserReport}
 import uk.gov.hmrc.tradereportingextracts.services.ReportRequestService
@@ -47,7 +48,8 @@ class RequestedReportsControllerSpec extends SpecBase:
           referenceNumber = "REQ123",
           reportName = "Monthly Report",
           requestedDate = Instant.parse("2024-07-01T10:00:00Z"),
-          reportType = EXPORTS_ITEM_REPORT
+          reportType = EXPORTS_ITEM_REPORT,
+          reportStatus = IN_PROGRESS
         )
       )
     ),
