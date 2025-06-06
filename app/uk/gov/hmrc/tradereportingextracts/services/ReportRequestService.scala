@@ -20,7 +20,8 @@ import play.api.mvc.Headers
 import uk.gov.hmrc.tradereportingextracts.connectors.CustomsDataStoreConnector
 import uk.gov.hmrc.tradereportingextracts.models.eis.EisReportStatusHeaders.XCorrelationID
 import uk.gov.hmrc.tradereportingextracts.models.eis.EisReportStatusRequest
-import uk.gov.hmrc.tradereportingextracts.models.{GetReportRequestsResponse, ReportRequest, ThirdPartyReport, UserReport}
+import uk.gov.hmrc.tradereportingextracts.models.{FileNotification, GetReportRequestsResponse, ReportRequest, ReportStatus, StringFieldRegex, ThirdPartyReport, UserReport}
+import uk.gov.hmrc.tradereportingextracts.models.eis.EisReportStatusRequest.StatusType
 import uk.gov.hmrc.tradereportingextracts.repositories.ReportRequestRepository
 
 import javax.inject.{Inject, Singleton}
@@ -77,7 +78,8 @@ class ReportRequestService @Inject() (
       referenceNumber = req.reportRequestId,
       reportName = req.reportName,
       requestedDate = req.createDate,
-      reportType = req.reportTypeName
+      reportType = req.reportTypeName,
+      reportStatus = determineReportStatus(req)
     )
 
   private def toThirdPartyReport(req: ReportRequest, companyName: String): ThirdPartyReport =
@@ -86,7 +88,8 @@ class ReportRequestService @Inject() (
       reportName = req.reportName,
       requestedDate = req.createDate,
       reportType = req.reportTypeName,
-      companyName = companyName
+      companyName = companyName,
+      reportStatus = determineReportStatus(req)
     )
 
   def getAvailableReports(eori: String)(using ec: ExecutionContext): Future[Seq[ReportRequest]] =
@@ -108,4 +111,20 @@ class ReportRequestService @Inject() (
       case None      =>
     }
 
+  }
+
+  private def determineReportStatus(reportRequest: ReportRequest): ReportStatus = {
+    val isComplete = reportRequest.fileNotifications.exists { notifications =>
+      val parts = notifications.flatMap { case FileNotification(_, _, _, _, _, _, _, reportFilesParts) =>
+        reportFilesParts match {
+          case StringFieldRegex.filePartPattern(part, total) => Some((part.toInt, total.toInt))
+          case _                                             => None
+        }
+      }
+      parts.nonEmpty && parts.exists { case (part, total) => part == total }
+    }
+
+    if (isComplete) ReportStatus.COMPLETE
+    else if (reportRequest.notifications.exists(_.statusType == StatusType.ERROR)) ReportStatus.ERROR
+    else ReportStatus.IN_PROGRESS
   }

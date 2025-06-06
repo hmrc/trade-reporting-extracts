@@ -25,13 +25,15 @@ sealed trait ReportSummary {
   def reportName: String
   def requestedDate: Instant
   def reportType: ReportTypeName
+  def reportStatus: ReportStatus
 }
 
 case class UserReport(
   referenceNumber: String,
   reportName: String,
   requestedDate: Instant,
-  reportType: ReportTypeName
+  reportType: ReportTypeName,
+  reportStatus: ReportStatus
 ) extends ReportSummary
 
 object UserReport:
@@ -42,7 +44,8 @@ case class ThirdPartyReport(
   reportName: String,
   requestedDate: Instant,
   reportType: ReportTypeName,
-  companyName: String
+  companyName: String,
+  reportStatus: ReportStatus
 ) extends ReportSummary
 
 object ThirdPartyReport:
