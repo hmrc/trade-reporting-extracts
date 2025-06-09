@@ -18,16 +18,21 @@ package uk.gov.hmrc.tradereportingextracts.services
 
 import play.api.Logger
 import uk.gov.hmrc.http.HeaderCarrier
+import uk.gov.hmrc.tradereportingextracts.config.AppConfig
 import uk.gov.hmrc.tradereportingextracts.connectors.SDESConnector
 import uk.gov.hmrc.tradereportingextracts.models.{AvailableReportAction, AvailableReportResponse, AvailableUserReportResponse, FileType, ReportRequest}
-import uk.gov.hmrc.tradereportingextracts.models.sdes.{FileAvailableMetadataItem, FileAvailableResponse}
+import uk.gov.hmrc.tradereportingextracts.models.sdes.{FileAvailableMetadataItem, FileAvailableResponse, FileAvailableStubRequest}
 
 import java.time.Instant
 import scala.concurrent.{ExecutionContext, Future}
 import javax.inject.Inject
 
-class AvailableReportService @Inject() (reportRequestService: ReportRequestService, sdesConnector: SDESConnector)(
-  implicit ec: ExecutionContext
+class AvailableReportService @Inject() (
+  reportRequestService: ReportRequestService,
+  sdesConnector: SDESConnector,
+  appConfig: AppConfig
+)(implicit
+  ec: ExecutionContext
 ) {
   val logger: Logger = Logger(this.getClass)
 
@@ -35,8 +40,10 @@ class AvailableReportService @Inject() (reportRequestService: ReportRequestServi
     hc: HeaderCarrier
   ): Future[AvailableReportResponse] =
     for {
-      sdesResponse   <- sdesConnector.fetchAvailableReportFileUrl(eoriValue)
       reportRequests <- reportRequestService.getAvailableReports(eoriValue)
+      // If SDES stub is enabled, generate stub requests for available reports
+      stubResponse    = if (appConfig.sdesStubValue) generateFileAvailableStubRequests(reportRequests) else Seq.empty
+      sdesResponse   <- sdesConnector.fetchAvailableReportFileUrl(eoriValue, stubResponse)
     } yield
       if (reportRequests.isEmpty) {
         logger.warn(s"No available reports found for EORI: $eoriValue")
@@ -89,9 +96,18 @@ class AvailableReportService @Inject() (reportRequestService: ReportRequestServi
     AvailableReportResponse(Some(availableUserReports), None)
   }
 
+  private def generateFileAvailableStubRequests(reportRequests: Seq[ReportRequest]): Seq[FileAvailableStubRequest] =
+    reportRequests.map { req =>
+      FileAvailableStubRequest(
+        reportRequestId = req.reportRequestId,
+        fileParts = req.fileNotifications.map(_.size).getOrElse(0)
+      )
+    }
+
   def getAvailableReportsCount(eoriValue: String): Future[Long] =
     reportRequestService.countAvailableReports(eoriValue).recover { case ex: Exception =>
       logger.error(ex.getMessage, ex)
       0L
     }
+
 }
