@@ -18,9 +18,9 @@ package uk.gov.hmrc.tradereportingextracts.models.sdes
 
 import play.api.libs.json.{Format, Json}
 
-case class FileAvailableStubRequest (
-  reportRequestId : String,
-  fileParts : Int
+case class FileAvailableStubRequest(
+  reportRequestId: String,
+  fileParts: Int
 )
 
 object FileAvailableStubRequest {
