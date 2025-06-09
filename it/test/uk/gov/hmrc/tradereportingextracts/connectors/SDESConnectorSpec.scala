@@ -66,7 +66,7 @@ class SDESConnectorSpec
           .willReturn(aResponse().withStatus(OK).withBody(responseBody))
       )
 
-      val result = connector.fetchAvailableReportFileUrl(eori).futureValue
+      val result = connector.fetchAvailableReportFileUrl(eori, Seq.empty).futureValue
       result.map(_.filename) should contain theSameElementsAs List("pvat-2018-106.csv")
     }
 
@@ -79,7 +79,7 @@ class SDESConnectorSpec
           .willReturn(aResponse().withStatus(INTERNAL_SERVER_ERROR))
       )
 
-      whenReady(connector.fetchAvailableReportFileUrl(eori).failed) { ex =>
+      whenReady(connector.fetchAvailableReportFileUrl(eori, Seq.empty).failed) { ex =>
         ex.getMessage should include ("500")
       }
     }
