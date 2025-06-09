@@ -40,7 +40,8 @@ class FileNotificationService @Inject() (reportRequestService: ReportRequestServ
               case Some(existing) => Some(existing :+ convertToTreFileNotification(fileNotification))
               case None           => Some(Seq(convertToTreFileNotification(fileNotification)))
             }
-            val updatedReportRequest     = reportRequest.copy(fileNotifications = updatedFileNotifications)
+            val updatedReportRequest     = reportRequest
+              .copy(fileNotifications = updatedFileNotifications, linkAvailableTime = Some(java.time.Instant.now()))
             reportRequestService.update(updatedReportRequest).map(_ => (CREATED, "Created"))
           case None                =>
             Future.successful((NOT_FOUND, s"ReportRequest not found for reportRequestId: $reportRequestId"))
