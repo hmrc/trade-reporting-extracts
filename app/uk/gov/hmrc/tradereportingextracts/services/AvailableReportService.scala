@@ -43,7 +43,10 @@ class AvailableReportService @Inject() (
       reportRequests <- reportRequestService.getAvailableReports(eoriValue)
       // If SDES stub is enabled, generate stub requests for available reports
       stubResponse    = if (appConfig.sdesStubValue) generateFileAvailableStubRequests(reportRequests) else Seq.empty
-      sdesResponse   <- sdesConnector.fetchAvailableReportFileUrl(eoriValue, stubResponse)
+      sdesResponse   <- if (reportRequests.isEmpty)
+                          Future.successful(Seq.empty[FileAvailableResponse])
+                        else
+                          sdesConnector.fetchAvailableReportFileUrl(eoriValue, stubResponse)
     } yield
       if (reportRequests.isEmpty) {
         logger.warn(s"No available reports found for EORI: $eoriValue")
