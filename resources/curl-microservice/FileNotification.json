@@ -1,0 +1,28 @@
+{
+  "environment": "qa",
+  "host": "https://trade-reporting-extracts.protected.mdtp/trade-reporting-extracts/notify-report-available",
+  "method": "PUT",
+  "header": {
+    "authorization": "sEEH5mEgSn3SNGDWFMFJwZ/Uj/Mar2iFDtmZxZ+KZmQ=",
+    "content-type": "application/json",
+    "date": "Mon, 02 Oct 2023 14:30:00 GMT",
+    "x-correlation-id": "46cd6ed6-21ba-4e05-975e-56d02011243c",
+    "source-system": "SDES",
+    "x-transmitting-system": "EIS"
+  },
+  "body": {
+    "eori": "GB123456789012",
+    "fileName": "report-2024-06-01.csv",
+    "fileSize": 1024,
+    "metadata": [
+      { "key": "RETENTION_DAYS", "value": "30" },
+      { "key": "FILE_TYPE", "value": "CSV" },
+      { "key": "EORI", "value": "GB123456789012" },
+      { "key": "MDTP-report-x-correlationID", "value": "46cd6ed6-21ba-4e05-975e-56d02011243c" },
+      { "key": "MDTP-report-requestID", "value": "RE57965342" },
+      { "key": "MDTP-reportTypeName", "value": "IMPORTS_HEADER_REPORT" },
+      { "key": "Report-files-parts", "value": "1of1" }
+    ]
+  }
+}
+
