@@ -1,0 +1,20 @@
+{
+  "environment": "qa",
+  "host": "https://trade-reporting-extracts.protected.mdtp/trade-reporting-extracts/gbe/notifyreportstatus/v1",
+  "method": "PUT",
+  "header": {
+    "authorization": "Pt6gimFQBVWhriBMH3nOqnP3NsNegX4lJV0G0UMOq1k=",
+    "content-type": "application/json",
+    "date": "Mon, 02 Oct 2023 14:30:00 GMT",
+    "x-correlation-id": "46cd6ed6-21ba-4e05-975e-56d02011243c",
+    "x-forwarded-host": "CDAP"
+  },
+  "body": {
+    "applicationComponent": "EIS",
+    "statusCode": "500",
+    "statusMessage": "Report failed to process",
+    "statusTimestamp": "2024-06-20T12:34:56Z",
+    "statusType": "ERROR"
+  }
+}
+
