@@ -1,0 +1,17 @@
+{
+  "environment": "qa",
+  "host": "https://trade-reporting-extracts.protected.mdtp/trade-reporting-extracts/gbe/updateeori/v1",
+  "method": "PUT",
+  "header": {
+    "authorization": "9ElRrrO0YoAQkhXGVO7XZ2mI2weOqdPVpM0KPR5EizY=",
+    "content-type": "application/json",
+    "date": "Mon, 02 Oct 2023 14:30:00 GMT",
+    "x-correlation-id": "46cd6ed6-21ba-4e05-975e-56d02011243c",
+    "x-forwarded-host": "CDAP"
+  },
+  "body": {
+    "newEori": "GB123456789013",
+    "oldEori": "GB123456789012"
+  }
+}
+

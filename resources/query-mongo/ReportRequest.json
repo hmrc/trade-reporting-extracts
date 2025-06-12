@@ -1,0 +1,6 @@
+{
+  "environment": "qa",
+  "get-all-users" : "use trade-reporting-extracts;\ndb.getCollection(\"tre-user\").find({})",
+  "get-all-report-requests": "use trade-reporting-extracts;\ndb.getCollection(\"tre-report-request\").find({})",
+  "get-report-request-by-id": "use trade-reporting-extracts;\ndb.getCollection(\"tre-report-request\").find({\"reportRequestId\": \"{{reportRequestId}}\"})"
+}
