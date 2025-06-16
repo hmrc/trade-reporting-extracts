@@ -14,18 +14,23 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.tradereportingextracts.models
+package uk.gov.hmrc.tradereportingextracts.models.eis
 
-trait AllowedEoris {
-  val allowedEoris: Seq[String] = Seq(
-    "GB123456789012",
-    "GB123456789013",
-    "GB123456789014",
-    "GB123456789015",
-    "GB123456789016",
-    "GB123456789017",
-    "GB123456789018",
-    "GB123456789019",
-    "GB123456789020"
-  )
+import org.scalatest.freespec.AnyFreeSpec
+import org.scalatest.matchers.must.Matchers
+
+class EisReportRequestHeadersSpec extends AnyFreeSpec with Matchers {
+
+  "EisReportRequestHeaders.allHeaders" - {
+    "must return all expected header names" in {
+      EisReportRequestHeaders.allHeaders must contain theSameElementsAs Seq(
+        "accept",
+        "authorization",
+        "content-type",
+        "date",
+        "x-correlation-id",
+        "x-forwarded-host"
+      )
+    }
+  }
 }
