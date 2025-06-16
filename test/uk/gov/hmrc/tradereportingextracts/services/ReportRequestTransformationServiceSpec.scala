@@ -40,7 +40,7 @@ class ReportRequestTransformationServiceSpec extends AnyFreeSpec with Matchers w
       result.reportName mustBe "TestReport"
       result.requesterEORI mustBe "GB123456789000"
       result.eoriRole mustBe EoriRole.DECLARANT
-      result.reportEORIs must contain allOf ("GB123456789001", "GB123456789000")
+      result.reportEORIs     must contain allOf ("GB123456789001", "GB123456789000")
       result.recipientEmails must contain allOf ("test@example.com", "user@email.com")
       result.reportTypeName mustBe ReportTypeName.IMPORTS_HEADER_REPORT
       result.reportStart mustBe LocalDate.parse("2025-04-01").atStartOfDay(ZoneOffset.UTC).toInstant
@@ -48,7 +48,7 @@ class ReportRequestTransformationServiceSpec extends AnyFreeSpec with Matchers w
     }
 
     "create a ReportRequest for importItem and trader" in {
-      val model = reportRequestTemplate.copy(eoriRole = Set("importer"), reportType = Set("importItem"))
+      val model  = reportRequestTemplate.copy(eoriRole = Set("importer"), reportType = Set("importItem"))
       val result = service.transformReportRequest(
         "GB123456789000",
         model,
@@ -60,7 +60,7 @@ class ReportRequestTransformationServiceSpec extends AnyFreeSpec with Matchers w
     }
 
     "create a ReportRequest for importTaxLine and trader-declarant" in {
-      val model = reportRequestTemplate.copy(eoriRole = Set("declarant", "importer"), reportType = Set("importTaxLine"))
+      val model  = reportRequestTemplate.copy(eoriRole = Set("declarant", "importer"), reportType = Set("importTaxLine"))
       val result = service.transformReportRequest(
         "GB123456789000",
         model,
@@ -72,7 +72,7 @@ class ReportRequestTransformationServiceSpec extends AnyFreeSpec with Matchers w
     }
 
     "create a ReportRequest for exportItem" in {
-      val model = reportRequestTemplate.copy(eoriRole = Set("exporter"), reportType = Set("exportItem"))
+      val model  = reportRequestTemplate.copy(eoriRole = Set("exporter"), reportType = Set("exportItem"))
       val result = service.transformReportRequest(
         "GB123456789000",
         model,
@@ -91,7 +91,7 @@ class ReportRequestTransformationServiceSpec extends AnyFreeSpec with Matchers w
         Seq("GB123456789001"),
         "user@email.com"
       )
-      val eisRequest = service.toEisReportRequest(reportRequest)
+      val eisRequest    = service.toEisReportRequest(reportRequest)
       eisRequest.eori must contain allOf ("GB123456789001", "GB123456789000")
       eisRequest.eoriRole mustBe EisReportRequest.EoriRole.DECLARANT
       eisRequest.reportTypeName mustBe EisReportRequest.ReportTypeName.IMPORTSHEADERREPORT

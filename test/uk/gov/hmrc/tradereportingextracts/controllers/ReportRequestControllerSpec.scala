@@ -167,7 +167,7 @@ class ReportRequestControllerSpec extends SpecBase with WireMockHelper {
 
       val capturedRequests = captor.getAllValues
       capturedRequests.size() mustBe 2
-      capturedRequests.asScala.map(_.reportRequestId) must contain allOf("RE00000001", "RE00000002")
+      capturedRequests.asScala.map(_.reportRequestId) must contain allOf ("RE00000001", "RE00000002")
       capturedRequests.asScala.foreach { req =>
         req.requesterEORI mustBe "GB123456789014"
         req.reportName mustBe "MyReport"
@@ -226,7 +226,7 @@ class ReportRequestControllerSpec extends SpecBase with WireMockHelper {
 
       val capturedRequests = captor.getAllValues
       capturedRequests.size() mustBe 3
-      capturedRequests.asScala.map(_.reportRequestId) must contain allOf("RE00000001", "RE00000002", "RE00000003")
+      capturedRequests.asScala.map(_.reportRequestId) must contain allOf ("RE00000001", "RE00000002", "RE00000003")
       capturedRequests.asScala.foreach { req =>
         req.requesterEORI mustBe "GB123456789014"
         req.reportName mustBe "MyReport"

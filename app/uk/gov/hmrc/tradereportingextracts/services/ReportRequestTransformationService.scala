@@ -26,30 +26,30 @@ import java.util.UUID
 
 @Singleton
 class ReportRequestTransformationService @Inject() (
-    requestReferenceService: RequestReferenceService
-                                                   ){
+  requestReferenceService: RequestReferenceService
+) {
 
   def transformReportRequest(
-                                      eoriValue: String,
-                                      reportRequestUserAnswersModel: ReportRequestUserAnswersModel,
-                                      historicalEoris: Seq[String],
-                                      userEmail: String
-                                    ): ReportRequest = {
+    eoriValue: String,
+    reportRequestUserAnswersModel: ReportRequestUserAnswersModel,
+    historicalEoris: Seq[String],
+    userEmail: String
+  ): ReportRequest = {
 
     val userAnswers = reportRequestUserAnswersModel
 
     def getReportType(reportTypes: String): ReportTypeName =
       reportTypes match {
-        case x if x.contains("importHeader") => ReportTypeName.IMPORTS_HEADER_REPORT
-        case x if x.contains("importItem") => ReportTypeName.IMPORTS_ITEM_REPORT
+        case x if x.contains("importHeader")  => ReportTypeName.IMPORTS_HEADER_REPORT
+        case x if x.contains("importItem")    => ReportTypeName.IMPORTS_ITEM_REPORT
         case x if x.contains("importTaxLine") => ReportTypeName.IMPORTS_TAXLINE_REPORT
-        case x if x.contains("exportItem") => ReportTypeName.EXPORTS_ITEM_REPORT
+        case x if x.contains("exportItem")    => ReportTypeName.EXPORTS_ITEM_REPORT
       }
 
     def getRole(roles: Set[String]): EoriRole =
       roles match {
-        case roles if roles == Set("declarant") => EoriRole.DECLARANT
-        case roles if roles.subsetOf(Set("importer", "exporter")) => EoriRole.TRADER
+        case roles if roles == Set("declarant")                                                                 => EoriRole.DECLARANT
+        case roles if roles.subsetOf(Set("importer", "exporter"))                                               => EoriRole.TRADER
         case roles if roles.contains("declarant") && (roles.contains("importer")) || roles.contains("exporter") =>
           EoriRole.TRADER_DECLARANT
       }
@@ -77,15 +77,15 @@ class ReportRequestTransformationService @Inject() (
       endDate = DateTimeFormatter.ISO_LOCAL_DATE.format(reportRequest.reportEnd.atZone(ZoneOffset.UTC)),
       eori = reportRequest.reportEORIs.toList,
       eoriRole = reportRequest.eoriRole match {
-        case EoriRole.TRADER => EisReportRequest.EoriRole.TRADER
-        case EoriRole.DECLARANT => EisReportRequest.EoriRole.DECLARANT
+        case EoriRole.TRADER           => EisReportRequest.EoriRole.TRADER
+        case EoriRole.DECLARANT        => EisReportRequest.EoriRole.DECLARANT
         case EoriRole.TRADER_DECLARANT => EisReportRequest.EoriRole.TRADERDECLARANT
       },
       reportTypeName = reportRequest.reportTypeName match {
-        case ReportTypeName.IMPORTS_ITEM_REPORT => EisReportRequest.ReportTypeName.IMPORTSITEMREPORT
-        case ReportTypeName.IMPORTS_HEADER_REPORT => EisReportRequest.ReportTypeName.IMPORTSHEADERREPORT
+        case ReportTypeName.IMPORTS_ITEM_REPORT    => EisReportRequest.ReportTypeName.IMPORTSITEMREPORT
+        case ReportTypeName.IMPORTS_HEADER_REPORT  => EisReportRequest.ReportTypeName.IMPORTSHEADERREPORT
         case ReportTypeName.IMPORTS_TAXLINE_REPORT => EisReportRequest.ReportTypeName.IMPORTSTAXLINEREPORT
-        case ReportTypeName.EXPORTS_ITEM_REPORT => EisReportRequest.ReportTypeName.EXPORTSITEMREPORT
+        case ReportTypeName.EXPORTS_ITEM_REPORT    => EisReportRequest.ReportTypeName.EXPORTSITEMREPORT
       },
       requestID = reportRequest.reportRequestId,
       requestTimestamp = DateTimeFormatter.ISO_INSTANT.format(reportRequest.createDate),

@@ -51,23 +51,23 @@ class ReportRequestController @Inject() (
           eoriHistory <- customsDataStoreConnector
                            .getEoriHistory(value.whichEori.get)
                            .map(_.filterByDateRange(startEndDate._1, startEndDate._2).map(_.eori))
-          requests = value.reportType.toSeq.map { reportTypeName =>
-            reportRequestTransformationService.transformReportRequest(
-              value.eori,
-              value.copy(reportType = Set(reportTypeName)),
-              eoriHistory,
-              userEmail
-            )
-          }
-          _ <- Future.sequence(requests.map { newRequest =>
-            val eisRequest = reportRequestTransformationService.toEisReportRequest(newRequest)
-            for {
-              _ <- reportRequestService.create(newRequest)
-              result <- eisService.requestTraderReport(eisRequest, newRequest)
-            } yield result
-          })
+          requests     = value.reportType.toSeq.map { reportTypeName =>
+                           reportRequestTransformationService.transformReportRequest(
+                             value.eori,
+                             value.copy(reportType = Set(reportTypeName)),
+                             eoriHistory,
+                             userEmail
+                           )
+                         }
+          _           <- Future.sequence(requests.map { newRequest =>
+                           val eisRequest = reportRequestTransformationService.toEisReportRequest(newRequest)
+                           for {
+                             _      <- reportRequestService.create(newRequest)
+                             result <- eisService.requestTraderReport(eisRequest, newRequest)
+                           } yield result
+                         })
         } yield Ok(Json.obj("references" -> requests.map(_.reportRequestId)))
-      case JsError(_) =>
+      case JsError(_)          =>
         Future.successful(BadRequest)
     }
   }
