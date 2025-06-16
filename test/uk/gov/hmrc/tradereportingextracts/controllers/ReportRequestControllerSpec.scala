@@ -17,6 +17,8 @@
 package uk.gov.hmrc.tradereportingextracts.controllers
 
 import org.apache.pekko.Done
+
+import scala.jdk.CollectionConverters.*
 import org.mockito.ArgumentCaptor
 import org.mockito.ArgumentMatchers.any
 import play.api.test.Helpers.*
@@ -27,21 +29,28 @@ import org.mockito.Mockito.*
 import org.scalatest.matchers.must.Matchers.{must, mustBe}
 import play.api.inject.guice.GuiceApplicationBuilder
 import uk.gov.hmrc.tradereportingextracts.connectors.CustomsDataStoreConnector
-import uk.gov.hmrc.tradereportingextracts.models.eis.EisReportRequest
 import uk.gov.hmrc.tradereportingextracts.models.{EoriHistory, EoriHistoryResponse, NotificationEmail, ReportRequest}
 import uk.gov.hmrc.tradereportingextracts.services.{EisService, ReportRequestService, RequestReferenceService}
-import uk.gov.hmrc.tradereportingextracts.utils.SpecBase
+import uk.gov.hmrc.tradereportingextracts.utils.{SpecBase, WireMockHelper}
 
 import scala.concurrent.{ExecutionContext, Future}
 import java.time.{LocalDate, LocalDateTime}
 
-class ReportRequestControllerSpec extends SpecBase {
+class ReportRequestControllerSpec extends SpecBase with WireMockHelper {
 
   val ec: ExecutionContext                                     = ExecutionContext.global
   val mockCustomsDataStoreConnector: CustomsDataStoreConnector = mock[CustomsDataStoreConnector]
   val mockReportRequestService: ReportRequestService           = mock[ReportRequestService]
   val mockRequestReferenceService: RequestReferenceService     = mock[RequestReferenceService]
   val mockEisService: EisService                               = mock[EisService]
+
+  override def beforeEach(): Unit = {
+    super.beforeEach()
+    reset(mockReportRequestService)
+    reset(mockCustomsDataStoreConnector)
+    reset(mockRequestReferenceService)
+    reset(mockEisService)
+  }
 
   private val app = new GuiceApplicationBuilder()
     .overrides(
@@ -53,7 +62,8 @@ class ReportRequestControllerSpec extends SpecBase {
     .build()
 
   "createReportRequest" should {
-    "return OK and report ID when input is valid" in {
+
+    "return OK and report ID for a single report when input is valid" in {
       val inputJson: JsValue = Json.parse(
         """
           {
@@ -106,7 +116,136 @@ class ReportRequestControllerSpec extends SpecBase {
       persistedRequest.reportName mustBe "MyReport"
     }
 
-    "return OK and report ID when input is sdfsdfsdf" in {
+    "return OK and 2 report IDs when 2 report types are requested" in {
+      val inputJson: JsValue = Json.parse(
+        """
+          {
+            "eori": "GB123456789014",
+            "reportStartDate": "2025-04-16",
+            "reportEndDate": "2025-05-16",
+            "whichEori": "GB123456789014",
+            "reportName": "MyReport",
+            "eoriRole": ["declarant"],
+            "reportType": ["importHeader", "importItem"],
+            "dataType": "import",
+            "additionalEmail": ["email1@gmail.com"]
+          }
+    """
+      )
+      when(mockCustomsDataStoreConnector.getVerifiedEmailForReport(any()))
+        .thenReturn(Future.successful(NotificationEmail("email@example.com", LocalDateTime.now())))
+
+      when(mockCustomsDataStoreConnector.getEoriHistory(any()))
+        .thenReturn(
+          Future.successful(
+            EoriHistoryResponse(
+              Seq(EoriHistory("eori", Some(LocalDate.of(2023, 2, 1)), Some(LocalDate.of(2023, 3, 1))))
+            )
+          )
+        )
+
+      when(mockRequestReferenceService.random())
+        .thenReturn("RE00000001")
+        .thenReturn("RE00000002")
+
+      when(mockReportRequestService.create(any())(any()))
+        .thenReturn(Future.successful(true))
+
+      when(mockEisService.requestTraderReport(any(), any())(any())).thenReturn(Future.successful(Done))
+
+      val request = FakeRequest(POST, "/trade-reporting-extracts/create-report-request")
+        .withHeaders("Content-Type" -> "application/json")
+        .withJsonBody(inputJson)
+
+      val result = route(app, request).value
+
+      status(result) mustBe OK
+      contentAsJson(result) mustBe Json.obj("references" -> Seq("RE00000001", "RE00000002"))
+
+      val captor = ArgumentCaptor.forClass(classOf[ReportRequest])
+      verify(mockReportRequestService, times(2)).create(captor.capture())(any())
+
+      val capturedRequests = captor.getAllValues
+      capturedRequests.size() mustBe 2
+      capturedRequests.asScala.map(_.reportRequestId) must contain allOf("RE00000001", "RE00000002")
+      capturedRequests.asScala.foreach { req =>
+        req.requesterEORI mustBe "GB123456789014"
+        req.reportName mustBe "MyReport"
+      }
+    }
+
+    "return OK and 3 report IDs when 3 report types are requested" in {
+      val inputJson: JsValue = Json.parse(
+        """
+      {
+        "eori": "GB123456789014",
+        "reportStartDate": "2025-04-16",
+        "reportEndDate": "2025-05-16",
+        "whichEori": "GB123456789014",
+        "reportName": "MyReport",
+        "eoriRole": ["declarant"],
+        "reportType": ["importHeader", "importItem", "importTaxLine"],
+        "dataType": "import",
+        "additionalEmail": ["email1@gmail.com"]
+      }
+    """
+      )
+      when(mockCustomsDataStoreConnector.getVerifiedEmailForReport(any()))
+        .thenReturn(Future.successful(NotificationEmail("email@example.com", LocalDateTime.now())))
+
+      when(mockCustomsDataStoreConnector.getEoriHistory(any()))
+        .thenReturn(
+          Future.successful(
+            EoriHistoryResponse(
+              Seq(EoriHistory("eori", Some(LocalDate.of(2023, 2, 1)), Some(LocalDate.of(2023, 3, 1))))
+            )
+          )
+        )
+
+      when(mockRequestReferenceService.random())
+        .thenReturn("RE00000001")
+        .thenReturn("RE00000002")
+        .thenReturn("RE00000003")
+
+      when(mockReportRequestService.create(any())(any()))
+        .thenReturn(Future.successful(true))
+
+      when(mockEisService.requestTraderReport(any(), any())(any())).thenReturn(Future.successful(Done))
+
+      val request = FakeRequest(POST, "/trade-reporting-extracts/create-report-request")
+        .withHeaders("Content-Type" -> "application/json")
+        .withJsonBody(inputJson)
+
+      val result = route(app, request).value
+
+      status(result) mustBe OK
+      contentAsJson(result) mustBe Json.obj("references" -> Seq("RE00000001", "RE00000002", "RE00000003"))
+
+      val captor = ArgumentCaptor.forClass(classOf[ReportRequest])
+      verify(mockReportRequestService, times(3)).create(captor.capture())(any())
+
+      val capturedRequests = captor.getAllValues
+      capturedRequests.size() mustBe 3
+      capturedRequests.asScala.map(_.reportRequestId) must contain allOf("RE00000001", "RE00000002", "RE00000003")
+      capturedRequests.asScala.foreach { req =>
+        req.requesterEORI mustBe "GB123456789014"
+        req.reportName mustBe "MyReport"
+      }
+    }
+
+    "return BadRequest if JSON is invalid" in {
+      val invalidJson = Json.obj("foo" -> "bar")
+
+      val request = FakeRequest(POST, "/trade-reporting-extracts/create-report-request")
+        .withHeaders("Content-Type" -> "application/json")
+        .withJsonBody(invalidJson)
+
+      val result = route(app, request).value
+
+      status(result) mustBe BAD_REQUEST
+    }
+
+    "fail when Customs Data Store is down" in {
       val inputJson: JsValue = Json.parse(
         """
           {
@@ -124,34 +263,15 @@ class ReportRequestControllerSpec extends SpecBase {
       )
 
       when(mockCustomsDataStoreConnector.getVerifiedEmailForReport(any()))
-        .thenReturn(Future.successful(NotificationEmail("email@example.com", LocalDateTime.now())))
-
-      when(mockCustomsDataStoreConnector.getEoriHistory(any()))
-        .thenReturn(Future.failed(Throwable("error")))
-
-      when(mockRequestReferenceService.random()).thenReturn("RE00000001")
-
-      when(mockReportRequestService.create(any())(any()))
-        .thenReturn(Future.successful(true))
+        .thenReturn(Future.failed(new RuntimeException("CDS Unavailable")))
 
       val request = FakeRequest(POST, "/trade-reporting-extracts/create-report-request")
         .withHeaders("Content-Type" -> "application/json")
         .withJsonBody(inputJson)
 
-      val result = route(app, request).value.failed.futureValue
-      result mustBe a[Throwable]
-    }
-
-    "return BadRequest if JSON is invalid" in {
-      val invalidJson = Json.obj("foo" -> "bar")
-
-      val request = FakeRequest(POST, "/trade-reporting-extracts/create-report-request")
-        .withHeaders("Content-Type" -> "application/json")
-        .withJsonBody(invalidJson)
-
-      val result = route(app, request).value
-
-      status(result) mustBe BAD_REQUEST
+      val thrown = route(app, request).value.failed.futureValue
+      thrown mustBe a[RuntimeException]
+      thrown.getMessage must include("CDS Unavailable")
     }
   }
 }

@@ -22,7 +22,7 @@ import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 import uk.gov.hmrc.tradereportingextracts.connectors.CustomsDataStoreConnector
 import uk.gov.hmrc.tradereportingextracts.models.eis.EisReportRequest
 import uk.gov.hmrc.tradereportingextracts.models.{EoriRole, ReportRequest, ReportRequestUserAnswersModel, ReportTypeName}
-import uk.gov.hmrc.tradereportingextracts.services.{EisService, ReportRequestService, RequestReferenceService}
+import uk.gov.hmrc.tradereportingextracts.services.{EisService, ReportRequestService, ReportRequestTransformationService, RequestReferenceService}
 
 import java.time.format.DateTimeFormatter
 import java.time.{Instant, LocalDate, ZoneOffset}
@@ -35,6 +35,7 @@ class ReportRequestController @Inject() (
   customsDataStoreConnector: CustomsDataStoreConnector,
   requestReferenceService: RequestReferenceService,
   reportRequestService: ReportRequestService,
+  reportRequestTransformationService: ReportRequestTransformationService,
   eisService: EisService
 )(implicit executionContext: ExecutionContext)
     extends BackendController(cc) {
@@ -46,82 +47,28 @@ class ReportRequestController @Inject() (
         val startEndDate =
           (LocalDate.parse(value.reportStartDate, formatter), LocalDate.parse(value.reportEndDate, formatter))
         for {
-          userEmail   <- customsDataStoreConnector.getVerifiedEmailForReport(value.eori).map(i => i.address)
+          userEmail   <- customsDataStoreConnector.getVerifiedEmailForReport(value.eori).map(_.address)
           eoriHistory <- customsDataStoreConnector
                            .getEoriHistory(value.whichEori.get)
-                           .map(i => i.filterByDateRange(startEndDate._1, startEndDate._2).map(j => j.eori))
-          newRequest   = transformReportRequest(value.eori, value, eoriHistory, userEmail)
-          _           <- reportRequestService.create(newRequest)
-          eisRequest   = toEisReportRequest(newRequest)
-          _           <- eisService.requestTraderReport(eisRequest, newRequest)
-        } yield Ok(Json.obj("references" -> Seq(newRequest.reportRequestId)))
-      case JsError(errors)     =>
+                           .map(_.filterByDateRange(startEndDate._1, startEndDate._2).map(_.eori))
+          requests = value.reportType.toSeq.map { reportTypeName =>
+            reportRequestTransformationService.transformReportRequest(
+              value.eori,
+              value.copy(reportType = Set(reportTypeName)),
+              eoriHistory,
+              userEmail
+            )
+          }
+          _ <- Future.sequence(requests.map { newRequest =>
+            val eisRequest = reportRequestTransformationService.toEisReportRequest(newRequest)
+            for {
+              _ <- reportRequestService.create(newRequest)
+              result <- eisService.requestTraderReport(eisRequest, newRequest)
+            } yield result
+          })
+        } yield Ok(Json.obj("references" -> requests.map(_.reportRequestId)))
+      case JsError(_) =>
         Future.successful(BadRequest)
     }
-
   }
-
-  private def transformReportRequest(
-    eoriValue: String,
-    reportRequestUserAnswersModel: ReportRequestUserAnswersModel,
-    historicalEoris: Seq[String],
-    userEmail: String
-  ): ReportRequest = {
-
-    val userAnswers = reportRequestUserAnswersModel
-
-    def getReportType(reportTypes: String): ReportTypeName =
-      reportTypes match {
-        case x if x.contains("importHeader")  => ReportTypeName.IMPORTS_HEADER_REPORT
-        case x if x.contains("importItem")    => ReportTypeName.IMPORTS_ITEM_REPORT
-        case x if x.contains("importTaxLine") => ReportTypeName.IMPORTS_TAXLINE_REPORT
-        case x if x.contains("exportItem")    => ReportTypeName.EXPORTS_ITEM_REPORT
-      }
-
-    def getRole(roles: Set[String]): EoriRole =
-      roles match {
-        case roles if roles == Set("declarant")                                                                 => EoriRole.DECLARANT
-        case roles if roles.subsetOf(Set("importer", "exporter"))                                               => EoriRole.TRADER
-        case roles if roles.contains("declarant") && (roles.contains("importer")) || roles.contains("exporter") =>
-          EoriRole.TRADER_DECLARANT
-      }
-
-    ReportRequest(
-      reportRequestId = requestReferenceService.random(),
-      correlationId = UUID.randomUUID().toString,
-      reportName = userAnswers.reportName,
-      requesterEORI = eoriValue,
-      eoriRole = getRole(userAnswers.eoriRole),
-      reportEORIs = historicalEoris :+ userAnswers.whichEori.getOrElse(""),
-      recipientEmails = userAnswers.additionalEmail.getOrElse(Seq()).toSeq :+ userEmail,
-      reportTypeName = getReportType(userAnswers.reportType.head),
-      reportStart = LocalDate.parse(userAnswers.reportStartDate).atStartOfDay(ZoneOffset.UTC).toInstant,
-      reportEnd = LocalDate.parse(userAnswers.reportEndDate).atStartOfDay(ZoneOffset.UTC).toInstant,
-      createDate = Instant.now,
-      notifications = Seq(),
-      linkAvailableTime = None,
-      fileNotifications = None
-    )
-  }
-
-  private def toEisReportRequest(reportRequest: ReportRequest): EisReportRequest =
-    EisReportRequest(
-      endDate = DateTimeFormatter.ISO_LOCAL_DATE.format(reportRequest.reportEnd.atZone(ZoneOffset.UTC)),
-      eori = reportRequest.reportEORIs.toList,
-      eoriRole = reportRequest.eoriRole match {
-        case EoriRole.TRADER           => EisReportRequest.EoriRole.TRADER
-        case EoriRole.DECLARANT        => EisReportRequest.EoriRole.DECLARANT
-        case EoriRole.TRADER_DECLARANT => EisReportRequest.EoriRole.TRADERDECLARANT
-      },
-      reportTypeName = reportRequest.reportTypeName match {
-        case ReportTypeName.IMPORTS_ITEM_REPORT    => EisReportRequest.ReportTypeName.IMPORTSITEMREPORT
-        case ReportTypeName.IMPORTS_HEADER_REPORT  => EisReportRequest.ReportTypeName.IMPORTSHEADERREPORT
-        case ReportTypeName.IMPORTS_TAXLINE_REPORT => EisReportRequest.ReportTypeName.IMPORTSTAXLINEREPORT
-        case ReportTypeName.EXPORTS_ITEM_REPORT    => EisReportRequest.ReportTypeName.EXPORTSITEMREPORT
-      },
-      requestID = reportRequest.reportRequestId,
-      requestTimestamp = DateTimeFormatter.ISO_INSTANT.format(reportRequest.createDate),
-      requesterEori = reportRequest.requesterEORI,
-      startDate = DateTimeFormatter.ISO_LOCAL_DATE.format(reportRequest.reportStart.atZone(ZoneOffset.UTC))
-    )
 }
