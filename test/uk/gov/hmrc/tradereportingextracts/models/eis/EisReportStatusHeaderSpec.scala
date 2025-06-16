@@ -14,15 +14,23 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.tradereportingextracts.models
+package uk.gov.hmrc.tradereportingextracts.models.eis
 
-import play.api.libs.json.*
+import org.scalatest.freespec.AnyFreeSpec
+import org.scalatest.matchers.must.Matchers
+import uk.gov.hmrc.tradereportingextracts.models.eis.EisReportStatusHeaders
 
-import java.time.Instant
+class EisReportStatusHeadersSpec extends AnyFreeSpec with Matchers {
 
-case class EoriHistory(eori: String, validFrom: Option[Instant], validUntil: Option[Instant]):
-  def isValid: Boolean = validFrom.isDefined && validUntil.isDefined
-
-object EoriHistory {
-  implicit val format: OFormat[EoriHistory] = Json.format[EoriHistory]
+  "EisReportStatusHeaders.allHeaders" - {
+    "must return all expected header names" in {
+      EisReportStatusHeaders.allHeaders must contain theSameElementsAs Seq(
+        "authorization",
+        "content-type",
+        "date",
+        "x-correlation-id",
+        "x-forwarded-host"
+      )
+    }
+  }
 }

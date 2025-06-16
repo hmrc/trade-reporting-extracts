@@ -34,7 +34,7 @@ import uk.gov.hmrc.tradereportingextracts.services.{EisService, ReportRequestSer
 import uk.gov.hmrc.tradereportingextracts.utils.{SpecBase, WireMockHelper}
 
 import scala.concurrent.{ExecutionContext, Future}
-import java.time.{LocalDate, LocalDateTime}
+import java.time.{Instant, LocalDate, LocalDateTime}
 
 class ReportRequestControllerSpec extends SpecBase with WireMockHelper {
 
@@ -86,7 +86,13 @@ class ReportRequestControllerSpec extends SpecBase with WireMockHelper {
         .thenReturn(
           Future.successful(
             EoriHistoryResponse(
-              Seq(EoriHistory("eori", Some(LocalDate.of(2023, 2, 1)), Some(LocalDate.of(2023, 3, 1))))
+              Seq(
+                EoriHistory(
+                  "eori",
+                  Some(Instant.parse("2023-02-01T00:00:00Z")),
+                  Some(Instant.parse("2023-03-01T00:00:00Z"))
+                )
+              )
             )
           )
         )

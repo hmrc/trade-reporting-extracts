@@ -1,0 +1,12 @@
+{
+  "microservice": {
+    "services": {
+      "files-listing": {
+        "host": "secure-data-exchange-proxy.public.mdtp",
+        "protocol": "https",
+        "port": 443,
+        "path": "/files-available/list/1749816314749"
+      }
+    }
+  }
+}

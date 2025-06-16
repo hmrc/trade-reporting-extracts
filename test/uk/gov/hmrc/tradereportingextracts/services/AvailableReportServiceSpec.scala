@@ -16,18 +16,18 @@
 
 package uk.gov.hmrc.tradereportingextracts.services
 
+import org.mockito.ArgumentMatchers.*
+import org.mockito.Mockito.*
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
-import org.mockito.Mockito.*
-import org.mockito.ArgumentMatchers.*
 import org.scalatestplus.mockito.MockitoSugar
-import uk.gov.hmrc.tradereportingextracts.models.sdes.{FileAvailableMetadataItem, FileAvailableResponse, FileNotificationMetadata}
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.tradereportingextracts.config.AppConfig
 import uk.gov.hmrc.tradereportingextracts.connectors.SDESConnector
 import uk.gov.hmrc.tradereportingextracts.models.eis.EisReportStatusRequest
-import uk.gov.hmrc.tradereportingextracts.models.{Component, EoriRole, FileNotification, FileType, Notification, ReportRequest, ReportTypeName, StatusCode, StatusType}
+import uk.gov.hmrc.tradereportingextracts.models.sdes.{FileAvailableMetadataItem, FileAvailableResponse, FileNotificationMetadata}
+import uk.gov.hmrc.tradereportingextracts.models.*
 
 import java.time.Instant
 import scala.concurrent.{ExecutionContext, Future}

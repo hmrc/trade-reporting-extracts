@@ -17,38 +17,39 @@
 package uk.gov.hmrc.tradereportingextracts.connectors
 
 import com.github.tomakehurst.wiremock.client.WireMock
-import uk.gov.hmrc.tradereportingextracts.utils.WireMockHelper
+import com.github.tomakehurst.wiremock.client.WireMock.*
 import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}
 import org.scalatest.freespec.AnyFreeSpec
 import org.scalatest.matchers.must.Matchers.mustBe
+import org.scalatest.matchers.should.Matchers
+import org.scalatestplus.mockito.MockitoSugar
+import org.scalatestplus.play.*
+import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import play.api.inject.guice.GuiceApplicationBuilder
+import play.api.test.*
+import play.api.test.Helpers.*
 import play.api.{Application, inject}
 import uk.gov.hmrc.http.UpstreamErrorResponse
 import uk.gov.hmrc.tradereportingextracts.config.AppConfig
 import uk.gov.hmrc.tradereportingextracts.models.NotificationEmail
-import org.scalatestplus.play.*
-import play.api.test.*
-import play.api.test.Helpers.*
-import com.github.tomakehurst.wiremock.client.WireMock.*
-import org.scalatest.concurrent.PatienceConfiguration.Timeout
-import org.scalatest.matchers.should.Matchers
-import org.scalatestplus.mockito.MockitoSugar
-import org.scalatestplus.play.guice.GuiceOneAppPerSuite
+import uk.gov.hmrc.tradereportingextracts.utils.WireMockHelper
 
-import java.net.{URI, URL}
+import java.net.URI
 import java.time.LocalDateTime
 
-class CustomsDataStoreConnectorSpec extends AnyFreeSpec with ScalaFutures
-  with GuiceOneAppPerSuite
-  with MockitoSugar
-  with Matchers
-  with WireMockHelper
-  with IntegrationPatience {
+class CustomsDataStoreConnectorSpec
+    extends AnyFreeSpec
+    with ScalaFutures
+    with GuiceOneAppPerSuite
+    with MockitoSugar
+    with Matchers
+    with WireMockHelper
+    with IntegrationPatience {
 
   val appConfig: AppConfig = app.injector.instanceOf[AppConfig]
-  val baseUrlCDS: String = appConfig.customsDataStore
-  val uri = new URI(baseUrlCDS)
-  val path = uri.getPath
+  val baseUrlCDS: String   = appConfig.customsDataStore
+  val uri                  = new URI(baseUrlCDS)
+  val path                 = uri.getPath
 
   private def application: Application =
     new GuiceApplicationBuilder()
@@ -71,7 +72,8 @@ class CustomsDataStoreConnectorSpec extends AnyFreeSpec with ScalaFutures
       running(app) {
         val connector = app.injector.instanceOf[CustomsDataStoreConnector]
         server.stubFor(
-          WireMock.get(urlEqualTo(url))
+          WireMock
+            .post(urlEqualTo(url))
             .willReturn(ok(responseBody))
         )
 
@@ -88,7 +90,8 @@ class CustomsDataStoreConnectorSpec extends AnyFreeSpec with ScalaFutures
       running(app) {
         val connector = app.injector.instanceOf[CustomsDataStoreConnector]
         server.stubFor(
-          WireMock.get(urlEqualTo(url))
+          WireMock
+            .post(urlEqualTo(url))
             .willReturn(aResponse.withStatus(500))
         )
 
