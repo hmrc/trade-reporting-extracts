@@ -24,7 +24,7 @@ import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import uk.gov.hmrc.mongo.test.CleanMongoCollectionSupport
 import uk.gov.hmrc.tradereportingextracts.config.AppConfig
 import uk.gov.hmrc.tradereportingextracts.models.eis.EisReportStatusRequest
-import uk.gov.hmrc.tradereportingextracts.models.{Component, EoriRole, FileNotification, FileType, Notification, ReportRequest, ReportTypeName, StatusCode, StatusType}
+import uk.gov.hmrc.tradereportingextracts.models.{Component, EoriRole, FileNotification, FileType, ReportRequest, ReportTypeName, StatusCode, StatusType}
 
 import java.time.Instant
 import scala.concurrent.ExecutionContext.Implicits.global

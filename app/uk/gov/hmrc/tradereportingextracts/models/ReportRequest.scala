@@ -57,7 +57,3 @@ object ReportRequest:
 object FileNotification:
   given format: Format[FileNotification]             = Json.format[FileNotification]
   given CanEqual[FileNotification, FileNotification] = CanEqual.derived
-
-object Notification:
-  given format: Format[EisReportStatusRequest]                   = Json.format[EisReportStatusRequest]
-  given CanEqual[EisReportStatusRequest, EisReportStatusRequest] = CanEqual.derived
