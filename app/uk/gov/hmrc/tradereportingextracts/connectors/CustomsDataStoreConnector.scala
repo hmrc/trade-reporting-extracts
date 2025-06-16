@@ -36,7 +36,7 @@ class CustomsDataStoreConnector @Inject() (appConfig: AppConfig, httpClient: Htt
 
   def getVerifiedEmailForReport(eori: String): Future[NotificationEmail] =
     httpClient
-      .get(url"${appConfig.customsDataStore}/eori/verified-email")
+      .post(url"${appConfig.customsDataStore}/eori/verified-email")
       .withBody(Json.obj("eori" -> eori))
       .execute[HttpResponse]
       .flatMap { response =>
@@ -57,7 +57,7 @@ class CustomsDataStoreConnector @Inject() (appConfig: AppConfig, httpClient: Htt
 
   def getCompanyInformation(eori: String): Future[CompanyInformation] =
     httpClient
-      .get(url"${appConfig.customsDataStore}/eori/company-information")
+      .post(url"${appConfig.customsDataStore}/eori/company-information")
       .withBody(Json.obj("eori" -> eori))
       .execute[HttpResponse]
       .flatMap { response =>
@@ -71,7 +71,7 @@ class CustomsDataStoreConnector @Inject() (appConfig: AppConfig, httpClient: Htt
 
   def getEoriHistory(eori: String): Future[EoriHistoryResponse] =
     httpClient
-      .get(url"${appConfig.customsDataStore}/eori/eori-history")
+      .post(url"${appConfig.customsDataStore}/eori/eori-history")
       .withBody(Json.obj("eori" -> eori))
       .execute[HttpResponse]
       .flatMap { response =>
@@ -85,7 +85,7 @@ class CustomsDataStoreConnector @Inject() (appConfig: AppConfig, httpClient: Htt
 
   def getNotificationEmail(eori: String): Future[NotificationEmail] =
     httpClient
-      .get(url"${appConfig.customsDataStore}/eori/verified-email")
+      .post(url"${appConfig.customsDataStore}/eori/verified-email")
       .withBody(Json.obj("eori" -> eori))
       .execute[HttpResponse]
       .flatMap { response =>

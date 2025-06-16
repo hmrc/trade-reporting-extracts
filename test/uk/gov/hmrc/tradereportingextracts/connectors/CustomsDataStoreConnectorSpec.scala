@@ -68,7 +68,7 @@ class CustomsDataStoreConnectorSpec
         val connector = app.injector.instanceOf[CustomsDataStoreConnector]
         server.stubFor(
           WireMock
-            .get(WireMock.urlEqualTo(url))
+            .post(WireMock.urlEqualTo(url))
             .willReturn(WireMock.ok(responseBody))
         )
 
@@ -83,7 +83,7 @@ class CustomsDataStoreConnectorSpec
         val connector = app.injector.instanceOf[CustomsDataStoreConnector]
         server.stubFor(
           WireMock
-            .get(WireMock.urlEqualTo(url))
+            .post(WireMock.urlEqualTo(url))
             .willReturn(WireMock.aResponse().withStatus(500))
         )
 
@@ -107,7 +107,7 @@ class CustomsDataStoreConnectorSpec
           val connector = app.injector.instanceOf[CustomsDataStoreConnector]
           server.stubFor(
             WireMock
-              .get(WireMock.urlEqualTo(url))
+              .post(WireMock.urlEqualTo(url))
               .willReturn(WireMock.ok(responseBody))
           )
 
@@ -122,7 +122,7 @@ class CustomsDataStoreConnectorSpec
           val connector = app.injector.instanceOf[CustomsDataStoreConnector]
           server.stubFor(
             WireMock
-              .get(WireMock.urlEqualTo(url))
+              .post(WireMock.urlEqualTo(url))
               .willReturn(WireMock.aResponse().withStatus(404))
           )
 
@@ -153,7 +153,7 @@ class CustomsDataStoreConnectorSpec
           val connector = app.injector.instanceOf[CustomsDataStoreConnector]
           server.stubFor(
             WireMock
-              .get(WireMock.urlEqualTo(url))
+              .post(WireMock.urlEqualTo(url))
               .willReturn(WireMock.ok(responseBody))
           )
 
@@ -176,7 +176,7 @@ class CustomsDataStoreConnectorSpec
           val connector = app.injector.instanceOf[CustomsDataStoreConnector]
           server.stubFor(
             WireMock
-              .get(WireMock.urlEqualTo(url))
+              .post(WireMock.urlEqualTo(url))
               .willReturn(WireMock.aResponse().withStatus(500))
           )
 
@@ -201,7 +201,7 @@ class CustomsDataStoreConnectorSpec
           val connector = app.injector.instanceOf[CustomsDataStoreConnector]
           server.stubFor(
             WireMock
-              .get(WireMock.urlEqualTo(url))
+              .post(WireMock.urlEqualTo(url))
               .willReturn(WireMock.ok(responseBody))
           )
 
