@@ -27,7 +27,7 @@ import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.tradereportingextracts.connectors.CustomsDataStoreConnector
 import uk.gov.hmrc.tradereportingextracts.models.{EoriHistory, EoriHistoryResponse}
 
-import java.time.LocalDate
+import java.time.{Instant, LocalDate}
 import scala.concurrent.{ExecutionContext, Future}
 
 class EoriHistoryServiceSpec extends AsyncWordSpec with Matchers with ScalaFutures with MockitoSugar {
@@ -36,8 +36,10 @@ class EoriHistoryServiceSpec extends AsyncWordSpec with Matchers with ScalaFutur
   val service                       = new EoriHistoryService(mockConnector)(using ec)
 
   val eori                        = "GB123456789012"
-  val history1                    = EoriHistory(eori, Some(LocalDate.parse("2024-01-01")), Some(LocalDate.parse("2024-06-30")))
-  val history2                    = EoriHistory(eori, Some(LocalDate.parse("2024-07-01")), Some(LocalDate.parse("2024-12-31")))
+  val history1                    =
+    EoriHistory(eori, Some(Instant.parse("2024-01-01T00:00:00Z")), Some(Instant.parse("2024-06-30T00:00:00Z")))
+  val history2                    =
+    EoriHistory(eori, Some(Instant.parse("2024-07-01T00:00:00Z")), Some(Instant.parse("2024-12-31T00:00:00Z")))
   val histories: Seq[EoriHistory] = Seq(history1, history2)
 
   private given HeaderCarrier = HeaderCarrier()
