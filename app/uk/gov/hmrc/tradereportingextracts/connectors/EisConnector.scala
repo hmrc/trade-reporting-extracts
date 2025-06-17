@@ -41,7 +41,7 @@ class EisConnector @Inject() (
   )(implicit hc: HeaderCarrier): Future[HttpResponse] = {
     val requestTraderReportUrl = url"${appConfig.eis}"
     val currentDate            = DateTimeFormatter.RFC_1123_DATE_TIME.format(ZonedDateTime.now(ZoneOffset.UTC))
-    val eisAuthToken           = appConfig.eisAuthToken
+    val eisAuthToken           = "Bearer " + appConfig.eisAuthToken
 
     httpClient
       .put(requestTraderReportUrl)
