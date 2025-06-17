@@ -47,6 +47,8 @@ class EisConnector @Inject() (
       .put(requestTraderReportUrl)
       .withBody(Json.toJson(payload))
       .setHeader(
+        "accept"           -> "application/json",
+        "content-type"     -> "application/json",
         "authorization"    -> eisAuthToken,
         "date"             -> currentDate,
         "x-correlation-id" -> correlationId,
