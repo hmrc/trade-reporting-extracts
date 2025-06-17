@@ -168,7 +168,7 @@ class EisServiceSpec extends AnyWordSpec with Matchers with MockitoSugar with Sc
           EisReportStatusRequest(
             applicationComponent = ApplicationComponent.TRE,
             statusCode = FAILED.toString,
-            statusMessage = "Report failed to send to EIS",
+            statusMessage = "Unexpected response from EIS: ",
             statusTimestamp = null,
             statusType = StatusType.ERROR
           )

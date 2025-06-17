@@ -17,13 +17,16 @@
 package uk.gov.hmrc.tradereportingextracts.services
 
 import org.apache.pekko.Done
+import play.api.Logging
 import play.api.http.Status.{ACCEPTED, INTERNAL_SERVER_ERROR, NO_CONTENT, OK}
+import play.api.libs.json.{JsError, JsSuccess, Json}
 import uk.gov.hmrc.http.{HeaderCarrier, UpstreamErrorResponse}
 import uk.gov.hmrc.tradereportingextracts.config.AppConfig
 import uk.gov.hmrc.tradereportingextracts.connectors.EisConnector
 import uk.gov.hmrc.tradereportingextracts.models.ReportRequest
-import uk.gov.hmrc.tradereportingextracts.models.eis.{EisReportRequest, EisReportStatusRequest}
 import uk.gov.hmrc.tradereportingextracts.models.StatusCode.*
+import uk.gov.hmrc.tradereportingextracts.models.eis.{EisReportRequest, EisReportResponseError, EisReportStatusRequest}
+
 import java.time.{Clock, LocalDate}
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
@@ -31,7 +34,7 @@ import scala.concurrent.{ExecutionContext, Future}
 @Singleton
 class EisService @Inject() (connector: EisConnector, reportRequestService: ReportRequestService, appConfig: AppConfig)(
   implicit ec: ExecutionContext
-) {
+) extends Logging {
 
   private val MaxRetries = appConfig.eisRequestTraderReportMaxRetries
 
@@ -65,6 +68,15 @@ class EisService @Inject() (connector: EisConnector, reportRequestService: Repor
             case INTERNAL_SERVER_ERROR if remainingAttempts > 1 =>
               attempt(remainingAttempts - 1)
             case status                                         =>
+              val errorMessage = Json.toJson(response.body).validate[EisReportResponseError] match {
+                case JsError(errors)        =>
+                  logger.error(s"Unexpected response from EIS: ${response.body}")
+                  s"Unexpected response from EIS: ${response.body}"
+                case JsSuccess(value, path) =>
+                  logger.error(s"Failed to send report to EIS. Status: $status, Body: ${response.body}")
+                  s"EIS Error: ${value.errorDetail.errorMessage}"
+              }
+
               val updatedRequest: ReportRequest =
                 reportRequest
                   .copy(notifications =
@@ -72,7 +84,7 @@ class EisService @Inject() (connector: EisConnector, reportRequestService: Repor
                       EisReportStatusRequest(
                         applicationComponent = EisReportStatusRequest.ApplicationComponent.TRE,
                         statusCode = FAILED.toString,
-                        statusMessage = "Report failed to send to EIS",
+                        statusMessage = errorMessage,
                         statusTimestamp = LocalDate.now(clock).toString,
                         statusType = EisReportStatusRequest.StatusType.ERROR
                       )
