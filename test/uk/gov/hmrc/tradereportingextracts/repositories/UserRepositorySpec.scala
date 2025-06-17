@@ -16,6 +16,7 @@
 
 package uk.gov.hmrc.tradereportingextracts.repositories
 
+import org.scalatest.concurrent.IntegrationPatience
 import org.scalatest.matchers.must.Matchers.{must, mustBe, mustEqual}
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
@@ -24,12 +25,18 @@ import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import uk.gov.hmrc.mongo.test.CleanMongoCollectionSupport
 import uk.gov.hmrc.tradereportingextracts.models.AccessType.IMPORTS
 import uk.gov.hmrc.tradereportingextracts.models.etmp.EoriUpdate
-import uk.gov.hmrc.tradereportingextracts.models.{AuthorisedUser, User, UserDetails}
+import uk.gov.hmrc.tradereportingextracts.models.{AuthorisedUser, User}
 
 import java.time.Instant
 import scala.concurrent.ExecutionContext.Implicits.global
 
-class UserRepositorySpec extends AnyWordSpec, MockitoSugar, GuiceOneAppPerSuite, CleanMongoCollectionSupport, Matchers:
+class UserRepositorySpec
+    extends AnyWordSpec,
+      MockitoSugar,
+      GuiceOneAppPerSuite,
+      CleanMongoCollectionSupport,
+      Matchers,
+      IntegrationPatience:
 
   val userRepository: UserRepository = UserRepository(mongoComponent)
   val user: User                     = User(
