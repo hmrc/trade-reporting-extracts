@@ -31,6 +31,10 @@ class AppConfigSpec extends SpecBase with Matchers {
     "return the correct customsDataStore URL" in new Setup {
       appConfig.customsDataStore shouldBe "http://localhost:2101/trade-reporting-extracts-stub"
     }
+
+    "return correct eis" in new Setup {
+      appConfig.eis shouldBe "http://localhost:2101/trade-reporting-extracts-stub/gbe/requesttraderreport/v1"
+    }
   }
 
   trait Setup {
