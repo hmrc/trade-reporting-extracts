@@ -18,20 +18,27 @@ package uk.gov.hmrc.tradereportingextracts.services
 
 import play.api.http.Status
 import play.api.http.Status.{BAD_REQUEST, CREATED, NOT_FOUND}
+import uk.gov.hmrc.http.HeaderCarrier
+import uk.gov.hmrc.tradereportingextracts.connectors.EmailRendererConnector
+import uk.gov.hmrc.tradereportingextracts.models.ReportStatus.COMPLETE
 import uk.gov.hmrc.tradereportingextracts.models.sdes.{FileNotificationMetadata, FileNotificationResponse}
-import uk.gov.hmrc.tradereportingextracts.models.{FileNotification as TreFileNotification, FileType, ReportTypeName}
+import uk.gov.hmrc.tradereportingextracts.models.{FileType, ReportTypeName, FileNotification as TreFileNotification}
 
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-class FileNotificationService @Inject() (reportRequestService: ReportRequestService)(implicit ec: ExecutionContext) {
+class FileNotificationService @Inject() (
+                                          reportRequestService: ReportRequestService,
+                                          emailRendererConnector: EmailRendererConnector)(implicit ec: ExecutionContext) {
 
   def processFileNotification(fileNotification: FileNotificationResponse): Future[(Int, String)] = {
     val maybeReportRequestId = fileNotification.metadata.collectFirst {
       case FileNotificationMetadata.MDTPReportRequestIDMetadataItem(value) => value
     }
 
+    implicit val hc: HeaderCarrier = HeaderCarrier()
+    
     maybeReportRequestId match {
       case Some(reportRequestId) =>
         reportRequestService.get(reportRequestId).flatMap {
@@ -42,7 +49,23 @@ class FileNotificationService @Inject() (reportRequestService: ReportRequestServ
             }
             val updatedReportRequest     = reportRequest
               .copy(fileNotifications = updatedFileNotifications, linkAvailableTime = Some(java.time.Instant.now()))
-            reportRequestService.update(updatedReportRequest).map(_ => (CREATED, "Created"))
+            if (reportRequestService.determineReportStatus(updatedReportRequest) == COMPLETE) {
+              for {
+                _ <- reportRequestService.update(updatedReportRequest)
+                _ <- Future.sequence(
+                  updatedReportRequest.recipientEmails.map { email => 
+                    emailRendererConnector.sendEmailRequest(
+                      templateId = "tre_report_available",
+                      email = email,
+                      params = Map("reportRequestId" -> updatedReportRequest.reportRequestId)
+                    )
+                  }
+                )
+              } yield (CREATED, "Created")
+            } else {
+              reportRequestService.update(updatedReportRequest).map(_ => (CREATED, "Created"))
+            }
+
           case None                =>
             Future.successful((NOT_FOUND, s"ReportRequest not found for reportRequestId: $reportRequestId"))
         }
