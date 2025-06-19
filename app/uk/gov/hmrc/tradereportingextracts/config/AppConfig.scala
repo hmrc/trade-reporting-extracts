@@ -36,7 +36,9 @@ class AppConfig @Inject() (val config: Configuration, servicesConfig: ServicesCo
   lazy val eisAPI6AuthToken: String    = config.get[String]("eis.auth-token")
   lazy val sdesStubValue: Boolean      = config.get[Boolean]("sdes.stub-value")
 
-  lazy val eis: String  = servicesConfig.baseUrl("eis") + config.get[String]("microservice.services.eis.context")
+  lazy val eis: String = servicesConfig.baseUrl("eis") + config.get[String]("microservice.services.eis.context")
+
+  lazy val emailRenderer: String = servicesConfig.baseUrl("hmrc-email-renderer")
   lazy val sdes: String = servicesConfig.baseUrl("sdes") + config.get[String]("microservice.services.sdes.context")
 
   lazy val eisRequestTraderReportMaxRetries: Int =

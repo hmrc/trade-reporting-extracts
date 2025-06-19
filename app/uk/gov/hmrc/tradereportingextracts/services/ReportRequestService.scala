@@ -113,7 +113,7 @@ class ReportRequestService @Inject() (
 
   }
 
-  private def determineReportStatus(reportRequest: ReportRequest): ReportStatus = {
+  def determineReportStatus(reportRequest: ReportRequest): ReportStatus = {
     val isComplete = reportRequest.fileNotifications.exists { notifications =>
       val parts = notifications.flatMap { case FileNotification(_, _, _, _, _, _, _, reportFilesParts) =>
         reportFilesParts match {
