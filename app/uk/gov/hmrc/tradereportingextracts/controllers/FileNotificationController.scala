@@ -42,7 +42,10 @@ class FileNotificationController @Inject() (
       allHeaders.filterNot(header => request.headers.get(header).isDefined)
 
     def isAuthorized: Boolean =
-      request.headers.get(Authorization.toString).getOrElse("").equals(appConfig.sdesAuthToken)
+      request.headers.get(Authorization.toString).exists { authHeader =>
+        authHeader.startsWith("Bearer ") &&
+        authHeader.substring("Bearer ".length) == appConfig.sdesAuthToken
+      }
 
     (missingHeaders, isAuthorized, request.body.asJson) match {
       case (headers, _, _) if headers.nonEmpty =>
