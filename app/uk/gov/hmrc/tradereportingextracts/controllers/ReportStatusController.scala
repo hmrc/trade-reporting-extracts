@@ -39,7 +39,10 @@ class ReportStatusController @Inject() (
       EisReportStatusHeaders.allHeaders.filterNot(header => request.headers.get(header).isDefined)
 
     def isAuthorized: Boolean =
-      request.headers.get(Authorization.toString).contains(appConfig.eisAPI6AuthToken)
+      request.headers.get(Authorization.toString).exists { authHeader =>
+        authHeader.startsWith("Bearer ") &&
+        authHeader.substring("Bearer ".length) == appConfig.eisAPI6AuthToken
+      }
 
     (missingHeaders, isAuthorized, request.body.asJson) match {
       case (headers, _, _) if headers.nonEmpty =>
