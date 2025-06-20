@@ -29,8 +29,8 @@ class SDESConnectorSpec
     .configure(
       "microservice.services.sdes.port" -> server.port,
       "microservice.services.sdes.host" -> "localhost",
-      "sdes.information-type" -> "INFORMATION_TYPE",
-      "trex.client-id" -> "client-id"
+      "microservice.services.sdes.information-type" -> "INFORMATION_TYPE",
+      "microservice.services.sdes.x-client-id" -> "TRE-CLIENT-ID"
     )
     .build()
 

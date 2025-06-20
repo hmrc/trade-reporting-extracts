@@ -133,22 +133,4 @@ class EoriUpdateController @Inject() (
         )
       )
     )
-
-  def serverOtherMethods(): Action[AnyContent] = Action.async { request =>
-    Future.successful(
-      MethodNotAllowed.withHeaders(
-        date.toString           -> getCurrentHttpDate,
-        xCorrelationID.toString -> request.headers.get(xCorrelationID.toString).getOrElse("")
-      )
-    )
-  }
-
-  def serverOthers(): Action[AnyContent] = Action.async { request =>
-    Future.successful(
-      NotFound.withHeaders(
-        date.toString           -> getCurrentHttpDate,
-        xCorrelationID.toString -> request.headers.get(xCorrelationID.toString).getOrElse("")
-      )
-    )
-  }
 }

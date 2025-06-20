@@ -74,11 +74,11 @@ class ReportStatusControllerSpec extends SpecBase {
     }
   }
   "ReportStatusController" should {
-    "return 405 MethodNotAllowed" in new Setup {
+    "return 404 MethodNotAllowed" in new Setup {
       val request = FakeRequest(GET, routes.ReportStatusController.notifyReportStatus().url)
 
       val result = route(app, request).value
-      status(result) shouldBe METHOD_NOT_ALLOWED
+      status(result) shouldBe 404
     }
   }
 
