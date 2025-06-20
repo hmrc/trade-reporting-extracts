@@ -30,7 +30,7 @@ class EoriUpdateControllerSpec extends SpecBase {
       val eoriUpdate = EoriUpdate(newEori = "GB987654321098", oldEori = "GB123456789012")
       val request    = FakeRequest(PUT, routes.EoriUpdateController.eoriUpdate().url)
         .withHeaders(
-          "authorization"    -> "EtmpAuthToken",
+          "authorization"    -> "Bearer EtmpAuthToken",
           "date"             -> "Mon, 02 Oct 2023 14:30:00 GMT",
           "x-correlation-id" -> "asfd-asdf-asdf",
           "x-forwarded-host" -> "localhost:9000",
@@ -44,7 +44,7 @@ class EoriUpdateControllerSpec extends SpecBase {
   "return 400 BadRequest" in new Setup {
     val request = FakeRequest(PUT, routes.EoriUpdateController.eoriUpdate().url)
       .withHeaders(
-        "authorization"    -> "EtmpAuthToken",
+        "authorization"    -> "Bearer EtmpAuthToken",
         "date"             -> "Mon, 02 Oct 2023 14:30:00 GMT",
         "x-correlation-id" -> "asfd-asdf-asdf",
         "x-forwarded-host" -> "localhost:9000",

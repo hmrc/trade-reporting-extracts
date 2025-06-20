@@ -40,7 +40,10 @@ class EoriUpdateController @Inject() (
       EoriUpdateHeaders.allHeaders.filterNot(header => request.headers.get(header).isDefined)
 
     def isAuthorized: Boolean =
-      request.headers.get(authorization.toString).getOrElse("").equals(appConfig.etmpAuthToken)
+      request.headers.get(authorization.toString).exists { authHeader =>
+        authHeader.startsWith("Bearer ") &&
+        authHeader.substring("Bearer ".length) == appConfig.etmpAuthToken
+      }
 
     (missingHeaders, isAuthorized, request.body.asJson) match {
       case (headers, _, _) if headers.nonEmpty =>

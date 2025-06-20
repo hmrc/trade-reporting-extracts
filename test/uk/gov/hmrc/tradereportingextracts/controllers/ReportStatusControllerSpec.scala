@@ -62,7 +62,7 @@ class ReportStatusControllerSpec extends SpecBase {
       val request                = FakeRequest(PUT, routes.ReportStatusController.notifyReportStatus().url)
         .withHeaders(
           "content-type"     -> "application/json",
-          "authorization"    -> "EisAuthToken",
+          "authorization"    -> "Bearer EisAuthToken",
           "date"             -> "Mon, 02 Oct 2023 14:30:00 GMT",
           "x-correlation-id" -> "asfd-asdf-asdf",
           "x-forwarded-host" -> "CDAP"

@@ -40,7 +40,7 @@ class FileNotificationControllerSpec extends SpecBase with MockitoSugar {
     "return 400 BadRequest when body is not JSON" in new Setup {
       val request = FakeRequest(PUT, routes.FileNotificationController.fileNotification().url)
         .withHeaders(
-          "authorization"         -> "SdesAuthToken",
+          "authorization"         -> "Bearer SdesAuthToken",
           "date"                  -> "Mon, 02 Oct 2023 14:30:00 GMT",
           "x-correlation-id"      -> "asfd-asdf-asdf",
           "source-system"         -> "SDES",
@@ -56,7 +56,7 @@ class FileNotificationControllerSpec extends SpecBase with MockitoSugar {
       val invalidJson = Json.obj("foo" -> "bar")
       val request     = FakeRequest(PUT, routes.FileNotificationController.fileNotification().url)
         .withHeaders(
-          "authorization"         -> "SdesAuthToken",
+          "authorization"         -> "Bearer SdesAuthToken",
           "date"                  -> "Mon, 02 Oct 2023 14:30:00 GMT",
           "x-correlation-id"      -> "asfd-asdf-asdf",
           "source-system"         -> "SDES",
@@ -86,7 +86,7 @@ class FileNotificationControllerSpec extends SpecBase with MockitoSugar {
 
       val request = FakeRequest(PUT, routes.FileNotificationController.fileNotification().url)
         .withHeaders(
-          "authorization"         -> "SdesAuthToken",
+          "authorization"         -> "Bearer SdesAuthToken",
           "date"                  -> "Mon, 02 Oct 2023 14:30:00 GMT",
           "x-correlation-id"      -> "asfd-asdf-asdf",
           "source-system"         -> "SDES",
@@ -117,7 +117,7 @@ class FileNotificationControllerSpec extends SpecBase with MockitoSugar {
 
       val request = FakeRequest(PUT, routes.FileNotificationController.fileNotification().url)
         .withHeaders(
-          "authorization"         -> "SdesAuthToken",
+          "authorization"         -> "Bearer SdesAuthToken",
           "date"                  -> "Mon, 02 Oct 2023 14:30:00 GMT",
           "x-correlation-id"      -> "asfd-asdf-asdf",
           "source-system"         -> "SDES",
@@ -163,7 +163,7 @@ class FileNotificationControllerSpec extends SpecBase with MockitoSugar {
 
       val request = FakeRequest(PUT, routes.FileNotificationController.fileNotification().url)
         .withHeaders(
-          "authorization"         -> "SdesAuthToken",
+          "authorization"         -> "Bearer SdesAuthToken",
           "date"                  -> "Mon, 02 Oct 2023 14:30:00 GMT",
           "x-correlation-id"      -> "asfd-asdf-asdf",
           "source-system"         -> "SDES",
