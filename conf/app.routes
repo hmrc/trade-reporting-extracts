@@ -8,22 +8,10 @@ GET        /requested-reports                           uk.gov.hmrc.tradereporti
 POST       /create-report-request                      uk.gov.hmrc.tradereportingextracts.controllers.ReportRequestController.createReportRequest
 
 PUT        /notify-report-available                     uk.gov.hmrc.tradereportingextracts.controllers.FileNotificationController.fileNotification()
-GET        /notify-report-available                     uk.gov.hmrc.tradereportingextracts.controllers.FileNotificationController.serverOtherMethods()
-POST       /notify-report-available                     uk.gov.hmrc.tradereportingextracts.controllers.FileNotificationController.serverOtherMethods()
-DELETE     /notify-report-available                     uk.gov.hmrc.tradereportingextracts.controllers.FileNotificationController.serverOtherMethods()
 
-PUT        /gbe/notifyreportstatus/v1                   uk.gov.hmrc.tradereportingextracts.controllers.ReportStatusController.notifyReportStatus()
-GET        /gbe/notifyreportstatus/v1                   uk.gov.hmrc.tradereportingextracts.controllers.ReportStatusController.serverOtherMethods()
-POST       /gbe/notifyreportstatus/v1                   uk.gov.hmrc.tradereportingextracts.controllers.ReportStatusController.serverOtherMethods()
-DELETE     /gbe/notifyreportstatus/v1                   uk.gov.hmrc.tradereportingextracts.controllers.ReportStatusController.serverOtherMethods()
+PUT        /tre/reportstatusnotification/v1             uk.gov.hmrc.tradereportingextracts.controllers.ReportStatusController.notifyReportStatus()
 
 GET        /api/available-reports                       uk.gov.hmrc.tradereportingextracts.controllers.AvailableReportController.getAvailableReports()
 GET        /api/available-reports-count                 uk.gov.hmrc.tradereportingextracts.controllers.AvailableReportController.getAvailableReportsCount()
 
-PUT        /gbe/updateeori/v1                           uk.gov.hmrc.tradereportingextracts.controllers.EoriUpdateController.eoriUpdate()
-GET        /gbe/updateeori/v1                           uk.gov.hmrc.tradereportingextracts.controllers.EoriUpdateController.serverOtherMethods()
-POST       /gbe/updateeori/v1                           uk.gov.hmrc.tradereportingextracts.controllers.EoriUpdateController.serverOtherMethods()
-DELETE     /gbe/updateeori/v1                           uk.gov.hmrc.tradereportingextracts.controllers.EoriUpdateController.serverOtherMethods()
-
-
-
+PUT        /tre/updateeori/v1                           uk.gov.hmrc.tradereportingextracts.controllers.EoriUpdateController.eoriUpdate()

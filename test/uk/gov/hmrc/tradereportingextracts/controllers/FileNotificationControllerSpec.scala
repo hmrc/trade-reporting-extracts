@@ -174,10 +174,10 @@ class FileNotificationControllerSpec extends SpecBase with MockitoSugar {
       status(result) shouldBe CREATED
     }
 
-    "return 405 MethodNotAllowed" in new Setup {
+    "return 404 MethodNotAllowed" in new Setup {
       val request = FakeRequest(GET, routes.FileNotificationController.fileNotification().url)
       val result  = route(app, request).value
-      status(result) shouldBe METHOD_NOT_ALLOWED
+      status(result) shouldBe 404
     }
   }
 

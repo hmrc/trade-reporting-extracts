@@ -67,12 +67,4 @@ class FileNotificationController @Inject() (
         }
     }
   }
-
-  def serverOtherMethods(): Action[AnyContent] = Action.async { request =>
-    Future.successful(
-      MethodNotAllowed(
-        s"Method ${request.method} not allowed. Only PUT is allowed for this endpoint."
-      )
-    )
-  }
 }

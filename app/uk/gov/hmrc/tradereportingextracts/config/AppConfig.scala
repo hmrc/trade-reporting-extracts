@@ -28,16 +28,16 @@ class AppConfig @Inject() (val config: Configuration, servicesConfig: ServicesCo
   lazy val customsDataStore: String = servicesConfig.baseUrl("customs-data-store") +
     config.get[String]("microservice.services.customs-data-store.context")
 
-  lazy val eisAuthToken: String        = config.get[String]("microservice.services.eis.auth-token")
-  lazy val etmpAuthToken: String       = config.get[String]("etmp.auth-token")
-  lazy val sdesAuthToken: String       = config.get[String]("sdes.auth-token")
-  lazy val sdesInformationType: String = config.get[String]("sdes.information-type")
-  lazy val treXClientId: String        = config.get[String]("sdes.x-client-id")
-  lazy val eisAPI6AuthToken: String    = config.get[String]("eis.auth-token")
-  lazy val sdesStubValue: Boolean      = config.get[Boolean]("sdes.stub-value")
+  lazy val eisAuthToken: String     = config.get[String]("microservice.services.eis.auth-token")
+  lazy val etmpAuthToken: String    = config.get[String]("etmp.auth-token")
+  lazy val sdesAuthToken: String    = config.get[String]("sdes.auth-token")
+  lazy val eisAPI6AuthToken: String = config.get[String]("eis.auth-token")
+  lazy val sdesStubValue: Boolean   = config.get[Boolean]("sdes.stub-value")
 
-  lazy val eis: String  = servicesConfig.baseUrl("eis") + config.get[String]("microservice.services.eis.context")
-  lazy val sdes: String = servicesConfig.baseUrl("sdes") + config.get[String]("microservice.services.sdes.context")
+  lazy val eis: String                 = servicesConfig.baseUrl("eis") + config.get[String]("microservice.services.eis.context")
+  lazy val sdes: String                = servicesConfig.baseUrl("sdes") + config.get[String]("microservice.services.sdes.context")
+  lazy val sdesInformationType: String = config.get[String]("microservice.services.sdes.information-type")
+  lazy val treXClientId: String        = config.get[String]("microservice.services.sdes.x-client-id")
 
   lazy val eisRequestTraderReportMaxRetries: Int =
     config.get[Int]("microservice.services.eis.request-trader-report.max-retries")
