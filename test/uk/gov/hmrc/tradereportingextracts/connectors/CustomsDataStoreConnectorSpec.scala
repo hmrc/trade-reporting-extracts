@@ -30,7 +30,7 @@ import uk.gov.hmrc.tradereportingextracts.config.AppConfig
 import uk.gov.hmrc.tradereportingextracts.models.{CompanyInformation, EoriHistory, EoriHistoryResponse, NotificationEmail}
 import uk.gov.hmrc.tradereportingextracts.utils.{SpecBase, WireMockHelper}
 
-import java.time.{Instant, LocalDate, LocalDateTime}
+import java.time.{Instant, LocalDateTime}
 
 class CustomsDataStoreConnectorSpec
     extends SpecBase
@@ -41,73 +41,74 @@ class CustomsDataStoreConnectorSpec
     with WireMockHelper
     with IntegrationPatience {
 
-  val appConfig: AppConfig = app.injector.instanceOf[AppConfig]
-  val baseUrlCDS: String   = appConfig.customsDataStore
-  val uri                  = new java.net.URI(baseUrlCDS)
-  val path                 = uri.getPath
-
-  private def application1: Application =
+  private def applicationWithPort(port: Int): Application =
     new GuiceApplicationBuilder()
-      .configure("microservice.services.customs-data-store.port" -> server.port)
+      .configure("microservice.services.customs-data-store.port" -> port)
       .build()
 
   "CustomsDataStoreConnector" should {
 
-    val url  = path ++ "/eori/verified-email"
     val eori = "GB123456789012"
 
-    "should return NotificationEmail when response is OK" in {
+    "getVerifiedEmailForReport" should {
+
       val responseBody =
         s"""{
-             |  "address": "test@example.com",
-             |  "timestamp": "2025-05-19T16:11:16.825994979"
-             |}""".stripMargin
+           |  "address": "test@example.com",
+           |  "timestamp": "2025-05-19T16:11:16.825994979"
+           |}""".stripMargin
 
-      val app = application1
-      running(app) {
-        val connector = app.injector.instanceOf[CustomsDataStoreConnector]
-        server.stubFor(
-          WireMock
-            .post(WireMock.urlEqualTo(url))
-            .willReturn(WireMock.ok(responseBody))
-        )
+      "return NotificationEmail when response is OK" in {
+        val app = applicationWithPort(server.port)
+        running(app) {
+          val connector = app.injector.instanceOf[CustomsDataStoreConnector]
+          val appConfig = app.injector.instanceOf[AppConfig]
 
-        val result = connector.getVerifiedEmailForReport(eori).futureValue
-        result mustBe NotificationEmail("test@example.com", LocalDateTime.parse("2025-05-19T16:11:16.825994979"))
+          server.stubFor(
+            WireMock
+              .post(WireMock.urlEqualTo(new java.net.URI(appConfig.verifiedEmailUrl).getPath))
+              .willReturn(WireMock.ok(responseBody))
+          )
+
+          val result = connector.getVerifiedEmailForReport(eori).futureValue
+          result mustBe NotificationEmail("test@example.com", LocalDateTime.parse("2025-05-19T16:11:16.825994979"))
+        }
       }
-    }
 
-    "should fail with UpstreamErrorResponse when response is not OK" in {
-      val app = application1
-      running(app) {
-        val connector = app.injector.instanceOf[CustomsDataStoreConnector]
-        server.stubFor(
-          WireMock
-            .post(WireMock.urlEqualTo(url))
-            .willReturn(WireMock.aResponse().withStatus(500))
-        )
+      "fail with UpstreamErrorResponse when response is not OK" in {
+        val app = applicationWithPort(server.port)
+        running(app) {
+          val connector = app.injector.instanceOf[CustomsDataStoreConnector]
+          val appConfig = app.injector.instanceOf[AppConfig]
 
-        val result = connector.getVerifiedEmailForReport(eori).failed.futureValue
-        result mustBe a[UpstreamErrorResponse]
+          server.stubFor(
+            WireMock
+              .post(WireMock.urlEqualTo(new java.net.URI(appConfig.verifiedEmailUrl).getPath))
+              .willReturn(WireMock.aResponse().withStatus(500))
+          )
+
+          val result = connector.getVerifiedEmailForReport(eori).failed.futureValue
+          result mustBe a[UpstreamErrorResponse]
+        }
       }
     }
 
     "getCompanyInformation" should {
-      val url  = path ++ "/eori/company-information"
-      val eori = "GB123456789012"
 
-      "should return CompanyInformation when response is OK" in {
-        val responseBody =
-          s"""{
-             |  "name": "Test Company"
-             |}""".stripMargin
+      val responseBody =
+        s"""{
+           |  "name": "Test Company"
+           |}""".stripMargin
 
-        val app = application1
+      "return CompanyInformation when response is OK" in {
+        val app = applicationWithPort(server.port)
         running(app) {
           val connector = app.injector.instanceOf[CustomsDataStoreConnector]
+          val appConfig = app.injector.instanceOf[AppConfig]
+
           server.stubFor(
             WireMock
-              .post(WireMock.urlEqualTo(url))
+              .post(WireMock.urlEqualTo(new java.net.URI(appConfig.companyInformationUrl).getPath))
               .willReturn(WireMock.ok(responseBody))
           )
 
@@ -116,13 +117,15 @@ class CustomsDataStoreConnectorSpec
         }
       }
 
-      "should return empty CompanyInformation when response is not OK" in {
-        val app = application1
+      "return empty CompanyInformation when response is not OK" in {
+        val app = applicationWithPort(server.port)
         running(app) {
           val connector = app.injector.instanceOf[CustomsDataStoreConnector]
+          val appConfig = app.injector.instanceOf[AppConfig]
+
           server.stubFor(
             WireMock
-              .post(WireMock.urlEqualTo(url))
+              .post(WireMock.urlEqualTo(new java.net.URI(appConfig.companyInformationUrl).getPath))
               .willReturn(WireMock.aResponse().withStatus(404))
           )
 
@@ -133,27 +136,27 @@ class CustomsDataStoreConnectorSpec
     }
 
     "getEoriHistory" should {
-      val url  = path ++ "/eori/eori-history"
-      val eori = "GB123456789012"
 
-      "should return EoriHistoryResponse when response is OK" in {
-        val responseBody =
-          s"""{
-             |"eoriHistory": [
-             |  {
-             |    "eori": "GB123456789012",
-             |    "validFrom": "2001-01-20T00:00:00Z", 
-             |    "validUntil": "2002-01-20T00:00:00Z"
-             |  }
-             |]
-             |}""".stripMargin
+      val responseBody =
+        s"""{
+           |"eoriHistory": [
+           |  {
+           |    "eori": "GB123456789012",
+           |    "validFrom": "2001-01-20T00:00:00Z",
+           |    "validUntil": "2002-01-20T00:00:00Z"
+           |  }
+           |]
+           |}""".stripMargin
 
-        val app = application1
+      "return EoriHistoryResponse when response is OK" in {
+        val app = applicationWithPort(server.port)
         running(app) {
           val connector = app.injector.instanceOf[CustomsDataStoreConnector]
+          val appConfig = app.injector.instanceOf[AppConfig]
+
           server.stubFor(
             WireMock
-              .post(WireMock.urlEqualTo(url))
+              .post(WireMock.urlEqualTo(new java.net.URI(appConfig.eoriHistoryUrl).getPath))
               .willReturn(WireMock.ok(responseBody))
           )
 
@@ -170,38 +173,41 @@ class CustomsDataStoreConnectorSpec
         }
       }
 
-      "should return empty EoriHistoryResponse when response is not OK" in {
-        val app = application1
+      "return empty EoriHistoryResponse when response is not OK" in {
+        val app = applicationWithPort(server.port)
         running(app) {
           val connector = app.injector.instanceOf[CustomsDataStoreConnector]
+          val appConfig = app.injector.instanceOf[AppConfig]
+
           server.stubFor(
             WireMock
-              .post(WireMock.urlEqualTo(url))
+              .post(WireMock.urlEqualTo(new java.net.URI(appConfig.eoriHistoryUrl).getPath))
               .willReturn(WireMock.aResponse().withStatus(500))
           )
 
           val result = connector.getEoriHistory(eori).futureValue
+          result mustBe EoriHistoryResponse(Seq.empty)
         }
       }
     }
 
     "getNotificationEmail" should {
-      val url  = path ++ "/eori/verified-email"
-      val eori = "GB123456789012"
 
-      "should return NotificationEmail when response is OK" in {
-        val responseBody =
-          s"""{
-             |  "address": "notify@example.com",
-             |  "timestamp": "2025-05-19T16:11:16.825994979"
-             |}""".stripMargin
+      val responseBody =
+        s"""{
+           |  "address": "notify@example.com",
+           |  "timestamp": "2025-05-19T16:11:16.825994979"
+           |}""".stripMargin
 
-        val app = application1
+      "return NotificationEmail when response is OK" in {
+        val app = applicationWithPort(server.port)
         running(app) {
           val connector = app.injector.instanceOf[CustomsDataStoreConnector]
+          val appConfig = app.injector.instanceOf[AppConfig]
+
           server.stubFor(
             WireMock
-              .post(WireMock.urlEqualTo(url))
+              .post(WireMock.urlEqualTo(new java.net.URI(appConfig.verifiedEmailUrl).getPath))
               .willReturn(WireMock.ok(responseBody))
           )
 

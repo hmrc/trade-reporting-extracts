@@ -16,19 +16,16 @@
 
 package uk.gov.hmrc.tradereportingextracts.connectors
 
-import com.github.tomakehurst.wiremock.client.WireMock
 import com.github.tomakehurst.wiremock.client.WireMock.*
 import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}
 import org.scalatest.freespec.AnyFreeSpec
-import org.scalatest.matchers.must.Matchers.mustBe
+import org.scalatest.matchers.must.Matchers.*
 import org.scalatest.matchers.should.Matchers
 import org.scalatestplus.mockito.MockitoSugar
-import org.scalatestplus.play.*
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
+import play.api.Application
 import play.api.inject.guice.GuiceApplicationBuilder
-import play.api.test.*
 import play.api.test.Helpers.*
-import play.api.{Application, inject}
 import uk.gov.hmrc.http.UpstreamErrorResponse
 import uk.gov.hmrc.tradereportingextracts.config.AppConfig
 import uk.gov.hmrc.tradereportingextracts.models.NotificationEmail
@@ -46,62 +43,56 @@ class CustomsDataStoreConnectorSpec
     with WireMockHelper
     with IntegrationPatience {
 
-  val appConfig: AppConfig = app.injector.instanceOf[AppConfig]
-  val baseUrlCDS: String   = appConfig.customsDataStore
-  val uri                  = new URI(baseUrlCDS)
-  val path                 = uri.getPath
-
   private def application: Application =
     new GuiceApplicationBuilder()
       .configure("microservice.services.customs-data-store.port" -> server.port)
       .build()
 
-  "getVerifiedEmailForReport" - {
+  "CustomsDataStoreConnector" - {
 
-    val url = path ++ "/eori/verified-email"
+    "getVerifiedEmailForReport" - {
 
-    "Must return verified email when OK" in {
+      "must return NotificationEmail when response is OK" in {
+        val responseBody =
+          s"""{
+             |  "address": "example@test.com",
+             |  "timestamp": "2025-05-19T16:11:16.825994979"
+             |}""".stripMargin
 
-      val responseBody =
-        s"""{
-           |  "address": "example@test.com",
-           |  "timestamp": "2025-05-19T16:11:16.825994979"
-           |}""".stripMargin
+        val app = application
+        running(app) {
+          val connector = app.injector.instanceOf[CustomsDataStoreConnector]
+          val appConfig = app.injector.instanceOf[AppConfig]
+          val path      = new URI(appConfig.verifiedEmailUrl).getPath
 
-      val app = application
-      running(app) {
-        val connector = app.injector.instanceOf[CustomsDataStoreConnector]
-        server.stubFor(
-          WireMock
-            .post(urlEqualTo(url))
-            .willReturn(ok(responseBody))
-        )
+          server.stubFor(
+            post(urlEqualTo(path))
+              .willReturn(ok(responseBody))
+          )
 
-        val result = connector.getVerifiedEmailForReport("eori").futureValue
+          val result = connector.getVerifiedEmailForReport("eori").futureValue
 
-        result mustBe NotificationEmail("example@test.com", LocalDateTime.parse("2025-05-19T16:11:16.825994979"))
-
+          result mustBe NotificationEmail("example@test.com", LocalDateTime.parse("2025-05-19T16:11:16.825994979"))
+        }
       }
 
-    }
+      "must return UpstreamErrorResponse when response is not OK" in {
+        val app = application
+        running(app) {
+          val connector = app.injector.instanceOf[CustomsDataStoreConnector]
+          val appConfig = app.injector.instanceOf[AppConfig]
+          val path      = new URI(appConfig.verifiedEmailUrl).getPath
 
-    "Must return upstream error response when not OK" in {
-      val app = application
-      running(app) {
-        val connector = app.injector.instanceOf[CustomsDataStoreConnector]
-        server.stubFor(
-          WireMock
-            .post(urlEqualTo(url))
-            .willReturn(aResponse.withStatus(500))
-        )
+          server.stubFor(
+            post(urlEqualTo(path))
+              .willReturn(aResponse().withStatus(500))
+          )
 
-        val result = connector.getVerifiedEmailForReport("eori").failed.futureValue
+          val result = connector.getVerifiedEmailForReport("eori").failed.futureValue
 
-        result mustBe a[UpstreamErrorResponse]
-
+          result mustBe a[UpstreamErrorResponse]
+        }
       }
-
     }
   }
-
 }
