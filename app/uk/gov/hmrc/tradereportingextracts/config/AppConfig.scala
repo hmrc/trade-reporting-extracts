@@ -27,6 +27,14 @@ class AppConfig @Inject() (val config: Configuration, servicesConfig: ServicesCo
 
   lazy val customsDataStore: String = servicesConfig.baseUrl("customs-data-store") +
     config.get[String]("microservice.services.customs-data-store.context")
+  lazy val verifiedEmailUrl: String =
+    customsDataStore + config.get[String]("microservice.services.customs-data-store.verified-email")
+
+  lazy val companyInformationUrl: String =
+    customsDataStore + config.get[String]("microservice.services.customs-data-store.company-information")
+
+  lazy val eoriHistoryUrl: String =
+    customsDataStore + config.get[String]("microservice.services.customs-data-store.eori-history")
 
   lazy val eisAuthToken: String     = config.get[String]("microservice.services.eis.auth-token")
   lazy val etmpAuthToken: String    = config.get[String]("etmp.auth-token")
