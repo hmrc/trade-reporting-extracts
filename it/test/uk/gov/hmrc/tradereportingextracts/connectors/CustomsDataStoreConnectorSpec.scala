@@ -70,27 +70,9 @@ class CustomsDataStoreConnectorSpec
               .willReturn(ok(responseBody))
           )
 
-          val result = connector.getVerifiedEmailForReport("eori").futureValue
+          val result = connector.getNotificationEmail("eori").futureValue
 
           result mustBe NotificationEmail("example@test.com", LocalDateTime.parse("2025-05-19T16:11:16.825994979"))
-        }
-      }
-
-      "must return UpstreamErrorResponse when response is not OK" in {
-        val app = application
-        running(app) {
-          val connector = app.injector.instanceOf[CustomsDataStoreConnector]
-          val appConfig = app.injector.instanceOf[AppConfig]
-          val path      = new URI(appConfig.verifiedEmailUrl).getPath
-
-          server.stubFor(
-            post(urlEqualTo(path))
-              .willReturn(aResponse().withStatus(500))
-          )
-
-          val result = connector.getVerifiedEmailForReport("eori").failed.futureValue
-
-          result mustBe a[UpstreamErrorResponse]
         }
       }
     }

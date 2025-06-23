@@ -34,27 +34,6 @@ class CustomsDataStoreConnector @Inject() (appConfig: AppConfig, httpClient: Htt
 
   implicit val hc: HeaderCarrier = HeaderCarrier()
 
-  def getVerifiedEmailForReport(eori: String): Future[NotificationEmail] =
-    httpClient
-      .post(url"${appConfig.verifiedEmailUrl}")
-      .withBody(Json.obj("eori" -> eori))
-      .execute[HttpResponse]
-      .flatMap { response =>
-        response.status match {
-          case OK => Future.successful(response.json.as[NotificationEmail])
-          case _  =>
-            logger.error(
-              s"Unexpected response from call to /trade-reporting-extracts/eori/verified-email status : ${response.status}"
-            )
-            Future.failed(
-              UpstreamErrorResponse(
-                "Unexpected response from /trade-reporting-extracts/eori/verified-email",
-                response.status
-              )
-            )
-        }
-      }
-
   def getCompanyInformation(eori: String): Future[CompanyInformation] =
     httpClient
       .post(url"${appConfig.companyInformationUrl}")
