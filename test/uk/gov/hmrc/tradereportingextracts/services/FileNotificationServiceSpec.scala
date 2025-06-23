@@ -27,27 +27,32 @@ import play.api.http.Status.{BAD_REQUEST, CREATED, NOT_FOUND}
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.tradereportingextracts.connectors.EmailConnector
 import uk.gov.hmrc.tradereportingextracts.models.sdes.{FileNotificationMetadata, FileNotificationResponse}
-import uk.gov.hmrc.tradereportingextracts.models.{FileType, ReportTypeName, FileNotification as TreFileNotification}
+import uk.gov.hmrc.tradereportingextracts.models.{FileNotification as TreFileNotification, FileType, ReportTypeName}
 import uk.gov.hmrc.tradereportingextracts.models.ReportRequest
 import uk.gov.hmrc.tradereportingextracts.models.ReportStatus.{COMPLETE, IN_PROGRESS}
 import uk.gov.hmrc.tradereportingextracts.utils.WireMockHelper
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class FileNotificationServiceSpec extends AnyWordSpec with Matchers with MockitoSugar with ScalaFutures with WireMockHelper {
+class FileNotificationServiceSpec
+    extends AnyWordSpec
+    with Matchers
+    with MockitoSugar
+    with ScalaFutures
+    with WireMockHelper {
 
-  implicit val hc: HeaderCarrier = HeaderCarrier()
+  implicit val hc: HeaderCarrier    = HeaderCarrier()
   implicit val ec: ExecutionContext = ExecutionContext.global
 
   override def beforeEach(): Unit = {
     super.beforeEach()
     reset(mockReportRequestService)
-    reset(mockEmailRendererConnector)
+    reset(mockEmailConnector)
   }
 
   val mockReportRequestService: ReportRequestService = mock[ReportRequestService]
-  val mockEmailRendererConnector: EmailConnector = mock[EmailConnector]
-  val service                                        = new FileNotificationService(mockReportRequestService, mockEmailRendererConnector)
+  val mockEmailConnector: EmailConnector             = mock[EmailConnector]
+  val service                                        = new FileNotificationService(mockReportRequestService, mockEmailConnector)
 
   val fileNotification = FileNotificationResponse(
     eori = "GB123456789012",
@@ -158,19 +163,19 @@ class FileNotificationServiceSpec extends AnyWordSpec with Matchers with Mockito
       }
     }
 
-    "call emailRendererConnector.sendEmailRequest for each recipient when status is COMPLETE" in {
+    "call emailConnector.sendEmailRequest for each recipient when status is COMPLETE" in {
       val reportWithEmails = reportRequest.copy(recipientEmails = Seq("a@example.com", "b@example.com"))
       when(mockReportRequestService.get(eqTo("TRE-19"))(any()))
         .thenReturn(Future.successful(Some(reportWithEmails)))
       when(mockReportRequestService.update(any())(any()))
         .thenReturn(Future.successful(true))
       when(mockReportRequestService.determineReportStatus(any())).thenReturn(COMPLETE)
-      when(mockEmailRendererConnector.sendEmailRequest(any(), any(), any())(any()))
+      when(mockEmailConnector.sendEmailRequest(any(), any(), any())(any()))
         .thenReturn(Future.successful(()))
 
       val result = service.processFileNotification(fileNotification)
       whenReady(result) { case (status, message) =>
-        verify(mockEmailRendererConnector, times(2)).sendEmailRequest(
+        verify(mockEmailConnector, times(2)).sendEmailRequest(
           eqTo("tre_report_available"),
           any(),
           eqTo(Map("reportRequestId" -> "TRE-19"))
@@ -178,7 +183,7 @@ class FileNotificationServiceSpec extends AnyWordSpec with Matchers with Mockito
       }
     }
 
-    "not call emailRendererConnector.sendEmailRequest when status is NOT complete" in {
+    "not call emailConnector.sendEmailRequest when status is NOT complete" in {
       val reportWithEmails = reportRequest.copy(recipientEmails = Seq("a@example.com", "b@example.com"))
       when(mockReportRequestService.get(eqTo("TRE-19"))(any()))
         .thenReturn(Future.successful(Some(reportWithEmails)))
@@ -186,10 +191,9 @@ class FileNotificationServiceSpec extends AnyWordSpec with Matchers with Mockito
         .thenReturn(Future.successful(true))
       when(mockReportRequestService.determineReportStatus(any())).thenReturn(IN_PROGRESS)
 
-
       val result = service.processFileNotification(fileNotification)
       whenReady(result) { case (status, message) =>
-        verify(mockEmailRendererConnector, times(0)).sendEmailRequest(
+        verify(mockEmailConnector, times(0)).sendEmailRequest(
           eqTo("tre_report_available"),
           any(),
           eqTo(Map("reportRequestId" -> "TRE-19"))

@@ -29,26 +29,24 @@ import scala.concurrent.{ExecutionContext, Future}
 import uk.gov.hmrc.http.HttpReads.Implicits.*
 import uk.gov.hmrc.tradereportingextracts.models.EmailRequest
 
-class EmailConnector @Inject()(
-                                         appConfig: AppConfig,
-                                         httpClient: HttpClientV2
-                                       )(implicit ec: ExecutionContext) extends Logging {
-
+class EmailConnector @Inject() (
+  appConfig: AppConfig,
+  httpClient: HttpClientV2
+)(implicit ec: ExecutionContext)
+    extends Logging {
 
   def sendEmailRequest(
-                        templateId: String,
-                        email: String,
-                        params: Map[String, String]
-                      )(implicit hc: HeaderCarrier): Future[Done] = {
+    templateId: String,
+    email: String,
+    params: Map[String, String]
+  )(implicit hc: HeaderCarrier): Future[Done] = {
 
-    val emailUrl = url"${appConfig.email}/hmrc/email"
+    val emailUrl           = url"${appConfig.email}/hmrc/email"
     val body: EmailRequest = EmailRequest(
       to = Seq(email),
       templateId = templateId,
       parameters = params
     )
-
-    println(s"Sending email request to: $emailUrl with body: $body")
 
     httpClient
       .post(emailUrl)
@@ -57,7 +55,7 @@ class EmailConnector @Inject()(
       .flatMap { response =>
         response.status match {
           case ACCEPTED => Future.successful(Done)
-          case _ =>
+          case _        =>
             logger.error(s"Unexpected response from email service: ${response.status} - ${response.body}")
             Future.failed(
               UpstreamErrorResponse(

@@ -121,11 +121,8 @@ class ReportRequestService @Inject() (
           case _                                             => None
         }
       }
-      println(s"Parts: $parts")
       parts.nonEmpty && parts.exists { case (part, total) => part == total }
     }
-
-    println(isComplete)
 
     if (isComplete) ReportStatus.COMPLETE
     else if (reportRequest.notifications.exists(_.statusType == StatusType.ERROR)) ReportStatus.ERROR

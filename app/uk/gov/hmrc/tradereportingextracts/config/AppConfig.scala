@@ -39,7 +39,7 @@ class AppConfig @Inject() (val config: Configuration, servicesConfig: ServicesCo
   lazy val eis: String = servicesConfig.baseUrl("eis") + config.get[String]("microservice.services.eis.context")
 
   lazy val email: String = servicesConfig.baseUrl("email")
-  lazy val sdes: String = servicesConfig.baseUrl("sdes") + config.get[String]("microservice.services.sdes.context")
+  lazy val sdes: String  = servicesConfig.baseUrl("sdes") + config.get[String]("microservice.services.sdes.context")
 
   lazy val eisRequestTraderReportMaxRetries: Int =
     config.get[Int]("microservice.services.eis.request-trader-report.max-retries")

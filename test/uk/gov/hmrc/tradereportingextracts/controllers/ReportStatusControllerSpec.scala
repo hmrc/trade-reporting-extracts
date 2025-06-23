@@ -46,7 +46,6 @@ class ReportStatusControllerSpec extends SpecBase {
         )
 
       val result = route(app, request).value
-      println(contentAsString(result))
       status(result) shouldBe FORBIDDEN
     }
   }
