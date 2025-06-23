@@ -21,19 +21,16 @@ import uk.gov.hmrc.tradereportingextracts.utils.WireMockHelper
 import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}
 import org.scalatest.freespec.AnyFreeSpec
 import play.api.inject.guice.GuiceApplicationBuilder
-import play.api.{Application, inject}
+import play.api.{Application}
 import uk.gov.hmrc.http.{HeaderCarrier, UpstreamErrorResponse}
 import uk.gov.hmrc.tradereportingextracts.config.AppConfig
 import org.scalatestplus.play.*
-import play.api.test.*
 import play.api.test.Helpers.*
 import com.github.tomakehurst.wiremock.client.WireMock.*
 import org.apache.pekko.Done
 import org.scalatest.matchers.should.Matchers
 import org.scalatestplus.mockito.MockitoSugar
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
-
-import java.net.URI
 
 class EmailConnectorSpec extends AnyFreeSpec with ScalaFutures
   with GuiceOneAppPerSuite
@@ -44,68 +41,51 @@ class EmailConnectorSpec extends AnyFreeSpec with ScalaFutures
 
   implicit private lazy val hc: HeaderCarrier = HeaderCarrier()
 
-  val appConfig: AppConfig = app.injector.instanceOf[AppConfig]
-  val baseUrlCDS: String = appConfig.emailRenderer
-  val uri = new URI(baseUrlCDS)
-  val path = uri.getPath
-
   private def application: Application =
     new GuiceApplicationBuilder()
-      .configure("microservice.services.hmrc-email-renderer.port" -> server.port)
+      .configure(
+        "microservice.services.email.port" -> server.port,
+        "microservice.services.email.host" -> "localhost"
+      )
       .build()
 
   "sendEmailRequest" - {
 
     val payload =
       s"""{
-         |  "parameters": {},
-         |  "email": "email@email.com"
+         |  "to": ["email@email.com"],
+         |  "templateId": "tre",
+         |  "parameters": {}
          |}""".stripMargin
 
-    val url = path ++ "/templates/tre"
+    val url = "/hmrc/email"
 
-    "Must return Done when DC returns OK" in {
-
+    "Must return Done when email service returns ACCEPTED" in {
       val app = application
       running(app) {
         val connector = app.injector.instanceOf[EmailConnector]
         server.stubFor(
           WireMock.post(urlEqualTo(url))
             .withRequestBody(equalToJson(payload))
-            .willReturn(ok)
+            .willReturn(aResponse().withStatus(202))
         )
-        val result = connector.sendEmailRequest("tre", "email@email.com").futureValue
+        val result = connector.sendEmailRequest("tre", "email@email.com", Map.empty).futureValue
         result shouldBe Done
-        }
       }
+    }
 
-      "Must return upstream error response when DC returns Not Found" in {
-
-        val app = application
-        running(app) {
-          val connector = app.injector.instanceOf[EmailConnector]
-          server.stubFor(
-            WireMock.post(urlEqualTo(url))
-              .withRequestBody(equalToJson(payload))
-              .willReturn(notFound)
-          )
-          val result = connector.sendEmailRequest("tre", "email@email.com").failed.futureValue
-          result shouldBe a[UpstreamErrorResponse]
-        }
-      }
-
-      "Must return upstream error response when DC returns bad request" in {
-
-        val app = application
-        running(app) {
-          val connector = app.injector.instanceOf[EmailConnector]
-          server.stubFor(
-            WireMock.post(urlEqualTo(url))
-              .willReturn(serverError)
-          )
-          val result = connector.sendEmailRequest("tre", "email@email.com").failed.futureValue
-          result shouldBe a[UpstreamErrorResponse]
-        }
+    "Must return upstream error response when email service returns server error" in {
+      val app = application
+      running(app) {
+        val connector = app.injector.instanceOf[EmailConnector]
+        server.stubFor(
+          WireMock.post(urlEqualTo(url))
+            .withRequestBody(equalToJson(payload))
+            .willReturn(aResponse().withStatus(500))
+        )
+        val result = connector.sendEmailRequest("tre", "email@email.com", Map.empty).failed.futureValue
+        result shouldBe a[UpstreamErrorResponse]
       }
     }
   }
+}

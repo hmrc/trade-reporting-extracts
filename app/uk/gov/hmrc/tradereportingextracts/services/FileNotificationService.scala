@@ -22,15 +22,15 @@ import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.tradereportingextracts.connectors.EmailConnector
 import uk.gov.hmrc.tradereportingextracts.models.ReportStatus.COMPLETE
 import uk.gov.hmrc.tradereportingextracts.models.sdes.{FileNotificationMetadata, FileNotificationResponse}
-import uk.gov.hmrc.tradereportingextracts.models.{FileType, ReportTypeName, FileNotification as TreFileNotification}
+import uk.gov.hmrc.tradereportingextracts.models.{FileNotification as TreFileNotification, FileType, ReportTypeName}
 
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-class FileNotificationService @Inject()(
-                                          reportRequestService: ReportRequestService,
-                                          emailRendererConnector: EmailConnector)(implicit ec: ExecutionContext) {
+class FileNotificationService @Inject() (reportRequestService: ReportRequestService, emailConnector: EmailConnector)(
+  implicit ec: ExecutionContext
+) {
 
   def processFileNotification(fileNotification: FileNotificationResponse): Future[(Int, String)] = {
     val maybeReportRequestId = fileNotification.metadata.collectFirst {
@@ -38,7 +38,7 @@ class FileNotificationService @Inject()(
     }
 
     implicit val hc: HeaderCarrier = HeaderCarrier()
-    
+
     maybeReportRequestId match {
       case Some(reportRequestId) =>
         reportRequestService.get(reportRequestId).flatMap {
@@ -50,25 +50,23 @@ class FileNotificationService @Inject()(
             val updatedReportRequest     = reportRequest
               .copy(fileNotifications = updatedFileNotifications, linkAvailableTime = Some(java.time.Instant.now()))
             if (reportRequestService.determineReportStatus(updatedReportRequest) == COMPLETE) {
-              println(reportRequestService.determineReportStatus(updatedReportRequest))
-              println("Report is complete, sending email notifications")
               for {
                 _ <- reportRequestService.update(updatedReportRequest)
                 _ <- Future.sequence(
-                  updatedReportRequest.recipientEmails.map { email => 
-                    emailRendererConnector.sendEmailRequest(
-                      templateId = "tre_report_available",
-                      email = email,
-                      params = Map("reportRequestId" -> updatedReportRequest.reportRequestId)
-                    )
-                  }
-                )
+                       updatedReportRequest.recipientEmails.map { email =>
+                         emailConnector.sendEmailRequest(
+                           templateId = "tre_report_available",
+                           email = email,
+                           params = Map("reportRequestId" -> updatedReportRequest.reportRequestId)
+                         )
+                       }
+                     )
               } yield (CREATED, "Created")
             } else {
               reportRequestService.update(updatedReportRequest).map(_ => (CREATED, "Created"))
             }
 
-          case None                =>
+          case None =>
             Future.successful((NOT_FOUND, s"ReportRequest not found for reportRequestId: $reportRequestId"))
         }
       case None                  =>
