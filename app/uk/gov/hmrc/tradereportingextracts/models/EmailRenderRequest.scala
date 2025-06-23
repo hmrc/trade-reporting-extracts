@@ -18,11 +18,12 @@ package uk.gov.hmrc.tradereportingextracts.models
 
 import play.api.libs.json.{Format, Json}
 
-case class EmailRenderRequest(
-                               parameters: Map[String, String],
-                               email: Option[String]
-                             )
+case class EmailRequest(
+                         to: Seq[String],
+                         templateId: String,
+                         parameters: Map[String, String]
+                       )
 
-object EmailRenderRequest {
-  implicit val format: Format[EmailRenderRequest] = Json.format[EmailRenderRequest]
+object EmailRequest {
+  implicit val format: Format[EmailRequest] = Json.format[EmailRequest]
 }

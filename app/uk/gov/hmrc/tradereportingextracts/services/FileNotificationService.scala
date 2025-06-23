@@ -19,7 +19,7 @@ package uk.gov.hmrc.tradereportingextracts.services
 import play.api.http.Status
 import play.api.http.Status.{BAD_REQUEST, CREATED, NOT_FOUND}
 import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.tradereportingextracts.connectors.EmailRendererConnector
+import uk.gov.hmrc.tradereportingextracts.connectors.EmailConnector
 import uk.gov.hmrc.tradereportingextracts.models.ReportStatus.COMPLETE
 import uk.gov.hmrc.tradereportingextracts.models.sdes.{FileNotificationMetadata, FileNotificationResponse}
 import uk.gov.hmrc.tradereportingextracts.models.{FileType, ReportTypeName, FileNotification as TreFileNotification}
@@ -28,9 +28,9 @@ import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-class FileNotificationService @Inject() (
+class FileNotificationService @Inject()(
                                           reportRequestService: ReportRequestService,
-                                          emailRendererConnector: EmailRendererConnector)(implicit ec: ExecutionContext) {
+                                          emailRendererConnector: EmailConnector)(implicit ec: ExecutionContext) {
 
   def processFileNotification(fileNotification: FileNotificationResponse): Future[(Int, String)] = {
     val maybeReportRequestId = fileNotification.metadata.collectFirst {
@@ -50,6 +50,8 @@ class FileNotificationService @Inject() (
             val updatedReportRequest     = reportRequest
               .copy(fileNotifications = updatedFileNotifications, linkAvailableTime = Some(java.time.Instant.now()))
             if (reportRequestService.determineReportStatus(updatedReportRequest) == COMPLETE) {
+              println(reportRequestService.determineReportStatus(updatedReportRequest))
+              println("Report is complete, sending email notifications")
               for {
                 _ <- reportRequestService.update(updatedReportRequest)
                 _ <- Future.sequence(

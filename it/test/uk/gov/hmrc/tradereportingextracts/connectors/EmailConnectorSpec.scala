@@ -35,7 +35,7 @@ import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 
 import java.net.URI
 
-class EmailRendererConnectorSpec extends AnyFreeSpec with ScalaFutures
+class EmailConnectorSpec extends AnyFreeSpec with ScalaFutures
   with GuiceOneAppPerSuite
   with MockitoSugar
   with Matchers
@@ -68,7 +68,7 @@ class EmailRendererConnectorSpec extends AnyFreeSpec with ScalaFutures
 
       val app = application
       running(app) {
-        val connector = app.injector.instanceOf[EmailRendererConnector]
+        val connector = app.injector.instanceOf[EmailConnector]
         server.stubFor(
           WireMock.post(urlEqualTo(url))
             .withRequestBody(equalToJson(payload))
@@ -83,7 +83,7 @@ class EmailRendererConnectorSpec extends AnyFreeSpec with ScalaFutures
 
         val app = application
         running(app) {
-          val connector = app.injector.instanceOf[EmailRendererConnector]
+          val connector = app.injector.instanceOf[EmailConnector]
           server.stubFor(
             WireMock.post(urlEqualTo(url))
               .withRequestBody(equalToJson(payload))
@@ -98,7 +98,7 @@ class EmailRendererConnectorSpec extends AnyFreeSpec with ScalaFutures
 
         val app = application
         running(app) {
-          val connector = app.injector.instanceOf[EmailRendererConnector]
+          val connector = app.injector.instanceOf[EmailConnector]
           server.stubFor(
             WireMock.post(urlEqualTo(url))
               .willReturn(serverError)
