@@ -47,7 +47,7 @@ class ReportRequestController @Inject() (
         val startEndDate =
           (LocalDate.parse(value.reportStartDate, formatter), LocalDate.parse(value.reportEndDate, formatter))
         for {
-          userEmail   <- customsDataStoreConnector.getVerifiedEmailForReport(value.eori).map(_.address)
+          userEmail   <- customsDataStoreConnector.getNotificationEmail(value.eori).map(_.address)
           eoriHistory <- customsDataStoreConnector
                            .getEoriHistory(value.whichEori.get)
                            .map(_.filterByDateRange(startEndDate._1, startEndDate._2).map(_.eori))

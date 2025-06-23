@@ -79,7 +79,7 @@ class ReportRequestControllerSpec extends SpecBase with WireMockHelper {
           }
         """
       )
-      when(mockCustomsDataStoreConnector.getVerifiedEmailForReport(any()))
+      when(mockCustomsDataStoreConnector.getNotificationEmail(any()))
         .thenReturn(Future.successful(NotificationEmail("email@example.com", LocalDateTime.now())))
 
       when(mockCustomsDataStoreConnector.getEoriHistory(any()))
@@ -138,7 +138,7 @@ class ReportRequestControllerSpec extends SpecBase with WireMockHelper {
           }
     """
       )
-      when(mockCustomsDataStoreConnector.getVerifiedEmailForReport(any()))
+      when(mockCustomsDataStoreConnector.getNotificationEmail(any()))
         .thenReturn(Future.successful(NotificationEmail("email@example.com", LocalDateTime.now())))
 
       when(mockCustomsDataStoreConnector.getEoriHistory(any()))
@@ -202,7 +202,7 @@ class ReportRequestControllerSpec extends SpecBase with WireMockHelper {
       }
     """
       )
-      when(mockCustomsDataStoreConnector.getVerifiedEmailForReport(any()))
+      when(mockCustomsDataStoreConnector.getNotificationEmail(any()))
         .thenReturn(Future.successful(NotificationEmail("email@example.com", LocalDateTime.now())))
 
       when(mockCustomsDataStoreConnector.getEoriHistory(any()))
@@ -280,7 +280,7 @@ class ReportRequestControllerSpec extends SpecBase with WireMockHelper {
         """
       )
 
-      when(mockCustomsDataStoreConnector.getVerifiedEmailForReport(any()))
+      when(mockCustomsDataStoreConnector.getNotificationEmail(any()))
         .thenReturn(Future.failed(new RuntimeException("CDS Unavailable")))
 
       val request = FakeRequest(POST, "/create-report-request")

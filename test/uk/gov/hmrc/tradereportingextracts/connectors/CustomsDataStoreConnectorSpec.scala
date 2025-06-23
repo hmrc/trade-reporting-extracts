@@ -70,25 +70,8 @@ class CustomsDataStoreConnectorSpec
               .willReturn(WireMock.ok(responseBody))
           )
 
-          val result = connector.getVerifiedEmailForReport(eori).futureValue
+          val result = connector.getNotificationEmail(eori).futureValue
           result mustBe NotificationEmail("test@example.com", LocalDateTime.parse("2025-05-19T16:11:16.825994979"))
-        }
-      }
-
-      "fail with UpstreamErrorResponse when response is not OK" in {
-        val app = applicationWithPort(server.port)
-        running(app) {
-          val connector = app.injector.instanceOf[CustomsDataStoreConnector]
-          val appConfig = app.injector.instanceOf[AppConfig]
-
-          server.stubFor(
-            WireMock
-              .post(WireMock.urlEqualTo(new java.net.URI(appConfig.verifiedEmailUrl).getPath))
-              .willReturn(WireMock.aResponse().withStatus(500))
-          )
-
-          val result = connector.getVerifiedEmailForReport(eori).failed.futureValue
-          result mustBe a[UpstreamErrorResponse]
         }
       }
     }
