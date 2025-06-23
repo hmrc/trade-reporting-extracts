@@ -25,7 +25,7 @@ import org.scalatestplus.mockito.MockitoSugar
 import org.scalatest.wordspec.AnyWordSpec
 import play.api.http.Status.{BAD_REQUEST, CREATED, NOT_FOUND}
 import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.tradereportingextracts.connectors.EmailRendererConnector
+import uk.gov.hmrc.tradereportingextracts.connectors.EmailConnector
 import uk.gov.hmrc.tradereportingextracts.models.sdes.{FileNotificationMetadata, FileNotificationResponse}
 import uk.gov.hmrc.tradereportingextracts.models.{FileType, ReportTypeName, FileNotification as TreFileNotification}
 import uk.gov.hmrc.tradereportingextracts.models.ReportRequest
@@ -46,7 +46,7 @@ class FileNotificationServiceSpec extends AnyWordSpec with Matchers with Mockito
   }
 
   val mockReportRequestService: ReportRequestService = mock[ReportRequestService]
-  val mockEmailRendererConnector: EmailRendererConnector = mock[EmailRendererConnector]
+  val mockEmailRendererConnector: EmailConnector = mock[EmailConnector]
   val service                                        = new FileNotificationService(mockReportRequestService, mockEmailRendererConnector)
 
   val fileNotification = FileNotificationResponse(

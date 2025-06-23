@@ -18,49 +18,50 @@ package uk.gov.hmrc.tradereportingextracts.connectors
 
 import org.apache.pekko.Done
 import play.api.Logging
-import play.api.libs.json._
-import play.api.http.Status.{NOT_FOUND, OK}
+import play.api.libs.json.*
+import play.api.http.Status.ACCEPTED
 import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse, StringContextOps, UpstreamErrorResponse}
 import uk.gov.hmrc.http.client.HttpClientV2
 import uk.gov.hmrc.tradereportingextracts.config.AppConfig
-import play.api.libs.ws.JsonBodyWritables.*
-import uk.gov.hmrc.tradereportingextracts.models.EmailRenderRequest
+import play.api.libs.ws.JsonBodyWritables.writeableOf_JsValue
 import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
 import uk.gov.hmrc.http.HttpReads.Implicits.*
+import uk.gov.hmrc.tradereportingextracts.models.EmailRequest
 
-class EmailRendererConnector @Inject() (
-                               appConfig: AppConfig,
-                               httpClient: HttpClientV2
-                             )(implicit ec: ExecutionContext) extends Logging {
+class EmailConnector @Inject()(
+                                         appConfig: AppConfig,
+                                         httpClient: HttpClientV2
+                                       )(implicit ec: ExecutionContext) extends Logging {
 
-  def sendEmailRequest(templateId: String,
-                          email: String,
-                          params: Map[String, String]
-                         )(implicit hc: HeaderCarrier): Future[Done] = {
 
-    val emailUrl = url"${appConfig.emailRenderer}/templates/${templateId}"
+  def sendEmailRequest(
+                        templateId: String,
+                        email: String,
+                        params: Map[String, String]
+                      )(implicit hc: HeaderCarrier): Future[Done] = {
+
+    val emailUrl = url"${appConfig.email}/hmrc/email"
+    val body: EmailRequest = EmailRequest(
+      to = Seq(email),
+      templateId = templateId,
+      parameters = params
+    )
+
+    println(s"Sending email request to: $emailUrl with body: $body")
 
     httpClient
       .post(emailUrl)
-      .withBody(Json.toJson(EmailRenderRequest(params, Some(email))))
+      .withBody(Json.toJson(body))
       .execute[HttpResponse]
       .flatMap { response =>
         response.status match {
-          case OK => Future.successful(Done)
-          case NOT_FOUND =>
-            logger.warn(s"Template with ID $templateId not found in email renderer")
+          case ACCEPTED => Future.successful(Done)
+          case _ =>
+            logger.error(s"Unexpected response from email service: ${response.status} - ${response.body}")
             Future.failed(
               UpstreamErrorResponse(
-                s"Template with ID $templateId not found in email renderer",
-                NOT_FOUND
-              )
-            )
-          case _  =>
-            logger.error(s"Unexpected response from call to email renderer")
-            Future.failed(
-              UpstreamErrorResponse(
-                "Unexpected response from email renderer",
+                s"Unexpected response from email service: ${response.status}",
                 response.status
               )
             )
