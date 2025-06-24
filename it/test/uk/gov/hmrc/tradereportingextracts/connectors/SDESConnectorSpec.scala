@@ -35,7 +35,7 @@ class SDESConnectorSpec
 
   private lazy val connector: SDESConnector = app.injector.instanceOf[SDESConnector]
 
-  private val sdesUrl = "/trade-reporting-extracts-stub/files-available/list/INFORMATION_TYPE"
+  private val sdesUrl = "/trade-reporting-extracts-stub/files-available/list/TRE"
 
   "SDESConnector" - {
     "should return file responses when SDES responds with 200" in {
