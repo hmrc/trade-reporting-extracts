@@ -43,9 +43,9 @@ class SDESConnectorSpec
 
   private lazy val app: Application = new GuiceApplicationBuilder()
     .configure(
-      "microservice.services.sdes.port"             -> server.port,
-      "microservice.services.sdes.host"             -> "localhost",
-      "microservice.services.sdes.x-client-id"      -> "TRE-CLIENT-ID"
+      "microservice.services.sdes.port"        -> server.port,
+      "microservice.services.sdes.host"        -> "localhost",
+      "microservice.services.sdes.x-client-id" -> "TRE-CLIENT-ID"
     )
     .build()
 
