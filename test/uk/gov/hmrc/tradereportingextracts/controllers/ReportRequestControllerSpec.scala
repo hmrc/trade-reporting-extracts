@@ -104,7 +104,7 @@ class ReportRequestControllerSpec extends SpecBase with WireMockHelper {
 
       when(mockEisService.requestTraderReport(any(), any())(any())).thenReturn(Future.successful(Done))
 
-      val request = FakeRequest(POST, "/create-report-request")
+      val request = FakeRequest(POST, "/trade-reporting-extracts/create-report-request")
         .withHeaders("Content-Type" -> "application/json")
         .withJsonBody(inputJson)
 
@@ -165,7 +165,7 @@ class ReportRequestControllerSpec extends SpecBase with WireMockHelper {
 
       when(mockEisService.requestTraderReport(any(), any())(any())).thenReturn(Future.successful(Done))
 
-      val request = FakeRequest(POST, "/create-report-request")
+      val request = FakeRequest(POST, "/trade-reporting-extracts/create-report-request")
         .withHeaders("Content-Type" -> "application/json")
         .withJsonBody(inputJson)
 
@@ -230,7 +230,7 @@ class ReportRequestControllerSpec extends SpecBase with WireMockHelper {
 
       when(mockEisService.requestTraderReport(any(), any())(any())).thenReturn(Future.successful(Done))
 
-      val request = FakeRequest(POST, "/create-report-request")
+      val request = FakeRequest(POST, "/trade-reporting-extracts/create-report-request")
         .withHeaders("Content-Type" -> "application/json")
         .withJsonBody(inputJson)
 
@@ -254,7 +254,7 @@ class ReportRequestControllerSpec extends SpecBase with WireMockHelper {
     "return BadRequest if JSON is invalid" in {
       val invalidJson = Json.obj("foo" -> "bar")
 
-      val request = FakeRequest(POST, "/create-report-request")
+      val request = FakeRequest(POST, "/trade-reporting-extracts/create-report-request")
         .withHeaders("Content-Type" -> "application/json")
         .withJsonBody(invalidJson)
 
@@ -283,7 +283,7 @@ class ReportRequestControllerSpec extends SpecBase with WireMockHelper {
       when(mockCustomsDataStoreConnector.getNotificationEmail(any()))
         .thenReturn(Future.failed(new RuntimeException("CDS Unavailable")))
 
-      val request = FakeRequest(POST, "/create-report-request")
+      val request = FakeRequest(POST, "/trade-reporting-extracts/create-report-request")
         .withHeaders("Content-Type" -> "application/json")
         .withJsonBody(inputJson)
 
