@@ -1,17 +1,17 @@
 # microservice specific routes
 
-GET         /eori/setup-user                    uk.gov.hmrc.tradereportingextracts.controllers.UserController.setupUser()
+GET         /trade-reporting-extracts/eori/setup-user                    uk.gov.hmrc.tradereportingextracts.controllers.UserController.setupUser()
 
-GET         /user/:eori/authorised-eoris        uk.gov.hmrc.tradereportingextracts.controllers.UserController.getAuthorisedEoris(eori: String)
+GET         /trade-reporting-extracts/user/:eori/authorised-eoris        uk.gov.hmrc.tradereportingextracts.controllers.UserController.getAuthorisedEoris(eori: String)
 
-GET         /requested-reports                  uk.gov.hmrc.tradereportingextracts.controllers.RequestedReportsController.getRequestedReports()
-POST        /create-report-request              uk.gov.hmrc.tradereportingextracts.controllers.ReportRequestController.createReportRequest
+GET         /trade-reporting-extracts/requested-reports                  uk.gov.hmrc.tradereportingextracts.controllers.RequestedReportsController.getRequestedReports()
+POST        /trade-reporting-extracts/create-report-request              uk.gov.hmrc.tradereportingextracts.controllers.ReportRequestController.createReportRequest
 
-PUT         /notify-report-available            uk.gov.hmrc.tradereportingextracts.controllers.FileNotificationController.fileNotification()
+PUT         /trade-reporting-extracts/notify-report-available            uk.gov.hmrc.tradereportingextracts.controllers.FileNotificationController.fileNotification()
 
-PUT         /reportstatusnotification/v1        uk.gov.hmrc.tradereportingextracts.controllers.ReportStatusController.notifyReportStatus()
+PUT         /tre/reportstatusnotification/v1                             uk.gov.hmrc.tradereportingextracts.controllers.ReportStatusController.notifyReportStatus()
 
-GET         /api/available-reports              uk.gov.hmrc.tradereportingextracts.controllers.AvailableReportController.getAvailableReports()
-GET         /api/available-reports-count        uk.gov.hmrc.tradereportingextracts.controllers.AvailableReportController.getAvailableReportsCount()
+GET         /trade-reporting-extracts/api/available-reports              uk.gov.hmrc.tradereportingextracts.controllers.AvailableReportController.getAvailableReports()
+GET         /trade-reporting-extracts/api/available-reports-count        uk.gov.hmrc.tradereportingextracts.controllers.AvailableReportController.getAvailableReportsCount()
 
-PUT         /updateeori/v1                      uk.gov.hmrc.tradereportingextracts.controllers.EoriUpdateController.eoriUpdate()
+PUT         /tre/updateeori/v1                                           uk.gov.hmrc.tradereportingextracts.controllers.EoriUpdateController.eoriUpdate()
