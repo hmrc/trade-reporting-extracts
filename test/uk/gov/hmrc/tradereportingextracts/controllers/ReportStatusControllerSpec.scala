@@ -38,11 +38,12 @@ class ReportStatusControllerSpec extends SpecBase {
     "return 403 Forbidden" in new Setup {
       val request = FakeRequest(PUT, routes.ReportStatusController.notifyReportStatus().url)
         .withHeaders(
-          "content-type"     -> "application/json",
-          "authorization"    -> "Invalid-auth-token",
-          "date"             -> "Mon, 02 Oct 2023 14:30:00 GMT",
-          "x-correlation-id" -> "asfd-asdf-asdf",
-          "x-forwarded-host" -> "CDAP"
+          "content-type"          -> "application/json",
+          "authorization"         -> "Invalid-auth-token",
+          "date"                  -> "Mon, 02 Oct 2023 14:30:00 GMT",
+          "x-correlation-id"      -> "asfd-asdf-asdf",
+          "x-transmitting-system" -> "CDAP",
+          "source-system"         -> "CDAP"
         )
 
       val result = route(app, request).value
@@ -61,11 +62,12 @@ class ReportStatusControllerSpec extends SpecBase {
       )
       val request                = FakeRequest(PUT, routes.ReportStatusController.notifyReportStatus().url)
         .withHeaders(
-          "content-type"     -> "application/json",
-          "authorization"    -> "Bearer EisAuthToken",
-          "date"             -> "Mon, 02 Oct 2023 14:30:00 GMT",
-          "x-correlation-id" -> "asfd-asdf-asdf",
-          "x-forwarded-host" -> "CDAP"
+          "content-type"          -> "application/json",
+          "authorization"         -> "Bearer EisAuthToken",
+          "date"                  -> "Mon, 02 Oct 2023 14:30:00 GMT",
+          "x-correlation-id"      -> "asfd-asdf-asdf",
+          "x-transmitting-system" -> "CDAP",
+          "source-system"         -> "CDAP"
         )
         .withBody(Json.toJson(eisReportStatusRequest))
 

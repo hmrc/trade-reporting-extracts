@@ -29,7 +29,8 @@ class EisReportStatusHeadersSpec extends AnyFreeSpec with Matchers {
         "content-type",
         "date",
         "x-correlation-id",
-        "x-forwarded-host"
+        "x-transmitting-system",
+        "source-system"
       )
     }
   }

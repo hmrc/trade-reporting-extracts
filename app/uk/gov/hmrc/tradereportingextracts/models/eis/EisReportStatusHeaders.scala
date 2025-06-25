@@ -16,14 +16,17 @@
 
 package uk.gov.hmrc.tradereportingextracts.models.eis
 
+import uk.gov.hmrc.tradereportingextracts.models.sdes.FileNotificationHeaders.Value
+
 object EisReportStatusHeaders extends Enumeration {
   type ReportStatusHeaders = Value
 
-  val Authorization: Value  = Value("authorization")
-  val ContentType: Value    = Value("content-type")
-  val Date: Value           = Value("date")
-  val XCorrelationID: Value = Value("x-correlation-id")
-  val XForwardedHost: Value = Value("x-forwarded-host")
+  val Authorization: Value       = Value("authorization")
+  val ContentType: Value         = Value("content-type")
+  val Date: Value                = Value("date")
+  val XCorrelationID: Value      = Value("x-correlation-id")
+  val XTransmittingSystem: Value = Value("x-transmitting-system")
+  val SourceSystem: Value        = Value("source-system")
 
   def allHeaders: List[String] = values.map(_.toString).toList
 }
