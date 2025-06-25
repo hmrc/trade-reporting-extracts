@@ -21,6 +21,7 @@ import uk.gov.hmrc.tradereportingextracts.models.eis.EisReportRequest
 import uk.gov.hmrc.tradereportingextracts.models.{EoriRole, ReportRequest, ReportRequestUserAnswersModel, ReportTypeName}
 
 import java.time.format.DateTimeFormatter
+import java.time.temporal.ChronoUnit
 import java.time.{Instant, LocalDate, ZoneOffset}
 import java.util.UUID
 
@@ -88,7 +89,7 @@ class ReportRequestTransformationService @Inject() (
         case ReportTypeName.EXPORTS_ITEM_REPORT    => EisReportRequest.ReportTypeName.EXPORTSITEMREPORT
       },
       requestID = reportRequest.reportRequestId,
-      requestTimestamp = DateTimeFormatter.ISO_INSTANT.format(reportRequest.createDate),
+      requestTimestamp = DateTimeFormatter.ISO_INSTANT.format(reportRequest.createDate.truncatedTo(ChronoUnit.MILLIS)),
       requesterEori = reportRequest.requesterEORI,
       startDate = DateTimeFormatter.ISO_LOCAL_DATE.format(reportRequest.reportStart.atZone(ZoneOffset.UTC))
     )
