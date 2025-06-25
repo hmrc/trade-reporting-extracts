@@ -16,8 +16,6 @@
 
 package uk.gov.hmrc.tradereportingextracts.models.eis
 
-import uk.gov.hmrc.tradereportingextracts.models.sdes.FileNotificationHeaders.Value
-
 object EisReportStatusHeaders extends Enumeration {
   type ReportStatusHeaders = Value
 
