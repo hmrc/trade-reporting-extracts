@@ -65,7 +65,8 @@ class FileNotificationServiceSpec extends AnyWordSpec with Matchers with Mockito
     createDate = null,
     notifications = Seq.empty,
     fileNotifications = None,
-    linkAvailableTime = null
+    linkAvailableTime = null,
+    journeyReferenceId = "123e4567-e89b-12d3-a456-426614174000"
   )
 
   "FileNotificationService.processFileNotification" should {
