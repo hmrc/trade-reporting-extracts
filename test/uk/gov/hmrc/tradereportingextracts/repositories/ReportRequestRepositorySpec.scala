@@ -71,7 +71,8 @@ class ReportRequestRepositorySpec
         )
       )
     ),
-    linkAvailableTime = Some(Instant.parse("2023-01-03T10:00:00Z"))
+    linkAvailableTime = Some(Instant.parse("2023-01-03T10:00:00Z")),
+    journeyReferenceId = "123e4567-e89b-12d3-a456-426614174000"
   )
   val appConfig: AppConfig  = app.injector.instanceOf[AppConfig]
 
@@ -154,7 +155,8 @@ class ReportRequestRepositorySpec
               FileNotification("f3", 1, 1, FileType.CSV, "x", "y", ReportTypeName.IMPORTS_ITEM_REPORT, "3Of3")
             )
           ),
-          linkAvailableTime = Some(Instant.now)
+          linkAvailableTime = Some(Instant.now),
+          journeyReferenceId = "123e4567-e89b-12d3-a456-426614174000"
         ),
         // Incomplete set: only 1Of2
         ReportRequest(
@@ -175,7 +177,8 @@ class ReportRequestRepositorySpec
               FileNotification("f4", 1, 1, FileType.CSV, "x", "y", ReportTypeName.IMPORTS_ITEM_REPORT, "1Of2")
             )
           ),
-          linkAvailableTime = Some(Instant.now)
+          linkAvailableTime = Some(Instant.now),
+          journeyReferenceId = "123e4567-e89b-12d3-a456-426614174000"
         )
       )
 
@@ -206,7 +209,8 @@ class ReportRequestRepositorySpec
             // Missing 2Of2
           )
         ),
-        linkAvailableTime = Some(Instant.now)
+        linkAvailableTime = Some(Instant.now),
+        journeyReferenceId = "123e4567-e89b-12d3-a456-426614174000"
       )
 
       reportRequestRepository.insert(incompleteRequest).futureValue
@@ -241,7 +245,8 @@ class ReportRequestRepositorySpec
               FileNotification("f8", 1, 1, FileType.CSV, "x", "y", ReportTypeName.IMPORTS_ITEM_REPORT, "3Of3")
             )
           ),
-          linkAvailableTime = Some(Instant.now)
+          linkAvailableTime = Some(Instant.now),
+          journeyReferenceId = "123e4567-e89b-12d3-a456-426614174000"
         ),
         // Incomplete set: only 1Of2
         ReportRequest(
@@ -262,7 +267,8 @@ class ReportRequestRepositorySpec
               FileNotification("f9", 1, 1, FileType.CSV, "x", "y", ReportTypeName.IMPORTS_ITEM_REPORT, "1Of2")
             )
           ),
-          linkAvailableTime = Some(Instant.now)
+          linkAvailableTime = Some(Instant.now),
+          journeyReferenceId = "123e4567-e89b-12d3-a456-426614174000"
         )
       )
 
@@ -293,7 +299,8 @@ class ReportRequestRepositorySpec
             // Missing 2Of2
           )
         ),
-        linkAvailableTime = Some(Instant.now)
+        linkAvailableTime = Some(Instant.now),
+        journeyReferenceId = "123e4567-e89b-12d3-a456-426614174000"
       )
 
       reportRequestRepository.insert(incompleteRequest).futureValue

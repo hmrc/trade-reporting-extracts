@@ -75,7 +75,8 @@ class ReportRequestControllerSpec extends SpecBase with WireMockHelper {
             "eoriRole": ["declarant"],
             "reportType": ["importHeader"],
             "dataType": "import",
-            "additionalEmail": ["email1@gmail.com"]
+            "additionalEmail": ["email1@gmail.com"],
+            "journeyReferenceId": "123e4567-e89b-12d3-a456-426614174000"
           }
         """
       )
@@ -134,7 +135,8 @@ class ReportRequestControllerSpec extends SpecBase with WireMockHelper {
             "eoriRole": ["declarant"],
             "reportType": ["importHeader", "importItem"],
             "dataType": "import",
-            "additionalEmail": ["email1@gmail.com"]
+            "additionalEmail": ["email1@gmail.com"],
+            "journeyReferenceId": "123e4567-e89b-12d3-a456-426614174000"
           }
     """
       )
@@ -198,7 +200,8 @@ class ReportRequestControllerSpec extends SpecBase with WireMockHelper {
         "eoriRole": ["declarant"],
         "reportType": ["importHeader", "importItem", "importTaxLine"],
         "dataType": "import",
-        "additionalEmail": ["email1@gmail.com"]
+        "additionalEmail": ["email1@gmail.com"],
+        "journeyReferenceId": "123e4567-e89b-12d3-a456-426614174000"
       }
     """
       )
@@ -275,7 +278,8 @@ class ReportRequestControllerSpec extends SpecBase with WireMockHelper {
             "eoriRole": ["declarant"],
             "reportType": ["importHeader"],
             "dataType": "import",
-            "additionalEmail": ["email1@gmail.com"]
+            "additionalEmail": ["email1@gmail.com"],
+            "journeyReferenceId": "123e4567-e89b-12d3-a456-426614174000"
           }
         """
       )

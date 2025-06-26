@@ -36,7 +36,8 @@ case class ReportRequest(
   createDate: Instant,
   notifications: Seq[EisReportStatusRequest],
   fileNotifications: Option[Seq[FileNotification]],
-  linkAvailableTime: Option[Instant]
+  linkAvailableTime: Option[Instant],
+  journeyReferenceId: String
 )
 
 case class FileNotification(

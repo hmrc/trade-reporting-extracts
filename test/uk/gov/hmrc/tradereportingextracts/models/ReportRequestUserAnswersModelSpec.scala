@@ -35,7 +35,8 @@ class ReportRequestUserAnswersModelSpec extends AnyFreeSpec with Matchers with O
         reportStartDate = "2021-01-01",
         reportEndDate = "2021-12-31",
         reportName = "MyReport",
-        additionalEmail = Some(Set("test@example.com", "another@example.com"))
+        additionalEmail = Some(Set("test@example.com", "another@example.com")),
+        journeyReferenceId = "123e4567-e89b-12d3-a456-426614174000"
       )
 
       val json = Json.toJson(model)
@@ -49,6 +50,7 @@ class ReportRequestUserAnswersModelSpec extends AnyFreeSpec with Matchers with O
       (json \ "reportEndDate").as[String] mustBe "2021-12-31"
       (json \ "reportName").as[String] mustBe "MyReport"
       (json \ "additionalEmail").asOpt[Set[String]] mustBe Some(Set("test@example.com", "another@example.com"))
+      (json \ "journeyReferenceId").as[String] mustBe "123e4567-e89b-12d3-a456-426614174000"
     }
 
     "deserialize from JSON" in {
@@ -62,7 +64,8 @@ class ReportRequestUserAnswersModelSpec extends AnyFreeSpec with Matchers with O
             "reportStartDate": "2021-01-01",
             "reportEndDate": "2021-12-31",
             "reportName": "MyReport",
-            "additionalEmail": ["test@example.com", "another@example.com"]
+            "additionalEmail": ["test@example.com", "another@example.com"],
+            "journeyReferenceId": "123e4567-e89b-12d3-a456-426614174000"
           }
         """)
 
@@ -77,6 +80,7 @@ class ReportRequestUserAnswersModelSpec extends AnyFreeSpec with Matchers with O
       model.reportEndDate mustBe "2021-12-31"
       model.reportName mustBe "MyReport"
       model.additionalEmail mustBe Some(Set("test@example.com", "another@example.com"))
+      model.journeyReferenceId mustBe "123e4567-e89b-12d3-a456-426614174000"
     }
   }
 
