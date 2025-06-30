@@ -16,22 +16,34 @@
 
 package uk.gov.hmrc.tradereportingextracts.services
 
-import org.scalatest.freespec.AnyFreeSpec
-import org.scalatest.matchers.must.Matchers.{all, be, must, mustBe, not, startWith}
+import org.mockito.ArgumentMatchers.{any, anyString}
+import org.mockito.Mockito.*
+import org.scalatest.freespec.AsyncFreeSpec
+import org.scalatest.matchers.must.Matchers
+import org.scalatestplus.mockito.MockitoSugar
+import uk.gov.hmrc.tradereportingextracts.repositories.ReportRequestRepository
 
-class RequestReferenceServiceSpec extends AnyFreeSpec {
+import scala.concurrent.{ExecutionContext, Future}
+
+class RequestReferenceServiceSpec extends AsyncFreeSpec with Matchers with MockitoSugar {
+
+  implicit val ec: ExecutionContext = ExecutionContext.global
 
   "RequestReferenceService" - {
-    val service = new RequestReferenceService()
-    "generate a random reference with 8 digits" in {
+    "generate a unique reference with 8 digits" in {
+      val mockRepository = mock[ReportRequestRepository]
+      when(mockRepository.findByReportRequestId(anyString())(any[ExecutionContext]))
+        .thenReturn(Future.successful(None))
 
-      val reference = service.random()
+      val service = new RequestReferenceService(mockRepository)
 
-      reference must startWith("RE")
-      reference.length mustBe 10
+      service.generateUnique().map { reference =>
+        reference must startWith("REF-")
+        reference.length mustBe 12
 
-      val digitsPart = reference.stripPrefix("RE")
-      all(digitsPart.toList) must (be >= '0' and be <= '9')
+        val digitsPart = reference.stripPrefix("REF-")
+        all(digitsPart.toList) must (be >= '0' and be <= '9')
+      }
     }
   }
 }

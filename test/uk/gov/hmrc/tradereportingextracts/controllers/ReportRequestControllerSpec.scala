@@ -97,7 +97,7 @@ class ReportRequestControllerSpec extends SpecBase with WireMockHelper {
           )
         )
 
-      when(mockRequestReferenceService.random()).thenReturn("RE00000001")
+      when(mockRequestReferenceService.generateUnique()).thenReturn(Future.successful("REF-00000001"))
 
       when(mockReportRequestService.create(any())(any()))
         .thenReturn(Future.successful(true))
@@ -111,7 +111,7 @@ class ReportRequestControllerSpec extends SpecBase with WireMockHelper {
       val result = route(app, request).value
 
       status(result) mustBe OK
-      contentAsJson(result) mustBe Json.obj("references" -> Seq("RE00000001"))
+      contentAsJson(result) mustBe Json.obj("references" -> Seq("REF-00000001"))
 
       val captor = ArgumentCaptor.forClass(classOf[ReportRequest])
       verify(mockReportRequestService).create(captor.capture())(any())
@@ -156,9 +156,9 @@ class ReportRequestControllerSpec extends SpecBase with WireMockHelper {
           )
         )
 
-      when(mockRequestReferenceService.random())
-        .thenReturn("RE00000001")
-        .thenReturn("RE00000002")
+      when(mockRequestReferenceService.generateUnique())
+        .thenReturn(Future.successful("REF-00000001"))
+        .thenReturn(Future.successful("REF-00000002"))
 
       when(mockReportRequestService.create(any())(any()))
         .thenReturn(Future.successful(true))
@@ -172,14 +172,14 @@ class ReportRequestControllerSpec extends SpecBase with WireMockHelper {
       val result = route(app, request).value
 
       status(result) mustBe OK
-      contentAsJson(result) mustBe Json.obj("references" -> Seq("RE00000001", "RE00000002"))
+      contentAsJson(result) mustBe Json.obj("references" -> Seq("REF-00000001", "REF-00000002"))
 
       val captor = ArgumentCaptor.forClass(classOf[ReportRequest])
       verify(mockReportRequestService, times(2)).create(captor.capture())(any())
 
       val capturedRequests = captor.getAllValues
       capturedRequests.size() mustBe 2
-      capturedRequests.asScala.map(_.reportRequestId) must contain allOf ("RE00000001", "RE00000002")
+      capturedRequests.asScala.map(_.reportRequestId) must contain allOf ("REF-00000001", "REF-00000002")
       capturedRequests.asScala.foreach { req =>
         req.requesterEORI mustBe "GB123456789014"
         req.reportName mustBe "MyReport"
@@ -220,10 +220,10 @@ class ReportRequestControllerSpec extends SpecBase with WireMockHelper {
           )
         )
 
-      when(mockRequestReferenceService.random())
-        .thenReturn("RE00000001")
-        .thenReturn("RE00000002")
-        .thenReturn("RE00000003")
+      when(mockRequestReferenceService.generateUnique())
+        .thenReturn(Future.successful("REF-00000001"))
+        .thenReturn(Future.successful("REF-00000002"))
+        .thenReturn(Future.successful("REF-00000003"))
 
       when(mockReportRequestService.create(any())(any()))
         .thenReturn(Future.successful(true))
@@ -237,14 +237,16 @@ class ReportRequestControllerSpec extends SpecBase with WireMockHelper {
       val result = route(app, request).value
 
       status(result) mustBe OK
-      contentAsJson(result) mustBe Json.obj("references" -> Seq("RE00000001", "RE00000002", "RE00000003"))
+      contentAsJson(result) mustBe Json.obj("references" -> Seq("REF-00000001", "REF-00000002", "REF-00000003"))
 
       val captor = ArgumentCaptor.forClass(classOf[ReportRequest])
       verify(mockReportRequestService, times(3)).create(captor.capture())(any())
 
       val capturedRequests = captor.getAllValues
       capturedRequests.size() mustBe 3
-      capturedRequests.asScala.map(_.reportRequestId) must contain allOf ("RE00000001", "RE00000002", "RE00000003")
+      capturedRequests.asScala.map(
+        _.reportRequestId
+      ) must contain allOf ("REF-00000001", "REF-00000002", "REF-00000003")
       capturedRequests.asScala.foreach { req =>
         req.requesterEORI mustBe "GB123456789014"
         req.reportName mustBe "MyReport"
