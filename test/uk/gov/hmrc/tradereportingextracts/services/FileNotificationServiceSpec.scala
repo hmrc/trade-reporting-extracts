@@ -102,7 +102,9 @@ class FileNotificationServiceSpec extends AnyWordSpec with Matchers with Mockito
               mDTPReportXCorrelationID = "x",
               mDTPReportRequestID = "TRE-19",
               mDTPReportTypeName = ReportTypeName.IMPORTS_HEADER_REPORT,
-              reportFilesParts = "1of1"
+              reportFilesParts = "1of1",
+              reportLastFile = "last",
+              fileCreationTimestamp = "2025-01-01T00:00:00Z"
             )
           )
         )

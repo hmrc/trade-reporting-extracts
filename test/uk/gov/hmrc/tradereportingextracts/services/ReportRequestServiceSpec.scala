@@ -32,9 +32,42 @@ class ReportRequestServiceSpec extends AnyWordSpec with Matchers {
     "return COMPLETE when fileNotifications contain the final part" in {
       val fileNotifications = Some(
         Seq(
-          FileNotification("file1", 1000, 7, FileType.CSV, "x1", "r1", ReportTypeName.IMPORTS_ITEM_REPORT, "1of3"),
-          FileNotification("file2", 1000, 7, FileType.CSV, "x2", "r1", ReportTypeName.IMPORTS_ITEM_REPORT, "2of3"),
-          FileNotification("file3", 1000, 7, FileType.CSV, "x3", "r1", ReportTypeName.IMPORTS_ITEM_REPORT, "3of3")
+          FileNotification(
+            "file1",
+            1000,
+            7,
+            FileType.CSV,
+            "x1",
+            "r1",
+            ReportTypeName.IMPORTS_ITEM_REPORT,
+            "1of3",
+            "",
+            ""
+          ),
+          FileNotification(
+            "file2",
+            1000,
+            7,
+            FileType.CSV,
+            "x2",
+            "r1",
+            ReportTypeName.IMPORTS_ITEM_REPORT,
+            "2of3",
+            "",
+            ""
+          ),
+          FileNotification(
+            "file3",
+            1000,
+            7,
+            FileType.CSV,
+            "x3",
+            "r1",
+            ReportTypeName.IMPORTS_ITEM_REPORT,
+            "3of3",
+            "",
+            ""
+          )
         )
       )
 

@@ -67,7 +67,9 @@ class ReportRequestRepositorySpec
           mDTPReportXCorrelationID = "X-Correlation-ID",
           mDTPReportRequestID = "Request-ID",
           mDTPReportTypeName = ReportTypeName.IMPORTS_ITEM_REPORT,
-          reportFilesParts = "Part1"
+          reportFilesParts = "Part1",
+          reportLastFile = "LastFile",
+          fileCreationTimestamp = "2023-01-01T10:00:00Z"
         )
       )
     ),
@@ -149,9 +151,9 @@ class ReportRequestRepositorySpec
           notifications = Seq.empty,
           fileNotifications = Some(
             Seq(
-              FileNotification("f1", 1, 1, FileType.CSV, "x", "y", ReportTypeName.IMPORTS_ITEM_REPORT, "1Of3"),
-              FileNotification("f2", 1, 1, FileType.CSV, "x", "y", ReportTypeName.IMPORTS_ITEM_REPORT, "2Of3"),
-              FileNotification("f3", 1, 1, FileType.CSV, "x", "y", ReportTypeName.IMPORTS_ITEM_REPORT, "3Of3")
+              FileNotification("f1", 1, 1, FileType.CSV, "x", "y", ReportTypeName.IMPORTS_ITEM_REPORT, "1Of3", "", ""),
+              FileNotification("f2", 1, 1, FileType.CSV, "x", "y", ReportTypeName.IMPORTS_ITEM_REPORT, "2Of3", "", ""),
+              FileNotification("f3", 1, 1, FileType.CSV, "x", "y", ReportTypeName.IMPORTS_ITEM_REPORT, "3Of3", "", "")
             )
           ),
           linkAvailableTime = Some(Instant.now)
@@ -172,7 +174,7 @@ class ReportRequestRepositorySpec
           notifications = Seq.empty,
           fileNotifications = Some(
             Seq(
-              FileNotification("f4", 1, 1, FileType.CSV, "x", "y", ReportTypeName.IMPORTS_ITEM_REPORT, "1Of2")
+              FileNotification("f4", 1, 1, FileType.CSV, "x", "y", ReportTypeName.IMPORTS_ITEM_REPORT, "1Of2", "", "")
             )
           ),
           linkAvailableTime = Some(Instant.now)
@@ -202,7 +204,7 @@ class ReportRequestRepositorySpec
         notifications = Seq.empty,
         fileNotifications = Some(
           Seq(
-            FileNotification("f5", 1, 1, FileType.CSV, "x", "y", ReportTypeName.IMPORTS_ITEM_REPORT, "1Of2")
+            FileNotification("f5", 1, 1, FileType.CSV, "x", "y", ReportTypeName.IMPORTS_ITEM_REPORT, "1Of2", "", "")
             // Missing 2Of2
           )
         ),
@@ -236,9 +238,9 @@ class ReportRequestRepositorySpec
           notifications = Seq.empty,
           fileNotifications = Some(
             Seq(
-              FileNotification("f6", 1, 1, FileType.CSV, "x", "y", ReportTypeName.IMPORTS_ITEM_REPORT, "1Of3"),
-              FileNotification("f7", 1, 1, FileType.CSV, "x", "y", ReportTypeName.IMPORTS_ITEM_REPORT, "2Of3"),
-              FileNotification("f8", 1, 1, FileType.CSV, "x", "y", ReportTypeName.IMPORTS_ITEM_REPORT, "3Of3")
+              FileNotification("f6", 1, 1, FileType.CSV, "x", "y", ReportTypeName.IMPORTS_ITEM_REPORT, "1Of3", "", ""),
+              FileNotification("f7", 1, 1, FileType.CSV, "x", "y", ReportTypeName.IMPORTS_ITEM_REPORT, "2Of3", "", ""),
+              FileNotification("f8", 1, 1, FileType.CSV, "x", "y", ReportTypeName.IMPORTS_ITEM_REPORT, "3Of3", "", "")
             )
           ),
           linkAvailableTime = Some(Instant.now)
@@ -259,7 +261,7 @@ class ReportRequestRepositorySpec
           notifications = Seq.empty,
           fileNotifications = Some(
             Seq(
-              FileNotification("f9", 1, 1, FileType.CSV, "x", "y", ReportTypeName.IMPORTS_ITEM_REPORT, "1Of2")
+              FileNotification("f9", 1, 1, FileType.CSV, "x", "y", ReportTypeName.IMPORTS_ITEM_REPORT, "1Of2", "", "")
             )
           ),
           linkAvailableTime = Some(Instant.now)
@@ -289,7 +291,7 @@ class ReportRequestRepositorySpec
         notifications = Seq.empty,
         fileNotifications = Some(
           Seq(
-            FileNotification("f10", 1, 1, FileType.CSV, "x", "y", ReportTypeName.IMPORTS_ITEM_REPORT, "1Of2")
+            FileNotification("f10", 1, 1, FileType.CSV, "x", "y", ReportTypeName.IMPORTS_ITEM_REPORT, "1Of2", "", "")
             // Missing 2Of2
           )
         ),

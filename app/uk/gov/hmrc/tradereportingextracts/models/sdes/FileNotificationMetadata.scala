@@ -28,48 +28,57 @@ object FileNotificationMetadata {
     val metadata = "RETENTION_DAYS"
   }
   case class FileTypeMetadataItem(value: String) extends FileNotificationMetadata {
-    val metadata = "FILE_TYPE"
+    val metadata = "FileType"
   }
   case class EORIMetadataItem(value: String) extends FileNotificationMetadata {
     val metadata = "EORI"
   }
   case class MDTPReportXCorrelationIDMetadataItem(value: String) extends FileNotificationMetadata {
-    val metadata = "MDTP-report-x-correlationID"
+    val metadata = "MdtpReportXCorrelationId"
   }
   case class MDTPReportRequestIDMetadataItem(value: String) extends FileNotificationMetadata {
-    val metadata = "MDTP-report-requestID"
+    val metadata = "MdtpReportRequestId"
   }
   case class MDTPReportTypeNameMetadataItem(value: String) extends FileNotificationMetadata {
-    val metadata = "MDTP-reportTypeName"
+    val metadata = "MdtpReportTypeName"
   }
   case class ReportFilesPartsMetadataItem(value: String) extends FileNotificationMetadata {
-    val metadata = "Report-files-parts"
+    val metadata = "ReportFileCounter"
+  }
+  case class ReportLastFileMetadataItem(value: String) extends FileNotificationMetadata {
+    val metadata = "ReportLastFile"
+  }
+  case class FileCreationTimestampMetadataItem(value: String) extends FileNotificationMetadata {
+    val metadata = "FileCreationTimestamp"
   }
 
   // JSON Reads/Writes
   implicit val reads: Reads[FileNotificationMetadata] = Reads { json =>
     (json \ "metadata").validate[String].flatMap {
-      case "RETENTION_DAYS"              => (json \ "value").validate[String].map(RetentionDaysMetadataItem(_))
-      case "FILE_TYPE"                   => (json \ "value").validate[String].map(FileTypeMetadataItem(_))
-      case "EORI"                        => (json \ "value").validate[String].map(EORIMetadataItem(_))
-      case "MDTP-report-x-correlationID" =>
+      case "RETENTION_DAYS"           => (json \ "value").validate[String].map(RetentionDaysMetadataItem(_))
+      case "FileType"                 => (json \ "value").validate[String].map(FileTypeMetadataItem(_))
+      case "EORI"                     => (json \ "value").validate[String].map(EORIMetadataItem(_))
+      case "MdtpReportXCorrelationId" =>
         (json \ "value").validate[String].map(MDTPReportXCorrelationIDMetadataItem(_))
-      case "MDTP-report-requestID"       => (json \ "value").validate[String].map(MDTPReportRequestIDMetadataItem(_))
-      case "MDTP-reportTypeName"         => (json \ "value").validate[String].map(MDTPReportTypeNameMetadataItem(_))
-      case "Report-files-parts"          => (json \ "value").validate[String].map(ReportFilesPartsMetadataItem(_))
-      case other                         => JsError(s"Unknown metadata key: $other")
+      case "MdtpReportRequestId"      => (json \ "value").validate[String].map(MDTPReportRequestIDMetadataItem(_))
+      case "MdtpReportTypeName"       => (json \ "value").validate[String].map(MDTPReportTypeNameMetadataItem(_))
+      case "ReportFileCounter"        => (json \ "value").validate[String].map(ReportFilesPartsMetadataItem(_))
+      case "ReportLastFile"           => (json \ "value").validate[String].map(ReportLastFileMetadataItem(_))
+      case "FileCreationTimestamp"    => (json \ "value").validate[String].map(FileCreationTimestampMetadataItem(_))
     }
   }
 
   implicit val writes: Writes[FileNotificationMetadata] = Writes {
     case RetentionDaysMetadataItem(value)            => Json.obj("metadata" -> "RETENTION_DAYS", "value" -> value)
-    case FileTypeMetadataItem(value)                 => Json.obj("metadata" -> "FILE_TYPE", "value" -> value)
+    case FileTypeMetadataItem(value)                 => Json.obj("metadata" -> "FileType", "value" -> value)
     case EORIMetadataItem(value)                     => Json.obj("metadata" -> "EORI", "value" -> value)
     case MDTPReportXCorrelationIDMetadataItem(value) =>
-      Json.obj("metadata" -> "MDTP-report-x-correlationID", "value" -> value)
-    case MDTPReportRequestIDMetadataItem(value)      => Json.obj("metadata" -> "MDTP-report-requestID", "value" -> value)
-    case MDTPReportTypeNameMetadataItem(value)       => Json.obj("metadata" -> "MDTP-reportTypeName", "value" -> value)
-    case ReportFilesPartsMetadataItem(value)         => Json.obj("metadata" -> "Report-files-parts", "value" -> value)
+      Json.obj("metadata" -> "MdtpReportXCorrelationId", "value" -> value)
+    case MDTPReportRequestIDMetadataItem(value)      => Json.obj("metadata" -> "MdtpReportRequestId", "value" -> value)
+    case MDTPReportTypeNameMetadataItem(value)       => Json.obj("metadata" -> "MdtpReportTypeName", "value" -> value)
+    case ReportFilesPartsMetadataItem(value)         => Json.obj("metadata" -> "ReportFileCounter", "value" -> value)
+    case ReportLastFileMetadataItem(value)           => Json.obj("metadata" -> "ReportLastFile", "value" -> value)
+    case FileCreationTimestampMetadataItem(value)    => Json.obj("metadata" -> "FileCreationTimestamp", "value" -> value)
   }
 
   implicit val format: Format[FileNotificationMetadata] = Format(reads, writes)

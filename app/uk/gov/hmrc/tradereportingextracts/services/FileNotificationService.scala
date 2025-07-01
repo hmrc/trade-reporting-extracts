@@ -70,7 +70,11 @@ class FileNotificationService @Inject() (reportRequestService: ReportRequestServ
       mDTPReportTypeName = ReportTypeName.valueOf(
         getValue { case FileNotificationMetadata.MDTPReportTypeNameMetadataItem(v: String) => v }
       ),
-      reportFilesParts = getValue { case FileNotificationMetadata.ReportFilesPartsMetadataItem(v: String) => v }
+      reportFilesParts = getValue { case FileNotificationMetadata.ReportFilesPartsMetadataItem(v: String) => v },
+      reportLastFile = getValue { case FileNotificationMetadata.ReportLastFileMetadataItem(v: String) => v },
+      fileCreationTimestamp = getValue { case FileNotificationMetadata.FileCreationTimestampMetadataItem(v: String) =>
+        v
+      }
     )
   }
 }

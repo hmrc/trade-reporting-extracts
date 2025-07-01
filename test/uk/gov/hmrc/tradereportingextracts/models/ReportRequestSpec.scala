@@ -54,7 +54,9 @@ class ReportRequestSpec extends AnyWordSpec with Matchers {
           mDTPReportXCorrelationID = "X-Correlation-ID",
           mDTPReportRequestID = "Request-ID",
           mDTPReportTypeName = ReportTypeName.IMPORTS_ITEM_REPORT,
-          reportFilesParts = "Part1"
+          reportFilesParts = "Part1",
+          reportLastFile = "LastFile",
+          fileCreationTimestamp = "2023-01-01T10:00:00Z"
         )
       )
     ),
