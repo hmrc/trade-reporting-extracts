@@ -7,7 +7,7 @@ GET         /trade-reporting-extracts/user/:eori/authorised-eoris        uk.gov.
 GET         /trade-reporting-extracts/requested-reports                  uk.gov.hmrc.tradereportingextracts.controllers.RequestedReportsController.getRequestedReports()
 POST        /trade-reporting-extracts/create-report-request              uk.gov.hmrc.tradereportingextracts.controllers.ReportRequestController.createReportRequest
 
-PUT         /trade-reporting-extracts/notify-report-available            uk.gov.hmrc.tradereportingextracts.controllers.FileNotificationController.fileNotification()
+POST        /trade-reporting-extracts/notify-report-available            uk.gov.hmrc.tradereportingextracts.controllers.FileNotificationController.fileNotification()
 
 PUT         /tre/reportstatusnotification/v1                             uk.gov.hmrc.tradereportingextracts.controllers.ReportStatusController.notifyReportStatus()
 

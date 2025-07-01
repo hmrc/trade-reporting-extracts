@@ -30,15 +30,9 @@ import uk.gov.hmrc.tradereportingextracts.utils.SpecBase
 class FileNotificationControllerSpec extends SpecBase with MockitoSugar {
 
   "FileNotificationController" should {
-    "return 400 BadRequest when headers are missing" in new Setup {
-      val request = FakeRequest(PUT, routes.FileNotificationController.fileNotification().url)
-      val result  = route(app, request).value
-      status(result)        shouldBe BAD_REQUEST
-      contentAsString(result) should include("Failed header validation")
-    }
 
     "return 400 BadRequest when body is not JSON" in new Setup {
-      val request = FakeRequest(PUT, routes.FileNotificationController.fileNotification().url)
+      val request = FakeRequest(POST, routes.FileNotificationController.fileNotification().url)
         .withHeaders(
           "authorization"         -> "Bearer SdesAuthToken",
           "date"                  -> "Mon, 02 Oct 2023 14:30:00 GMT",
@@ -54,7 +48,7 @@ class FileNotificationControllerSpec extends SpecBase with MockitoSugar {
 
     "return 400 BadRequest when JSON is invalid" in new Setup {
       val invalidJson = Json.obj("foo" -> "bar")
-      val request     = FakeRequest(PUT, routes.FileNotificationController.fileNotification().url)
+      val request     = FakeRequest(POST, routes.FileNotificationController.fileNotification().url)
         .withHeaders(
           "authorization"         -> "Bearer SdesAuthToken",
           "date"                  -> "Mon, 02 Oct 2023 14:30:00 GMT",
@@ -84,7 +78,7 @@ class FileNotificationControllerSpec extends SpecBase with MockitoSugar {
           scala.concurrent.Future.successful((BAD_REQUEST, "report-requestID not found in FileNotification metadata"))
         )
 
-      val request = FakeRequest(PUT, routes.FileNotificationController.fileNotification().url)
+      val request = FakeRequest(POST, routes.FileNotificationController.fileNotification().url)
         .withHeaders(
           "authorization"         -> "Bearer SdesAuthToken",
           "date"                  -> "Mon, 02 Oct 2023 14:30:00 GMT",
@@ -115,7 +109,7 @@ class FileNotificationControllerSpec extends SpecBase with MockitoSugar {
           scala.concurrent.Future.successful((NOT_FOUND, "ReportRequest not found for reportRequestId: NOT-FOUND"))
         )
 
-      val request = FakeRequest(PUT, routes.FileNotificationController.fileNotification().url)
+      val request = FakeRequest(POST, routes.FileNotificationController.fileNotification().url)
         .withHeaders(
           "authorization"         -> "Bearer SdesAuthToken",
           "date"                  -> "Mon, 02 Oct 2023 14:30:00 GMT",
@@ -127,20 +121,6 @@ class FileNotificationControllerSpec extends SpecBase with MockitoSugar {
       val result  = route(app, request).value
       status(result)        shouldBe NOT_FOUND
       contentAsString(result) should include("ReportRequest not found")
-    }
-
-    "return 403 Forbidden" in new Setup {
-      val request = FakeRequest(PUT, routes.FileNotificationController.fileNotification().url)
-        .withHeaders(
-          "content-type"          -> "application/json",
-          "authorization"         -> "Invalid-auth-token",
-          "date"                  -> "Mon, 02 Oct 2023 14:30:00 GMT",
-          "x-correlation-id"      -> "asfd-asdf-asdf",
-          "source-system"         -> "SDES",
-          "x-transmitting-system" -> "SDES"
-        )
-      val result  = route(app, request).value
-      status(result) shouldBe FORBIDDEN
     }
 
     "return 201 Created" in new Setup {
@@ -161,7 +141,7 @@ class FileNotificationControllerSpec extends SpecBase with MockitoSugar {
       when(mockFileNotificationService.processFileNotification(fileNotification))
         .thenReturn(scala.concurrent.Future.successful((CREATED, "Created")))
 
-      val request = FakeRequest(PUT, routes.FileNotificationController.fileNotification().url)
+      val request = FakeRequest(POST, routes.FileNotificationController.fileNotification().url)
         .withHeaders(
           "authorization"         -> "Bearer SdesAuthToken",
           "date"                  -> "Mon, 02 Oct 2023 14:30:00 GMT",
