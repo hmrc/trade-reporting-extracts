@@ -75,7 +75,8 @@ class EisServiceSpec extends AnyWordSpec with Matchers with MockitoSugar with Sc
     createDate = Instant.now,
     notifications = Seq.empty,
     fileNotifications = null,
-    linkAvailableTime = null
+    linkAvailableTime = null,
+    itmpName = Some("John Doe")
   )
 
   def httpResponse(status: Int, body: String = ""): HttpResponse =

@@ -22,10 +22,11 @@ import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.tradereportingextracts.connectors.EmailConnector
 import uk.gov.hmrc.tradereportingextracts.models.ReportStatus.COMPLETE
 import uk.gov.hmrc.tradereportingextracts.models.sdes.{FileNotificationMetadata, FileNotificationResponse}
-import uk.gov.hmrc.tradereportingextracts.models.{FileNotification as TreFileNotification, FileType, ReportTypeName}
+import uk.gov.hmrc.tradereportingextracts.models.{FileType, ReportTypeName, FileNotification as TreFileNotification}
 
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util.matching.Regex
 
 @Singleton
 class FileNotificationService @Inject() (reportRequestService: ReportRequestService, emailConnector: EmailConnector)(
@@ -49,6 +50,7 @@ class FileNotificationService @Inject() (reportRequestService: ReportRequestServ
             }
             val updatedReportRequest     = reportRequest
               .copy(fileNotifications = updatedFileNotifications, linkAvailableTime = Some(java.time.Instant.now()))
+            val maskedId = updatedReportRequest.reportRequestId.replaceFirst("^.{5}", "XXXXX")
             if (reportRequestService.determineReportStatus(updatedReportRequest) == COMPLETE) {
               for {
                 _ <- reportRequestService.update(updatedReportRequest)
@@ -58,8 +60,7 @@ class FileNotificationService @Inject() (reportRequestService: ReportRequestServ
                            templateId = "tre_report_available",
                            email = email,
                            params = Map(
-                             "reportRequestId" -> updatedReportRequest.reportRequestId.replaceFirst("""^\d{5}""", "X")
-                           ) ++ updatedReportRequest.itmpName.map("customerName" -> _))
+                             "reportRequestId" -> maskedId) ++ updatedReportRequest.itmpName.map("customerName" -> _))
                        }
                      )
               } yield (CREATED, "Created")

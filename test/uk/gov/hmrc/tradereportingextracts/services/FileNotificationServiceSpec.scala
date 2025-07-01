@@ -83,7 +83,8 @@ class FileNotificationServiceSpec
     createDate = null,
     notifications = Seq.empty,
     fileNotifications = None,
-    linkAvailableTime = null
+    linkAvailableTime = null,
+    itmpName = Some("John Doe")
   )
 
   "FileNotificationService.processFileNotification" should {
@@ -167,7 +168,7 @@ class FileNotificationServiceSpec
 
     "call emailConnector.sendEmailRequest for each recipient when status is COMPLETE" in {
       val reportWithEmails = reportRequest.copy(recipientEmails = Seq("a@example.com", "b@example.com"))
-      when(mockReportRequestService.get(eqTo("TRE-19"))(any()))
+      when(mockReportRequestService.get(eqTo("RE123456"))(any()))
         .thenReturn(Future.successful(Some(reportWithEmails)))
       when(mockReportRequestService.update(any())(any()))
         .thenReturn(Future.successful(true))
@@ -180,14 +181,14 @@ class FileNotificationServiceSpec
         verify(mockEmailConnector, times(2)).sendEmailRequest(
           eqTo("tre_report_available"),
           any(),
-          eqTo(Map("reportRequestId" -> "TRE-19"))
+          eqTo(Map("reportRequestId" -> "XXXXX456", "customerName" -> "John Doe"))
         )(any())
       }
     }
 
     "not call emailConnector.sendEmailRequest when status is NOT complete" in {
       val reportWithEmails = reportRequest.copy(recipientEmails = Seq("a@example.com", "b@example.com"))
-      when(mockReportRequestService.get(eqTo("TRE-19"))(any()))
+      when(mockReportRequestService.get(eqTo("RE123456"))(any()))
         .thenReturn(Future.successful(Some(reportWithEmails)))
       when(mockReportRequestService.update(any())(any()))
         .thenReturn(Future.successful(true))
@@ -198,8 +199,69 @@ class FileNotificationServiceSpec
         verify(mockEmailConnector, times(0)).sendEmailRequest(
           eqTo("tre_report_available"),
           any(),
-          eqTo(Map("reportRequestId" -> "TRE-19"))
+          eqTo(Map("reportRequestId" -> "XXXXX456"))
         )(any())
+      }
+    }
+
+    "mask the first 5 characters of reportRequestId in params when sending email" in {
+      val maskedReportRequest = reportRequest.copy(
+        reportRequestId = "RE123456",
+        recipientEmails = Seq("masked@example.com"),
+        itmpName = Some("John Doe")
+      )
+      when(mockReportRequestService.get(eqTo("RE123456"))(any()))
+        .thenReturn(Future.successful(Some(maskedReportRequest)))
+      when(mockReportRequestService.update(any())(any()))
+        .thenReturn(Future.successful(true))
+      when(mockReportRequestService.determineReportStatus(any())).thenReturn(COMPLETE)
+      when(mockEmailConnector.sendEmailRequest(any(), any(), any())(any()))
+        .thenReturn(Future.successful(()))
+
+      val result = service.processFileNotification(fileNotification.copy(
+        metadata = fileNotification.metadata.map {
+          case FileNotificationMetadata.MDTPReportRequestIDMetadataItem(_) =>
+            FileNotificationMetadata.MDTPReportRequestIDMetadataItem("RE123456")
+          case m => m
+        }
+      ))
+      whenReady(result) { case (status, message) =>
+        val paramsCaptor = ArgumentCaptor.forClass(classOf[Map[String, String]])
+        verify(mockEmailConnector).sendEmailRequest(
+          eqTo("tre_report_available"),
+          eqTo("masked@example.com"),
+          paramsCaptor.capture()
+        )(any())
+        val params = paramsCaptor.getValue
+        params("reportRequestId") shouldBe "XXXXX456"
+        params("customerName") shouldBe "John Doe"
+      }
+    }
+
+    "not include customerName in params when itmpName is None" in {
+      val noNameReportRequest = reportRequest.copy(
+        recipientEmails = Seq("noname@example.com"),
+        itmpName = None
+      )
+      when(mockReportRequestService.get(eqTo("RE123456"))(any()))
+        .thenReturn(Future.successful(Some(noNameReportRequest)))
+      when(mockReportRequestService.update(any())(any()))
+        .thenReturn(Future.successful(true))
+      when(mockReportRequestService.determineReportStatus(any())).thenReturn(COMPLETE)
+      when(mockEmailConnector.sendEmailRequest(any(), any(), any())(any()))
+        .thenReturn(Future.successful(()))
+
+      val result = service.processFileNotification(fileNotification)
+      whenReady(result) { case (status, message) =>
+        val paramsCaptor = ArgumentCaptor.forClass(classOf[Map[String, String]])
+        verify(mockEmailConnector).sendEmailRequest(
+          eqTo("tre_report_available"),
+          eqTo("noname@example.com"),
+          paramsCaptor.capture()
+        )(any())
+        val params = paramsCaptor.getValue
+        params.keySet should contain ("reportRequestId")
+        params.keySet should not contain ("customerName")
       }
     }
   }

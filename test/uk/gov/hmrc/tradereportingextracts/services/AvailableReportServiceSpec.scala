@@ -105,7 +105,8 @@ class AvailableReportServiceSpec extends AnyWordSpec with Matchers with ScalaFut
           )
         ),
         fileNotifications = Some(Seq(fileNotification)),
-        linkAvailableTime = Some(Instant.parse("2023-01-03T10:00:00Z"))
+        linkAvailableTime = Some(Instant.parse("2023-01-03T10:00:00Z")),
+        itmpName = Some("John Doe")
       )
       val sdesResponse                             = Seq(
         FileAvailableResponse(

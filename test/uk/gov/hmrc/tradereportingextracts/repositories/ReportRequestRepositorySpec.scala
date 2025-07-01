@@ -25,9 +25,12 @@ import uk.gov.hmrc.mongo.test.CleanMongoCollectionSupport
 import uk.gov.hmrc.tradereportingextracts.config.AppConfig
 import uk.gov.hmrc.tradereportingextracts.models.eis.EisReportStatusRequest
 import uk.gov.hmrc.tradereportingextracts.models.{Component, EoriRole, FileNotification, FileType, ReportRequest, ReportTypeName, StatusCode, StatusType}
+import org.scalactic.Equality
 
 import java.time.Instant
 import scala.concurrent.ExecutionContext.Implicits.global
+
+implicit val eqReportRequest: Equality[ReportRequest] = (a, b) => a == b
 
 class ReportRequestRepositorySpec
     extends AnyWordSpec,
@@ -73,7 +76,8 @@ class ReportRequestRepositorySpec
         )
       )
     ),
-    linkAvailableTime = Some(Instant.parse("2023-01-03T10:00:00Z"))
+    linkAvailableTime = Some(Instant.parse("2023-01-03T10:00:00Z")),
+    itmpName = Some("John Doe")
   )
   val appConfig: AppConfig  = app.injector.instanceOf[AppConfig]
 
@@ -156,7 +160,8 @@ class ReportRequestRepositorySpec
               FileNotification("f3", 1, 1, FileType.CSV, "x", "y", ReportTypeName.IMPORTS_ITEM_REPORT, "3Of3", "", "")
             )
           ),
-          linkAvailableTime = Some(Instant.now)
+          linkAvailableTime = Some(Instant.now),
+            itmpName = Some("John Doe")
         ),
         // Incomplete set: only 1Of2
         ReportRequest(
@@ -177,7 +182,8 @@ class ReportRequestRepositorySpec
               FileNotification("f4", 1, 1, FileType.CSV, "x", "y", ReportTypeName.IMPORTS_ITEM_REPORT, "1Of2", "", "")
             )
           ),
-          linkAvailableTime = Some(Instant.now)
+          linkAvailableTime = Some(Instant.now),
+            itmpName = Some("John Doe")
         )
       )
 
@@ -208,7 +214,8 @@ class ReportRequestRepositorySpec
             // Missing 2Of2
           )
         ),
-        linkAvailableTime = Some(Instant.now)
+        linkAvailableTime = Some(Instant.now),
+        itmpName = Some("John Doe")
       )
 
       reportRequestRepository.insert(incompleteRequest).futureValue
@@ -243,7 +250,8 @@ class ReportRequestRepositorySpec
               FileNotification("f8", 1, 1, FileType.CSV, "x", "y", ReportTypeName.IMPORTS_ITEM_REPORT, "3Of3", "", "")
             )
           ),
-          linkAvailableTime = Some(Instant.now)
+          linkAvailableTime = Some(Instant.now),
+            itmpName = Some("John Doe")
         ),
         // Incomplete set: only 1Of2
         ReportRequest(
@@ -264,7 +272,8 @@ class ReportRequestRepositorySpec
               FileNotification("f9", 1, 1, FileType.CSV, "x", "y", ReportTypeName.IMPORTS_ITEM_REPORT, "1Of2", "", "")
             )
           ),
-          linkAvailableTime = Some(Instant.now)
+          linkAvailableTime = Some(Instant.now),
+            itmpName = Some("John Doe")
         )
       )
 
@@ -295,7 +304,8 @@ class ReportRequestRepositorySpec
             // Missing 2Of2
           )
         ),
-        linkAvailableTime = Some(Instant.now)
+        linkAvailableTime = Some(Instant.now),
+        itmpName = Some("John Doe")
       )
 
       reportRequestRepository.insert(incompleteRequest).futureValue
