@@ -19,15 +19,12 @@ package uk.gov.hmrc.tradereportingextracts.controllers
 import play.api.libs.json.*
 import play.api.mvc.*
 import uk.gov.hmrc.tradereportingextracts.config.AppConfig
-import uk.gov.hmrc.tradereportingextracts.models.FileNotification as TreFileNotication
-import uk.gov.hmrc.tradereportingextracts.models.sdes.FileNotificationHeaders.*
 import uk.gov.hmrc.tradereportingextracts.models.sdes.FileNotificationResponse
+import uk.gov.hmrc.tradereportingextracts.services.{FileNotificationService, ReportRequestService}
 
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
-import uk.gov.hmrc.tradereportingextracts.models.{FileType, ReportTypeName}
-import uk.gov.hmrc.tradereportingextracts.models.sdes.FileNotificationMetadata
-import uk.gov.hmrc.tradereportingextracts.services.{FileNotificationService, ReportRequestService}
+
 @Singleton
 class FileNotificationController @Inject() (
   cc: ControllerComponents,
@@ -38,23 +35,10 @@ class FileNotificationController @Inject() (
     extends AbstractController(cc) {
 
   def fileNotification(): Action[AnyContent] = Action.async { request =>
-    def missingHeaders: Seq[String] =
-      allHeaders.filterNot(header => request.headers.get(header).isDefined)
-
-    def isAuthorized: Boolean =
-      request.headers.get(Authorization.toString).exists { authHeader =>
-        authHeader.startsWith("Bearer ") &&
-        authHeader.substring("Bearer ".length) == appConfig.sdesAuthToken
-      }
-
-    (missingHeaders, isAuthorized, request.body.asJson) match {
-      case (headers, _, _) if headers.nonEmpty =>
-        Future.successful(BadRequest(s"Failed header validation: Missing headers: ${headers.mkString(", ")}"))
-      case (_, false, _)                       =>
-        Future.successful(Forbidden)
-      case (_, _, None)                        =>
+    request.body.asJson match {
+      case None       =>
         Future.successful(BadRequest("Expected application/json request body"))
-      case (_, _, Some(json))                  =>
+      case Some(json) =>
         json.validate[FileNotificationResponse] match {
           case JsSuccess(fileNotification, _) =>
             fileNotificationService.processFileNotification(fileNotification).map { (status, message) =>
