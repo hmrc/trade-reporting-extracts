@@ -47,7 +47,9 @@ case class FileNotification(
   mDTPReportXCorrelationID: String,
   mDTPReportRequestID: String,
   mDTPReportTypeName: ReportTypeName,
-  reportFilesParts: String
+  reportFilesParts: String,
+  reportLastFile: String,
+  fileCreationTimestamp: String
 )
 
 object ReportRequest:

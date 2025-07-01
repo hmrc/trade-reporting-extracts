@@ -79,7 +79,9 @@ class AvailableReportServiceSpec extends AnyWordSpec with Matchers with ScalaFut
         "Core-ID",
         "req-id-456",
         ReportTypeName.IMPORTS_ITEM_REPORT,
-        "1Of1"
+        "1Of1",
+        "last",
+        ""
       )
       val reportRequest                            = ReportRequest(
         reportRequestId = reportRequestId,
