@@ -41,7 +41,8 @@ class ReportRequestTransformationServiceSpec extends AnyFreeSpec with Matchers w
     eoriRole = Set("declarant"),
     reportType = Set("importHeader"),
     dataType = "import",
-    additionalEmail = Some(Set("test@example.com"))
+    additionalEmail = Some(Set("test@example.com")),
+    journeyReferenceId = "123e4567-e89b-12d3-a456-426614174000"
   )
 
   "transformReportRequest" - {

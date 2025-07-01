@@ -52,7 +52,8 @@ class ReportRequestServiceSpec extends AnyWordSpec with Matchers {
         Instant.now(),
         Seq.empty,
         fileNotifications,
-        None
+        None,
+        journeyReferenceId = "123e4567-e89b-12d3-a456-426614174000"
       )
 
       service.invokePrivateMethod("determineReportStatus", reportRequest) shouldBe ReportStatus.COMPLETE
@@ -83,7 +84,8 @@ class ReportRequestServiceSpec extends AnyWordSpec with Matchers {
         Instant.now(),
         notifications,
         None,
-        None
+        None,
+        journeyReferenceId = "123e4567-e89b-12d3-a456-426614174000"
       )
 
       service.invokePrivateMethod("determineReportStatus", reportRequest) shouldBe ReportStatus.ERROR
@@ -114,7 +116,8 @@ class ReportRequestServiceSpec extends AnyWordSpec with Matchers {
         Instant.now(),
         notifications,
         None,
-        None
+        None,
+        journeyReferenceId = "123e4567-e89b-12d3-a456-426614174000"
       )
 
       service.invokePrivateMethod("determineReportStatus", reportRequest) shouldBe ReportStatus.IN_PROGRESS
@@ -135,7 +138,8 @@ class ReportRequestServiceSpec extends AnyWordSpec with Matchers {
         Instant.now(),
         Seq.empty,
         None,
-        None
+        None,
+        journeyReferenceId = "123e4567-e89b-12d3-a456-426614174000"
       )
 
       service.invokePrivateMethod("determineReportStatus", reportRequest) shouldBe ReportStatus.IN_PROGRESS

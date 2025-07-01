@@ -18,8 +18,11 @@ package uk.gov.hmrc.tradereportingextracts.models
 
 import org.scalatest.wordspec.AnyWordSpec
 import org.scalatest.matchers.must.Matchers
+
 import java.time.Instant
 import uk.gov.hmrc.tradereportingextracts.models.eis.EisReportStatusRequest
+
+import java.util.UUID
 
 class ReportRequestSpec extends AnyWordSpec with Matchers {
 
@@ -58,7 +61,8 @@ class ReportRequestSpec extends AnyWordSpec with Matchers {
         )
       )
     ),
-    linkAvailableTime = Some(Instant.parse("2023-01-03T10:00:00Z"))
+    linkAvailableTime = Some(Instant.parse("2023-01-03T10:00:00Z")),
+    journeyReferenceId = UUID.randomUUID().toString
   )
 
   "ReportRequest equality" should {
