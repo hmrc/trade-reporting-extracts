@@ -15,7 +15,7 @@ import uk.gov.hmrc.tradereportingextracts.utils.WireMockHelper
 import scala.List
 
 class SDESConnectorSpec
-  extends AnyFreeSpec
+    extends AnyFreeSpec
     with Matchers
     with ScalaFutures
     with WireMockHelper
@@ -39,24 +39,26 @@ class SDESConnectorSpec
 
   "SDESConnector" - {
     "should return file responses when SDES responds with 200" in {
-      val eori = "GB123456789000"
-      val responseBody = Json.arr(
-        Json.obj(
-          "filename"     -> "pvat-2018-106.csv",
-          "downloadURL"  -> "https://some.sdes.domain?token=abc456",
-          "fileSize"     -> 1324,
-          "metadata"     -> Json.arr(
-            Json.obj("metadata" -> "RETENTION_DAYS",           "value" -> "30"),
-            Json.obj("metadata" -> "FileType",                  "value" -> "CSV"),
-            Json.obj("metadata" -> "EORI",                      "value" -> eori),
-            Json.obj("metadata" -> "MdtpReportXCorrelationId",  "value" -> "2409398b-ee8f-47cd-b873-ac7ac099c28b"),
-            Json.obj("metadata" -> "MdtpReportRequestId",       "value" -> "RE1212212001"),
-            Json.obj("metadata" -> "MdtpReportTypeName",        "value" -> "Imports-Header"),
-            Json.obj("metadata" -> "ReportFileCounter",         "value" -> "2of2"),
-            Json.obj("metadata" -> "ReportLastFile",            "value" -> "true")
+      val eori         = "GB123456789000"
+      val responseBody = Json
+        .arr(
+          Json.obj(
+            "filename"    -> "pvat-2018-106.csv",
+            "downloadURL" -> "https://some.sdes.domain?token=abc456",
+            "fileSize"    -> 1324,
+            "metadata"    -> Json.arr(
+              Json.obj("metadata" -> "RETENTION_DAYS", "value"           -> "30"),
+              Json.obj("metadata" -> "FileType", "value"                 -> "CSV"),
+              Json.obj("metadata" -> "EORI", "value"                     -> eori),
+              Json.obj("metadata" -> "MdtpReportXCorrelationId", "value" -> "2409398b-ee8f-47cd-b873-ac7ac099c28b"),
+              Json.obj("metadata" -> "MdtpReportRequestId", "value"      -> "RE1212212001"),
+              Json.obj("metadata" -> "MdtpReportTypeName", "value"       -> "Imports-Header"),
+              Json.obj("metadata" -> "ReportFileCounter", "value"        -> "2of2"),
+              Json.obj("metadata" -> "ReportLastFile", "value"           -> "true")
+            )
           )
         )
-      ).toString()
+        .toString()
 
       server.stubFor(
         get(urlEqualTo(sdesUrl))
@@ -65,7 +67,7 @@ class SDESConnectorSpec
           .willReturn(aResponse().withStatus(OK).withBody(responseBody))
       )
 
-      val result = connector.fetchAvailableReportFileUrl(eori, Seq.empty).futureValue
+      val result = connector.fetchAvailableReportFileUrl(eori).futureValue
       result.map(_.filename) should contain theSameElementsAs List("pvat-2018-106.csv")
     }
 
@@ -78,8 +80,8 @@ class SDESConnectorSpec
           .willReturn(aResponse().withStatus(INTERNAL_SERVER_ERROR))
       )
 
-      whenReady(connector.fetchAvailableReportFileUrl(eori, Seq.empty).failed) { ex =>
-        ex.getMessage should include ("500")
+      whenReady(connector.fetchAvailableReportFileUrl(eori).failed) { ex =>
+        ex.getMessage should include("500")
       }
     }
   }

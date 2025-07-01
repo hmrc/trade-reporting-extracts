@@ -16,22 +16,20 @@
 
 package uk.gov.hmrc.tradereportingextracts.connectors
 
-import play.api.libs.json.Json
 import uk.gov.hmrc.http.HttpReads.Implicits.*
-import javax.inject.Inject
-import uk.gov.hmrc.http.{HeaderCarrier, StringContextOps}
 import uk.gov.hmrc.http.client.HttpClientV2
+import uk.gov.hmrc.http.{HeaderCarrier, StringContextOps}
 import uk.gov.hmrc.tradereportingextracts.config.AppConfig
 import uk.gov.hmrc.tradereportingextracts.connectors.ConnectorFailureLogger.*
-import uk.gov.hmrc.tradereportingextracts.models.sdes.{FileAvailableResponse, FileAvailableStubRequest}
+import uk.gov.hmrc.tradereportingextracts.models.sdes.FileAvailableResponse
 import uk.gov.hmrc.tradereportingextracts.utils.ApplicationConstants.{xClientId, xSDESKey}
-import play.api.libs.ws.JsonBodyWritables.*
 
+import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
 
 class SDESConnector @Inject() (appConfig: AppConfig, httpClient: HttpClientV2)(using ec: ExecutionContext) {
 
-  def fetchAvailableReportFileUrl(eori: String, reportRequestsForStub: Seq[FileAvailableStubRequest])(implicit
+  def fetchAvailableReportFileUrl(eori: String)(implicit
     hc: HeaderCarrier
   ): Future[Seq[FileAvailableResponse]] = {
     val requestAvailableReportFileUrl = url"${appConfig.sdes}"
@@ -40,9 +38,6 @@ class SDESConnector @Inject() (appConfig: AppConfig, httpClient: HttpClientV2)(u
       .setHeader(
         xClientId -> appConfig.treXClientId,
         xSDESKey  -> eori
-      )
-      .withBody(
-        Json.toJson(reportRequestsForStub)
       )
       .execute[Seq[FileAvailableResponse]]
       .logFailureReason(connectorName = "SDESConnector on fetchAvailableReportFileUrl")

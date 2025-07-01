@@ -41,7 +41,7 @@ class AvailableReportServiceSpec extends AnyWordSpec with Matchers with ScalaFut
       val mockAppConfig: AppConfig                       = mock[AppConfig]
       val mockSDESConnector                              = mock[SDESConnector]
       val eori                                           = "GB123456789000"
-      when(mockSDESConnector.fetchAvailableReportFileUrl(any(), any())(any()))
+      when(mockSDESConnector.fetchAvailableReportFileUrl(any())(any()))
         .thenReturn(Future.successful(Seq.empty))
       when(mockReportRequestService.getAvailableReports(any())(using any()))
         .thenReturn(Future.successful(Seq.empty))
@@ -116,7 +116,7 @@ class AvailableReportServiceSpec extends AnyWordSpec with Matchers with ScalaFut
         )
       )
 
-      when(mockSDESConnector.fetchAvailableReportFileUrl(any(), any())(any()))
+      when(mockSDESConnector.fetchAvailableReportFileUrl(any())(any()))
         .thenReturn(Future.successful(sdesResponse))
       when(mockReportRequestService.getAvailableReports(any())(using any()))
         .thenReturn(Future.successful(Seq(reportRequest)))

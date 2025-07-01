@@ -40,7 +40,6 @@ class AppConfig @Inject() (val config: Configuration, servicesConfig: ServicesCo
   lazy val etmpAuthToken: String    = config.get[String]("etmp.auth-token")
   lazy val sdesAuthToken: String    = config.get[String]("sdes.auth-token")
   lazy val eisAPI6AuthToken: String = config.get[String]("eis.auth-token")
-  lazy val sdesStubValue: Boolean   = config.get[Boolean]("sdes.stub-value")
 
   lazy val eis: String                 = servicesConfig.baseUrl("eis") + config.get[String]("microservice.services.eis.context")
   lazy val sdes: String                = servicesConfig.baseUrl("sdes") + config.get[String]("microservice.services.sdes.context")

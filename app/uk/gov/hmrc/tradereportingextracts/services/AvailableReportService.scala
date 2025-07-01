@@ -20,12 +20,12 @@ import play.api.Logger
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.tradereportingextracts.config.AppConfig
 import uk.gov.hmrc.tradereportingextracts.connectors.SDESConnector
-import uk.gov.hmrc.tradereportingextracts.models.{AvailableReportAction, AvailableReportResponse, AvailableUserReportResponse, FileType, ReportRequest}
-import uk.gov.hmrc.tradereportingextracts.models.sdes.{FileAvailableMetadataItem, FileAvailableResponse, FileAvailableStubRequest}
+import uk.gov.hmrc.tradereportingextracts.models.sdes.{FileAvailableMetadataItem, FileAvailableResponse}
+import uk.gov.hmrc.tradereportingextracts.models.*
 
 import java.time.Instant
-import scala.concurrent.{ExecutionContext, Future}
 import javax.inject.Inject
+import scala.concurrent.{ExecutionContext, Future}
 
 class AvailableReportService @Inject() (
   reportRequestService: ReportRequestService,
@@ -41,12 +41,8 @@ class AvailableReportService @Inject() (
   ): Future[AvailableReportResponse] =
     for {
       reportRequests <- reportRequestService.getAvailableReports(eoriValue)
-      // If SDES stub is enabled, generate stub requests for available reports
-      stubResponse    = if (appConfig.sdesStubValue) generateFileAvailableStubRequests(reportRequests) else Seq.empty
-      sdesResponse   <- if (reportRequests.isEmpty)
-                          Future.successful(Seq.empty[FileAvailableResponse])
-                        else
-                          sdesConnector.fetchAvailableReportFileUrl(eoriValue, stubResponse)
+      sdesResponse   <- if (reportRequests.isEmpty) Future.successful(Seq.empty[FileAvailableResponse])
+                        else sdesConnector.fetchAvailableReportFileUrl(eoriValue)
     } yield
       if (reportRequests.isEmpty) {
         logger.warn(s"No available reports found for EORI: $eoriValue")
@@ -98,14 +94,6 @@ class AvailableReportService @Inject() (
     }
     AvailableReportResponse(Some(availableUserReports), None)
   }
-
-  private def generateFileAvailableStubRequests(reportRequests: Seq[ReportRequest]): Seq[FileAvailableStubRequest] =
-    reportRequests.map { req =>
-      FileAvailableStubRequest(
-        reportRequestId = req.reportRequestId,
-        fileParts = req.fileNotifications.map(_.size).getOrElse(0)
-      )
-    }
 
   def getAvailableReportsCount(eoriValue: String): Future[Long] =
     reportRequestService.countAvailableReports(eoriValue).recover { case ex: Exception =>
