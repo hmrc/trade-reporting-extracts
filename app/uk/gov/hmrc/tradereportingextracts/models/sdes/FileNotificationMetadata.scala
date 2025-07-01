@@ -19,36 +19,36 @@ package uk.gov.hmrc.tradereportingextracts.models.sdes
 import play.api.libs.json._
 
 sealed trait FileNotificationMetadata {
-  def key: String
+  def metadata: String
   def value: String
 }
 
 object FileNotificationMetadata {
   case class RetentionDaysMetadataItem(value: String) extends FileNotificationMetadata {
-    val key = "RETENTION_DAYS"
+    val metadata = "RETENTION_DAYS"
   }
   case class FileTypeMetadataItem(value: String) extends FileNotificationMetadata {
-    val key = "FILE_TYPE"
+    val metadata = "FILE_TYPE"
   }
   case class EORIMetadataItem(value: String) extends FileNotificationMetadata {
-    val key = "EORI"
+    val metadata = "EORI"
   }
   case class MDTPReportXCorrelationIDMetadataItem(value: String) extends FileNotificationMetadata {
-    val key = "MDTP-report-x-correlationID"
+    val metadata = "MDTP-report-x-correlationID"
   }
   case class MDTPReportRequestIDMetadataItem(value: String) extends FileNotificationMetadata {
-    val key = "MDTP-report-requestID"
+    val metadata = "MDTP-report-requestID"
   }
   case class MDTPReportTypeNameMetadataItem(value: String) extends FileNotificationMetadata {
-    val key = "MDTP-reportTypeName"
+    val metadata = "MDTP-reportTypeName"
   }
   case class ReportFilesPartsMetadataItem(value: String) extends FileNotificationMetadata {
-    val key = "Report-files-parts"
+    val metadata = "Report-files-parts"
   }
 
   // JSON Reads/Writes
   implicit val reads: Reads[FileNotificationMetadata] = Reads { json =>
-    (json \ "key").validate[String].flatMap {
+    (json \ "metadata").validate[String].flatMap {
       case "RETENTION_DAYS"              => (json \ "value").validate[String].map(RetentionDaysMetadataItem(_))
       case "FILE_TYPE"                   => (json \ "value").validate[String].map(FileTypeMetadataItem(_))
       case "EORI"                        => (json \ "value").validate[String].map(EORIMetadataItem(_))
@@ -62,14 +62,14 @@ object FileNotificationMetadata {
   }
 
   implicit val writes: Writes[FileNotificationMetadata] = Writes {
-    case RetentionDaysMetadataItem(value)            => Json.obj("key" -> "RETENTION_DAYS", "value" -> value)
-    case FileTypeMetadataItem(value)                 => Json.obj("key" -> "FILE_TYPE", "value" -> value)
-    case EORIMetadataItem(value)                     => Json.obj("key" -> "EORI", "value" -> value)
+    case RetentionDaysMetadataItem(value)            => Json.obj("metadata" -> "RETENTION_DAYS", "value" -> value)
+    case FileTypeMetadataItem(value)                 => Json.obj("metadata" -> "FILE_TYPE", "value" -> value)
+    case EORIMetadataItem(value)                     => Json.obj("metadata" -> "EORI", "value" -> value)
     case MDTPReportXCorrelationIDMetadataItem(value) =>
-      Json.obj("key" -> "MDTP-report-x-correlationID", "value" -> value)
-    case MDTPReportRequestIDMetadataItem(value)      => Json.obj("key" -> "MDTP-report-requestID", "value" -> value)
-    case MDTPReportTypeNameMetadataItem(value)       => Json.obj("key" -> "MDTP-reportTypeName", "value" -> value)
-    case ReportFilesPartsMetadataItem(value)         => Json.obj("key" -> "Report-files-parts", "value" -> value)
+      Json.obj("metadata" -> "MDTP-report-x-correlationID", "value" -> value)
+    case MDTPReportRequestIDMetadataItem(value)      => Json.obj("metadata" -> "MDTP-report-requestID", "value" -> value)
+    case MDTPReportTypeNameMetadataItem(value)       => Json.obj("metadata" -> "MDTP-reportTypeName", "value" -> value)
+    case ReportFilesPartsMetadataItem(value)         => Json.obj("metadata" -> "Report-files-parts", "value" -> value)
   }
 
   implicit val format: Format[FileNotificationMetadata] = Format(reads, writes)
