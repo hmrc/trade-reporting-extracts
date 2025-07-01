@@ -57,8 +57,9 @@ class FileNotificationService @Inject() (reportRequestService: ReportRequestServ
                          emailConnector.sendEmailRequest(
                            templateId = "tre_report_available",
                            email = email,
-                           params = Map("reportRequestId" -> updatedReportRequest.reportRequestId)
-                         )
+                           params = Map(
+                             "reportRequestId" -> updatedReportRequest.reportRequestId.replaceFirst("""^\d{5}""", "X")
+                           ) ++ updatedReportRequest.itmpName.map("customerName" -> _))
                        }
                      )
               } yield (CREATED, "Created")
