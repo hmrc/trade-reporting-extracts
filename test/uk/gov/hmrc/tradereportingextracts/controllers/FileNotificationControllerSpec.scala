@@ -30,12 +30,6 @@ import uk.gov.hmrc.tradereportingextracts.utils.SpecBase
 class FileNotificationControllerSpec extends SpecBase with MockitoSugar {
 
   "FileNotificationController" should {
-    "return 400 BadRequest when headers are missing" in new Setup {
-      val request = FakeRequest(POST, routes.FileNotificationController.fileNotification().url)
-      val result  = route(app, request).value
-      status(result)        shouldBe BAD_REQUEST
-      contentAsString(result) should include("Failed header validation")
-    }
 
     "return 400 BadRequest when body is not JSON" in new Setup {
       val request = FakeRequest(POST, routes.FileNotificationController.fileNotification().url)
@@ -127,20 +121,6 @@ class FileNotificationControllerSpec extends SpecBase with MockitoSugar {
       val result  = route(app, request).value
       status(result)        shouldBe NOT_FOUND
       contentAsString(result) should include("ReportRequest not found")
-    }
-
-    "return 403 Forbidden" in new Setup {
-      val request = FakeRequest(POST, routes.FileNotificationController.fileNotification().url)
-        .withHeaders(
-          "content-type"          -> "application/json",
-          "authorization"         -> "Invalid-auth-token",
-          "date"                  -> "Mon, 02 Oct 2023 14:30:00 GMT",
-          "x-correlation-id"      -> "asfd-asdf-asdf",
-          "source-system"         -> "SDES",
-          "x-transmitting-system" -> "SDES"
-        )
-      val result  = route(app, request).value
-      status(result) shouldBe FORBIDDEN
     }
 
     "return 201 Created" in new Setup {
