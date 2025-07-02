@@ -63,14 +63,14 @@ class FileNotificationServiceSpec
       FileNotificationMetadata.FileTypeMetadataItem("CSV"),
       FileNotificationMetadata.EORIMetadataItem("GB123456789012"),
       FileNotificationMetadata.MDTPReportXCorrelationIDMetadataItem("asfd-asdf-asdf"),
-      FileNotificationMetadata.MDTPReportRequestIDMetadataItem("TRE-19"),
+      FileNotificationMetadata.MDTPReportRequestIDMetadataItem("RE123456"),
       FileNotificationMetadata.MDTPReportTypeNameMetadataItem("IMPORTS_HEADER_REPORT"),
       FileNotificationMetadata.ReportFilesPartsMetadataItem("1of2")
     )
   )
 
   val reportRequest = ReportRequest(
-    reportRequestId = "TRE-19",
+    reportRequestId = "RE123456",
     correlationId = "corr-1",
     reportName = "name",
     requesterEORI = "GB123456789012",
@@ -90,7 +90,7 @@ class FileNotificationServiceSpec
   "FileNotificationService.processFileNotification" should {
 
     "return CREATED and update reportRequest when found and no existing fileNotifications" in {
-      when(mockReportRequestService.get(eqTo("TRE-19"))(any()))
+      when(mockReportRequestService.get(eqTo("RE123456"))(any()))
         .thenReturn(Future.successful(Some(reportRequest)))
       when(mockReportRequestService.update(any())(any()))
         .thenReturn(Future.successful(true))
@@ -119,7 +119,7 @@ class FileNotificationServiceSpec
               retentionDays = 1,
               fileType = FileType.CSV,
               mDTPReportXCorrelationID = "x",
-              mDTPReportRequestID = "TRE-19",
+              mDTPReportRequestID = "RE123456",
               mDTPReportTypeName = ReportTypeName.IMPORTS_HEADER_REPORT,
               reportFilesParts = "1of1",
               reportLastFile = "last",
@@ -128,7 +128,7 @@ class FileNotificationServiceSpec
           )
         )
       )
-      when(mockReportRequestService.get(eqTo("TRE-19"))(any()))
+      when(mockReportRequestService.get(eqTo("RE123456"))(any()))
         .thenReturn(Future.successful(Some(existing)))
       when(mockReportRequestService.update(any())(any()))
         .thenReturn(Future.successful(true))
@@ -144,7 +144,7 @@ class FileNotificationServiceSpec
     }
 
     "return NOT_FOUND if reportRequest is not found" in {
-      when(mockReportRequestService.get(eqTo("TRE-19"))(any()))
+      when(mockReportRequestService.get(eqTo("RE123456"))(any()))
         .thenReturn(Future.successful(None))
 
       val result = service.processFileNotification(fileNotification)
@@ -199,18 +199,18 @@ class FileNotificationServiceSpec
         verify(mockEmailConnector, times(0)).sendEmailRequest(
           eqTo("tre_report_available"),
           any(),
-          eqTo(Map("reportRequestId" -> "XXXXX456"))
+          eqTo(Map("reportRequestId" -> "RE123456"))
         )(any())
       }
     }
 
-    "mask the first 5 characters of reportRequestId in params when sending email" in {
+    "mask the first 5 digits of reportRequestId in params when sending email" in {
       val maskedReportRequest = reportRequest.copy(
-        reportRequestId = "RE123456",
+        reportRequestId = "12345-6789",
         recipientEmails = Seq("masked@example.com"),
-        itmpName = Some("John Doe")
+        itmpName = Some("Masked User")
       )
-      when(mockReportRequestService.get(eqTo("RE123456"))(any()))
+      when(mockReportRequestService.get(eqTo("12345-6789"))(any()))
         .thenReturn(Future.successful(Some(maskedReportRequest)))
       when(mockReportRequestService.update(any())(any()))
         .thenReturn(Future.successful(true))
@@ -218,13 +218,15 @@ class FileNotificationServiceSpec
       when(mockEmailConnector.sendEmailRequest(any(), any(), any())(any()))
         .thenReturn(Future.successful(()))
 
-      val result = service.processFileNotification(fileNotification.copy(
-        metadata = fileNotification.metadata.map {
-          case FileNotificationMetadata.MDTPReportRequestIDMetadataItem(_) =>
-            FileNotificationMetadata.MDTPReportRequestIDMetadataItem("RE123456")
-          case m => m
-        }
-      ))
+      val result = service.processFileNotification(
+        fileNotification.copy(
+          metadata = fileNotification.metadata.map {
+            case FileNotificationMetadata.MDTPReportRequestIDMetadataItem(_) =>
+              FileNotificationMetadata.MDTPReportRequestIDMetadataItem("12345-6789")
+            case m                                                           => m
+          }
+        )
+      )
       whenReady(result) { case (status, message) =>
         val paramsCaptor = ArgumentCaptor.forClass(classOf[Map[String, String]])
         verify(mockEmailConnector).sendEmailRequest(
@@ -232,9 +234,9 @@ class FileNotificationServiceSpec
           eqTo("masked@example.com"),
           paramsCaptor.capture()
         )(any())
-        val params = paramsCaptor.getValue
-        params("reportRequestId") shouldBe "XXXXX456"
-        params("customerName") shouldBe "John Doe"
+        val params       = paramsCaptor.getValue
+        params("reportRequestId") shouldBe "XXXXX-6789"
+        params("customerName")    shouldBe "Masked User"
       }
     }
 
@@ -259,9 +261,9 @@ class FileNotificationServiceSpec
           eqTo("noname@example.com"),
           paramsCaptor.capture()
         )(any())
-        val params = paramsCaptor.getValue
-        params.keySet should contain ("reportRequestId")
-        params.keySet should not contain ("customerName")
+        val params       = paramsCaptor.getValue
+        params.keySet should contain("reportRequestId")
+        params.keySet should not contain "customerName"
       }
     }
   }

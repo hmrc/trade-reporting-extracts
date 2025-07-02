@@ -161,7 +161,7 @@ class ReportRequestRepositorySpec
             )
           ),
           linkAvailableTime = Some(Instant.now),
-            itmpName = Some("John Doe")
+          itmpName = Some("John Doe")
         ),
         // Incomplete set: only 1Of2
         ReportRequest(
@@ -183,7 +183,7 @@ class ReportRequestRepositorySpec
             )
           ),
           linkAvailableTime = Some(Instant.now),
-            itmpName = Some("John Doe")
+          itmpName = Some("John Doe")
         )
       )
 
@@ -251,7 +251,7 @@ class ReportRequestRepositorySpec
             )
           ),
           linkAvailableTime = Some(Instant.now),
-            itmpName = Some("John Doe")
+          itmpName = Some("John Doe")
         ),
         // Incomplete set: only 1Of2
         ReportRequest(
@@ -273,7 +273,7 @@ class ReportRequestRepositorySpec
             )
           ),
           linkAvailableTime = Some(Instant.now),
-            itmpName = Some("John Doe")
+          itmpName = Some("John Doe")
         )
       )
 

@@ -22,7 +22,7 @@ import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.tradereportingextracts.connectors.EmailConnector
 import uk.gov.hmrc.tradereportingextracts.models.ReportStatus.COMPLETE
 import uk.gov.hmrc.tradereportingextracts.models.sdes.{FileNotificationMetadata, FileNotificationResponse}
-import uk.gov.hmrc.tradereportingextracts.models.{FileType, ReportTypeName, FileNotification as TreFileNotification}
+import uk.gov.hmrc.tradereportingextracts.models.{FileNotification as TreFileNotification, FileType, ReportTypeName}
 
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
@@ -50,19 +50,21 @@ class FileNotificationService @Inject() (reportRequestService: ReportRequestServ
             }
             val updatedReportRequest     = reportRequest
               .copy(fileNotifications = updatedFileNotifications, linkAvailableTime = Some(java.time.Instant.now()))
-            val maskedId = updatedReportRequest.reportRequestId.replaceFirst("^.{5}", "XXXXX")
+            val maskedId                 = updatedReportRequest.reportRequestId.replaceFirst("^.{5}", "XXXXX")
             if (reportRequestService.determineReportStatus(updatedReportRequest) == COMPLETE) {
               for {
                 _ <- reportRequestService.update(updatedReportRequest)
-                _ <- Future.sequence(
-                       updatedReportRequest.recipientEmails.map { email =>
-                         emailConnector.sendEmailRequest(
-                           templateId = "tre_report_available",
-                           email = email,
-                           params = Map(
-                             "reportRequestId" -> maskedId) ++ updatedReportRequest.itmpName.map("customerName" -> _))
-                       }
-                     )
+                _ <-
+                  Future.sequence(
+                    updatedReportRequest.recipientEmails.map { email =>
+                      emailConnector.sendEmailRequest(
+                        templateId = "tre_report_available",
+                        email = email,
+                        params =
+                          Map("reportRequestId" -> maskedId) ++ updatedReportRequest.itmpName.map("customerName" -> _)
+                      )
+                    }
+                  )
               } yield (CREATED, "Created")
             } else {
               reportRequestService.update(updatedReportRequest).map(_ => (CREATED, "Created"))
