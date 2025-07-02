@@ -63,7 +63,7 @@ class SDESConnectorSpec
             "downloadURL" -> "https://some.sdes.domain?token=abc456",
             "fileSize"    -> 1324,
             "metadata"    -> Json.arr(
-              Json.obj("metadata" -> "FileCreationTimestamp", "value"    -> "30"),
+              Json.obj("metadata" -> "FileCreationTimestamp", "value"    -> "2025-06-30T12"),
               Json.obj("metadata" -> "FileType", "value"                 -> "CSV"),
               Json.obj("metadata" -> "EORI", "value"                     -> eori),
               Json.obj("metadata" -> "MdtpReportXCorrelationId", "value" -> "2409398b-ee8f-47cd-b873-ac7ac099c28b"),

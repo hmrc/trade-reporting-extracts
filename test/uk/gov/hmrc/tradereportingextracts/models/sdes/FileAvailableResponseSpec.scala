@@ -29,7 +29,7 @@ class FileAvailableResponseSpec extends AnyWordSpec with Matchers {
         downloadURL = "http://example.com/file.csv",
         fileSize = 12345L,
         metadata = Seq(
-          FileAvailableMetadataItem.FileCreationTimestampMetadataItem("30"),
+          FileAvailableMetadataItem.FileCreationTimestampMetadataItem("2025-06-30T12"),
           FileAvailableMetadataItem.FileTypeMetadataItem("CSV"),
           FileAvailableMetadataItem.EORIMetadataItem("GB123456789000"),
           FileAvailableMetadataItem.MDTPReportXCorrelationIDMetadataItem("corr-id"),
@@ -46,7 +46,9 @@ class FileAvailableResponseSpec extends AnyWordSpec with Matchers {
 
   "FileAvailableMetadataItem" should {
     "correctly extract metadata and value for each subtype" in {
-      FileAvailableMetadataItem.FileCreationTimestampMetadataItem("10").metadata     shouldBe "FileCreationTimestamp"
+      FileAvailableMetadataItem
+        .FileCreationTimestampMetadataItem("2025-06-30T12")
+        .metadata                                                                    shouldBe "FileCreationTimestamp"
       FileAvailableMetadataItem.FileTypeMetadataItem("PDF").metadata                 shouldBe "FileType"
       FileAvailableMetadataItem.EORIMetadataItem("GB123").metadata                   shouldBe "EORI"
       FileAvailableMetadataItem.MDTPReportXCorrelationIDMetadataItem("xid").metadata shouldBe "MdtpReportXCorrelationId"
@@ -59,7 +61,7 @@ class FileAvailableResponseSpec extends AnyWordSpec with Matchers {
   "FileAvailableMetadataItem JSON format" should {
     "serialize and deserialize each subtype correctly" in {
       val items = Seq(
-        FileAvailableMetadataItem.FileCreationTimestampMetadataItem("10"),
+        FileAvailableMetadataItem.FileCreationTimestampMetadataItem("2025-06-30T12"),
         FileAvailableMetadataItem.FileTypeMetadataItem("PDF"),
         FileAvailableMetadataItem.EORIMetadataItem("GB123"),
         FileAvailableMetadataItem.MDTPReportXCorrelationIDMetadataItem("xid"),
