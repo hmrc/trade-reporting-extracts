@@ -36,8 +36,8 @@ sealed trait FileAvailableMetadataItem {
 }
 
 object FileAvailableMetadataItem {
-  case class RetentionDaysMetadataItem(value: String) extends FileAvailableMetadataItem {
-    val metadata = "RETENTION_DAYS"
+  case class FileCreationTimestampMetadataItem(value: String) extends FileAvailableMetadataItem {
+    val metadata = "FileCreationTimestamp"
   }
   case class FileTypeMetadataItem(value: String) extends FileAvailableMetadataItem {
     val metadata = "FileType"
@@ -65,7 +65,7 @@ object FileAvailableMetadataItem {
 
   implicit val reads: Reads[FileAvailableMetadataItem] = Reads { json =>
     (json \ "metadata").validate[String].flatMap {
-      case "RETENTION_DAYS"           => (json \ "value").validate[String].map(RetentionDaysMetadataItem(_))
+      case "FileCreationTimestamp"    => (json \ "value").validate[String].map(FileCreationTimestampMetadataItem(_))
       case "FileType"                 => (json \ "value").validate[String].map(FileTypeMetadataItem(_))
       case "EORI"                     => (json \ "value").validate[String].map(EORIMetadataItem(_))
       case "MdtpReportXCorrelationId" => (json \ "value").validate[String].map(MDTPReportXCorrelationIDMetadataItem(_))
@@ -73,12 +73,11 @@ object FileAvailableMetadataItem {
       case "MdtpReportTypeName"       => (json \ "value").validate[String].map(MDTPReportTypeNameMetadataItem(_))
       case "ReportFileCounter"        => (json \ "value").validate[String].map(ReportFileCounterMetadataItem(_))
       case "ReportLastFile"           => (json \ "value").validate[String].map(ReportLastFileMetadataItem(_))
-      case other                      => JsError(s"Unknown metadata metadata: $other")
     }
   }
 
   implicit val writes: Writes[FileAvailableMetadataItem] = Writes {
-    case RetentionDaysMetadataItem(value)            => Json.obj("metadata" -> "RETENTION_DAYS", "value" -> value)
+    case FileCreationTimestampMetadataItem(value)    => Json.obj("metadata" -> "FileCreationTimestamp", "value" -> value)
     case FileTypeMetadataItem(value)                 => Json.obj("metadata" -> "FileType", "value" -> value)
     case EORIMetadataItem(value)                     => Json.obj("metadata" -> "EORI", "value" -> value)
     case MDTPReportXCorrelationIDMetadataItem(value) =>

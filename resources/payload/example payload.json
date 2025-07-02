@@ -1,0 +1,39 @@
+{
+  "filename": "RE00000028_EXPORTS-ITEM-REPORT_20250630_1.csv",
+  "fileSize": 50172,
+  "downloadURL": "https://sdes-test.hmrc.gov.uk/api-download/9f665953-ab96-4f43-b80a-89e45fc6f43f",
+  "metadata": [
+    {
+      "metadata": "EORI",
+      "value": "GB807533938000"
+    },
+    {
+      "metadata": "FileCreationTimestamp",
+      "value": "2025-06-30T12"
+    },
+    {
+      "metadata": "FileType",
+      "value": "CSV"
+    },
+    {
+      "metadata": "MdtpReportRequestId",
+      "value": "RE00000028"
+    },
+    {
+      "metadata": "MdtpReportTypeName",
+      "value": "EXPORTS-ITEM-REPORT"
+    },
+    {
+      "metadata": "MdtpReportXCorrelationId",
+      "value": "a4c8c2e5-14f6-41f4-b730-d6ec00e18493"
+    },
+    {
+      "metadata": "ReportFileCounter",
+      "value": "1"
+    },
+    {
+      "metadata": "ReportLastFile",
+      "value": "true"
+    }
+  ]
+}
