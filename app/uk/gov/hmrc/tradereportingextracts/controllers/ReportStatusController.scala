@@ -22,6 +22,7 @@ import uk.gov.hmrc.tradereportingextracts.config.AppConfig
 import uk.gov.hmrc.tradereportingextracts.models.eis.EisReportStatusHeaders.*
 import uk.gov.hmrc.tradereportingextracts.models.eis.{EisReportStatusHeaders, EisReportStatusRequest}
 import uk.gov.hmrc.tradereportingextracts.services.ReportRequestService
+import uk.gov.hmrc.tradereportingextracts.utils.HttpDateFormatter.getCurrentHttpDate
 
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
@@ -55,7 +56,12 @@ class ReportStatusController @Inject() (
         json.validate[EisReportStatusRequest] match {
           case JsSuccess(_, _) =>
             reportRequestService.processReportStatus(request.headers, json.as[EisReportStatusRequest])
-            Future.successful(Created)
+            Future.successful(
+              Created.withHeaders(
+                Date.toString           -> getCurrentHttpDate,
+                XCorrelationID.toString -> request.headers.get(XCorrelationID.toString).getOrElse("")
+              )
+            )
           case JsError(errors) =>
             val errorMessage = errors
               .map { case (path, validationErrors) =>
