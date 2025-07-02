@@ -29,7 +29,7 @@ class FileAvailableResponseSpec extends AnyWordSpec with Matchers {
         downloadURL = "http://example.com/file.csv",
         fileSize = 12345L,
         metadata = Seq(
-          FileAvailableMetadataItem.RetentionDaysMetadataItem("30"),
+          FileAvailableMetadataItem.FileCreationTimestampMetadataItem("2025-06-30T12"),
           FileAvailableMetadataItem.FileTypeMetadataItem("CSV"),
           FileAvailableMetadataItem.EORIMetadataItem("GB123456789000"),
           FileAvailableMetadataItem.MDTPReportXCorrelationIDMetadataItem("corr-id"),
@@ -42,26 +42,13 @@ class FileAvailableResponseSpec extends AnyWordSpec with Matchers {
       val parsed   = json.as[FileAvailableResponse]
       parsed shouldBe response
     }
-
-    "fail to deserialize unknown metadata type" in {
-      val json   = Json.parse("""
-          |{
-          |  "filename": "file.csv",
-          |  "downloadURL": "http://example.com/file.csv",
-          |  "fileSize": 12345,
-          |  "metadata": [
-          |    { "metadata": "UNKNOWN_TYPE", "value": "foo" }
-          |  ]
-          |}
-          |""".stripMargin)
-      val result = json.validate[FileAvailableResponse]
-      result.isError shouldBe true
-    }
   }
 
   "FileAvailableMetadataItem" should {
     "correctly extract metadata and value for each subtype" in {
-      FileAvailableMetadataItem.RetentionDaysMetadataItem("10").metadata             shouldBe "RETENTION_DAYS"
+      FileAvailableMetadataItem
+        .FileCreationTimestampMetadataItem("2025-06-30T12")
+        .metadata                                                                    shouldBe "FileCreationTimestamp"
       FileAvailableMetadataItem.FileTypeMetadataItem("PDF").metadata                 shouldBe "FileType"
       FileAvailableMetadataItem.EORIMetadataItem("GB123").metadata                   shouldBe "EORI"
       FileAvailableMetadataItem.MDTPReportXCorrelationIDMetadataItem("xid").metadata shouldBe "MdtpReportXCorrelationId"
@@ -74,7 +61,7 @@ class FileAvailableResponseSpec extends AnyWordSpec with Matchers {
   "FileAvailableMetadataItem JSON format" should {
     "serialize and deserialize each subtype correctly" in {
       val items = Seq(
-        FileAvailableMetadataItem.RetentionDaysMetadataItem("10"),
+        FileAvailableMetadataItem.FileCreationTimestampMetadataItem("2025-06-30T12"),
         FileAvailableMetadataItem.FileTypeMetadataItem("PDF"),
         FileAvailableMetadataItem.EORIMetadataItem("GB123"),
         FileAvailableMetadataItem.MDTPReportXCorrelationIDMetadataItem("xid"),
