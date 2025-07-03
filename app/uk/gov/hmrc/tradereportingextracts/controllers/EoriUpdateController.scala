@@ -18,12 +18,11 @@ package uk.gov.hmrc.tradereportingextracts.controllers
 
 import play.api.libs.json.*
 import play.api.mvc.*
-import sttp.model.MediaType.ApplicationJson
 import uk.gov.hmrc.tradereportingextracts.config.AppConfig
 import uk.gov.hmrc.tradereportingextracts.models.etmp.*
 import uk.gov.hmrc.tradereportingextracts.models.etmp.EoriUpdateHeaders.*
 import uk.gov.hmrc.tradereportingextracts.services.UserService
-import uk.gov.hmrc.tradereportingextracts.utils.HttpDateFormatter.getCurrentHttpDate
+import uk.gov.hmrc.tradereportingextracts.utils.ISODateFormatter.getCurrentISODate
 
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.Future
@@ -48,40 +47,31 @@ class EoriUpdateController @Inject() (
     (missingHeaders, isAuthorized, request.body.asJson) match {
       case (headers, _, _) if headers.nonEmpty =>
         Future.successful(
-          BadRequest(buildBadRequestHeaderResponse(request, missingHeaders)).withHeaders(
-            contentType.toString    -> ApplicationJson.toString(),
-            date.toString           -> getCurrentHttpDate,
+          BadRequest.withHeaders(
+            date.toString           -> getCurrentISODate,
             xCorrelationID.toString -> request.headers.get(xCorrelationID.toString).getOrElse("")
           )
         )
       case (_, false, _)                       =>
         Future.successful(
           Forbidden.withHeaders(
-            date.toString           -> getCurrentHttpDate,
+            date.toString           -> getCurrentISODate,
             xCorrelationID.toString -> request.headers.get(xCorrelationID.toString).getOrElse("")
           )
         )
       case (_, _, None)                        =>
         Future.successful(
-          BadRequest(buildBadRequestBodyResponse(request, List("Expected application/json request body")))
-            .withHeaders(
-              contentType.toString    -> ApplicationJson.toString(),
-              date.toString           -> getCurrentHttpDate,
-              xCorrelationID.toString -> request.headers.get(xCorrelationID.toString).getOrElse("")
-            )
+          BadRequest.withHeaders(
+            date.toString           -> getCurrentISODate,
+            xCorrelationID.toString -> request.headers.get(xCorrelationID.toString).getOrElse("")
+          )
         )
       case (_, _, Some(json))                  =>
         json.validate[EoriUpdate] match {
           case JsError(errors) =>
-            val errorMessage = errors
-              .map { case (path, validationErrors) =>
-                s"Invalid value at path $path: ${validationErrors.map(_.message).mkString(", ")}"
-              }
-              .mkString(", ")
             Future.successful(
-              BadRequest(buildBadRequestBodyResponse(request, List(errorMessage))).withHeaders(
-                contentType.toString    -> ApplicationJson.toString(),
-                date.toString           -> getCurrentHttpDate,
+              BadRequest.withHeaders(
+                date.toString           -> getCurrentISODate,
                 xCorrelationID.toString -> request.headers.get(xCorrelationID.toString).getOrElse("")
               )
             )
@@ -89,51 +79,11 @@ class EoriUpdateController @Inject() (
             userService.updateEori(json.as[EoriUpdate])
             Future.successful(
               Created.withHeaders(
-                date.toString           -> getCurrentHttpDate,
+                date.toString           -> getCurrentISODate,
                 xCorrelationID.toString -> request.headers.get(xCorrelationID.toString).getOrElse("")
               )
             )
         }
     }
   }
-
-  private def buildBadRequestHeaderResponse(request: Request[AnyContent], missingHeaders: Seq[String]) =
-    Json.toJson(
-      EoriUpdate400Error(
-        errorDetail = EoriUpdate400ErrorDetail(
-          correlationId = request.headers.get(xCorrelationID.toString).getOrElse(""),
-          errorCode = Some("400"),
-          errorMessage = Some("Failed header validation"),
-          source = Some("TRE"),
-          sourceFaultDetail = Some(
-            EoriUpdate400ErrorDetailSourceFault(
-              detail = missingHeaders.map(header => s"Failed header validation: Invalid $header header"),
-              restFault = None,
-              soapFault = None
-            )
-          ),
-          timestamp = getCurrentHttpDate
-        )
-      )
-    )
-
-  private def buildBadRequestBodyResponse(request: Request[AnyContent], errors: Seq[String]) =
-    Json.toJson(
-      EoriUpdate400Error(
-        errorDetail = EoriUpdate400ErrorDetail(
-          correlationId = request.headers.get(xCorrelationID.toString).getOrElse(""),
-          errorCode = Some("400"),
-          errorMessage = Some("Failed body validation"),
-          source = Some("EIS"),
-          sourceFaultDetail = Some(
-            EoriUpdate400ErrorDetailSourceFault(
-              detail = errors.map(error => s"Failed body validation: Invalid $error"),
-              restFault = None,
-              soapFault = None
-            )
-          ),
-          timestamp = getCurrentHttpDate
-        )
-      )
-    )
 }

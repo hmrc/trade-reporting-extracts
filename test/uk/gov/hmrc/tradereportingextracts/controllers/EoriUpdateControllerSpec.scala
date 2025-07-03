@@ -30,11 +30,12 @@ class EoriUpdateControllerSpec extends SpecBase {
       val eoriUpdate = EoriUpdate(newEori = "GB987654321098", oldEori = "GB123456789012")
       val request    = FakeRequest(PUT, routes.EoriUpdateController.eoriUpdate().url)
         .withHeaders(
-          "authorization"    -> "Bearer EtmpAuthToken",
-          "date"             -> "Mon, 02 Oct 2023 14:30:00 GMT",
-          "x-correlation-id" -> "asfd-asdf-asdf",
-          "x-forwarded-host" -> "localhost:9000",
-          "content-type"     -> "application/json"
+          "authorization"         -> "Bearer EtmpAuthToken",
+          "content-type"          -> "application/json",
+          "date"                  -> "Mon, 02 Oct 2023 14:30:00 GMT",
+          "x-correlation-id"      -> "asfd-asdf-asdf",
+          "x-transmitting-system" -> "CDAP",
+          "source-system"         -> "CDAP"
         )
         .withBody(Json.toJson(eoriUpdate))
       val result     = route(app, request).value

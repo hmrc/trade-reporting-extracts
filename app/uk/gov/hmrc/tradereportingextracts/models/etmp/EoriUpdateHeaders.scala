@@ -16,12 +16,15 @@
 
 package uk.gov.hmrc.tradereportingextracts.models.etmp
 
+import uk.gov.hmrc.tradereportingextracts.models.eis.EisReportStatusHeaders.Value
+
 object EoriUpdateHeaders extends Enumeration {
-  val authorization: Value  = Value("authorization")
-  val contentType: Value    = Value("content-type")
-  val date: Value           = Value("date")
-  val xCorrelationID: Value = Value("x-correlation-id")
-  val xForwardedHost: Value = Value("x-forwarded-host")
+  val authorization: Value       = Value("authorization")
+  val contentType: Value         = Value("content-type")
+  val date: Value                = Value("date")
+  val xCorrelationID: Value      = Value("x-correlation-id")
+  val XTransmittingSystem: Value = Value("x-transmitting-system")
+  val SourceSystem: Value        = Value("source-system")
 
   def allHeaders: List[String] = values.map(_.toString).toList
 }
