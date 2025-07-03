@@ -49,6 +49,7 @@ class ReportRequestUserAnswersModelSpec extends AnyFreeSpec with Matchers with O
       (json \ "reportEndDate").as[String] mustBe "2021-12-31"
       (json \ "reportName").as[String] mustBe "MyReport"
       (json \ "additionalEmail").asOpt[Set[String]] mustBe Some(Set("test@example.com", "another@example.com"))
+
     }
 
     "deserialize from JSON" in {

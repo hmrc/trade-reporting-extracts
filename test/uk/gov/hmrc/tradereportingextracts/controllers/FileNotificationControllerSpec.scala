@@ -62,7 +62,7 @@ class FileNotificationControllerSpec extends SpecBase with MockitoSugar {
       contentAsString(result) should include("Invalid value at path")
     }
 
-    "return 400 BadRequest when report-requestID is missing in metadata" in new Setup {
+    "still return 201 even when FileNotificationService returns error as external caller is not concerned with our errors" in new Setup {
       val fileNotification = FileNotificationResponse(
         eori = "GB123456789012",
         fileName = "testFileName",
@@ -88,39 +88,7 @@ class FileNotificationControllerSpec extends SpecBase with MockitoSugar {
         )
         .withBody(Json.toJson(fileNotification))
       val result  = route(app, request).value
-      status(result)        shouldBe BAD_REQUEST
-      contentAsString(result) should include("report-requestID not found")
-    }
-
-    "return 404 NotFound when reportRequest is not found" in new Setup {
-      val fileNotification = FileNotificationResponse(
-        eori = "GB123456789012",
-        fileName = "testFileName",
-        fileSize = 12345,
-        metadata = List(
-          FileNotificationMetadata.RetentionDaysMetadataItem("30"),
-          FileNotificationMetadata.FileTypeMetadataItem("CSV"),
-          FileNotificationMetadata.MDTPReportRequestIDMetadataItem("NOT-FOUND")
-        )
-      )
-
-      when(mockFileNotificationService.processFileNotification(fileNotification))
-        .thenReturn(
-          scala.concurrent.Future.successful((NOT_FOUND, "ReportRequest not found for reportRequestId: NOT-FOUND"))
-        )
-
-      val request = FakeRequest(POST, routes.FileNotificationController.fileNotification().url)
-        .withHeaders(
-          "authorization"         -> "Bearer SdesAuthToken",
-          "date"                  -> "Mon, 02 Oct 2023 14:30:00 GMT",
-          "x-correlation-id"      -> "asfd-asdf-asdf",
-          "source-system"         -> "SDES",
-          "x-transmitting-system" -> "SDES"
-        )
-        .withBody(Json.toJson(fileNotification))
-      val result  = route(app, request).value
-      status(result)        shouldBe NOT_FOUND
-      contentAsString(result) should include("ReportRequest not found")
+      status(result) shouldBe CREATED
     }
 
     "return 201 Created" in new Setup {
