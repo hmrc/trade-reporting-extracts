@@ -35,8 +35,7 @@ class ReportRequestUserAnswersModelSpec extends AnyFreeSpec with Matchers with O
         reportStartDate = "2021-01-01",
         reportEndDate = "2021-12-31",
         reportName = "MyReport",
-        additionalEmail = Some(Set("test@example.com", "another@example.com")),
-        itmpName = Some("John Doe")
+        additionalEmail = Some(Set("test@example.com", "another@example.com"))
       )
 
       val json = Json.toJson(model)
@@ -50,7 +49,6 @@ class ReportRequestUserAnswersModelSpec extends AnyFreeSpec with Matchers with O
       (json \ "reportEndDate").as[String] mustBe "2021-12-31"
       (json \ "reportName").as[String] mustBe "MyReport"
       (json \ "additionalEmail").asOpt[Set[String]] mustBe Some(Set("test@example.com", "another@example.com"))
-      (json \ "itmpName").asOpt[String] mustBe Some("John Doe")
 
     }
 
@@ -65,8 +63,7 @@ class ReportRequestUserAnswersModelSpec extends AnyFreeSpec with Matchers with O
             "reportStartDate": "2021-01-01",
             "reportEndDate": "2021-12-31",
             "reportName": "MyReport",
-            "additionalEmail": ["test@example.com", "another@example.com"],
-            "itmpName": "John Doe"
+            "additionalEmail": ["test@example.com", "another@example.com"]
           }
         """)
 
@@ -81,7 +78,6 @@ class ReportRequestUserAnswersModelSpec extends AnyFreeSpec with Matchers with O
       model.reportEndDate mustBe "2021-12-31"
       model.reportName mustBe "MyReport"
       model.additionalEmail mustBe Some(Set("test@example.com", "another@example.com"))
-      model.itmpName mustBe Some("John Doe")
     }
   }
 

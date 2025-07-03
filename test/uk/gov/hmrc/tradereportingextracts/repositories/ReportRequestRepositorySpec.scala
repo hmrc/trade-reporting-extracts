@@ -76,8 +76,7 @@ class ReportRequestRepositorySpec
         )
       )
     ),
-    linkAvailableTime = Some(Instant.parse("2023-01-03T10:00:00Z")),
-    itmpName = Some("John Doe")
+    linkAvailableTime = Some(Instant.parse("2023-01-03T10:00:00Z"))
   )
   val appConfig: AppConfig  = app.injector.instanceOf[AppConfig]
 
@@ -160,8 +159,7 @@ class ReportRequestRepositorySpec
               FileNotification("f3", 1, 1, FileType.CSV, "x", "y", ReportTypeName.IMPORTS_ITEM_REPORT, "3Of3", "", "")
             )
           ),
-          linkAvailableTime = Some(Instant.now),
-          itmpName = Some("John Doe")
+          linkAvailableTime = Some(Instant.now)
         ),
         // Incomplete set: only 1Of2
         ReportRequest(
@@ -182,8 +180,7 @@ class ReportRequestRepositorySpec
               FileNotification("f4", 1, 1, FileType.CSV, "x", "y", ReportTypeName.IMPORTS_ITEM_REPORT, "1Of2", "", "")
             )
           ),
-          linkAvailableTime = Some(Instant.now),
-          itmpName = Some("John Doe")
+          linkAvailableTime = Some(Instant.now)
         )
       )
 
@@ -214,8 +211,7 @@ class ReportRequestRepositorySpec
             // Missing 2Of2
           )
         ),
-        linkAvailableTime = Some(Instant.now),
-        itmpName = Some("John Doe")
+        linkAvailableTime = Some(Instant.now)
       )
 
       reportRequestRepository.insert(incompleteRequest).futureValue
@@ -250,8 +246,7 @@ class ReportRequestRepositorySpec
               FileNotification("f8", 1, 1, FileType.CSV, "x", "y", ReportTypeName.IMPORTS_ITEM_REPORT, "3Of3", "", "")
             )
           ),
-          linkAvailableTime = Some(Instant.now),
-          itmpName = Some("John Doe")
+          linkAvailableTime = Some(Instant.now)
         ),
         // Incomplete set: only 1Of2
         ReportRequest(
@@ -272,8 +267,7 @@ class ReportRequestRepositorySpec
               FileNotification("f9", 1, 1, FileType.CSV, "x", "y", ReportTypeName.IMPORTS_ITEM_REPORT, "1Of2", "", "")
             )
           ),
-          linkAvailableTime = Some(Instant.now),
-          itmpName = Some("John Doe")
+          linkAvailableTime = Some(Instant.now)
         )
       )
 
@@ -304,8 +298,7 @@ class ReportRequestRepositorySpec
             // Missing 2Of2
           )
         ),
-        linkAvailableTime = Some(Instant.now),
-        itmpName = Some("John Doe")
+        linkAvailableTime = Some(Instant.now)
       )
 
       reportRequestRepository.insert(incompleteRequest).futureValue

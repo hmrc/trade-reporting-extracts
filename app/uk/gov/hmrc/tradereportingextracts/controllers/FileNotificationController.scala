@@ -36,14 +36,14 @@ class FileNotificationController @Inject() (
 
   def fileNotification(): Action[AnyContent] = Action { request =>
     request.body.asJson match {
-      case None =>
+      case None       =>
         BadRequest("Expected application/json request body")
       case Some(json) =>
         json.validate[FileNotificationResponse] match {
           case JsSuccess(fileNotification, _) =>
             fileNotificationService.processFileNotification(fileNotification)
             Created("Accepted")
-          case JsError(errors) =>
+          case JsError(errors)                =>
             val errorMessage = errors
               .map { case (path, validationErrors) =>
                 s"Invalid value at path $path: ${validationErrors.map(_.message).mkString(", ")}"

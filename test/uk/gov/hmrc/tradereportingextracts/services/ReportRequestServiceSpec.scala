@@ -85,8 +85,7 @@ class ReportRequestServiceSpec extends AnyWordSpec with Matchers {
         Instant.now(),
         Seq.empty,
         fileNotifications,
-        None,
-        itmpName = Some("John Doe")
+        None
       )
 
       service.invokePrivateMethod("determineReportStatus", reportRequest) shouldBe ReportStatus.COMPLETE
@@ -117,8 +116,7 @@ class ReportRequestServiceSpec extends AnyWordSpec with Matchers {
         Instant.now(),
         notifications,
         None,
-        None,
-        itmpName = Some("John Doe")
+        None
       )
 
       service.invokePrivateMethod("determineReportStatus", reportRequest) shouldBe ReportStatus.ERROR
@@ -149,8 +147,7 @@ class ReportRequestServiceSpec extends AnyWordSpec with Matchers {
         Instant.now(),
         notifications,
         None,
-        None,
-        itmpName = Some("John Doe")
+        None
       )
 
       service.invokePrivateMethod("determineReportStatus", reportRequest) shouldBe ReportStatus.IN_PROGRESS
@@ -171,8 +168,7 @@ class ReportRequestServiceSpec extends AnyWordSpec with Matchers {
         Instant.now(),
         Seq.empty,
         None,
-        None,
-        itmpName = Some("John Doe")
+        None
       )
 
       service.invokePrivateMethod("determineReportStatus", reportRequest) shouldBe ReportStatus.IN_PROGRESS

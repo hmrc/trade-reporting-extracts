@@ -71,8 +71,7 @@ class ReportRequestTransformationService @Inject() (
         createDate = Instant.now,
         notifications = Seq(),
         linkAvailableTime = None,
-        fileNotifications = None,
-        itmpName = userAnswers.itmpName
+        fileNotifications = None
       )
     }
   }

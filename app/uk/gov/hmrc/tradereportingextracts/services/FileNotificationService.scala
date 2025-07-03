@@ -60,8 +60,7 @@ class FileNotificationService @Inject() (reportRequestService: ReportRequestServ
                       emailConnector.sendEmailRequest(
                         templateId = "tre_report_available",
                         email = email,
-                        params =
-                          Map("reportRequestId" -> maskedId)
+                        params = Map("reportRequestId" -> maskedId)
                       )
                     }
                   )

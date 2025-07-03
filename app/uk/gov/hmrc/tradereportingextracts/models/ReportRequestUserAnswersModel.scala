@@ -27,8 +27,7 @@ case class ReportRequestUserAnswersModel(
   reportStartDate: String,
   reportEndDate: String,
   reportName: String,
-  additionalEmail: Option[Set[String]],
-  itmpName: Option[String]
+  additionalEmail: Option[Set[String]]
 )
 
 object ReportRequestUserAnswersModel {

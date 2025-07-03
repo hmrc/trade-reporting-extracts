@@ -42,8 +42,7 @@ class ReportRequestTransformationServiceSpec extends AsyncFreeSpec with Matchers
     eoriRole = Set("declarant"),
     reportType = Set("importHeader"),
     dataType = "import",
-    additionalEmail = Some(Set("test@example.com")),
-    itmpName = Some("John Doe")
+    additionalEmail = Some(Set("test@example.com"))
   )
 
   "transformReportRequest" - {
