@@ -23,7 +23,7 @@ object ISODateFormatter {
 
   private val isoDateFormat: DateTimeFormatter =
     DateTimeFormatter
-      .ofPattern("yyyy-MM-dd'T'HH:mm:ss.SS'Z'")
+      .ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
       .withZone(ZoneId.of("UTC"))
 
   def getCurrentISODate: String =
