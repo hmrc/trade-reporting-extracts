@@ -18,9 +18,10 @@ package uk.gov.hmrc.tradereportingextracts.controllers
 
 import play.api.libs.json.*
 import play.api.mvc.*
+import sttp.model.MediaType.ApplicationJson
 import uk.gov.hmrc.tradereportingextracts.config.AppConfig
 import uk.gov.hmrc.tradereportingextracts.models.eis.EisReportStatusHeaders.*
-import uk.gov.hmrc.tradereportingextracts.models.eis.{EisReportStatusHeaders, EisReportStatusRequest}
+import uk.gov.hmrc.tradereportingextracts.models.eis.*
 import uk.gov.hmrc.tradereportingextracts.services.ReportRequestService
 import uk.gov.hmrc.tradereportingextracts.utils.HttpDateFormatter.getCurrentHttpDate
 
@@ -47,11 +48,31 @@ class ReportStatusController @Inject() (
 
     (missingHeaders, isAuthorized, request.body.asJson) match {
       case (headers, _, _) if headers.nonEmpty =>
-        Future.successful(BadRequest(s"Failed header validation: Missing headers: ${headers.mkString(", ")}"))
+        val errorMessage = s"Missing headers: ${headers.mkString(", ")}"
+        Future.successful(
+          BadRequest(buildBadRequestResponse(request, errorMessage)).withHeaders(
+            ContentType.toString    -> ApplicationJson.toString(),
+            Date.toString           -> getCurrentHttpDate,
+            XCorrelationID.toString -> request.headers.get(XCorrelationID.toString).getOrElse("")
+          )
+        )
       case (_, false, _)                       =>
-        Future.successful(Forbidden)
+        val errorMessage = "Unauthorized request: Invalid or missing authorization header"
+        Future.successful(
+          Forbidden.withHeaders(
+            Date.toString           -> getCurrentHttpDate,
+            XCorrelationID.toString -> request.headers.get(XCorrelationID.toString).getOrElse("")
+          )
+        )
       case (_, _, None)                        =>
-        Future.successful(BadRequest("Expected application/json request body"))
+        val errorMessage = "Expected application/json request body"
+        Future.successful(
+          BadRequest(buildBadRequestResponse(request, errorMessage)).withHeaders(
+            ContentType.toString    -> ApplicationJson.toString(),
+            Date.toString           -> getCurrentHttpDate,
+            XCorrelationID.toString -> request.headers.get(XCorrelationID.toString).getOrElse("")
+          )
+        )
       case (_, _, Some(json))                  =>
         json.validate[EisReportStatusRequest] match {
           case JsSuccess(_, _) =>
@@ -68,8 +89,34 @@ class ReportStatusController @Inject() (
                 s"Invalid value at path $path: ${validationErrors.map(_.message).mkString(", ")}"
               }
               .mkString(", ")
-            Future.successful(BadRequest(errorMessage))
+            Future.successful(
+              BadRequest(buildBadRequestResponse(request, errorMessage)).withHeaders(
+                ContentType.toString    -> ApplicationJson.toString(),
+                Date.toString           -> getCurrentHttpDate,
+                XCorrelationID.toString -> request.headers.get(XCorrelationID.toString).getOrElse("")
+              )
+            )
         }
     }
   }
+
+  private def buildBadRequestResponse(request: Request[AnyContent], details: String) =
+    Json.toJson(
+      EisReportStatusResponseError(
+        errorDetail = EisReportStatusResponseErrorDetail(
+          correlationId = request.headers.get(XCorrelationID.toString).getOrElse(""),
+          errorCode = Some("400"),
+          errorMessage = Some("Invalid request"),
+          source = Some("TRE"),
+          sourceFaultDetail = Some(
+            EisReportStatusResponseErrorDetailSourceFaultDetail(
+              detail = List(details),
+              restFault = None,
+              soapFault = None
+            )
+          ),
+          timestamp = getCurrentHttpDate
+        )
+      )
+    )
 }
