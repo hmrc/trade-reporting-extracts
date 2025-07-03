@@ -24,18 +24,19 @@ import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
 import java.time.{Instant, LocalDate, ZoneOffset}
 import java.util.UUID
+import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
 class ReportRequestTransformationService @Inject() (
   requestReferenceService: RequestReferenceService
-) {
+)(implicit ec: ExecutionContext) {
 
   def transformReportRequest(
     eoriValue: String,
     reportRequestUserAnswersModel: ReportRequestUserAnswersModel,
     historicalEoris: Seq[String],
     userEmail: String
-  ): ReportRequest = {
+  ): Future[ReportRequest] = {
 
     val userAnswers = reportRequestUserAnswersModel
 
@@ -51,26 +52,28 @@ class ReportRequestTransformationService @Inject() (
       roles match {
         case roles if roles == Set("declarant")                                                                 => EoriRole.DECLARANT
         case roles if roles.subsetOf(Set("importer", "exporter"))                                               => EoriRole.TRADER
-        case roles if roles.contains("declarant") && (roles.contains("importer")) || roles.contains("exporter") =>
+        case roles if roles.contains("declarant") && (roles.contains("importer") || roles.contains("exporter")) =>
           EoriRole.TRADER_DECLARANT
       }
 
-    ReportRequest(
-      reportRequestId = requestReferenceService.random(),
-      correlationId = UUID.randomUUID().toString,
-      reportName = userAnswers.reportName,
-      requesterEORI = eoriValue,
-      eoriRole = getRole(userAnswers.eoriRole),
-      reportEORIs = historicalEoris :+ userAnswers.whichEori.getOrElse(""),
-      recipientEmails = userAnswers.additionalEmail.getOrElse(Seq()).toSeq :+ userEmail,
-      reportTypeName = getReportType(userAnswers.reportType.head),
-      reportStart = LocalDate.parse(userAnswers.reportStartDate).atStartOfDay(ZoneOffset.UTC).toInstant,
-      reportEnd = LocalDate.parse(userAnswers.reportEndDate).atStartOfDay(ZoneOffset.UTC).toInstant,
-      createDate = Instant.now,
-      notifications = Seq(),
-      linkAvailableTime = None,
-      fileNotifications = None
-    )
+    requestReferenceService.generateUnique().map { uniqueId =>
+      ReportRequest(
+        reportRequestId = uniqueId,
+        correlationId = UUID.randomUUID().toString,
+        reportName = userAnswers.reportName,
+        requesterEORI = eoriValue,
+        eoriRole = getRole(userAnswers.eoriRole),
+        reportEORIs = historicalEoris :+ userAnswers.whichEori.getOrElse(""),
+        recipientEmails = userAnswers.additionalEmail.getOrElse(Seq()).toSeq :+ userEmail,
+        reportTypeName = getReportType(userAnswers.reportType.head),
+        reportStart = LocalDate.parse(userAnswers.reportStartDate).atStartOfDay(ZoneOffset.UTC).toInstant,
+        reportEnd = LocalDate.parse(userAnswers.reportEndDate).atStartOfDay(ZoneOffset.UTC).toInstant,
+        createDate = Instant.now,
+        notifications = Seq(),
+        linkAvailableTime = None,
+        fileNotifications = None
+      )
+    }
   }
 
   def toEisReportRequest(reportRequest: ReportRequest): EisReportRequest =

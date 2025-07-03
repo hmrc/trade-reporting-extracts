@@ -33,7 +33,6 @@ import scala.concurrent.{ExecutionContext, Future}
 class ReportRequestController @Inject() (
   cc: ControllerComponents,
   customsDataStoreConnector: CustomsDataStoreConnector,
-  requestReferenceService: RequestReferenceService,
   reportRequestService: ReportRequestService,
   reportRequestTransformationService: ReportRequestTransformationService,
   eisService: EisService
@@ -46,29 +45,36 @@ class ReportRequestController @Inject() (
         val formatter    = DateTimeFormatter.ofPattern("yyyy-MM-dd")
         val startEndDate =
           (LocalDate.parse(value.reportStartDate, formatter), LocalDate.parse(value.reportEndDate, formatter))
+
         for {
-          userEmail   <- customsDataStoreConnector.getNotificationEmail(value.eori).map(_.address)
-          eoriHistory <- customsDataStoreConnector
-                           .getEoriHistory(value.whichEori.get)
-                           .map(_.filterByDateRange(startEndDate._1, startEndDate._2).map(_.eori))
-          requests     = value.reportType.toSeq.map { reportTypeName =>
-                           reportRequestTransformationService.transformReportRequest(
-                             value.eori,
-                             value.copy(reportType = Set(reportTypeName)),
-                             eoriHistory,
-                             userEmail
-                           )
-                         }
-          _           <- Future.sequence(requests.map { newRequest =>
-                           val eisRequest = reportRequestTransformationService.toEisReportRequest(newRequest)
-                           for {
-                             _      <- reportRequestService.create(newRequest)
-                             result <- eisService.requestTraderReport(eisRequest, newRequest)
-                           } yield result
-                         })
-        } yield Ok(Json.obj("references" -> requests.map(_.reportRequestId)))
-      case JsError(_)          =>
-        Future.successful(BadRequest)
+          userEmail      <- customsDataStoreConnector.getNotificationEmail(value.eori).map(_.address)
+          eoriHistory    <- customsDataStoreConnector
+                              .getEoriHistory(value.whichEori.get)
+                              .map(_.filterByDateRange(startEndDate._1, startEndDate._2).map(_.eori))
+          reportRequests <- Future.sequence {
+                              value.reportType.toSeq.map { reportTypeName =>
+                                reportRequestTransformationService.transformReportRequest(
+                                  value.eori,
+                                  value.copy(reportType = Set(reportTypeName)),
+                                  eoriHistory,
+                                  userEmail
+                                )
+                              }
+                            }
+          _              <- Future.sequence {
+                              reportRequests.map { newRequest =>
+                                val eisRequest = reportRequestTransformationService.toEisReportRequest(newRequest)
+                                for {
+                                  _      <- reportRequestService.create(newRequest)
+                                  result <- eisService.requestTraderReport(eisRequest, newRequest)
+                                } yield result
+                              }
+                            }
+        } yield Ok(Json.obj("references" -> reportRequests.map(_.reportRequestId)))
+
+      case JsError(_) =>
+        Future.successful(BadRequest(Json.obj("error" -> "Invalid request format")))
     }
   }
+
 }

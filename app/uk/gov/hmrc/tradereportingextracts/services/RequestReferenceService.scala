@@ -16,15 +16,30 @@
 
 package uk.gov.hmrc.tradereportingextracts.services
 
+import uk.gov.hmrc.tradereportingextracts.repositories.ReportRequestRepository
+
 import javax.inject.{Inject, Singleton}
+import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Random
 
 @Singleton
-class RequestReferenceService @Inject() {
+class RequestReferenceService @Inject() (
+  reportRequestRepository: ReportRequestRepository
+)(implicit ec: ExecutionContext) {
 
-  def random(): String = {
-    val prefix       = "RE"
-    val randomDigits = f"${Random.nextInt(100000000)}%08d"
-    prefix + randomDigits
+  private val prefix = "REF-"
+
+  def generateUnique(): Future[String] = {
+    def generate(): String = prefix + f"${Random.nextInt(100000000)}%08d"
+
+    def tryGenerate(): Future[String] = {
+      val candidate = generate()
+      reportRequestRepository.findByReportRequestId(candidate).flatMap {
+        case Some(_) => tryGenerate() // ID exists, try again
+        case None    => Future.successful(candidate) // Unique ID found
+      }
+    }
+
+    tryGenerate()
   }
 }
