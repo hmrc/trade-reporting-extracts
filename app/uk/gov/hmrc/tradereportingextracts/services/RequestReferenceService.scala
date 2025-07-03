@@ -27,7 +27,7 @@ class RequestReferenceService @Inject() (
   reportRequestRepository: ReportRequestRepository
 )(implicit ec: ExecutionContext) {
 
-  private val prefix = "REF-"
+  private val prefix = "RE"
 
   def generateUnique(): Future[String] = {
     def generate(): String = prefix + f"${Random.nextInt(100000000)}%08d"

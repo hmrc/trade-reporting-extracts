@@ -38,10 +38,10 @@ class RequestReferenceServiceSpec extends AsyncFreeSpec with Matchers with Mocki
       val service = new RequestReferenceService(mockRepository)
 
       service.generateUnique().map { reference =>
-        reference must startWith("REF-")
-        reference.length mustBe 12
+        reference must startWith("RE")
+        reference.length mustBe 10
 
-        val digitsPart = reference.stripPrefix("REF-")
+        val digitsPart = reference.stripPrefix("RE")
         all(digitsPart.toList) must (be >= '0' and be <= '9')
       }
     }
