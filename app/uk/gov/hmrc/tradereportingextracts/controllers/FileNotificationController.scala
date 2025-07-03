@@ -34,23 +34,22 @@ class FileNotificationController @Inject() (
 )(implicit ec: ExecutionContext)
     extends AbstractController(cc) {
 
-  def fileNotification(): Action[AnyContent] = Action.async { request =>
+  def fileNotification(): Action[AnyContent] = Action { request =>
     request.body.asJson match {
-      case None       =>
-        Future.successful(BadRequest("Expected application/json request body"))
+      case None =>
+        BadRequest("Expected application/json request body")
       case Some(json) =>
         json.validate[FileNotificationResponse] match {
           case JsSuccess(fileNotification, _) =>
-            fileNotificationService.processFileNotification(fileNotification).map { (status, message) =>
-              Status(status)(message)
-            }
-          case JsError(errors)                =>
+            fileNotificationService.processFileNotification(fileNotification)
+            Created("Accepted")
+          case JsError(errors) =>
             val errorMessage = errors
               .map { case (path, validationErrors) =>
                 s"Invalid value at path $path: ${validationErrors.map(_.message).mkString(", ")}"
               }
               .mkString(", ")
-            Future.successful(BadRequest(errorMessage))
+            BadRequest(errorMessage)
         }
     }
   }

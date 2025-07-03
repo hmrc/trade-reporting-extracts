@@ -61,7 +61,7 @@ class FileNotificationService @Inject() (reportRequestService: ReportRequestServ
                         templateId = "tre_report_available",
                         email = email,
                         params =
-                          Map("reportRequestId" -> maskedId) ++ updatedReportRequest.itmpName.map("customerName" -> _)
+                          Map("reportRequestId" -> maskedId)
                       )
                     }
                   )
