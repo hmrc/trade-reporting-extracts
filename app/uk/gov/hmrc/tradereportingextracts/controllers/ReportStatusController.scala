@@ -18,12 +18,11 @@ package uk.gov.hmrc.tradereportingextracts.controllers
 
 import play.api.libs.json.*
 import play.api.mvc.*
-import sttp.model.MediaType.ApplicationJson
 import uk.gov.hmrc.tradereportingextracts.config.AppConfig
-import uk.gov.hmrc.tradereportingextracts.models.eis.EisReportStatusHeaders.*
 import uk.gov.hmrc.tradereportingextracts.models.eis.*
+import uk.gov.hmrc.tradereportingextracts.models.eis.EisReportStatusHeaders.*
 import uk.gov.hmrc.tradereportingextracts.services.ReportRequestService
-import uk.gov.hmrc.tradereportingextracts.utils.HttpDateFormatter.getCurrentHttpDate
+import uk.gov.hmrc.tradereportingextracts.utils.ISODateFormatter.getCurrentISODate
 
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
@@ -48,28 +47,23 @@ class ReportStatusController @Inject() (
 
     (missingHeaders, isAuthorized, request.body.asJson) match {
       case (headers, _, _) if headers.nonEmpty =>
-        val errorMessage = s"Missing headers: ${headers.mkString(", ")}"
         Future.successful(
-          BadRequest(buildBadRequestResponse(request, errorMessage)).withHeaders(
-            ContentType.toString    -> ApplicationJson.toString(),
-            Date.toString           -> getCurrentHttpDate,
+          BadRequest.withHeaders(
+            Date.toString           -> getCurrentISODate,
             XCorrelationID.toString -> request.headers.get(XCorrelationID.toString).getOrElse("")
           )
         )
       case (_, false, _)                       =>
-        val errorMessage = "Unauthorized request: Invalid or missing authorization header"
         Future.successful(
           Forbidden.withHeaders(
-            Date.toString           -> getCurrentHttpDate,
+            Date.toString           -> getCurrentISODate,
             XCorrelationID.toString -> request.headers.get(XCorrelationID.toString).getOrElse("")
           )
         )
       case (_, _, None)                        =>
-        val errorMessage = "Expected application/json request body"
         Future.successful(
-          BadRequest(buildBadRequestResponse(request, errorMessage)).withHeaders(
-            ContentType.toString    -> ApplicationJson.toString(),
-            Date.toString           -> getCurrentHttpDate,
+          BadRequest.withHeaders(
+            Date.toString           -> getCurrentISODate,
             XCorrelationID.toString -> request.headers.get(XCorrelationID.toString).getOrElse("")
           )
         )
@@ -79,44 +73,18 @@ class ReportStatusController @Inject() (
             reportRequestService.processReportStatus(request.headers, json.as[EisReportStatusRequest])
             Future.successful(
               Created.withHeaders(
-                Date.toString           -> getCurrentHttpDate,
+                Date.toString           -> getCurrentISODate,
                 XCorrelationID.toString -> request.headers.get(XCorrelationID.toString).getOrElse("")
               )
             )
           case JsError(errors) =>
-            val errorMessage = errors
-              .map { case (path, validationErrors) =>
-                s"Invalid value at path $path: ${validationErrors.map(_.message).mkString(", ")}"
-              }
-              .mkString(", ")
             Future.successful(
-              BadRequest(buildBadRequestResponse(request, errorMessage)).withHeaders(
-                ContentType.toString    -> ApplicationJson.toString(),
-                Date.toString           -> getCurrentHttpDate,
+              BadRequest.withHeaders(
+                Date.toString           -> getCurrentISODate,
                 XCorrelationID.toString -> request.headers.get(XCorrelationID.toString).getOrElse("")
               )
             )
         }
     }
   }
-
-  private def buildBadRequestResponse(request: Request[AnyContent], details: String) =
-    Json.toJson(
-      EisReportStatusResponseError(
-        errorDetail = EisReportStatusResponseErrorDetail(
-          correlationId = request.headers.get(XCorrelationID.toString).getOrElse(""),
-          errorCode = Some("400"),
-          errorMessage = Some("Invalid request"),
-          source = Some("TRE"),
-          sourceFaultDetail = Some(
-            EisReportStatusResponseErrorDetailSourceFaultDetail(
-              detail = List(details),
-              restFault = None,
-              soapFault = None
-            )
-          ),
-          timestamp = getCurrentHttpDate
-        )
-      )
-    )
 }
