@@ -37,9 +37,9 @@ class EoriHistoryServiceSpec extends AsyncWordSpec with Matchers with ScalaFutur
 
   val eori                        = "GB123456789012"
   val history1                    =
-    EoriHistory(eori, Some(Instant.parse("2024-01-01T00:00:00Z")), Some(Instant.parse("2024-06-30T00:00:00Z")))
+    EoriHistory(eori, Some("2024-01-01"), Some("2024-06-30"))
   val history2                    =
-    EoriHistory(eori, Some(Instant.parse("2024-07-01T00:00:00Z")), Some(Instant.parse("2024-12-31T00:00:00Z")))
+    EoriHistory(eori, Some("2024-07-01"), Some("2024-12-31"))
   val histories: Seq[EoriHistory] = Seq(history1, history2)
 
   private given HeaderCarrier = HeaderCarrier()

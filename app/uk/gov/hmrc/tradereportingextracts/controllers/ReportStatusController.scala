@@ -22,7 +22,7 @@ import uk.gov.hmrc.tradereportingextracts.config.AppConfig
 import uk.gov.hmrc.tradereportingextracts.models.eis.*
 import uk.gov.hmrc.tradereportingextracts.models.eis.EisReportStatusHeaders.*
 import uk.gov.hmrc.tradereportingextracts.services.ReportRequestService
-import uk.gov.hmrc.tradereportingextracts.utils.ISODateFormatter.getCurrentISODate
+import uk.gov.hmrc.tradereportingextracts.utils.HttpDateFormatter.getCurrentHttpDate
 
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
@@ -49,21 +49,21 @@ class ReportStatusController @Inject() (
       case (headers, _, _) if headers.nonEmpty =>
         Future.successful(
           BadRequest.withHeaders(
-            Date.toString           -> getCurrentISODate,
+            Date.toString           -> getCurrentHttpDate,
             XCorrelationID.toString -> request.headers.get(XCorrelationID.toString).getOrElse("")
           )
         )
       case (_, false, _)                       =>
         Future.successful(
           Forbidden.withHeaders(
-            Date.toString           -> getCurrentISODate,
+            Date.toString           -> getCurrentHttpDate,
             XCorrelationID.toString -> request.headers.get(XCorrelationID.toString).getOrElse("")
           )
         )
       case (_, _, None)                        =>
         Future.successful(
           BadRequest.withHeaders(
-            Date.toString           -> getCurrentISODate,
+            Date.toString           -> getCurrentHttpDate,
             XCorrelationID.toString -> request.headers.get(XCorrelationID.toString).getOrElse("")
           )
         )
@@ -73,14 +73,14 @@ class ReportStatusController @Inject() (
             reportRequestService.processReportStatus(request.headers, json.as[EisReportStatusRequest])
             Future.successful(
               Created.withHeaders(
-                Date.toString           -> getCurrentISODate,
+                Date.toString           -> getCurrentHttpDate,
                 XCorrelationID.toString -> request.headers.get(XCorrelationID.toString).getOrElse("")
               )
             )
           case JsError(errors) =>
             Future.successful(
               BadRequest.withHeaders(
-                Date.toString           -> getCurrentISODate,
+                Date.toString           -> getCurrentHttpDate,
                 XCorrelationID.toString -> request.headers.get(XCorrelationID.toString).getOrElse("")
               )
             )
