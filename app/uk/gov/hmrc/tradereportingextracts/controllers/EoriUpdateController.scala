@@ -22,7 +22,7 @@ import uk.gov.hmrc.tradereportingextracts.config.AppConfig
 import uk.gov.hmrc.tradereportingextracts.models.etmp.*
 import uk.gov.hmrc.tradereportingextracts.models.etmp.EoriUpdateHeaders.*
 import uk.gov.hmrc.tradereportingextracts.services.UserService
-import uk.gov.hmrc.tradereportingextracts.utils.ISODateFormatter.getCurrentISODate
+import uk.gov.hmrc.tradereportingextracts.utils.HttpDateFormatter.getCurrentHttpDate
 
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.Future
@@ -48,21 +48,21 @@ class EoriUpdateController @Inject() (
       case (headers, _, _) if headers.nonEmpty =>
         Future.successful(
           BadRequest.withHeaders(
-            date.toString           -> getCurrentISODate,
+            date.toString           -> getCurrentHttpDate,
             xCorrelationID.toString -> request.headers.get(xCorrelationID.toString).getOrElse("")
           )
         )
       case (_, false, _)                       =>
         Future.successful(
           Forbidden.withHeaders(
-            date.toString           -> getCurrentISODate,
+            date.toString           -> getCurrentHttpDate,
             xCorrelationID.toString -> request.headers.get(xCorrelationID.toString).getOrElse("")
           )
         )
       case (_, _, None)                        =>
         Future.successful(
           BadRequest.withHeaders(
-            date.toString           -> getCurrentISODate,
+            date.toString           -> getCurrentHttpDate,
             xCorrelationID.toString -> request.headers.get(xCorrelationID.toString).getOrElse("")
           )
         )
@@ -71,7 +71,7 @@ class EoriUpdateController @Inject() (
           case JsError(errors) =>
             Future.successful(
               BadRequest.withHeaders(
-                date.toString           -> getCurrentISODate,
+                date.toString           -> getCurrentHttpDate,
                 xCorrelationID.toString -> request.headers.get(xCorrelationID.toString).getOrElse("")
               )
             )
@@ -79,7 +79,7 @@ class EoriUpdateController @Inject() (
             userService.updateEori(json.as[EoriUpdate])
             Future.successful(
               Created.withHeaders(
-                date.toString           -> getCurrentISODate,
+                date.toString           -> getCurrentHttpDate,
                 xCorrelationID.toString -> request.headers.get(xCorrelationID.toString).getOrElse("")
               )
             )

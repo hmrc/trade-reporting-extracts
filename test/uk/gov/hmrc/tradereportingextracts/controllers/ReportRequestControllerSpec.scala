@@ -89,8 +89,8 @@ class ReportRequestControllerSpec extends SpecBase with WireMockHelper {
               Seq(
                 EoriHistory(
                   "eori",
-                  Some(Instant.parse("2023-02-01T00:00:00Z")),
-                  Some(Instant.parse("2023-03-01T00:00:00Z"))
+                  Some("2023-02-01"),
+                  Some("2023-03-01")
                 )
               )
             )
@@ -148,8 +148,8 @@ class ReportRequestControllerSpec extends SpecBase with WireMockHelper {
               Seq(
                 EoriHistory(
                   "eori",
-                  Some(Instant.parse("2023-02-01T00:00:00Z")),
-                  Some(Instant.parse("2023-03-01T00:00:00Z"))
+                  Some("2023-02-01"),
+                  Some("2023-03-01")
                 )
               )
             )
@@ -212,8 +212,8 @@ class ReportRequestControllerSpec extends SpecBase with WireMockHelper {
               Seq(
                 EoriHistory(
                   "eori",
-                  Some(Instant.parse("2023-02-01T00:00:00Z")),
-                  Some(Instant.parse("2023-03-01T00:00:00Z"))
+                  Some("2023-02-01"),
+                  Some("2023-03-01")
                 )
               )
             )

@@ -22,12 +22,11 @@ import java.time.{Instant, LocalDate, ZoneOffset}
 
 case class EoriHistoryResponse(var eoriHistory: Seq[EoriHistory]) {
   def filterByDateRange(from: LocalDate, until: LocalDate): Seq[EoriHistory] =
-    val fromInstant: Instant  = from.atStartOfDay(ZoneOffset.UTC).toInstant
-    val untilInstant: Instant = until.atTime(23, 59, 59).atZone(ZoneOffset.UTC).toInstant
-    eoriHistory.filter { h =>
-      val validFrom  = h.validFrom.getOrElse(Instant.MIN)
-      val validUntil = h.validUntil.getOrElse(Instant.MAX)
-      !validUntil.isBefore(fromInstant) && !validFrom.isAfter(untilInstant)
+    eoriHistory.filter { history =>
+      val validFrom  = history.validFromLocalDate
+      val validUntil = history.validUntilLocalDate
+      (validFrom.isAfter(from) || validFrom.isEqual(from)) &&
+      (validUntil.isBefore(until) || validUntil.isEqual(until))
     }
 }
 

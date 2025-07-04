@@ -26,38 +26,36 @@ class EoriHistorySpec extends AnyFreeSpec with Matchers {
   "EoriHistory" - {
 
     "must serialize and deserialize correctly with valid dates" in {
-      val eoriHistory =
-        EoriHistory(
-          "GB123456789000",
-          Some(Instant.parse("2024-01-01T00:00:00Z")),
-          Some(Instant.parse("2024-12-31T00:00:00Z"))
-        )
+      val eoriHistory = EoriHistory("GB1234567890", Some("2023-01-01"), Some("2024-01-01"))
       val json        = Json.toJson(eoriHistory)
       json mustBe Json.obj(
-        "eori"       -> "GB123456789000",
-        "validFrom"  -> "2024-01-01T00:00:00Z",
-        "validUntil" -> "2024-12-31T00:00:00Z"
+        "eori"       -> "GB1234567890",
+        "validFrom"  -> "2023-01-01",
+        "validUntil" -> "2024-01-01"
       )
-      json.as[EoriHistory] mustBe eoriHistory
-    }
-
-    "must handle missing dates" in {
-      val eoriHistory = EoriHistory("GB123456789000", None, None)
-      val json        = Json.toJson(eoriHistory)
-      (json \ "validFrom").asOpt[String] mustBe None
-      (json \ "validUntil").asOpt[String] mustBe None
-      json.as[EoriHistory] mustBe eoriHistory
-    }
-
-    "must parse ISO_OFFSET_DATE_TIME for validFrom and validUntil" in {
-      val json   = Json.obj(
-        "eori"       -> "GB123456789000",
-        "validFrom"  -> "2024-01-01T00:00:00Z",
-        "validUntil" -> "2024-12-31T00:00:00Z"
-      )
-      val result = json.as[EoriHistory]
-      result.validFrom mustBe Some(Instant.parse("2024-01-01T00:00:00Z"))
-      result.validUntil mustBe Some(Instant.parse("2024-12-31T00:00:00Z"))
+      Json.fromJson[EoriHistory](json) mustBe JsSuccess(eoriHistory)
     }
   }
+
+  "must serialize and deserialize correctly with missing dates" in {
+    val eoriHistory = EoriHistory("GB1234567890", None, None)
+    val json        = Json.toJson(eoriHistory)
+    json mustBe Json.obj(
+      "eori" -> "GB1234567890"
+    )
+    Json.fromJson[EoriHistory](json) mustBe JsSuccess(eoriHistory)
+  }
+
+  "must parse validFrom and validUntil as LocalDate" in {
+    val eoriHistory = EoriHistory("GB1234567890", Some("2023-01-01"), Some("2024-01-01"))
+    eoriHistory.validFromLocalDate mustBe LocalDate.parse("2023-01-01")
+    eoriHistory.validUntilLocalDate mustBe LocalDate.parse("2024-01-01")
+  }
+
+  "must handle missing validFrom and validUntil dates as LocalDate.MIN and LocalDate.MAX" in {
+    val eoriHistory = EoriHistory("GB1234567890", None, None)
+    eoriHistory.validFromLocalDate mustBe LocalDate.MIN
+    eoriHistory.validUntilLocalDate mustBe LocalDate.MAX
+  }
+
 }

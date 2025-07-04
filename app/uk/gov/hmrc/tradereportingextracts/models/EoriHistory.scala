@@ -18,10 +18,12 @@ package uk.gov.hmrc.tradereportingextracts.models
 
 import play.api.libs.json.*
 
-import java.time.Instant
+import java.time.LocalDate
 
-case class EoriHistory(eori: String, validFrom: Option[Instant], validUntil: Option[Instant]):
-  def isValid: Boolean = validFrom.isDefined && validUntil.isDefined
+case class EoriHistory(eori: String, validFrom: Option[String], validUntil: Option[String]):
+  def isValid: Boolean               = validFrom.isDefined && validUntil.isDefined
+  def validFromLocalDate: LocalDate  = validFrom.map(date => LocalDate.parse(date)).getOrElse(LocalDate.MIN)
+  def validUntilLocalDate: LocalDate = validUntil.map(date => LocalDate.parse(date)).getOrElse(LocalDate.MAX)
 
 object EoriHistory {
   implicit val format: OFormat[EoriHistory] = Json.format[EoriHistory]

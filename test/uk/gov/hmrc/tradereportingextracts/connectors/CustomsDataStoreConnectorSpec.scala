@@ -125,8 +125,8 @@ class CustomsDataStoreConnectorSpec
            |"eoriHistory": [
            |  {
            |    "eori": "GB123456789012",
-           |    "validFrom": "2001-01-20T00:00:00Z",
-           |    "validUntil": "2002-01-20T00:00:00Z"
+           |    "validFrom": "2001-01-20",
+           |    "validUntil": "2002-01-20"
            |  }
            |]
            |}""".stripMargin
@@ -148,8 +148,8 @@ class CustomsDataStoreConnectorSpec
             Seq(
               EoriHistory(
                 "GB123456789012",
-                Some(Instant.parse("2001-01-20T00:00:00Z")),
-                Some(Instant.parse("2002-01-20T00:00:00Z"))
+                Some("2001-01-20"),
+                Some("2002-01-20")
               )
             )
           )
