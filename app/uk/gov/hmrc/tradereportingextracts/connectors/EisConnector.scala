@@ -16,25 +16,27 @@
 
 package uk.gov.hmrc.tradereportingextracts.connectors
 
+import play.api.Logging
 import play.api.libs.json.Json
-import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse, StringContextOps}
-import uk.gov.hmrc.http.client.HttpClientV2
-import uk.gov.hmrc.tradereportingextracts.config.AppConfig
-import uk.gov.hmrc.tradereportingextracts.models.eis.EisReportRequest
 import play.api.libs.ws.JsonBodyWritables.*
+import uk.gov.hmrc.http.HttpReads.Implicits.*
+import uk.gov.hmrc.http.client.HttpClientV2
+import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse, StringContextOps}
+import uk.gov.hmrc.tradereportingextracts.config.AppConfig
 import uk.gov.hmrc.tradereportingextracts.connectors.ConnectorFailureLogger.FromResultToConnectorFailureLogger
+import uk.gov.hmrc.tradereportingextracts.models.eis.EisReportRequest
 
-import java.time.{ZoneOffset, ZonedDateTime}
 import java.time.format.DateTimeFormatter
-import java.util.UUID
+import java.time.{ZoneOffset, ZonedDateTime}
 import javax.inject.Inject
+import scala.concurrent.duration.{Duration, SECONDS}
 import scala.concurrent.{ExecutionContext, Future}
-import uk.gov.hmrc.http.HttpReads.Implicits._
 
 class EisConnector @Inject() (
   appConfig: AppConfig,
   httpClient: HttpClientV2
-)(implicit ec: ExecutionContext) {
+)(implicit ec: ExecutionContext)
+    extends Logging {
   def requestTraderReport(
     payload: EisReportRequest,
     correlationId: String
@@ -44,7 +46,9 @@ class EisConnector @Inject() (
       .now(ZoneOffset.UTC)
       .format(DateTimeFormatter.ofPattern("EEE, dd MMM yyyy HH:mm:ss 'GMT'"))
     val eisAuthToken           = "Bearer " + appConfig.eisAuthToken
-
+    logger.info(
+      s"Requesting trader report with payload: ${Json.toJson(payload)}"
+    )
     httpClient
       .put(requestTraderReportUrl)
       .withBody(Json.toJson(payload))
@@ -56,6 +60,7 @@ class EisConnector @Inject() (
         "x-correlation-id" -> correlationId,
         "x-forwarded-host" -> "MDTP"
       )
+      .transform(_.withRequestTimeout(Duration(15, SECONDS)))
       .execute[HttpResponse]
       .logFailureReason(connectorName = "TradeReportConnector on requestTraderReport")
   }
