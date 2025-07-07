@@ -27,6 +27,7 @@ import uk.gov.hmrc.tradereportingextracts.repositories.ReportRequestRepository
 
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util.{Failure, Success, Try}
 
 @Singleton
 class ReportRequestService @Inject() (
@@ -116,18 +117,15 @@ class ReportRequestService @Inject() (
 
   def determineReportStatus(reportRequest: ReportRequest): ReportStatus = {
     val isComplete = reportRequest.fileNotifications.exists { notifications =>
-      val parts = notifications.flatMap { case FileNotification(_, _, _, _, _, _, _, reportFilesParts, _, _) =>
-        reportFilesParts match {
-          case StringFieldRegex.filePartPattern(part, total) =>
-            Some((part.toInt, total.toInt))
-          case _                                             =>
-            None
-        }
-      }
-
-      parts match {
-        case Nil  => false
-        case list => list.exists { case (part, total) => part == total }
+      val notificationsCount = notifications.size
+      val lastNotification   = notifications.find(_.reportLastFile == "true")
+      lastNotification match {
+        case Some(last) =>
+          Try(last.reportFilesParts.toInt) match {
+            case Success(parts) => notificationsCount == parts
+            case Failure(_)     => false
+          }
+        case _          => false
       }
     }
 

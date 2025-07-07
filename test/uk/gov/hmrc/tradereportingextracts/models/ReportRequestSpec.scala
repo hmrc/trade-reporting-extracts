@@ -50,10 +50,10 @@ class ReportRequestSpec extends AnyWordSpec with Matchers {
           fileName = "example.txt",
           fileSize = 1024,
           retentionDays = 30,
-          fileType = FileType.CSV,
+          fileType = "CSV",
           mDTPReportXCorrelationID = "X-Correlation-ID",
           mDTPReportRequestID = "Request-ID",
-          mDTPReportTypeName = ReportTypeName.IMPORTS_ITEM_REPORT,
+          mDTPReportTypeName = "IMPORTS-ITEM-REPORT",
           reportFilesParts = "Part1",
           reportLastFile = "LastFile",
           fileCreationTimestamp = "2023-01-01T10:00:00Z"

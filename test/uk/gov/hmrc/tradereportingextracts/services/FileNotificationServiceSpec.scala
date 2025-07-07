@@ -116,10 +116,10 @@ class FileNotificationServiceSpec
               fileName = "oldFile",
               fileSize = 1,
               retentionDays = 1,
-              fileType = FileType.CSV,
+              fileType = "CSV",
               mDTPReportXCorrelationID = "x",
               mDTPReportRequestID = "RE123456",
-              mDTPReportTypeName = ReportTypeName.IMPORTS_HEADER_REPORT,
+              mDTPReportTypeName = "IMPORTS-HEADER-REPORT",
               reportFilesParts = "1of1",
               reportLastFile = "last",
               fileCreationTimestamp = "2025-01-01T00:00:00Z"
