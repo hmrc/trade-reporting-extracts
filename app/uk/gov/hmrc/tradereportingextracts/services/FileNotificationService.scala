@@ -86,16 +86,12 @@ class FileNotificationService @Inject() (reportRequestService: ReportRequestServ
       fileSize = sdes.fileSize,
       retentionDays =
         getValue { case FileNotificationMetadata.RetentionDaysMetadataItem(v: String) => v }.toIntOption.getOrElse(0),
-      fileType = FileType.valueOf(
-        getValue { case FileNotificationMetadata.FileTypeMetadataItem(v: String) => v }
-      ),
+      fileType = getValue { case FileNotificationMetadata.FileTypeMetadataItem(v: String) => v },
       mDTPReportXCorrelationID = getValue {
         case FileNotificationMetadata.MDTPReportXCorrelationIDMetadataItem(v: String) => v
       },
       mDTPReportRequestID = getValue { case FileNotificationMetadata.MDTPReportRequestIDMetadataItem(v: String) => v },
-      mDTPReportTypeName = ReportTypeName.valueOf(
-        getValue { case FileNotificationMetadata.MDTPReportTypeNameMetadataItem(v: String) => v }
-      ),
+      mDTPReportTypeName = getValue { case FileNotificationMetadata.MDTPReportTypeNameMetadataItem(v: String) => v },
       reportFilesParts = getValue { case FileNotificationMetadata.ReportFilesPartsMetadataItem(v: String) => v },
       reportLastFile = getValue { case FileNotificationMetadata.ReportLastFileMetadataItem(v: String) => v },
       fileCreationTimestamp = getValue { case FileNotificationMetadata.FileCreationTimestampMetadataItem(v: String) =>

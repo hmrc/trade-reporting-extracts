@@ -43,10 +43,10 @@ case class FileNotification(
   fileName: String,
   fileSize: Long,
   retentionDays: Int,
-  fileType: FileType,
+  fileType: String,
   mDTPReportXCorrelationID: String,
   mDTPReportRequestID: String,
-  mDTPReportTypeName: ReportTypeName,
+  mDTPReportTypeName: String,
   reportFilesParts: String,
   reportLastFile: String,
   fileCreationTimestamp: String

@@ -75,10 +75,10 @@ class AvailableReportServiceSpec extends AnyWordSpec with Matchers with ScalaFut
         "file.csv",
         123L,
         30,
-        FileType.CSV,
+        "CSV",
         "Core-ID",
         "req-id-456",
-        ReportTypeName.IMPORTS_ITEM_REPORT,
+        "IMPORTS-ITEM-REPORT",
         "1Of1",
         "last",
         ""
