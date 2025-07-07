@@ -131,21 +131,12 @@ class ReportRequestService @Inject() (
       }
     }
 
-    reportRequest.notifications match {
-      case notifications if isComplete =>
-        ReportStatus.COMPLETE
-
-      case notifications
-          if notifications.exists(n =>
-            n.statusType == StatusType.ERROR &&
-              n.statusCode == StatusCode.FILENOREC.toString
-          ) =>
+    (isComplete, reportRequest.notifications) match
+      case (true, _)                                                                    => ReportStatus.COMPLETE
+      case (_, notifications)
+          if notifications
+            .exists(n => n.statusType == StatusType.ERROR && n.statusCode == StatusCode.FILENOREC.toString) =>
         ReportStatus.NO_DATA_AVAILABLE
-
-      case notifications if notifications.exists(_.statusType == StatusType.ERROR) =>
-        ReportStatus.ERROR
-
-      case _ =>
-        ReportStatus.IN_PROGRESS
-    }
+      case (_, notifications) if notifications.exists(_.statusType == StatusType.ERROR) => ReportStatus.ERROR
+      case _                                                                            => ReportStatus.IN_PROGRESS
   }
