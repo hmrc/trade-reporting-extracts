@@ -165,8 +165,8 @@ class FileNotificationServiceSpec
       }
     }
 
-    "call emailConnector.sendEmailRequest for each recipient when status is COMPLETE" in {
-      val reportWithEmails = reportRequest.copy(recipientEmails = Seq("a@example.com", "b@example.com"))
+    "call emailConnector.sendEmailRequest with template id tre_report_available for one recipient and when status is COMPLETE" in {
+      val reportWithEmails = reportRequest.copy(recipientEmails = Seq("a@example.com"))
       when(mockReportRequestService.get(eqTo("RE123456"))(any()))
         .thenReturn(Future.successful(Some(reportWithEmails)))
       when(mockReportRequestService.update(any())(any()))
@@ -177,7 +177,7 @@ class FileNotificationServiceSpec
 
       val result = service.processFileNotification(fileNotification)
       whenReady(result) { case (status, message) =>
-        verify(mockEmailConnector, times(2)).sendEmailRequest(
+        verify(mockEmailConnector, times(1)).sendEmailRequest(
           eqTo("tre_report_available"),
           any(),
           eqTo(Map("reportRequestId" -> "XXXXX456"))
@@ -234,6 +234,74 @@ class FileNotificationServiceSpec
         )(any())
         val params       = paramsCaptor.getValue
         params("reportRequestId") shouldBe "XXXXX-6789"
+      }
+    }
+
+    "assign correct templateId to each recipient email" in {
+      val emails           = Seq(
+        "firstnonverfied@example.com",
+        "secondnonverfied@example.com",
+        "thirdnonverfied@example.com",
+        "verfied@test.com"
+      )
+      val reportWithEmails = reportRequest.copy(recipientEmails = emails)
+      when(mockReportRequestService.get(eqTo("RE123456"))(any()))
+        .thenReturn(Future.successful(Some(reportWithEmails)))
+      when(mockReportRequestService.update(any())(any()))
+        .thenReturn(Future.successful(true))
+      when(mockReportRequestService.determineReportStatus(any())).thenReturn(COMPLETE)
+      when(mockEmailConnector.sendEmailRequest(any(), any(), any())(any()))
+        .thenReturn(Future.successful(()))
+
+      val result = service.processFileNotification(fileNotification)
+      whenReady(result) { _ =>
+        verify(mockEmailConnector).sendEmailRequest(
+          eqTo("tre_report_available_non_verified"),
+          eqTo("firstnonverfied@example.com"),
+          any()
+        )(any())
+        verify(mockEmailConnector).sendEmailRequest(
+          eqTo("tre_report_available_non_verified"),
+          eqTo("secondnonverfied@example.com"),
+          any()
+        )(any())
+        verify(mockEmailConnector).sendEmailRequest(
+          eqTo("tre_report_available_non_verified"),
+          eqTo("thirdnonverfied@example.com"),
+          any()
+        )(any())
+        verify(mockEmailConnector).sendEmailRequest(
+          eqTo("tre_report_available"),
+          eqTo("verfied@test.com"),
+          any()
+        )(any())
+      }
+    }
+
+    // TODO remove this test once additional email ticket on frontend is implemented
+    "append @test.com to emails without @" in {
+      val emails           = Seq("plainemail", "already@domain.com")
+      val reportWithEmails = reportRequest.copy(recipientEmails = emails)
+      when(mockReportRequestService.get(eqTo("RE123456"))(any()))
+        .thenReturn(Future.successful(Some(reportWithEmails)))
+      when(mockReportRequestService.update(any())(any()))
+        .thenReturn(Future.successful(true))
+      when(mockReportRequestService.determineReportStatus(any())).thenReturn(COMPLETE)
+      when(mockEmailConnector.sendEmailRequest(any(), any(), any())(any()))
+        .thenReturn(Future.successful(()))
+
+      val result = service.processFileNotification(fileNotification)
+      whenReady(result) { _ =>
+        verify(mockEmailConnector).sendEmailRequest(
+          any(),
+          eqTo("plainemail@test.com"),
+          any()
+        )(any())
+        verify(mockEmailConnector).sendEmailRequest(
+          any(),
+          eqTo("already@domain.com"),
+          any()
+        )(any())
       }
     }
   }
