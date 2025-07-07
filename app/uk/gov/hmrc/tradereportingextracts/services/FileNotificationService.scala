@@ -55,16 +55,21 @@ class FileNotificationService @Inject() (reportRequestService: ReportRequestServ
             if (reportRequestService.determineReportStatus(updatedReportRequest) == COMPLETE) {
               for {
                 _ <- reportRequestService.update(updatedReportRequest)
-                _ <-
-                  Future.sequence(
-                    updatedReportRequest.recipientEmails.map { email =>
-                      emailConnector.sendEmailRequest(
-                        templateId = "tre_report_available",
-                        email = email,
-                        params = Map("reportRequestId" -> maskedId)
-                      )
-                    }
-                  )
+                _ <- Future.sequence(
+                       updatedReportRequest.recipientEmails.zipWithIndex.map { case (email, id) =>
+                         // TODO: Remove formattedEmail once additional email ticket on frontend is implemented
+                         val formattedEmail =
+                           if (email.contains("@")) email else s"$email@test.com"
+                         val templateId     =
+                           if (id == updatedReportRequest.recipientEmails.size - 1) "tre_report_available"
+                           else "tre_report_available_non_verified"
+                         emailConnector.sendEmailRequest(
+                           templateId = templateId,
+                           email = formattedEmail,
+                           params = Map("reportRequestId" -> maskedId)
+                         )
+                       }
+                     )
               } yield (CREATED, "Created")
             } else {
               reportRequestService.update(updatedReportRequest).map(_ => (CREATED, "Created"))
