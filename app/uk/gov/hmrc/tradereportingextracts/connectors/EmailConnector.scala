@@ -48,8 +48,6 @@ class EmailConnector @Inject() (
       parameters = params
     )
 
-    println(s"Sending email request with body: ${Json.toJson(body)}")
-
     httpClient
       .post(emailUrl)
       .withBody(Json.toJson(body))
