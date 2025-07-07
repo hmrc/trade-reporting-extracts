@@ -130,8 +130,8 @@ class ReportRequestServiceSpec extends AnyWordSpec with Matchers {
           "Failure",
           "2025-06-04T12:00:00Z",
           StatusType.ERROR
-          )
         )
+      )
 
       val reportRequest = ReportRequest(
         "id",
@@ -148,7 +148,7 @@ class ReportRequestServiceSpec extends AnyWordSpec with Matchers {
         notifications,
         None,
         None
-        )
+      )
 
       service.invokePrivateMethod("determineReportStatus", reportRequest) shouldBe ReportStatus.NO_DATA_AVAILABLE
     }

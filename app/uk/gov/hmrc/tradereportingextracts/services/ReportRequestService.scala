@@ -118,18 +118,34 @@ class ReportRequestService @Inject() (
     val isComplete = reportRequest.fileNotifications.exists { notifications =>
       val parts = notifications.flatMap { case FileNotification(_, _, _, _, _, _, _, reportFilesParts, _, _) =>
         reportFilesParts match {
-          case StringFieldRegex.filePartPattern(part, total) => Some((part.toInt, total.toInt))
-          case _                                             => None
+          case StringFieldRegex.filePartPattern(part, total) =>
+            Some((part.toInt, total.toInt))
+          case _                                             =>
+            None
         }
       }
-      parts.nonEmpty && parts.exists { case (part, total) => part == total }
+
+      parts match {
+        case Nil  => false
+        case list => list.exists { case (part, total) => part == total }
+      }
     }
 
-    if (isComplete) ReportStatus.COMPLETE
-    else if (
-      reportRequest.notifications
-        .exists(n => n.statusType == StatusType.ERROR && n.statusCode == StatusCode.FILENOREC.toString)
-    ) ReportStatus.NO_DATA_AVAILABLE
-    else if (reportRequest.notifications.exists(_.statusType == StatusType.ERROR)) ReportStatus.ERROR
-    else ReportStatus.IN_PROGRESS
+    reportRequest.notifications match {
+      case notifications if isComplete =>
+        ReportStatus.COMPLETE
+
+      case notifications
+          if notifications.exists(n =>
+            n.statusType == StatusType.ERROR &&
+              n.statusCode == StatusCode.FILENOREC.toString
+          ) =>
+        ReportStatus.NO_DATA_AVAILABLE
+
+      case notifications if notifications.exists(_.statusType == StatusType.ERROR) =>
+        ReportStatus.ERROR
+
+      case _ =>
+        ReportStatus.IN_PROGRESS
+    }
   }
