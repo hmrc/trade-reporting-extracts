@@ -22,6 +22,7 @@ import uk.gov.hmrc.tradereportingextracts.models.eis.EisReportStatusHeaders.XCor
 import uk.gov.hmrc.tradereportingextracts.models.eis.EisReportStatusRequest
 import uk.gov.hmrc.tradereportingextracts.models.{FileNotification, GetReportRequestsResponse, ReportRequest, ReportStatus, StringFieldRegex, ThirdPartyReport, UserReport}
 import uk.gov.hmrc.tradereportingextracts.models.eis.EisReportStatusRequest.StatusType
+import uk.gov.hmrc.tradereportingextracts.models.StatusCode
 import uk.gov.hmrc.tradereportingextracts.repositories.ReportRequestRepository
 
 import javax.inject.{Inject, Singleton}
@@ -117,14 +118,25 @@ class ReportRequestService @Inject() (
     val isComplete = reportRequest.fileNotifications.exists { notifications =>
       val parts = notifications.flatMap { case FileNotification(_, _, _, _, _, _, _, reportFilesParts, _, _) =>
         reportFilesParts match {
-          case StringFieldRegex.filePartPattern(part, total) => Some((part.toInt, total.toInt))
-          case _                                             => None
+          case StringFieldRegex.filePartPattern(part, total) =>
+            Some((part.toInt, total.toInt))
+          case _                                             =>
+            None
         }
       }
-      parts.nonEmpty && parts.exists { case (part, total) => part == total }
+
+      parts match {
+        case Nil  => false
+        case list => list.exists { case (part, total) => part == total }
+      }
     }
 
-    if (isComplete) ReportStatus.COMPLETE
-    else if (reportRequest.notifications.exists(_.statusType == StatusType.ERROR)) ReportStatus.ERROR
-    else ReportStatus.IN_PROGRESS
+    (isComplete, reportRequest.notifications) match
+      case (true, _)                                                                    => ReportStatus.COMPLETE
+      case (_, notifications)
+          if notifications
+            .exists(n => n.statusType == StatusType.ERROR && n.statusCode == StatusCode.FILENOREC.toString) =>
+        ReportStatus.NO_DATA_AVAILABLE
+      case (_, notifications) if notifications.exists(_.statusType == StatusType.ERROR) => ReportStatus.ERROR
+      case _                                                                            => ReportStatus.IN_PROGRESS
   }
