@@ -55,12 +55,12 @@ class FileNotificationService @Inject() (reportRequestService: ReportRequestServ
               for {
                 _ <- reportRequestService.update(updatedReportRequest)
                 _ <- Future.sequence(
-                       updatedReportRequest.recipientEmails.zipWithIndex.map { case (email, id) =>
+                       updatedReportRequest.recipientEmails.zipWithIndex.map { case (email, index) =>
                          // TODO: Remove formattedEmail once additional email ticket on frontend is implemented
                          val formattedEmail =
                            if (email.contains("@")) email else s"$email@test.com"
                          val templateId     =
-                           if (id == updatedReportRequest.recipientEmails.size - 1) "tre_report_available"
+                           if (index == updatedReportRequest.recipientEmails.size - 1) "tre_report_available"
                            else "tre_report_available_non_verified"
                          emailConnector.sendEmailRequest(
                            templateId = templateId,
