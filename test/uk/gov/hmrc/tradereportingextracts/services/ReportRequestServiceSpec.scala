@@ -95,7 +95,7 @@ class ReportRequestServiceSpec extends AnyWordSpec with Matchers {
       val notifications = Seq(
         EisReportStatusRequest(
           EisReportStatusRequest.ApplicationComponent.TRE,
-          "ERR001",
+          StatusCode.FAILED.toString,
           "Failure",
           "2025-06-04T12:00:00Z",
           StatusType.ERROR
@@ -120,6 +120,37 @@ class ReportRequestServiceSpec extends AnyWordSpec with Matchers {
       )
 
       service.invokePrivateMethod("determineReportStatus", reportRequest) shouldBe ReportStatus.ERROR
+    }
+
+    "return NO_DATA_AVAILABLE when not complete and at least one notification has ERROR status with FILENOREC status code" in {
+      val notifications = Seq(
+        EisReportStatusRequest(
+          EisReportStatusRequest.ApplicationComponent.TRE,
+          StatusCode.FILENOREC.toString,
+          "Failure",
+          "2025-06-04T12:00:00Z",
+          StatusType.ERROR
+          )
+        )
+
+      val reportRequest = ReportRequest(
+        "id",
+        "corr",
+        "Report",
+        "GB123",
+        EoriRole.TRADER,
+        Seq("GB123"),
+        Seq("test@example.com"),
+        ReportTypeName.IMPORTS_ITEM_REPORT,
+        Instant.now(),
+        Instant.now(),
+        Instant.now(),
+        notifications,
+        None,
+        None
+        )
+
+      service.invokePrivateMethod("determineReportStatus", reportRequest) shouldBe ReportStatus.NO_DATA_AVAILABLE
     }
 
     "return IN_PROGRESS when all notifications are INFORMATION and report is not complete" in {

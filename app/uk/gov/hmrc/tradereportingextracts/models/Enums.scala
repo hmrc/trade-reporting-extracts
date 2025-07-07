@@ -118,7 +118,7 @@ object FileType:
       case _               => JsError("FileType must be a string")
 
 enum ReportStatus:
-  case COMPLETE, ERROR, IN_PROGRESS
+  case COMPLETE, ERROR, IN_PROGRESS, NO_DATA_AVAILABLE
 
 object ReportStatus:
   given Format[ReportStatus] with

@@ -22,6 +22,7 @@ import uk.gov.hmrc.tradereportingextracts.models.eis.EisReportStatusHeaders.XCor
 import uk.gov.hmrc.tradereportingextracts.models.eis.EisReportStatusRequest
 import uk.gov.hmrc.tradereportingextracts.models.{FileNotification, GetReportRequestsResponse, ReportRequest, ReportStatus, StringFieldRegex, ThirdPartyReport, UserReport}
 import uk.gov.hmrc.tradereportingextracts.models.eis.EisReportStatusRequest.StatusType
+import uk.gov.hmrc.tradereportingextracts.models.StatusCode
 import uk.gov.hmrc.tradereportingextracts.repositories.ReportRequestRepository
 
 import javax.inject.{Inject, Singleton}
@@ -125,6 +126,10 @@ class ReportRequestService @Inject() (
     }
 
     if (isComplete) ReportStatus.COMPLETE
+    else if (
+      reportRequest.notifications
+        .exists(n => n.statusType == StatusType.ERROR && n.statusCode == StatusCode.FILENOREC.toString)
+    ) ReportStatus.NO_DATA_AVAILABLE
     else if (reportRequest.notifications.exists(_.statusType == StatusType.ERROR)) ReportStatus.ERROR
     else ReportStatus.IN_PROGRESS
   }
