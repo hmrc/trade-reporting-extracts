@@ -154,9 +154,9 @@ class ReportRequestRepositorySpec
           notifications = Seq.empty,
           fileNotifications = Some(
             Seq(
-              FileNotification("f1", 1, 1, "CSV", "x", "y", "IMPORTS-ITEM-REPORT", "1Of3", "", ""),
-              FileNotification("f2", 1, 1, "CSV", "x", "y", "IMPORTS-ITEM-REPORT", "2Of3", "", ""),
-              FileNotification("f3", 1, 1, "CSV", "x", "y", "IMPORTS-ITEM-REPORT", "3Of3", "", "")
+              FileNotification("f1", 1, 1, "CSV", "x", "y", "IMPORTS-ITEM-REPORT", "1", "", ""),
+              FileNotification("f2", 1, 1, "CSV", "x", "y", "IMPORTS-ITEM-REPORT", "2", "", ""),
+              FileNotification("f3", 1, 1, "CSV", "x", "y", "IMPORTS-ITEM-REPORT", "3", "true", "")
             )
           ),
           linkAvailableTime = Some(Instant.now)
@@ -177,7 +177,7 @@ class ReportRequestRepositorySpec
           notifications = Seq.empty,
           fileNotifications = Some(
             Seq(
-              FileNotification("f4", 1, 1, "CSV", "x", "y", "IMPORTS-ITEM-REPORT", "1Of2", "", "")
+              FileNotification("f4", 1, 1, "CSV", "x", "y", "IMPORTS-ITEM-REPORT", "1", "", "")
             )
           ),
           linkAvailableTime = Some(Instant.now)
