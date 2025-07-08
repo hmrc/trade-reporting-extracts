@@ -16,6 +16,7 @@
 
 package uk.gov.hmrc.tradereportingextracts.connectors
 
+import play.api.Logging
 import uk.gov.hmrc.http.HttpReads.Implicits.*
 import uk.gov.hmrc.http.client.HttpClientV2
 import uk.gov.hmrc.http.{HeaderCarrier, StringContextOps}
@@ -27,12 +28,17 @@ import uk.gov.hmrc.tradereportingextracts.utils.ApplicationConstants.{xClientId,
 import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
 
-class SDESConnector @Inject() (appConfig: AppConfig, httpClient: HttpClientV2)(using ec: ExecutionContext) {
+class SDESConnector @Inject() (appConfig: AppConfig, httpClient: HttpClientV2)(using ec: ExecutionContext)
+    extends Logging {
 
   def fetchAvailableReportFileUrl(eori: String)(implicit
     hc: HeaderCarrier
   ): Future[Seq[FileAvailableResponse]] = {
     val requestAvailableReportFileUrl = url"${appConfig.sdes}"
+    logger.info(
+      s"Fetching available reports using $xSDESKey : $eori and $xClientId : ${appConfig.treXClientId}" +
+        s"with SDES URL: $requestAvailableReportFileUrl"
+    )
     httpClient
       .get(requestAvailableReportFileUrl)
       .setHeader(

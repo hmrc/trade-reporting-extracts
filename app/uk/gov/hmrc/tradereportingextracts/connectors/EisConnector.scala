@@ -60,7 +60,6 @@ class EisConnector @Inject() (
         "x-correlation-id" -> correlationId,
         "x-forwarded-host" -> "MDTP"
       )
-      .transform(_.withRequestTimeout(Duration(15, SECONDS)))
       .execute[HttpResponse]
       .logFailureReason(connectorName = "TradeReportConnector on requestTraderReport")
   }
