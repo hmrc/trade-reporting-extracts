@@ -17,6 +17,7 @@
 package uk.gov.hmrc.tradereportingextracts.services
 
 import org.apache.pekko.Done
+import org.apache.pekko.actor.ActorSystem
 import org.mockito.ArgumentCaptor
 import org.mockito.ArgumentMatchers.{any, eq as eqTo}
 import org.mockito.Mockito.*
@@ -35,20 +36,27 @@ import uk.gov.hmrc.tradereportingextracts.models.eis.{EisReportRequest, EisRepor
 import uk.gov.hmrc.tradereportingextracts.models.{EoriRole, ReportRequest, ReportTypeName}
 
 import java.time.Instant
+import scala.concurrent.duration.*
 import scala.concurrent.{ExecutionContext, Future}
 
 class EisServiceSpec extends AnyWordSpec with Matchers with MockitoSugar with ScalaFutures {
 
-  implicit val ec: ExecutionContext = ExecutionContext.global
-  implicit val hc: HeaderCarrier    = HeaderCarrier()
+  implicit override val patienceConfig: PatienceConfig = PatienceConfig(
+    timeout = 5.seconds,
+    interval = 100.milliseconds
+  )
+  implicit val ec: ExecutionContext                    = ExecutionContext.global
+  implicit val hc: HeaderCarrier                       = HeaderCarrier()
 
   val mockConnector: EisConnector                    = mock[EisConnector]
   val mockReportRequestService: ReportRequestService = mock[ReportRequestService]
   val mockAppConfig: AppConfig                       = mock[AppConfig]
+  val mockActorSystem: ActorSystem                   = ActorSystem("test-system")
 
+  when(mockAppConfig.eisRequestTraderReportRetryDelay).thenReturn(1)
   when(mockAppConfig.eisRequestTraderReportMaxRetries).thenReturn(3)
 
-  val service = new EisService(mockConnector, mockReportRequestService, mockAppConfig)
+  val service = new EisService(mockConnector, mockReportRequestService, mockActorSystem, mockAppConfig)
 
   val eisReportRequest: EisReportRequest = EisReportRequest(
     endDate = "2024-01-01",

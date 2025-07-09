@@ -17,8 +17,10 @@
 package uk.gov.hmrc.tradereportingextracts.services
 
 import org.apache.pekko.Done
+import org.apache.pekko.actor.ActorSystem
+import org.apache.pekko.pattern.after
 import play.api.Logging
-import play.api.http.Status.{ACCEPTED, INTERNAL_SERVER_ERROR, NO_CONTENT, OK}
+import play.api.http.Status.*
 import play.api.libs.json.{JsError, JsSuccess, Json}
 import uk.gov.hmrc.http.{HeaderCarrier, UpstreamErrorResponse}
 import uk.gov.hmrc.tradereportingextracts.config.AppConfig
@@ -29,14 +31,21 @@ import uk.gov.hmrc.tradereportingextracts.models.eis.{EisReportRequest, EisRepor
 
 import java.time.{Clock, LocalDate}
 import javax.inject.{Inject, Singleton}
+import scala.concurrent.duration.*
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-class EisService @Inject() (connector: EisConnector, reportRequestService: ReportRequestService, appConfig: AppConfig)(
-  implicit ec: ExecutionContext
+class EisService @Inject() (
+  connector: EisConnector,
+  reportRequestService: ReportRequestService,
+  actorSystem: ActorSystem,
+  appConfig: AppConfig
+)(implicit
+  ec: ExecutionContext
 ) extends Logging {
 
   private val MaxRetries = appConfig.eisRequestTraderReportMaxRetries
+  private val RetryDelay = appConfig.eisRequestTraderReportRetryDelay
 
   def requestTraderReport(payload: EisReportRequest, reportRequest: ReportRequest)(implicit
     hc: HeaderCarrier
@@ -48,26 +57,28 @@ class EisService @Inject() (connector: EisConnector, reportRequestService: Repor
         .requestTraderReport(payload, reportRequest.correlationId)
         .flatMap { response =>
           response.status match {
-            case OK | ACCEPTED | NO_CONTENT                     =>
+            case OK | ACCEPTED | NO_CONTENT                                                                           =>
               val updatedRequest: ReportRequest =
-                reportRequest
-                  .copy(notifications =
-                    Seq(
-                      EisReportStatusRequest(
-                        applicationComponent = EisReportStatusRequest.ApplicationComponent.TRE,
-                        statusCode = INITIATED.toString,
-                        statusMessage = "Report sent to EIS successfully",
-                        statusTimestamp = LocalDate.now(clock).toString,
-                        statusType = EisReportStatusRequest.StatusType.INFORMATION
-                      )
+                reportRequest.copy(notifications =
+                  reportRequest.notifications :+
+                    EisReportStatusRequest(
+                      applicationComponent = EisReportStatusRequest.ApplicationComponent.TRE,
+                      statusCode = INITIATED.toString,
+                      statusMessage = "Report sent to EIS successfully",
+                      statusTimestamp = LocalDate.now(clock).toString,
+                      statusType = EisReportStatusRequest.StatusType.INFORMATION
                     )
-                  )
+                )
               reportRequestService.update(updatedRequest).flatMap { _ =>
                 Future.successful(Done)
               }
-            case INTERNAL_SERVER_ERROR if remainingAttempts > 1 =>
-              attempt(remainingAttempts - 1)
-            case status                                         =>
+            case INTERNAL_SERVER_ERROR | SERVICE_UNAVAILABLE | BAD_GATEWAY | GATEWAY_TIMEOUT if remainingAttempts > 1 =>
+              logger.warn(
+                s"EIS request failed with status ${response.status}. " +
+                  s"Retrying... Attempts left: ${remainingAttempts - 1}"
+              )
+              after(RetryDelay.second, actorSystem.scheduler)(attempt(remainingAttempts - 1))
+            case status                                                                                               =>
               val errorMessage = Json.toJson(response.body).validate[EisReportResponseError] match {
                 case JsError(errors)        =>
                   logger.error(s"Unexpected response from EIS: ${response.body}")
@@ -78,23 +89,22 @@ class EisService @Inject() (connector: EisConnector, reportRequestService: Repor
               }
 
               val updatedRequest: ReportRequest =
-                reportRequest
-                  .copy(notifications =
-                    Seq(
-                      EisReportStatusRequest(
-                        applicationComponent = EisReportStatusRequest.ApplicationComponent.TRE,
-                        statusCode = FAILED.toString,
-                        statusMessage = errorMessage,
-                        statusTimestamp = LocalDate.now(clock).toString,
-                        statusType = EisReportStatusRequest.StatusType.ERROR
-                      )
+                reportRequest.copy(notifications =
+                  reportRequest.notifications :+
+                    EisReportStatusRequest(
+                      applicationComponent = EisReportStatusRequest.ApplicationComponent.TRE,
+                      statusCode = FAILED.toString,
+                      statusMessage = errorMessage,
+                      statusTimestamp = LocalDate.now(clock).toString,
+                      statusType = EisReportStatusRequest.StatusType.ERROR
                     )
-                  )
+                )
               reportRequestService.update(updatedRequest).flatMap { _ =>
                 Future.failed(UpstreamErrorResponse(response.body, status))
               }
           }
         }
+
     attempt(MaxRetries)
   }
 }
