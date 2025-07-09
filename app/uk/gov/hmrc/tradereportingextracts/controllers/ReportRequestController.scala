@@ -42,15 +42,14 @@ class ReportRequestController @Inject() (
   def createReportRequest: Action[JsValue] = Action.async(parse.json) { implicit request =>
     request.body.validate[ReportRequestUserAnswersModel] match {
       case JsSuccess(value, _) =>
-        val formatter    = DateTimeFormatter.ofPattern("yyyy-MM-dd")
-        val startEndDate =
-          (LocalDate.parse(value.reportStartDate, formatter), LocalDate.parse(value.reportEndDate, formatter))
-
-        for {
+        val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
+        val startDate = LocalDate.parse(value.reportStartDate, formatter)
+        val endDate   = LocalDate.parse(value.reportEndDate, formatter)
+        (for {
           userEmail      <- customsDataStoreConnector.getNotificationEmail(value.eori).map(_.address)
           eoriHistory    <- customsDataStoreConnector
                               .getEoriHistory(value.whichEori.get)
-                              .map(_.filterByDateRange(startEndDate._1, startEndDate._2).map(_.eori))
+                              .map(_.filterByDateRange(startDate, endDate).map(_.eori))
           reportRequests <- Future.sequence {
                               value.reportType.toSeq.map { reportTypeName =>
                                 reportRequestTransformationService.transformReportRequest(
@@ -61,18 +60,19 @@ class ReportRequestController @Inject() (
                                 )
                               }
                             }
-          _              <- Future.sequence {
-                              reportRequests.map { newRequest =>
-                                val eisRequest = reportRequestTransformationService.toEisReportRequest(newRequest)
-                                for {
-                                  _      <- reportRequestService.create(newRequest)
-                                  result <- eisService.requestTraderReport(eisRequest, newRequest)
-                                } yield result
-                              }
-                            }
-        } yield Ok(Json.obj("references" -> reportRequests.map(_.reportRequestId)))
-
-      case JsError(_) =>
+          persisted      <- reportRequestService.createAll(reportRequests)
+        } yield (persisted, reportRequests)).flatMap { case (persisted, reportRequests) =>
+          if (persisted) {
+            reportRequests.foreach { reportRequest =>
+              val eisRequest = reportRequestTransformationService.toEisReportRequest(reportRequest)
+              eisService.requestTraderReport(eisRequest, reportRequest)
+            }
+            Future.successful(Ok(Json.obj("references" -> reportRequests.map(_.reportRequestId))))
+          } else {
+            Future.successful(InternalServerError(Json.obj("error" -> "Failed to create report requests")))
+          }
+        }
+      case JsError(_)          =>
         Future.successful(BadRequest(Json.obj("error" -> "Invalid request format")))
     }
   }

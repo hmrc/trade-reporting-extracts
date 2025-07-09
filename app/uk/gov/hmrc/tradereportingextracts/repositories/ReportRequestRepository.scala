@@ -46,6 +46,14 @@ class ReportRequestRepository @Inject() (appConfig: AppConfig, mongoComponent: M
       .head()
       .map(_.wasAcknowledged())
 
+  def insertAll(reportRequests: Seq[ReportRequest])(implicit ec: ExecutionContext): Future[Boolean] =
+    if (reportRequests.isEmpty) Future.successful(true)
+    else
+      collection
+        .insertMany(reportRequests)
+        .head()
+        .map(_.wasAcknowledged())
+
   def findByReportRequestId(reportRequestId: String)(implicit ec: ExecutionContext): Future[Option[ReportRequest]] =
     collection
       .find(Filters.equal("reportRequestId", reportRequestId))

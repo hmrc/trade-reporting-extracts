@@ -38,6 +38,9 @@ class ReportRequestService @Inject() (
   def create(reportRequest: ReportRequest)(implicit ec: ExecutionContext): Future[Boolean] =
     reportRequestRepository.insert(reportRequest)
 
+  def createAll(reportRequests: Seq[ReportRequest])(implicit ec: ExecutionContext): Future[Boolean] =
+    reportRequestRepository.insertAll(reportRequests)
+
   def get(reportRequestId: String)(implicit ec: ExecutionContext): Future[Option[ReportRequest]] =
     reportRequestRepository.findByReportRequestId(reportRequestId)
 

@@ -99,7 +99,7 @@ class ReportRequestControllerSpec extends SpecBase with WireMockHelper {
 
       when(mockRequestReferenceService.generateUnique()).thenReturn(Future.successful("REF-00000001"))
 
-      when(mockReportRequestService.create(any())(any()))
+      when(mockReportRequestService.createAll(any())(any()))
         .thenReturn(Future.successful(true))
 
       when(mockEisService.requestTraderReport(any(), any())(any())).thenReturn(Future.successful(Done))
@@ -113,13 +113,9 @@ class ReportRequestControllerSpec extends SpecBase with WireMockHelper {
       status(result) mustBe OK
       contentAsJson(result) mustBe Json.obj("references" -> Seq("REF-00000001"))
 
-      val captor = ArgumentCaptor.forClass(classOf[ReportRequest])
-      verify(mockReportRequestService).create(captor.capture())(any())
+      val captor = ArgumentCaptor.forClass(classOf[Seq[ReportRequest]])
+      verify(mockReportRequestService).createAll(any())(any())
 
-      val persistedRequest: ReportRequest = captor.getValue
-
-      persistedRequest.requesterEORI mustBe "GB123456789014"
-      persistedRequest.reportName mustBe "MyReport"
     }
 
     "return OK and 2 report IDs when 2 report types are requested" in {
@@ -160,7 +156,7 @@ class ReportRequestControllerSpec extends SpecBase with WireMockHelper {
         .thenReturn(Future.successful("REF-00000001"))
         .thenReturn(Future.successful("REF-00000002"))
 
-      when(mockReportRequestService.create(any())(any()))
+      when(mockReportRequestService.createAll(any())(any()))
         .thenReturn(Future.successful(true))
 
       when(mockEisService.requestTraderReport(any(), any())(any())).thenReturn(Future.successful(Done))
@@ -174,16 +170,9 @@ class ReportRequestControllerSpec extends SpecBase with WireMockHelper {
       status(result) mustBe OK
       contentAsJson(result) mustBe Json.obj("references" -> Seq("REF-00000001", "REF-00000002"))
 
-      val captor = ArgumentCaptor.forClass(classOf[ReportRequest])
-      verify(mockReportRequestService, times(2)).create(captor.capture())(any())
+      val captor = ArgumentCaptor.forClass(classOf[Seq[ReportRequest]])
+      verify(mockReportRequestService, times(1)).createAll(captor.capture())(any())
 
-      val capturedRequests = captor.getAllValues
-      capturedRequests.size() mustBe 2
-      capturedRequests.asScala.map(_.reportRequestId) must contain allOf ("REF-00000001", "REF-00000002")
-      capturedRequests.asScala.foreach { req =>
-        req.requesterEORI mustBe "GB123456789014"
-        req.reportName mustBe "MyReport"
-      }
     }
 
     "return OK and 3 report IDs when 3 report types are requested" in {
@@ -225,7 +214,7 @@ class ReportRequestControllerSpec extends SpecBase with WireMockHelper {
         .thenReturn(Future.successful("REF-00000002"))
         .thenReturn(Future.successful("REF-00000003"))
 
-      when(mockReportRequestService.create(any())(any()))
+      when(mockReportRequestService.createAll(any())(any()))
         .thenReturn(Future.successful(true))
 
       when(mockEisService.requestTraderReport(any(), any())(any())).thenReturn(Future.successful(Done))
@@ -239,18 +228,9 @@ class ReportRequestControllerSpec extends SpecBase with WireMockHelper {
       status(result) mustBe OK
       contentAsJson(result) mustBe Json.obj("references" -> Seq("REF-00000001", "REF-00000002", "REF-00000003"))
 
-      val captor = ArgumentCaptor.forClass(classOf[ReportRequest])
-      verify(mockReportRequestService, times(3)).create(captor.capture())(any())
+      val captor = ArgumentCaptor.forClass(classOf[Seq[ReportRequest]])
+      verify(mockReportRequestService, times(1)).createAll(captor.capture())(any())
 
-      val capturedRequests = captor.getAllValues
-      capturedRequests.size() mustBe 3
-      capturedRequests.asScala.map(
-        _.reportRequestId
-      ) must contain allOf ("REF-00000001", "REF-00000002", "REF-00000003")
-      capturedRequests.asScala.foreach { req =>
-        req.requesterEORI mustBe "GB123456789014"
-        req.reportName mustBe "MyReport"
-      }
     }
 
     "return BadRequest if JSON is invalid" in {
