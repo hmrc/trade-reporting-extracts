@@ -21,13 +21,15 @@ import org.mongodb.scala.*
 import org.mongodb.scala.model.*
 import uk.gov.hmrc.mongo.MongoComponent
 import uk.gov.hmrc.mongo.play.json.PlayMongoRepository
+import uk.gov.hmrc.tradereportingextracts.config.AppConfig
 import uk.gov.hmrc.tradereportingextracts.models.User
 import uk.gov.hmrc.tradereportingextracts.models.etmp.EoriUpdate
 
+import java.util.concurrent.TimeUnit
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-class UserRepository @Inject() (mongoComponent: MongoComponent)(using ec: ExecutionContext)
+class UserRepository @Inject() (appConfig: AppConfig, mongoComponent: MongoComponent)(using ec: ExecutionContext)
     extends PlayMongoRepository[User](
       collectionName = "tre-user",
       mongoComponent = mongoComponent,
@@ -36,6 +38,10 @@ class UserRepository @Inject() (mongoComponent: MongoComponent)(using ec: Execut
         IndexModel(
           Indexes.ascending("eori"),
           IndexOptions().name("eori-index").unique(true)
+        ),
+        IndexModel(
+          Indexes.ascending("createDate"),
+          IndexOptions().name("createDate-ttl-index").expireAfter(appConfig.userTTL, TimeUnit.SECONDS)
         )
       ),
       replaceIndexes = true

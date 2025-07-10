@@ -24,7 +24,8 @@ import scala.reflect.ClassTag
 case class User(
   eori: String,
   additionalEmails: Seq[String] = Seq.empty,
-  authorisedUsers: Seq[AuthorisedUser] = Seq.empty
+  authorisedUsers: Seq[AuthorisedUser] = Seq.empty,
+  createDate: Instant = Instant.now()
 )
 
 case class AuthorisedUser(

@@ -23,6 +23,7 @@ import org.scalatest.wordspec.AnyWordSpec
 import org.scalatestplus.mockito.MockitoSugar
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import uk.gov.hmrc.mongo.test.CleanMongoCollectionSupport
+import uk.gov.hmrc.tradereportingextracts.config.AppConfig
 import uk.gov.hmrc.tradereportingextracts.models.AccessType.IMPORTS
 import uk.gov.hmrc.tradereportingextracts.models.etmp.EoriUpdate
 import uk.gov.hmrc.tradereportingextracts.models.{AuthorisedUser, User}
@@ -38,7 +39,8 @@ class UserRepositorySpec
       Matchers,
       IntegrationPatience:
 
-  val userRepository: UserRepository = UserRepository(mongoComponent)
+  val appConfig: AppConfig  = app.injector.instanceOf[AppConfig]
+  val userRepository: UserRepository = UserRepository(appConfig, mongoComponent)
   val user: User                     = User(
     eori = "EORI1234",
     additionalEmails = Seq("asd@gmail.com", "dfsf@gmail.com"),
