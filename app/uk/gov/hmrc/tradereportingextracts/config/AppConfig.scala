@@ -25,6 +25,8 @@ class AppConfig @Inject() (val config: Configuration, servicesConfig: ServicesCo
 
   val appName: String = config.get[String]("appName")
 
+  val mongodbTTL: Long = config.get[Long]("mongodb.timeToLiveInSeconds")
+
   lazy val customsDataStore: String = servicesConfig.baseUrl("customs-data-store") +
     config.get[String]("microservice.services.customs-data-store.context")
   lazy val verifiedEmailUrl: String =
