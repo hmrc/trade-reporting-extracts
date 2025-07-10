@@ -69,5 +69,25 @@ class UserServiceSpec
         }
       }
     }
+
+    "getNotificationEmail" - {
+      val eori = "EORI1234"
+      val notificationEmail = uk.gov.hmrc.tradereportingextracts.models.NotificationEmail("test@email.com")
+
+      "must return notification email when connector returns it" in {
+        when(mockCustomsDataStoreConnector.getNotificationEmail(eori)).thenReturn(Future.successful(notificationEmail))
+        val result = service.getNotificationEmail(eori)
+        result.futureValue mustEqual notificationEmail
+      }
+
+      "must fail when connector returns failed Future" in {
+        val expectedException = new Exception("Email not found")
+        when(mockCustomsDataStoreConnector.getNotificationEmail(eori)).thenReturn(Future.failed(expectedException))
+        val result = service.getNotificationEmail(eori)
+        whenReady(result.failed) { ex =>
+          ex mustEqual expectedException
+        }
+      }
+    }
   }
 }

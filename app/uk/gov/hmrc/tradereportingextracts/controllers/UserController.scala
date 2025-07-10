@@ -16,13 +16,13 @@
 
 package uk.gov.hmrc.tradereportingextracts.controllers
 
-import play.api.libs.json.{JsValue, Json}
+import play.api.libs.json.{JsError, JsSuccess, JsValue, Json}
 import play.api.mvc.{Action, AnyContent, ControllerComponents}
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 import uk.gov.hmrc.tradereportingextracts.services.UserService
 
 import javax.inject.{Inject, Singleton}
-import scala.concurrent.ExecutionContext
+import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton()
 class UserController @Inject() (
@@ -32,9 +32,13 @@ class UserController @Inject() (
     extends BackendController(cc):
 
   def setupUser(): Action[JsValue] = Action.async(parse.json) { implicit request =>
-    val eori = (request.body \ "eori").as[String]
-    userService.getOrCreateUser(eori).map { userDetails =>
-      Created(Json.toJson(userDetails))
+    (request.body \ "eori").validate[String] match {
+      case JsSuccess(eori, _) =>
+        userService.getOrCreateUser(eori).map { userDetails =>
+          Created(Json.toJson(userDetails))
+        }
+      case JsError(_) =>
+        Future.successful(BadRequest("Missing or invalid 'eori' field"))
     }
   }
 
@@ -47,4 +51,19 @@ class UserController @Inject() (
       .recover { case e: Exception =>
         InternalServerError(e.getMessage)
       }
+  }
+
+  def getNotificationEmail: Action[JsValue] = Action.async(parse.json) { implicit request =>
+    (request.body \ "eori").validate[String] match {
+      case JsSuccess(eori, _) =>
+        userService
+          .getNotificationEmail(eori)
+          .map(email => Ok(Json.toJson(email)))
+          .recover { case e: Exception =>
+            InternalServerError(e.getMessage)
+          }
+
+      case JsError(_) =>
+        Future.successful(BadRequest("Missing or invalid 'eori' field"))
+    }
   }
