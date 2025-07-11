@@ -56,3 +56,6 @@ class UserService @Inject() (
 
   def getAuthorisedEoris(eori: String): Future[Seq[String]] =
     userRepository.getAuthorisedEoris(eori)
+
+  def getNotificationEmail(eori: String): Future[NotificationEmail] =
+    customsDataStoreConnector.getNotificationEmail(eori)
