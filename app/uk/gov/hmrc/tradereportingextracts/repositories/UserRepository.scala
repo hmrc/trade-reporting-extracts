@@ -41,7 +41,7 @@ class UserRepository @Inject() (appConfig: AppConfig, mongoComponent: MongoCompo
         ),
         IndexModel(
           Indexes.ascending("createDate"),
-          IndexOptions().name("createDate-ttl-index").expireAfter(appConfig.userTTL, TimeUnit.SECONDS)
+          IndexOptions().name("createDate-ttl-index").expireAfter(appConfig.userTTLDays, TimeUnit.DAYS)
         )
       ),
       replaceIndexes = true

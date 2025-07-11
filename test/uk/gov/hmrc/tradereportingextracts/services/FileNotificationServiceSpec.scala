@@ -83,7 +83,7 @@ class FileNotificationServiceSpec
     createDate = null,
     notifications = Seq.empty,
     fileNotifications = None,
-    linkAvailableTime = null
+    updateDate = null
   )
 
   "FileNotificationService.processFileNotification" should {

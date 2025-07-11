@@ -39,7 +39,7 @@ class ReportRequestRepository @Inject() (appConfig: AppConfig, mongoComponent: M
         IndexModel(Indexes.ascending("reportRequestId"), IndexOptions().name("reportRequestId-index").unique(true)),
         IndexModel(
           Indexes.ascending("createDate"),
-          IndexOptions().name("createDate-ttl-index").expireAfter(appConfig.reportRequestTTL, TimeUnit.SECONDS)
+          IndexOptions().name("createDate-ttl-index").expireAfter(appConfig.reportRequestTTLDays, TimeUnit.DAYS)
         )
       ),
       replaceIndexes = true

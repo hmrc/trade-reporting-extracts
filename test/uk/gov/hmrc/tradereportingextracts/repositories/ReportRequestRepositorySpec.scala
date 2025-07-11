@@ -76,7 +76,7 @@ class ReportRequestRepositorySpec
         )
       )
     ),
-    linkAvailableTime = Some(Instant.parse("2023-01-03T10:00:00Z"))
+    updateDate = Some(Instant.parse("2023-01-03T10:00:00Z"))
   )
   val appConfig: AppConfig  = app.injector.instanceOf[AppConfig]
 
@@ -159,7 +159,7 @@ class ReportRequestRepositorySpec
               FileNotification("f3", 1, 1, "CSV", "x", "y", "IMPORTS-ITEM-REPORT", "3", "true", "")
             )
           ),
-          linkAvailableTime = Some(Instant.now)
+          updateDate = Some(Instant.now)
         ),
         // Incomplete set: only 1Of2
         ReportRequest(
@@ -180,7 +180,7 @@ class ReportRequestRepositorySpec
               FileNotification("f4", 1, 1, "CSV", "x", "y", "IMPORTS-ITEM-REPORT", "1", "", "")
             )
           ),
-          linkAvailableTime = Some(Instant.now)
+          updateDate = Some(Instant.now)
         )
       )
 
@@ -211,7 +211,7 @@ class ReportRequestRepositorySpec
             // Missing 2Of2
           )
         ),
-        linkAvailableTime = Some(Instant.now)
+        updateDate = Some(Instant.now)
       )
 
       reportRequestRepository.insert(incompleteRequest).futureValue
@@ -246,7 +246,7 @@ class ReportRequestRepositorySpec
               FileNotification("f8", 1, 1, "CSV", "x", "y", "IMPORTS-ITEM-REPORT", "3Of3", "", "")
             )
           ),
-          linkAvailableTime = Some(Instant.now)
+          updateDate = Some(Instant.now)
         ),
         // Incomplete set: only 1Of2
         ReportRequest(
@@ -267,7 +267,7 @@ class ReportRequestRepositorySpec
               FileNotification("f9", 1, 1, "CSV", "x", "y", "IMPORTS-ITEM-REPORT", "1Of2", "", "")
             )
           ),
-          linkAvailableTime = Some(Instant.now)
+          updateDate = Some(Instant.now)
         )
       )
 
@@ -298,7 +298,7 @@ class ReportRequestRepositorySpec
             // Missing 2Of2
           )
         ),
-        linkAvailableTime = Some(Instant.now)
+        updateDate = Some(Instant.now)
       )
 
       reportRequestRepository.insert(incompleteRequest).futureValue

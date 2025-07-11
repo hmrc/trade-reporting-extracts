@@ -79,7 +79,7 @@ class AvailableReportService @Inject() (
         referenceNumber = req.reportRequestId,
         reportName = req.reportName,
         reportType = req.reportTypeName,
-        expiryDate = req.linkAvailableTime
+        expiryDate = req.updateDate
           .getOrElse(java.time.Instant.EPOCH)
           .plusSeconds(30 * 86400),
         action = toAvailableReportActions(

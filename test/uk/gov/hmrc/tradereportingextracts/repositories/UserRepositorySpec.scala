@@ -39,7 +39,7 @@ class UserRepositorySpec
       Matchers,
       IntegrationPatience:
 
-  val appConfig: AppConfig  = app.injector.instanceOf[AppConfig]
+  val appConfig: AppConfig           = app.injector.instanceOf[AppConfig]
   val userRepository: UserRepository = UserRepository(appConfig, mongoComponent)
   val user: User                     = User(
     eori = "EORI1234",

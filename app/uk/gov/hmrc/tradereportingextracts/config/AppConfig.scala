@@ -25,8 +25,8 @@ class AppConfig @Inject() (val config: Configuration, servicesConfig: ServicesCo
 
   val appName: String = config.get[String]("appName")
 
-  val reportRequestTTL: Long = config.get[Long]("mongodb.reportRequestTTLInSeconds")
-  var userTTL: Long          = config.get[Long]("mongodb.userTTLInSeconds")
+  val reportRequestTTLDays: Long = config.get[Long]("mongodb.reportRequestTTLInDays")
+  var userTTLDays: Long          = config.get[Long]("mongodb.userTTLInDays")
 
   lazy val customsDataStore: String = servicesConfig.baseUrl("customs-data-store") +
     config.get[String]("microservice.services.customs-data-store.context")
