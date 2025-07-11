@@ -37,7 +37,7 @@ class UserController @Inject() (
         userService.getOrCreateUser(eori).map { userDetails =>
           Created(Json.toJson(userDetails))
         }
-      case JsError(_) =>
+      case JsError(_)         =>
         Future.successful(BadRequest("Missing or invalid 'eori' field"))
     }
   }
