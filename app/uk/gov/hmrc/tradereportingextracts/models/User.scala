@@ -18,9 +18,6 @@ package uk.gov.hmrc.tradereportingextracts.models
 
 import play.api.libs.json.*
 import uk.gov.hmrc.crypto.Sensitive.*
-import uk.gov.hmrc.crypto.{Decrypter, Encrypter}
-import uk.gov.hmrc.crypto.json.JsonEncryption
-import uk.gov.hmrc.mongo.play.json.formats.MongoJavatimeFormats
 
 import java.time.Instant
 
@@ -42,33 +39,6 @@ case class AuthorisedUser(
 
 object User:
   given format: Format[User] = Json.format[User]
-
-  def encryptedFormat(implicit crypto: Encrypter with Decrypter): OFormat[User] = {
-    import play.api.libs.functional.syntax.*
-
-    implicit val sensitiveFormat: Format[SensitiveString] =
-      JsonEncryption.sensitiveEncrypterDecrypter(SensitiveString.apply)
-
-    val encryptedReads: Reads[User] =
-      (
-        (__ \ "eori").read[SensitiveString] and
-          (__ \ "additionalEmails").read[Seq[String]] and
-          (__ \ "authorisedUsers").read[Seq[AuthorisedUser]] and
-          (__ \ "accessDate").read(MongoJavatimeFormats.instantFormat)
-      )((eori, additionalEmails, authorisedUsers, accessDate) =>
-        User(eori.decryptedValue, additionalEmails, authorisedUsers, accessDate)
-      )
-
-    val encryptedWrites: OWrites[User] =
-      (
-        (__ \ "eori").write[SensitiveString] and
-          (__ \ "additionalEmails").write[Seq[String]] and
-          (__ \ "authorisedUsers").write[Seq[AuthorisedUser]] and
-          (__ \ "accessDate").write(MongoJavatimeFormats.instantFormat)
-      )(user => (SensitiveString(user.eori), user.additionalEmails, user.authorisedUsers, user.accessDate))
-
-    OFormat(encryptedReads, encryptedWrites)
-  }
 
 object AuthorisedUser:
   given Format[AuthorisedUser] = Json.format[AuthorisedUser]
