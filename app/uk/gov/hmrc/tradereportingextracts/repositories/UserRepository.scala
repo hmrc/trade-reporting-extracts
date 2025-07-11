@@ -40,8 +40,8 @@ class UserRepository @Inject() (appConfig: AppConfig, mongoComponent: MongoCompo
           IndexOptions().name("eori-index").unique(true)
         ),
         IndexModel(
-          Indexes.ascending("createDate"),
-          IndexOptions().name("createDate-ttl-index").expireAfter(appConfig.userTTLDays, TimeUnit.DAYS)
+          Indexes.ascending("accessDate"),
+          IndexOptions().name("accessDate-ttl-index").expireAfter(appConfig.userTTLDays, TimeUnit.DAYS)
         )
       ),
       replaceIndexes = true

@@ -38,8 +38,8 @@ class ReportRequestRepository @Inject() (appConfig: AppConfig, mongoComponent: M
       indexes = Seq(
         IndexModel(Indexes.ascending("reportRequestId"), IndexOptions().name("reportRequestId-index").unique(true)),
         IndexModel(
-          Indexes.ascending("createDate"),
-          IndexOptions().name("createDate-ttl-index").expireAfter(appConfig.reportRequestTTLDays, TimeUnit.DAYS)
+          Indexes.ascending("updateDate"),
+          IndexOptions().name("updateDate-ttl-index").expireAfter(appConfig.reportRequestTTLDays, TimeUnit.DAYS)
         )
       ),
       replaceIndexes = true
