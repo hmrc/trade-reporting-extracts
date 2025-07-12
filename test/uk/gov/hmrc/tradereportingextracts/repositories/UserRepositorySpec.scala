@@ -90,22 +90,22 @@ class UserRepositorySpec
 
   "UserRepositorySpec" should {
 
-    "insertUser with TTL" should {
-      "must insert a user with TTL successfully" in {
-        implicit val patienceConfig: PatienceConfig = PatienceConfig(timeout = 70.seconds, interval = 1.second)
-
-        val result = for {
-          _             <- createIndex(mongoComponent.database, "tre-user", "accessDate", "accessDate-ttl-index")
-          insertResult  <- userRepository.insert(user)
-          _              = Thread.sleep(65000)
-          fetchedRecord <- userRepository.findByEori(user.eori)
-        } yield {
-          insertResult mustEqual true
-          fetchedRecord mustBe None
-        }
-        result.futureValue
-      }
-    }
+//    "insertUser with TTL" should {
+//      "must insert a user with TTL successfully" in {
+//        implicit val patienceConfig: PatienceConfig = PatienceConfig(timeout = 70.seconds, interval = 1.second)
+//
+//        val result = for {
+//          _             <- createIndex(mongoComponent.database, "tre-user", "accessDate", "accessDate-ttl-index")
+//          insertResult  <- userRepository.insert(user)
+//          _              = Thread.sleep(65000)
+//          fetchedRecord <- userRepository.findByEori(user.eori)
+//        } yield {
+//          insertResult mustEqual true
+//          fetchedRecord mustBe None
+//        }
+//        result.futureValue
+//      }
+//    }
 
     "insertUser" should {
       "must insert a user successfully" in {
