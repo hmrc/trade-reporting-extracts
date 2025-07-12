@@ -38,7 +38,14 @@ case class AuthorisedUser(
 )
 
 object User:
-  given format: Format[User] = Json.format[User]
+  private val instantReads: Reads[Instant]    = Reads { js =>
+    println(s"Reading Instant from JSON: $js")
+    (js \ "$date" \ "$numberLong").validate[String].map(str => Instant.ofEpochMilli(str.toLong))
+  }
+  private val instantWrites: Writes[Instant]  =
+    (instant: Instant) => Json.obj("$date" -> instant.toEpochMilli)
+  implicit val instantFormat: Format[Instant] = Format(instantReads, instantWrites)
+  given format: Format[User]                  = Json.format[User]
 
 object AuthorisedUser:
   given Format[AuthorisedUser] = Json.format[AuthorisedUser]
