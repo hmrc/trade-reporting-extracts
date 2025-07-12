@@ -49,7 +49,7 @@ class FileNotificationService @Inject() (reportRequestService: ReportRequestServ
               case None           => Some(Seq(convertToTreFileNotification(fileNotification)))
             }
             val updatedReportRequest     = reportRequest
-              .copy(fileNotifications = updatedFileNotifications, linkAvailableTime = Some(java.time.Instant.now()))
+              .copy(fileNotifications = updatedFileNotifications, updateDate = Some(java.time.Instant.now()))
             val maskedId                 = updatedReportRequest.reportRequestId.replaceFirst("^.{5}", "XXXXX")
             if (reportRequestService.determineReportStatus(updatedReportRequest) == COMPLETE) {
               for {

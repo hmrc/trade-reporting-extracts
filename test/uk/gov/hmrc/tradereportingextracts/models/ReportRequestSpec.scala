@@ -60,7 +60,7 @@ class ReportRequestSpec extends AnyWordSpec with Matchers {
         )
       )
     ),
-    linkAvailableTime = Some(Instant.parse("2023-01-03T10:00:00Z"))
+    updateDate = Some(Instant.parse("2023-01-03T10:00:00Z"))
   )
 
   "ReportRequest equality" should {

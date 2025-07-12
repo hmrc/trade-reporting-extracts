@@ -16,15 +16,16 @@
 
 package uk.gov.hmrc.tradereportingextracts.models
 
-import play.api.libs.json.{Format, Json, Reads, Writes}
+import play.api.libs.json.*
+import uk.gov.hmrc.crypto.Sensitive.*
 
 import java.time.Instant
-import scala.reflect.ClassTag
 
 case class User(
   eori: String,
   additionalEmails: Seq[String] = Seq.empty,
-  authorisedUsers: Seq[AuthorisedUser] = Seq.empty
+  authorisedUsers: Seq[AuthorisedUser] = Seq.empty,
+  accessDate: Instant = Instant.now()
 )
 
 case class AuthorisedUser(
@@ -37,7 +38,13 @@ case class AuthorisedUser(
 )
 
 object User:
-  given format: Format[User] = Json.format[User]
+  private val instantReads: Reads[Instant]    = Reads { js =>
+    (js \ "$date" \ "$numberLong").validate[String].map(str => Instant.ofEpochMilli(str.toLong))
+  }
+  private val instantWrites: Writes[Instant]  =
+    (instant: Instant) => Json.obj("$date" -> instant.toEpochMilli)
+  implicit val instantFormat: Format[Instant] = Format(instantReads, instantWrites)
+  given format: Format[User]                  = Json.format[User]
 
 object AuthorisedUser:
   given Format[AuthorisedUser] = Json.format[AuthorisedUser]

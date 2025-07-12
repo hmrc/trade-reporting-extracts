@@ -70,7 +70,7 @@ class ReportRequestTransformationService @Inject() (
         reportEnd = LocalDate.parse(userAnswers.reportEndDate).atStartOfDay(ZoneOffset.UTC).toInstant,
         createDate = Instant.now,
         notifications = Seq(),
-        linkAvailableTime = None,
+        updateDate = None,
         fileNotifications = None
       )
     }

@@ -24,6 +24,7 @@ import uk.gov.hmrc.tradereportingextracts.config.AppConfig
 import uk.gov.hmrc.tradereportingextracts.models.{ReportRequest, StringFieldRegex}
 import uk.gov.hmrc.tradereportingextracts.utils.ReportRequestUtil.isReportStatusComplete
 
+import java.util.concurrent.TimeUnit
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -35,7 +36,11 @@ class ReportRequestRepository @Inject() (appConfig: AppConfig, mongoComponent: M
       collectionName = "tre-report-request",
       domainFormat = ReportRequest.format,
       indexes = Seq(
-        IndexModel(Indexes.ascending("reportRequestId"), IndexOptions().name("reportRequestId-index").unique(true))
+        IndexModel(Indexes.ascending("reportRequestId"), IndexOptions().name("reportRequestId-index").unique(true)),
+        IndexModel(
+          Indexes.ascending("updateDate"),
+          IndexOptions().name("updateDate-ttl-index").expireAfter(appConfig.reportRequestTTLDays, TimeUnit.DAYS)
+        )
       ),
       replaceIndexes = true
     ):

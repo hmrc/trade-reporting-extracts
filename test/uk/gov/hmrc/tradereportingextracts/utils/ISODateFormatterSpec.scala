@@ -24,7 +24,6 @@ class ISODateFormatterSpec extends AnyFreeSpec with Matchers {
 
     "must format current date in ISO 8601 format" in {
       val isoDate = ISODateFormatter.getCurrentISODate
-      println(s"Current ISO Date: $isoDate")
       isoDate must fullyMatch regex """\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z"""
     }
   }
