@@ -24,6 +24,7 @@ import uk.gov.hmrc.tradereportingextracts.models.ReportStatus.COMPLETE
 import uk.gov.hmrc.tradereportingextracts.models.sdes.{FileNotificationMetadata, FileNotificationResponse}
 import uk.gov.hmrc.tradereportingextracts.models.{FileNotification as TreFileNotification, FileType, ReportTypeName}
 
+import java.time.Instant
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.matching.Regex
@@ -49,7 +50,7 @@ class FileNotificationService @Inject() (reportRequestService: ReportRequestServ
               case None           => Some(Seq(convertToTreFileNotification(fileNotification)))
             }
             val updatedReportRequest     = reportRequest
-              .copy(fileNotifications = updatedFileNotifications, updateDate = Some(java.time.Instant.now()))
+              .copy(fileNotifications = updatedFileNotifications, updateDate = Instant.now())
             val maskedId                 = updatedReportRequest.reportRequestId.replaceFirst("^.{5}", "XXXXX")
             if (reportRequestService.determineReportStatus(updatedReportRequest) == COMPLETE) {
               for {

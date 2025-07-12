@@ -90,6 +90,7 @@ class AvailableReportServiceSpec extends AnyWordSpec with Matchers with ScalaFut
         requesterEORI = "GB0019",
         eoriRole = EoriRole.TRADER,
         reportEORIs = Array("EORI1", "EORI2"),
+        userEmail = Some("test@example.com"),
         recipientEmails = Array("email1@example.com", "email2@example.com"),
         reportTypeName = ReportTypeName.IMPORTS_ITEM_REPORT,
         reportStart = Instant.parse("2023-01-01T00:00:00Z"),
@@ -105,7 +106,7 @@ class AvailableReportServiceSpec extends AnyWordSpec with Matchers with ScalaFut
           )
         ),
         fileNotifications = Some(Seq(fileNotification)),
-        updateDate = Some(Instant.parse("2023-01-03T10:00:00Z"))
+        updateDate = Instant.parse("2023-01-03T10:00:00Z")
       )
       val sdesResponse                             = Seq(
         FileAvailableResponse(

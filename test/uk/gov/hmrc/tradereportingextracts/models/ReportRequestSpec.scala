@@ -30,6 +30,7 @@ class ReportRequestSpec extends AnyWordSpec with Matchers {
     requesterEORI = "GB0019",
     eoriRole = EoriRole.TRADER,
     reportEORIs = Array("EORI1", "EORI2"),
+    userEmail = Some("test@example.com"),
     recipientEmails = Array("email1@example.com", "email2@example.com"),
     reportTypeName = ReportTypeName.IMPORTS_ITEM_REPORT,
     reportStart = Instant.parse("2023-01-01T00:00:00Z"),
@@ -60,7 +61,7 @@ class ReportRequestSpec extends AnyWordSpec with Matchers {
         )
       )
     ),
-    updateDate = Some(Instant.parse("2023-01-03T10:00:00Z"))
+    updateDate = Instant.parse("2023-01-03T10:00:00Z")
   )
 
   "ReportRequest equality" should {

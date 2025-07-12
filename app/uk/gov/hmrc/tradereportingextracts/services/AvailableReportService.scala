@@ -24,6 +24,7 @@ import uk.gov.hmrc.tradereportingextracts.models.sdes.{FileAvailableMetadataItem
 import uk.gov.hmrc.tradereportingextracts.models.*
 
 import java.time.Instant
+import java.time.temporal.ChronoUnit.DAYS
 import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -79,9 +80,7 @@ class AvailableReportService @Inject() (
         referenceNumber = req.reportRequestId,
         reportName = req.reportName,
         reportType = req.reportTypeName,
-        expiryDate = req.updateDate
-          .getOrElse(java.time.Instant.EPOCH)
-          .plusSeconds(30 * 86400),
+        expiryDate = req.updateDate.plus(appConfig.reportRequestTTLDays, DAYS),
         action = toAvailableReportActions(
           sdesResponse.filter(_.metadata.exists {
             case FileAvailableMetadataItem.MDTPReportRequestIDMetadataItem(value) =>

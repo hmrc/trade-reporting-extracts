@@ -46,6 +46,7 @@ class ReportRequestRepositorySpec
     requesterEORI = "GB0019",
     eoriRole = EoriRole.TRADER,
     reportEORIs = Array("EORI1", "EORI2"),
+    userEmail = Some("test@example.com"),
     recipientEmails = Array("email1@example.com", "email2@example.com"),
     reportTypeName = ReportTypeName.IMPORTS_ITEM_REPORT,
     reportStart = Instant.parse("2023-01-01T00:00:00Z"),
@@ -76,7 +77,7 @@ class ReportRequestRepositorySpec
         )
       )
     ),
-    updateDate = Some(Instant.parse("2023-01-03T10:00:00Z"))
+    updateDate = Instant.parse("2023-01-03T10:00:00Z")
   )
   val appConfig: AppConfig  = app.injector.instanceOf[AppConfig]
 
@@ -146,6 +147,7 @@ class ReportRequestRepositorySpec
           requesterEORI = "EORI-1",
           eoriRole = EoriRole.TRADER,
           reportEORIs = Array("EORI-1"),
+          userEmail = Some("test@example.com"),
           recipientEmails = Array("a@b.com"),
           reportTypeName = ReportTypeName.IMPORTS_ITEM_REPORT,
           reportStart = Instant.now,
@@ -159,7 +161,7 @@ class ReportRequestRepositorySpec
               FileNotification("f3", 1, 1, "CSV", "x", "y", "IMPORTS-ITEM-REPORT", "3", "true", "")
             )
           ),
-          updateDate = Some(Instant.now)
+          updateDate = Instant.now
         ),
         // Incomplete set: only 1Of2
         ReportRequest(
@@ -169,6 +171,7 @@ class ReportRequestRepositorySpec
           requesterEORI = "EORI-1",
           eoriRole = EoriRole.TRADER,
           reportEORIs = Array("EORI-1"),
+          userEmail = Some("test@example.com"),
           recipientEmails = Array("a@b.com"),
           reportTypeName = ReportTypeName.IMPORTS_ITEM_REPORT,
           reportStart = Instant.now,
@@ -180,7 +183,7 @@ class ReportRequestRepositorySpec
               FileNotification("f4", 1, 1, "CSV", "x", "y", "IMPORTS-ITEM-REPORT", "1", "", "")
             )
           ),
-          updateDate = Some(Instant.now)
+          updateDate = Instant.now
         )
       )
 
@@ -199,6 +202,7 @@ class ReportRequestRepositorySpec
         requesterEORI = "EORI-2",
         eoriRole = EoriRole.TRADER,
         reportEORIs = Array("EORI-2"),
+        userEmail = Some("test@example.com"),
         recipientEmails = Array("a@b.com"),
         reportTypeName = ReportTypeName.IMPORTS_ITEM_REPORT,
         reportStart = Instant.now,
@@ -211,7 +215,7 @@ class ReportRequestRepositorySpec
             // Missing 2Of2
           )
         ),
-        updateDate = Some(Instant.now)
+        updateDate = Instant.now
       )
 
       reportRequestRepository.insert(incompleteRequest).futureValue
@@ -233,6 +237,7 @@ class ReportRequestRepositorySpec
           requesterEORI = "EORI-3",
           eoriRole = EoriRole.TRADER,
           reportEORIs = Array("EORI-3"),
+          userEmail = Some("test@example.com"),
           recipientEmails = Array("a@b.com"),
           reportTypeName = ReportTypeName.IMPORTS_ITEM_REPORT,
           reportStart = Instant.now,
@@ -246,7 +251,7 @@ class ReportRequestRepositorySpec
               FileNotification("f8", 1, 1, "CSV", "x", "y", "IMPORTS-ITEM-REPORT", "3Of3", "", "")
             )
           ),
-          updateDate = Some(Instant.now)
+          updateDate = Instant.now
         ),
         // Incomplete set: only 1Of2
         ReportRequest(
@@ -256,6 +261,7 @@ class ReportRequestRepositorySpec
           requesterEORI = "EORI-3",
           eoriRole = EoriRole.TRADER,
           reportEORIs = Array("EORI-3"),
+          userEmail = Some("test@example.com"),
           recipientEmails = Array("a@b.com"),
           reportTypeName = ReportTypeName.IMPORTS_ITEM_REPORT,
           reportStart = Instant.now,
@@ -267,7 +273,7 @@ class ReportRequestRepositorySpec
               FileNotification("f9", 1, 1, "CSV", "x", "y", "IMPORTS-ITEM-REPORT", "1Of2", "", "")
             )
           ),
-          updateDate = Some(Instant.now)
+          updateDate = Instant.now
         )
       )
 
@@ -286,6 +292,7 @@ class ReportRequestRepositorySpec
         requesterEORI = "EORI-4",
         eoriRole = EoriRole.TRADER,
         reportEORIs = Array("EORI-4"),
+        userEmail = Some("test@example.com"),
         recipientEmails = Array("a@b.com"),
         reportTypeName = ReportTypeName.IMPORTS_ITEM_REPORT,
         reportStart = Instant.now,
@@ -298,7 +305,7 @@ class ReportRequestRepositorySpec
             // Missing 2Of2
           )
         ),
-        updateDate = Some(Instant.now)
+        updateDate = Instant.now
       )
 
       reportRequestRepository.insert(incompleteRequest).futureValue

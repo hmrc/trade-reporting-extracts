@@ -75,6 +75,7 @@ class EisServiceSpec extends AnyWordSpec with Matchers with MockitoSugar with Sc
     reportName = "name",
     requesterEORI = "GB123456789000",
     eoriRole = EoriRole.DECLARANT,
+    userEmail = Some("test@example.com"),
     reportEORIs = Seq("GB123456789000"),
     recipientEmails = Seq("test@example.com"),
     reportTypeName = ReportTypeName.IMPORTS_HEADER_REPORT,

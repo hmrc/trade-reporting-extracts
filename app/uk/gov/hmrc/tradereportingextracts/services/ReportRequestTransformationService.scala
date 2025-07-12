@@ -64,14 +64,15 @@ class ReportRequestTransformationService @Inject() (
         requesterEORI = eoriValue,
         eoriRole = getRole(userAnswers.eoriRole),
         reportEORIs = historicalEoris :+ userAnswers.whichEori.getOrElse(""),
-        recipientEmails = userAnswers.additionalEmail.getOrElse(Seq()).toSeq :+ userEmail,
+        userEmail = Some(userEmail),
+        recipientEmails = userAnswers.additionalEmail.getOrElse(Seq()).toSeq,
         reportTypeName = getReportType(userAnswers.reportType.head),
         reportStart = LocalDate.parse(userAnswers.reportStartDate).atStartOfDay(ZoneOffset.UTC).toInstant,
         reportEnd = LocalDate.parse(userAnswers.reportEndDate).atStartOfDay(ZoneOffset.UTC).toInstant,
         createDate = Instant.now,
         notifications = Seq(),
-        updateDate = None,
-        fileNotifications = None
+        fileNotifications = None,
+        updateDate = Instant.now
       )
     }
   }

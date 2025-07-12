@@ -76,6 +76,7 @@ class FileNotificationServiceSpec
     requesterEORI = "GB123456789012",
     eoriRole = null,
     reportEORIs = Seq("GB123456789012"),
+    userEmail = Some("test@example.com"),
     recipientEmails = Seq("test@example.com"),
     reportTypeName = ReportTypeName.IMPORTS_HEADER_REPORT,
     reportStart = null,
