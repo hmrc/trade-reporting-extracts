@@ -173,4 +173,19 @@ class UserRepositorySpec
         }
       }
     }
+
+    "getOrCreateUser" should {
+      "must create a new user if it does not exist" in {
+        val eori   = "NEW-EORI"
+        val result = userRepository.getOrCreateUser(eori).futureValue
+        result.eori mustEqual eori
+      }
+
+      "must return existing user with updatd accessDate if it exists" in {
+        val insertResult = userRepository.insert(user).futureValue
+        val result       = userRepository.getOrCreateUser(user.eori).futureValue
+        insertResult mustEqual true
+        result.accessDate.compareTo(Instant.now().minusSeconds(1)) >= 0
+      }
+    }
   }

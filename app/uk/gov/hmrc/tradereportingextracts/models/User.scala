@@ -39,7 +39,6 @@ case class AuthorisedUser(
 
 object User:
   private val instantReads: Reads[Instant]    = Reads { js =>
-    println(s"Reading Instant from JSON: $js")
     (js \ "$date" \ "$numberLong").validate[String].map(str => Instant.ofEpochMilli(str.toLong))
   }
   private val instantWrites: Writes[Instant]  =

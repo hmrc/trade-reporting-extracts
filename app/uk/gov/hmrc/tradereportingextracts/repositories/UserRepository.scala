@@ -60,7 +60,9 @@ class UserRepository @Inject() (appConfig: AppConfig, mongoComponent: MongoCompo
 
   def getOrCreateUser(eori: String): Future[User] =
     findByEori(eori).flatMap {
-      case Some(existingUser) => Future.successful(existingUser)
+      case Some(existingUser) =>
+        val updatedUser = existingUser.copy(accessDate = java.time.Instant.now())
+        update(updatedUser).map(_ => updatedUser)
       case None               =>
         val newUser = User(eori)
         insert(newUser).map(_ => newUser)
