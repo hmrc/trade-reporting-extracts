@@ -59,9 +59,9 @@ class ReportRequestTransformationServiceSpec extends AsyncFreeSpec with Matchers
           result.reportName mustBe "TestReport"
           result.requesterEORI mustBe "GB123456789000"
           result.eoriRole mustBe EoriRole.DECLARANT
-          result.reportEORIs     must contain allOf ("GB123456789001", "GB123456789000")
-          result.userEmail       must contain("user@email.com")
-          result.recipientEmails must contain("test@example.com")
+          result.reportEORIs                  must contain allOf ("GB123456789001", "GB123456789000")
+          result.userEmail.get.decryptedValue must be("user@email.com")
+          result.recipientEmails              must contain("test@example.com")
           result.recipientEmails.size mustBe reportRequestTemplate.additionalEmail.get.size
           result.reportTypeName mustBe ReportTypeName.IMPORTS_HEADER_REPORT
           result.reportStart mustBe LocalDate.parse("2025-04-01").atStartOfDay(ZoneOffset.UTC).toInstant

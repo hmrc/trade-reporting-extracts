@@ -18,9 +18,11 @@ package uk.gov.hmrc.tradereportingextracts.services
 
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
-import uk.gov.hmrc.tradereportingextracts.models._
+import uk.gov.hmrc.crypto.Sensitive.SensitiveString
+import uk.gov.hmrc.tradereportingextracts.models.*
 import uk.gov.hmrc.tradereportingextracts.models.eis.EisReportStatusRequest
 import uk.gov.hmrc.tradereportingextracts.models.eis.EisReportStatusRequest.StatusType
+
 import java.time.Instant
 
 class ReportRequestServiceSpec extends AnyWordSpec with Matchers {
@@ -78,7 +80,7 @@ class ReportRequestServiceSpec extends AnyWordSpec with Matchers {
         "GB123",
         EoriRole.TRADER,
         Seq("GB123"),
-        Some("test@example.com"),
+        Some(SensitiveString("test@example.com")),
         Seq("test@example.com"),
         ReportTypeName.IMPORTS_ITEM_REPORT,
         Instant.now(),
@@ -110,7 +112,7 @@ class ReportRequestServiceSpec extends AnyWordSpec with Matchers {
         "GB123",
         EoriRole.TRADER,
         Seq("GB123"),
-        Some("test@example.com"),
+        Some(SensitiveString("test@example.com")),
         Seq("test@example.com"),
         ReportTypeName.IMPORTS_ITEM_REPORT,
         Instant.now(),
@@ -142,7 +144,7 @@ class ReportRequestServiceSpec extends AnyWordSpec with Matchers {
         "GB123",
         EoriRole.TRADER,
         Seq("GB123"),
-        Some("test@example.com"),
+        Some(SensitiveString("test@example.com")),
         Seq("test@example.com"),
         ReportTypeName.IMPORTS_ITEM_REPORT,
         Instant.now(),
@@ -174,7 +176,7 @@ class ReportRequestServiceSpec extends AnyWordSpec with Matchers {
         "GB123",
         EoriRole.TRADER,
         Seq("GB123"),
-        Some("test@example.com"),
+        Some(SensitiveString("test@example.com")),
         Seq("test@example.com"),
         ReportTypeName.IMPORTS_ITEM_REPORT,
         Instant.now(),
@@ -196,7 +198,7 @@ class ReportRequestServiceSpec extends AnyWordSpec with Matchers {
         "GB123",
         EoriRole.TRADER,
         Seq("GB123"),
-        Some("test@example.com"),
+        Some(SensitiveString("test@example.com")),
         Seq("test@example.com"),
         ReportTypeName.IMPORTS_ITEM_REPORT,
         Instant.now(),

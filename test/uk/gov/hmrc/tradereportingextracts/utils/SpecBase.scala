@@ -18,23 +18,22 @@ package uk.gov.hmrc.tradereportingextracts.utils
 
 import com.codahale.metrics.MetricRegistry
 import org.apache.pekko.stream.Materializer
+import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito.when
+import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpecLike
 import org.scalatest.{BeforeAndAfterEach, OptionValues}
 import org.scalatestplus.mockito.MockitoSugar
-import org.scalatestplus.play.guice.{GuiceOneAppPerSuite, GuiceOneAppPerTest}
+import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import play.api.inject.bind
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.test.{DefaultAwaitTimeout, FutureAwaits}
-import uk.gov.hmrc.http.{HeaderCarrier, HttpReads}
 import uk.gov.hmrc.http.client.{HttpClientV2, RequestBuilder}
+import uk.gov.hmrc.http.{HeaderCarrier, HttpReads}
 import uk.gov.hmrc.play.bootstrap.metrics.Metrics
 
 import java.net.URL
-import org.mockito.ArgumentMatchers.{any, argThat}
-import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}
-
 import scala.concurrent.{ExecutionContext, Future}
 
 class SpecBase

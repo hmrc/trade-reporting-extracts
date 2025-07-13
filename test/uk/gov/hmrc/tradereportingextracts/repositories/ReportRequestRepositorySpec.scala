@@ -16,16 +16,18 @@
 
 package uk.gov.hmrc.tradereportingextracts.repositories
 
+import org.scalactic.Equality
 import org.scalatest.matchers.must.Matchers.{must, mustBe, mustEqual}
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 import org.scalatestplus.mockito.MockitoSugar
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
+import uk.gov.hmrc.crypto.Sensitive.SensitiveString
+import uk.gov.hmrc.crypto.{Decrypter, Encrypter}
 import uk.gov.hmrc.mongo.test.CleanMongoCollectionSupport
-import uk.gov.hmrc.tradereportingextracts.config.AppConfig
+import uk.gov.hmrc.tradereportingextracts.config.{AppConfig, CryptoProvider}
 import uk.gov.hmrc.tradereportingextracts.models.eis.EisReportStatusRequest
-import uk.gov.hmrc.tradereportingextracts.models.{Component, EoriRole, FileNotification, FileType, ReportRequest, ReportTypeName, StatusCode, StatusType}
-import org.scalactic.Equality
+import uk.gov.hmrc.tradereportingextracts.models.*
 
 import java.time.Instant
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -39,14 +41,14 @@ class ReportRequestRepositorySpec
       CleanMongoCollectionSupport,
       Matchers:
 
-  private val reportRequest = ReportRequest(
+  private val reportRequest               = ReportRequest(
     reportRequestId = "REQ00001",
     correlationId = "ABCD-DEFG",
     reportName = "Jan Report",
     requesterEORI = "GB0019",
     eoriRole = EoriRole.TRADER,
     reportEORIs = Array("EORI1", "EORI2"),
-    userEmail = Some("test@example.com"),
+    userEmail = Some(SensitiveString("test@example.com")),
     recipientEmails = Array("email1@example.com", "email2@example.com"),
     reportTypeName = ReportTypeName.IMPORTS_ITEM_REPORT,
     reportStart = Instant.parse("2023-01-01T00:00:00Z"),
@@ -79,7 +81,10 @@ class ReportRequestRepositorySpec
     ),
     updateDate = Instant.parse("2023-01-03T10:00:00Z")
   )
-  val appConfig: AppConfig  = app.injector.instanceOf[AppConfig]
+  val appConfig: AppConfig                = app.injector.instanceOf[AppConfig]
+  lazy val cryptoProvider: CryptoProvider = app.injector.instanceOf[CryptoProvider]
+
+  implicit val crypto: Encrypter with Decrypter = cryptoProvider.get
 
   val reportRequestRepository: ReportRequestRepository = new ReportRequestRepository(appConfig, mongoComponent)
 
@@ -147,7 +152,7 @@ class ReportRequestRepositorySpec
           requesterEORI = "EORI-1",
           eoriRole = EoriRole.TRADER,
           reportEORIs = Array("EORI-1"),
-          userEmail = Some("test@example.com"),
+          userEmail = Some(SensitiveString("test@example.com")),
           recipientEmails = Array("a@b.com"),
           reportTypeName = ReportTypeName.IMPORTS_ITEM_REPORT,
           reportStart = Instant.now,
@@ -171,7 +176,7 @@ class ReportRequestRepositorySpec
           requesterEORI = "EORI-1",
           eoriRole = EoriRole.TRADER,
           reportEORIs = Array("EORI-1"),
-          userEmail = Some("test@example.com"),
+          userEmail = Some(SensitiveString("test@example.com")),
           recipientEmails = Array("a@b.com"),
           reportTypeName = ReportTypeName.IMPORTS_ITEM_REPORT,
           reportStart = Instant.now,
@@ -202,7 +207,7 @@ class ReportRequestRepositorySpec
         requesterEORI = "EORI-2",
         eoriRole = EoriRole.TRADER,
         reportEORIs = Array("EORI-2"),
-        userEmail = Some("test@example.com"),
+        userEmail = Some(SensitiveString("test@example.com")),
         recipientEmails = Array("a@b.com"),
         reportTypeName = ReportTypeName.IMPORTS_ITEM_REPORT,
         reportStart = Instant.now,
@@ -237,7 +242,7 @@ class ReportRequestRepositorySpec
           requesterEORI = "EORI-3",
           eoriRole = EoriRole.TRADER,
           reportEORIs = Array("EORI-3"),
-          userEmail = Some("test@example.com"),
+          userEmail = Some(SensitiveString("test@example.com")),
           recipientEmails = Array("a@b.com"),
           reportTypeName = ReportTypeName.IMPORTS_ITEM_REPORT,
           reportStart = Instant.now,
@@ -261,7 +266,7 @@ class ReportRequestRepositorySpec
           requesterEORI = "EORI-3",
           eoriRole = EoriRole.TRADER,
           reportEORIs = Array("EORI-3"),
-          userEmail = Some("test@example.com"),
+          userEmail = Some(SensitiveString("test@example.com")),
           recipientEmails = Array("a@b.com"),
           reportTypeName = ReportTypeName.IMPORTS_ITEM_REPORT,
           reportStart = Instant.now,
@@ -292,7 +297,7 @@ class ReportRequestRepositorySpec
         requesterEORI = "EORI-4",
         eoriRole = EoriRole.TRADER,
         reportEORIs = Array("EORI-4"),
-        userEmail = Some("test@example.com"),
+        userEmail = Some(SensitiveString("test@example.com")),
         recipientEmails = Array("a@b.com"),
         reportTypeName = ReportTypeName.IMPORTS_ITEM_REPORT,
         reportStart = Instant.now,

@@ -27,6 +27,7 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 import org.scalatestplus.mockito.MockitoSugar
 import play.api.http.Status.{ACCEPTED, INTERNAL_SERVER_ERROR, NO_CONTENT, OK}
+import uk.gov.hmrc.crypto.Sensitive.SensitiveString
 import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse, UpstreamErrorResponse}
 import uk.gov.hmrc.tradereportingextracts.config.AppConfig
 import uk.gov.hmrc.tradereportingextracts.connectors.EisConnector
@@ -75,7 +76,7 @@ class EisServiceSpec extends AnyWordSpec with Matchers with MockitoSugar with Sc
     reportName = "name",
     requesterEORI = "GB123456789000",
     eoriRole = EoriRole.DECLARANT,
-    userEmail = Some("test@example.com"),
+    userEmail = Some(SensitiveString("test@example.com")),
     reportEORIs = Seq("GB123456789000"),
     recipientEmails = Seq("test@example.com"),
     reportTypeName = ReportTypeName.IMPORTS_HEADER_REPORT,

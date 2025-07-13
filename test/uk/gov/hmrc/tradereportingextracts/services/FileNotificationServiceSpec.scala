@@ -24,6 +24,7 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatestplus.mockito.MockitoSugar
 import org.scalatest.wordspec.AnyWordSpec
 import play.api.http.Status.{BAD_REQUEST, CREATED, NOT_FOUND}
+import uk.gov.hmrc.crypto.Sensitive.SensitiveString
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.tradereportingextracts.connectors.EmailConnector
 import uk.gov.hmrc.tradereportingextracts.models.sdes.{FileNotificationMetadata, FileNotificationResponse}
@@ -54,7 +55,7 @@ class FileNotificationServiceSpec
   val mockEmailConnector: EmailConnector             = mock[EmailConnector]
   val service                                        = new FileNotificationService(mockReportRequestService, mockEmailConnector)
 
-  val fileNotification = FileNotificationResponse(
+  val fileNotification: FileNotificationResponse = FileNotificationResponse(
     eori = "GB123456789012",
     fileName = "testFileName",
     fileSize = 12345,
@@ -69,14 +70,14 @@ class FileNotificationServiceSpec
     )
   )
 
-  val reportRequest = ReportRequest(
+  val reportRequest: ReportRequest = ReportRequest(
     reportRequestId = "RE123456",
     correlationId = "corr-1",
     reportName = "name",
     requesterEORI = "GB123456789012",
     eoriRole = null,
     reportEORIs = Seq("GB123456789012"),
-    userEmail = Some("test@example.com"),
+    userEmail = Some(SensitiveString("test@example.com")),
     recipientEmails = Seq("test@example.com"),
     reportTypeName = ReportTypeName.IMPORTS_HEADER_REPORT,
     reportStart = null,

@@ -18,6 +18,7 @@ package uk.gov.hmrc.tradereportingextracts.repositories
 
 import org.mongodb.scala.*
 import org.mongodb.scala.model.{Filters, IndexModel, IndexOptions, Indexes}
+import uk.gov.hmrc.crypto.{Decrypter, Encrypter}
 import uk.gov.hmrc.mongo.MongoComponent
 import uk.gov.hmrc.mongo.play.json.PlayMongoRepository
 import uk.gov.hmrc.tradereportingextracts.config.AppConfig
@@ -30,11 +31,12 @@ import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
 class ReportRequestRepository @Inject() (appConfig: AppConfig, mongoComponent: MongoComponent)(implicit
-  ec: ExecutionContext
+  ec: ExecutionContext,
+  crypto: Encrypter with Decrypter
 ) extends PlayMongoRepository[ReportRequest](
       mongoComponent,
       collectionName = "tre-report-request",
-      domainFormat = ReportRequest.format,
+      domainFormat = ReportRequest.encryptedFormat,
       indexes = Seq(
         IndexModel(Indexes.ascending("reportRequestId"), IndexOptions().name("reportRequestId-index").unique(true)),
         IndexModel(
