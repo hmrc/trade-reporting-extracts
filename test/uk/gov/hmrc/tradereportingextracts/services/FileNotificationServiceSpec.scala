@@ -167,10 +167,13 @@ class FileNotificationServiceSpec
       }
     }
 
-    "call emailConnector.sendEmailRequest for each recipient when status is COMPLETE" in {
-      val reportWithEmails = reportRequest.copy(recipientEmails = Seq("a@example.com", "b@example.com"))
+    "send tre_report_available only to userEmail if present" in {
+      val reportWithUserEmail = reportRequest.copy(
+        userEmail = Some(SensitiveString("user@verified.com")),
+        recipientEmails = Seq("recipient1@nonverified.com", "recipient2@nonverified.com")
+      )
       when(mockReportRequestService.get(eqTo("RE123456"))(any()))
-        .thenReturn(Future.successful(Some(reportWithEmails)))
+        .thenReturn(Future.successful(Some(reportWithUserEmail)))
       when(mockReportRequestService.update(any())(any()))
         .thenReturn(Future.successful(true))
       when(mockReportRequestService.determineReportStatus(any())).thenReturn(COMPLETE)
@@ -178,29 +181,77 @@ class FileNotificationServiceSpec
         .thenReturn(Future.successful(()))
 
       val result = service.processFileNotification(fileNotification)
-      whenReady(result) { case (status, message) =>
-        verify(mockEmailConnector, times(2)).sendEmailRequest(
+      whenReady(result) { _ =>
+        verify(mockEmailConnector).sendEmailRequest(
           eqTo("tre_report_available"),
-          any(),
+          eqTo("user@verified.com"),
+          eqTo(Map("reportRequestId" -> "XXXXX456"))
+        )(any())
+        verify(mockEmailConnector, never).sendEmailRequest(
+          eqTo("tre_report_available"),
+          eqTo("recipient1@nonverified.com"),
+          any()
+        )(any())
+        verify(mockEmailConnector, never).sendEmailRequest(
+          eqTo("tre_report_available"),
+          eqTo("recipient2@nonverified.com"),
+          any()
+        )(any())
+      }
+    }
+
+    "send tre_report_available_non_verified to all recipientEmails" in {
+      val reportWithRecipients = reportRequest.copy(
+        userEmail = Some(SensitiveString("user@verified.com")),
+        recipientEmails = Seq("recipient1@nonverified.com", "recipient2@nonverified.com")
+      )
+      when(mockReportRequestService.get(eqTo("RE123456"))(any()))
+        .thenReturn(Future.successful(Some(reportWithRecipients)))
+      when(mockReportRequestService.update(any())(any()))
+        .thenReturn(Future.successful(true))
+      when(mockReportRequestService.determineReportStatus(any())).thenReturn(COMPLETE)
+      when(mockEmailConnector.sendEmailRequest(any(), any(), any())(any()))
+        .thenReturn(Future.successful(()))
+
+      val result = service.processFileNotification(fileNotification)
+      whenReady(result) { _ =>
+        verify(mockEmailConnector).sendEmailRequest(
+          eqTo("tre_report_available_non_verified"),
+          eqTo("recipient1@nonverified.com"),
+          eqTo(Map("reportRequestId" -> "XXXXX456"))
+        )(any())
+        verify(mockEmailConnector).sendEmailRequest(
+          eqTo("tre_report_available_non_verified"),
+          eqTo("recipient2@nonverified.com"),
           eqTo(Map("reportRequestId" -> "XXXXX456"))
         )(any())
       }
     }
 
-    "not call emailConnector.sendEmailRequest when status is NOT complete" in {
-      val reportWithEmails = reportRequest.copy(recipientEmails = Seq("a@example.com", "b@example.com"))
+    "when userEmail is missing do not send request with tre_report_available" in {
+      val reportNoUserEmail = reportRequest.copy(
+        userEmail = None,
+        recipientEmails = Seq("recipient@nonverified.com")
+      )
       when(mockReportRequestService.get(eqTo("RE123456"))(any()))
-        .thenReturn(Future.successful(Some(reportWithEmails)))
+        .thenReturn(Future.successful(Some(reportNoUserEmail)))
       when(mockReportRequestService.update(any())(any()))
         .thenReturn(Future.successful(true))
-      when(mockReportRequestService.determineReportStatus(any())).thenReturn(IN_PROGRESS)
+      when(mockReportRequestService.determineReportStatus(any())).thenReturn(COMPLETE)
+      when(mockEmailConnector.sendEmailRequest(any(), any(), any())(any()))
+        .thenReturn(Future.successful(()))
 
       val result = service.processFileNotification(fileNotification)
-      whenReady(result) { case (status, message) =>
-        verify(mockEmailConnector, times(0)).sendEmailRequest(
+      whenReady(result) { _ =>
+        verify(mockEmailConnector, never).sendEmailRequest(
           eqTo("tre_report_available"),
           any(),
-          eqTo(Map("reportRequestId" -> "RE123456"))
+          any()
+        )(any())
+        verify(mockEmailConnector).sendEmailRequest(
+          eqTo("tre_report_available_non_verified"),
+          eqTo("recipient@nonverified.com"),
+          any()
         )(any())
       }
     }
@@ -230,12 +281,39 @@ class FileNotificationServiceSpec
       whenReady(result) { case (status, message) =>
         val paramsCaptor = ArgumentCaptor.forClass(classOf[Map[String, String]])
         verify(mockEmailConnector).sendEmailRequest(
-          eqTo("tre_report_available"),
+          any(),
           eqTo("masked@example.com"),
           paramsCaptor.capture()
         )(any())
         val params       = paramsCaptor.getValue
         params("reportRequestId") shouldBe "XXXXX-6789"
+      }
+    }
+
+    // TODO remove this test once additional email ticket on frontend is implemented
+    "append @test.com to emails without @ in additional emails" in {
+      val emails           = Seq("plainemail", "already@domain.com")
+      val reportWithEmails = reportRequest.copy(recipientEmails = emails)
+      when(mockReportRequestService.get(eqTo("RE123456"))(any()))
+        .thenReturn(Future.successful(Some(reportWithEmails)))
+      when(mockReportRequestService.update(any())(any()))
+        .thenReturn(Future.successful(true))
+      when(mockReportRequestService.determineReportStatus(any())).thenReturn(COMPLETE)
+      when(mockEmailConnector.sendEmailRequest(any(), any(), any())(any()))
+        .thenReturn(Future.successful(()))
+
+      val result = service.processFileNotification(fileNotification)
+      whenReady(result) { _ =>
+        verify(mockEmailConnector).sendEmailRequest(
+          any(),
+          eqTo("plainemail@test.com"),
+          any()
+        )(any())
+        verify(mockEmailConnector).sendEmailRequest(
+          any(),
+          eqTo("already@domain.com"),
+          any()
+        )(any())
       }
     }
   }

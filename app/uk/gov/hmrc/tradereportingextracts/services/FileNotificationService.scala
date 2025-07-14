@@ -16,6 +16,7 @@
 
 package uk.gov.hmrc.tradereportingextracts.services
 
+import play.api.Logging
 import play.api.http.Status
 import play.api.http.Status.{BAD_REQUEST, CREATED, NOT_FOUND}
 import uk.gov.hmrc.http.HeaderCarrier
@@ -32,7 +33,7 @@ import scala.util.matching.Regex
 @Singleton
 class FileNotificationService @Inject() (reportRequestService: ReportRequestService, emailConnector: EmailConnector)(
   implicit ec: ExecutionContext
-) {
+) extends Logging {
 
   def processFileNotification(fileNotification: FileNotificationResponse): Future[(Int, String)] = {
     val maybeReportRequestId = fileNotification.metadata.collectFirst {
@@ -55,16 +56,29 @@ class FileNotificationService @Inject() (reportRequestService: ReportRequestServ
             if (reportRequestService.determineReportStatus(updatedReportRequest) == COMPLETE) {
               for {
                 _ <- reportRequestService.update(updatedReportRequest)
-                _ <-
-                  Future.sequence(
-                    updatedReportRequest.recipientEmails.map { email =>
-                      emailConnector.sendEmailRequest(
-                        templateId = "tre_report_available",
-                        email = email,
-                        params = Map("reportRequestId" -> maskedId)
-                      )
-                    }
-                  )
+                _ <- updatedReportRequest.userEmail match {
+                       case Some(userEmail) =>
+                         emailConnector.sendEmailRequest(
+                           templateId = "tre_report_available",
+                           email = userEmail.decryptedValue,
+                           params = Map("reportRequestId" -> maskedId)
+                         )
+                       case None            =>
+                         logger.info(s"No userEmail found for reportRequestId: $maskedId")
+                         Future.successful(())
+                     }
+                _ <- Future.sequence(
+                       updatedReportRequest.recipientEmails.map { email =>
+                         // TODO: Remove formattedEmail once additional email ticket on frontend is implemented
+                         val formattedEmail =
+                           if (email.contains("@")) email else s"$email@test.com"
+                         emailConnector.sendEmailRequest(
+                           templateId = "tre_report_available_non_verified",
+                           email = formattedEmail,
+                           params = Map("reportRequestId" -> maskedId)
+                         )
+                       }
+                     )
               } yield (CREATED, "Created")
             } else {
               reportRequestService.update(updatedReportRequest).map(_ => (CREATED, "Created"))
