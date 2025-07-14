@@ -24,7 +24,6 @@ class HttpDateFormatterSpec extends AnyFreeSpec with Matchers {
 
     "must format current date in HTTP date format" in {
       val httpDate = HttpDateFormatter.getCurrentHttpDate
-      println(s"Current HTTP Date: $httpDate")
       httpDate must fullyMatch regex """[A-Za-z]{3}, \d{2} [A-Za-z]{3} \d{4} \d{2}:\d{2}:\d{2} GMT"""
     }
   }

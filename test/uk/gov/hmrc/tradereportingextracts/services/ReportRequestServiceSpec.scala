@@ -18,9 +18,11 @@ package uk.gov.hmrc.tradereportingextracts.services
 
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
-import uk.gov.hmrc.tradereportingextracts.models._
+import uk.gov.hmrc.crypto.Sensitive.SensitiveString
+import uk.gov.hmrc.tradereportingextracts.models.*
 import uk.gov.hmrc.tradereportingextracts.models.eis.EisReportStatusRequest
 import uk.gov.hmrc.tradereportingextracts.models.eis.EisReportStatusRequest.StatusType
+
 import java.time.Instant
 
 class ReportRequestServiceSpec extends AnyWordSpec with Matchers {
@@ -78,6 +80,7 @@ class ReportRequestServiceSpec extends AnyWordSpec with Matchers {
         "GB123",
         EoriRole.TRADER,
         Seq("GB123"),
+        Some(SensitiveString("test@example.com")),
         Seq("test@example.com"),
         ReportTypeName.IMPORTS_ITEM_REPORT,
         Instant.now(),
@@ -85,7 +88,7 @@ class ReportRequestServiceSpec extends AnyWordSpec with Matchers {
         Instant.now(),
         Seq.empty,
         fileNotifications,
-        None
+        Instant.now()
       )
 
       service.invokePrivateMethod("determineReportStatus", reportRequest) shouldBe ReportStatus.COMPLETE
@@ -109,6 +112,7 @@ class ReportRequestServiceSpec extends AnyWordSpec with Matchers {
         "GB123",
         EoriRole.TRADER,
         Seq("GB123"),
+        Some(SensitiveString("test@example.com")),
         Seq("test@example.com"),
         ReportTypeName.IMPORTS_ITEM_REPORT,
         Instant.now(),
@@ -116,7 +120,7 @@ class ReportRequestServiceSpec extends AnyWordSpec with Matchers {
         Instant.now(),
         notifications,
         None,
-        None
+        Instant.now
       )
 
       service.invokePrivateMethod("determineReportStatus", reportRequest) shouldBe ReportStatus.ERROR
@@ -140,6 +144,7 @@ class ReportRequestServiceSpec extends AnyWordSpec with Matchers {
         "GB123",
         EoriRole.TRADER,
         Seq("GB123"),
+        Some(SensitiveString("test@example.com")),
         Seq("test@example.com"),
         ReportTypeName.IMPORTS_ITEM_REPORT,
         Instant.now(),
@@ -147,7 +152,7 @@ class ReportRequestServiceSpec extends AnyWordSpec with Matchers {
         Instant.now(),
         notifications,
         None,
-        None
+        Instant.now
       )
 
       service.invokePrivateMethod("determineReportStatus", reportRequest) shouldBe ReportStatus.NO_DATA_AVAILABLE
@@ -171,6 +176,7 @@ class ReportRequestServiceSpec extends AnyWordSpec with Matchers {
         "GB123",
         EoriRole.TRADER,
         Seq("GB123"),
+        Some(SensitiveString("test@example.com")),
         Seq("test@example.com"),
         ReportTypeName.IMPORTS_ITEM_REPORT,
         Instant.now(),
@@ -178,7 +184,7 @@ class ReportRequestServiceSpec extends AnyWordSpec with Matchers {
         Instant.now(),
         notifications,
         None,
-        None
+        Instant.now
       )
 
       service.invokePrivateMethod("determineReportStatus", reportRequest) shouldBe ReportStatus.IN_PROGRESS
@@ -192,6 +198,7 @@ class ReportRequestServiceSpec extends AnyWordSpec with Matchers {
         "GB123",
         EoriRole.TRADER,
         Seq("GB123"),
+        Some(SensitiveString("test@example.com")),
         Seq("test@example.com"),
         ReportTypeName.IMPORTS_ITEM_REPORT,
         Instant.now(),
@@ -199,7 +206,7 @@ class ReportRequestServiceSpec extends AnyWordSpec with Matchers {
         Instant.now(),
         Seq.empty,
         None,
-        None
+        Instant.now
       )
 
       service.invokePrivateMethod("determineReportStatus", reportRequest) shouldBe ReportStatus.IN_PROGRESS

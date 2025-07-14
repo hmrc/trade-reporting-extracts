@@ -16,7 +16,10 @@
 
 package uk.gov.hmrc.tradereportingextracts.models
 
-import play.api.libs.json.{Format, Json}
+import play.api.libs.json.*
+import uk.gov.hmrc.crypto.Sensitive.SensitiveString
+import uk.gov.hmrc.crypto.json.JsonEncryption
+import uk.gov.hmrc.crypto.{Decrypter, Encrypter}
 import uk.gov.hmrc.mongo.play.json.formats.MongoJavatimeFormats.Implicits.*
 import uk.gov.hmrc.tradereportingextracts.models.eis.EisReportStatusRequest
 
@@ -29,6 +32,7 @@ case class ReportRequest(
   requesterEORI: String,
   eoriRole: EoriRole,
   reportEORIs: Seq[String],
+  userEmail: Option[SensitiveString],
   recipientEmails: Seq[String],
   reportTypeName: ReportTypeName,
   reportStart: Instant,
@@ -36,7 +40,7 @@ case class ReportRequest(
   createDate: Instant,
   notifications: Seq[EisReportStatusRequest],
   fileNotifications: Option[Seq[FileNotification]],
-  linkAvailableTime: Option[Instant]
+  updateDate: Instant
 )
 
 case class FileNotification(
@@ -53,7 +57,18 @@ case class FileNotification(
 )
 
 object ReportRequest:
-  given format: Format[ReportRequest]          = Json.format[ReportRequest]
+  def encryptedFormat(implicit crypto: Encrypter with Decrypter): OFormat[ReportRequest] = {
+    val instantReads: Reads[Instant]                      = Reads { js =>
+      (js \ "$date" \ "$numberLong").validate[String].map(str => Instant.ofEpochMilli(str.toLong))
+    }
+    val instantWrites: Writes[Instant]                    =
+      (instant: Instant) => Json.obj("$date" -> instant.toEpochMilli)
+    implicit val instantFormat: Format[Instant]           = Format(instantReads, instantWrites)
+    implicit val sensitiveFormat: Format[SensitiveString] =
+      JsonEncryption.sensitiveEncrypterDecrypter(SensitiveString.apply)
+    Json.format[ReportRequest]
+  }
+
   given CanEqual[ReportRequest, ReportRequest] = CanEqual.derived
 
 object FileNotification:

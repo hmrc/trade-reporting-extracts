@@ -25,8 +25,9 @@ class ModuleSpec extends SpecBase with Matchers {
 
   "Module" should {
 
-    "bind AppConfig as an eager singleton" in new Setup {
-      val appConfig: AppConfig = app.injector.instanceOf[AppConfig]
+    "bind AppConfig, CryptoProvider as an eager singleton" in new Setup {
+      val appConfig: AppConfig           = app.injector.instanceOf[AppConfig]
+      val cryptoProvider: CryptoProvider = app.injector.instanceOf[CryptoProvider]
       appConfig should not be null
     }
   }

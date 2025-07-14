@@ -16,6 +16,10 @@
 
 package uk.gov.hmrc.tradereportingextracts.repositories
 
+import org.mongodb.scala.{MongoDatabase, SingleObservableFuture}
+import org.mongodb.scala.bson.collection.immutable.Document
+import org.mongodb.scala.model.IndexOptions
+import org.scalatest.BeforeAndAfterAll
 import org.scalatest.concurrent.IntegrationPatience
 import org.scalatest.matchers.must.Matchers.{must, mustBe, mustEqual}
 import org.scalatest.matchers.should.Matchers
@@ -23,12 +27,15 @@ import org.scalatest.wordspec.AnyWordSpec
 import org.scalatestplus.mockito.MockitoSugar
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import uk.gov.hmrc.mongo.test.CleanMongoCollectionSupport
+import uk.gov.hmrc.tradereportingextracts.config.AppConfig
 import uk.gov.hmrc.tradereportingextracts.models.AccessType.IMPORTS
 import uk.gov.hmrc.tradereportingextracts.models.etmp.EoriUpdate
 import uk.gov.hmrc.tradereportingextracts.models.{AuthorisedUser, User}
 
 import java.time.Instant
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.duration.*
+import scala.concurrent.{ExecutionContext, Future}
 
 class UserRepositorySpec
     extends AnyWordSpec,
@@ -36,9 +43,11 @@ class UserRepositorySpec
       GuiceOneAppPerSuite,
       CleanMongoCollectionSupport,
       Matchers,
-      IntegrationPatience:
+      IntegrationPatience,
+      BeforeAndAfterAll:
 
-  val userRepository: UserRepository = UserRepository(mongoComponent)
+  val appConfig: AppConfig           = app.injector.instanceOf[AppConfig]
+  val userRepository: UserRepository = UserRepository(appConfig, mongoComponent)
   val user: User                     = User(
     eori = "EORI1234",
     additionalEmails = Seq("asd@gmail.com", "dfsf@gmail.com"),
@@ -59,10 +68,44 @@ class UserRepositorySpec
         reportDataEnd = Instant.parse("2023-12-31T23:59:59Z"),
         accessType = IMPORTS
       )
-    )
+    ),
+    accessDate = Instant.parse("2023-01-01T00:00:00Z")
   )
 
+  private def createIndex(
+    mdb: MongoDatabase,
+    collectionName: String,
+    fieldName: String,
+    indexName: String
+  ): Future[String] =
+    mdb
+      .getCollection(collectionName)
+      .createIndex(
+        key = Document(fieldName -> 1),
+        options = IndexOptions()
+          .name(indexName)
+          .expireAfter(3, SECONDS)
+      )
+      .toFuture()
+
   "UserRepositorySpec" should {
+
+//    "insertUser with TTL" should {
+//      "must insert a user with TTL successfully" in {
+//        implicit val patienceConfig: PatienceConfig = PatienceConfig(timeout = 70.seconds, interval = 1.second)
+//
+//        val result = for {
+//          _             <- createIndex(mongoComponent.database, "tre-user", "accessDate", "accessDate-ttl-index")
+//          insertResult  <- userRepository.insert(user)
+//          _              = Thread.sleep(65000)
+//          fetchedRecord <- userRepository.findByEori(user.eori)
+//        } yield {
+//          insertResult mustEqual true
+//          fetchedRecord mustBe None
+//        }
+//        result.futureValue
+//      }
+//    }
 
     "insertUser" should {
       "must insert a user successfully" in {
@@ -128,6 +171,21 @@ class UserRepositorySpec
           ex mustBe an[Exception]
           ex.getMessage mustEqual "User with EORI non-existent-eori not found"
         }
+      }
+    }
+
+    "getOrCreateUser" should {
+      "must create a new user if it does not exist" in {
+        val eori   = "NEW-EORI"
+        val result = userRepository.getOrCreateUser(eori).futureValue
+        result.eori mustEqual eori
+      }
+
+      "must return existing user with updatd accessDate if it exists" in {
+        val insertResult = userRepository.insert(user).futureValue
+        val result       = userRepository.getOrCreateUser(user.eori).futureValue
+        insertResult mustEqual true
+        result.accessDate.compareTo(Instant.now().minusSeconds(1)) >= 0
       }
     }
   }

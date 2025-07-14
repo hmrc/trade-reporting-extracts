@@ -20,13 +20,11 @@ import play.api.libs.json.{JsError, JsSuccess, JsValue, Json}
 import play.api.mvc.{Action, ControllerComponents}
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 import uk.gov.hmrc.tradereportingextracts.connectors.CustomsDataStoreConnector
-import uk.gov.hmrc.tradereportingextracts.models.eis.EisReportRequest
-import uk.gov.hmrc.tradereportingextracts.models.{EoriRole, ReportRequest, ReportRequestUserAnswersModel, ReportTypeName}
-import uk.gov.hmrc.tradereportingextracts.services.{EisService, ReportRequestService, ReportRequestTransformationService, RequestReferenceService}
+import uk.gov.hmrc.tradereportingextracts.models.ReportRequestUserAnswersModel
+import uk.gov.hmrc.tradereportingextracts.services.{EisService, ReportRequestService, ReportRequestTransformationService}
 
+import java.time.LocalDate
 import java.time.format.DateTimeFormatter
-import java.time.{Instant, LocalDate, ZoneOffset}
-import java.util.UUID
 import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -63,11 +61,14 @@ class ReportRequestController @Inject() (
           persisted      <- reportRequestService.createAll(reportRequests)
         } yield (persisted, reportRequests)).flatMap { case (persisted, reportRequests) =>
           if (persisted) {
-            reportRequests.foreach { reportRequest =>
-              val eisRequest = reportRequestTransformationService.toEisReportRequest(reportRequest)
-              eisService.requestTraderReport(eisRequest, reportRequest)
-            }
-            Future.successful(Ok(Json.obj("references" -> reportRequests.map(_.reportRequestId))))
+            Future
+              .sequence(
+                reportRequests.map { reportRequest =>
+                  val eisRequest = reportRequestTransformationService.toEisReportRequest(reportRequest)
+                  eisService.requestTraderReport(eisRequest, reportRequest)
+                }
+              )
+              .map(_ => Ok(Json.obj("references" -> reportRequests.map(_.reportRequestId))))
           } else {
             Future.successful(InternalServerError(Json.obj("error" -> "Failed to create report requests")))
           }

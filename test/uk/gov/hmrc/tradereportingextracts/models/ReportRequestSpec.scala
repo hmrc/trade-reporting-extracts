@@ -18,6 +18,8 @@ package uk.gov.hmrc.tradereportingextracts.models
 
 import org.scalatest.wordspec.AnyWordSpec
 import org.scalatest.matchers.must.Matchers
+import uk.gov.hmrc.crypto.Sensitive.SensitiveString
+
 import java.time.Instant
 import uk.gov.hmrc.tradereportingextracts.models.eis.EisReportStatusRequest
 
@@ -30,6 +32,7 @@ class ReportRequestSpec extends AnyWordSpec with Matchers {
     requesterEORI = "GB0019",
     eoriRole = EoriRole.TRADER,
     reportEORIs = Array("EORI1", "EORI2"),
+    userEmail = Some(SensitiveString("test@example.com")),
     recipientEmails = Array("email1@example.com", "email2@example.com"),
     reportTypeName = ReportTypeName.IMPORTS_ITEM_REPORT,
     reportStart = Instant.parse("2023-01-01T00:00:00Z"),
@@ -60,7 +63,7 @@ class ReportRequestSpec extends AnyWordSpec with Matchers {
         )
       )
     ),
-    linkAvailableTime = Some(Instant.parse("2023-01-03T10:00:00Z"))
+    updateDate = Instant.parse("2023-01-03T10:00:00Z")
   )
 
   "ReportRequest equality" should {

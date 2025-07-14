@@ -16,6 +16,8 @@
 
 package uk.gov.hmrc.tradereportingextracts.services
 
+import uk.gov.hmrc.crypto.Sensitive.SensitiveString
+
 import javax.inject.{Inject, Singleton}
 import uk.gov.hmrc.tradereportingextracts.models.eis.EisReportRequest
 import uk.gov.hmrc.tradereportingextracts.models.{EoriRole, ReportRequest, ReportRequestUserAnswersModel, ReportTypeName}
@@ -64,14 +66,15 @@ class ReportRequestTransformationService @Inject() (
         requesterEORI = eoriValue,
         eoriRole = getRole(userAnswers.eoriRole),
         reportEORIs = historicalEoris :+ userAnswers.whichEori.getOrElse(""),
-        recipientEmails = userAnswers.additionalEmail.getOrElse(Seq()).toSeq :+ userEmail,
+        userEmail = Some(SensitiveString(userEmail)),
+        recipientEmails = userAnswers.additionalEmail.getOrElse(Seq()).toSeq,
         reportTypeName = getReportType(userAnswers.reportType.head),
         reportStart = LocalDate.parse(userAnswers.reportStartDate).atStartOfDay(ZoneOffset.UTC).toInstant,
         reportEnd = LocalDate.parse(userAnswers.reportEndDate).atStartOfDay(ZoneOffset.UTC).toInstant,
         createDate = Instant.now,
         notifications = Seq(),
-        linkAvailableTime = None,
-        fileNotifications = None
+        fileNotifications = None,
+        updateDate = Instant.now
       )
     }
   }
