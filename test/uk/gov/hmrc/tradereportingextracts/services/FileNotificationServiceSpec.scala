@@ -289,32 +289,5 @@ class FileNotificationServiceSpec
         params("reportRequestId") shouldBe "XXXXX-6789"
       }
     }
-
-    // TODO remove this test once additional email ticket on frontend is implemented
-    "append @test.com to emails without @ in additional emails" in {
-      val emails           = Seq("plainemail", "already@domain.com")
-      val reportWithEmails = reportRequest.copy(recipientEmails = emails)
-      when(mockReportRequestService.get(eqTo("RE123456"))(any()))
-        .thenReturn(Future.successful(Some(reportWithEmails)))
-      when(mockReportRequestService.update(any())(any()))
-        .thenReturn(Future.successful(true))
-      when(mockReportRequestService.determineReportStatus(any())).thenReturn(COMPLETE)
-      when(mockEmailConnector.sendEmailRequest(any(), any(), any())(any()))
-        .thenReturn(Future.successful(()))
-
-      val result = service.processFileNotification(fileNotification)
-      whenReady(result) { _ =>
-        verify(mockEmailConnector).sendEmailRequest(
-          any(),
-          eqTo("plainemail@test.com"),
-          any()
-        )(any())
-        verify(mockEmailConnector).sendEmailRequest(
-          any(),
-          eqTo("already@domain.com"),
-          any()
-        )(any())
-      }
-    }
   }
 }
