@@ -16,3 +16,5 @@ GET         /trade-reporting-extracts/api/available-reports              uk.gov.
 GET         /trade-reporting-extracts/api/available-reports-count        uk.gov.hmrc.tradereportingextracts.controllers.AvailableReportController.getAvailableReportsCount()
 
 PUT         /tre/updateeori/v1                                           uk.gov.hmrc.tradereportingextracts.controllers.EoriUpdateController.eoriUpdate()
+
+GET   /trade-reporting-extracts/report-submission-limit/:eori   uk.gov.hmrc.tradereportingextracts.controllers.ReportRequestController.hasReachedSubmissionLimit(eori: String)
