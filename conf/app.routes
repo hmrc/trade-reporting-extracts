@@ -3,6 +3,7 @@
 GET         /trade-reporting-extracts/eori/setup-user                    uk.gov.hmrc.tradereportingextracts.controllers.UserController.setupUser()
 
 GET         /trade-reporting-extracts/user/:eori/authorised-eoris        uk.gov.hmrc.tradereportingextracts.controllers.UserController.getAuthorisedEoris(eori: String)
+POST        /trade-reporting-extracts/user/notification-email            uk.gov.hmrc.tradereportingextracts.controllers.UserController.getNotificationEmail
 
 GET         /trade-reporting-extracts/requested-reports                  uk.gov.hmrc.tradereportingextracts.controllers.RequestedReportsController.getRequestedReports()
 POST        /trade-reporting-extracts/create-report-request              uk.gov.hmrc.tradereportingextracts.controllers.ReportRequestController.createReportRequest
