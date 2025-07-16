@@ -2,7 +2,7 @@ import scoverage.ScoverageKeys
 import uk.gov.hmrc.DefaultBuildSettings
 
 ThisBuild / majorVersion := 0
-ThisBuild / scalaVersion := "3.3.4"
+ThisBuild / scalaVersion := "3.3.6"
 
 lazy val microservice = Project("trade-reporting-extracts", file("."))
   .enablePlugins(play.sbt.PlayScala, SbtDistributablesPlugin, ScalafmtPlugin)
@@ -16,7 +16,6 @@ lazy val microservice = Project("trade-reporting-extracts", file("."))
     scalacOptions += "-Wconf:msg=Flag.*repeatedly:s",
     PlayKeys.playDefaultPort := 2100
   )
-  .settings(resolvers += Resolver.jcenterRepo)
   .settings(CodeCoverageSettings.settings: _*)
 
 lazy val it = project
