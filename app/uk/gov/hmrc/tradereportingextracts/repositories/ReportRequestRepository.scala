@@ -16,6 +16,8 @@
 
 package uk.gov.hmrc.tradereportingextracts.repositories
 
+import java.time.{Instant, LocalDate, ZoneOffset}
+import org.mongodb.scala.model.Filters
 import org.mongodb.scala.*
 import org.mongodb.scala.model.{Filters, IndexModel, IndexOptions, Indexes}
 import uk.gov.hmrc.crypto.{Decrypter, Encrypter}
@@ -120,3 +122,18 @@ class ReportRequestRepository @Inject() (appConfig: AppConfig, mongoComponent: M
             values.map(_._2).distinct.sorted == (1 to total)
           }
       }
+
+  def countReportSubmissionsForEoriOnDate(eori: String, date: LocalDate)(implicit ec: ExecutionContext): Future[Int] = {
+    val startOfDay = date.atStartOfDay().toInstant(ZoneOffset.UTC)
+    val endOfDay   = date.plusDays(1).atStartOfDay().toInstant(ZoneOffset.UTC)
+    collection
+      .countDocuments(
+        Filters.and(
+          Filters.equal("requesterEORI", eori),
+          Filters.gte("createDate", startOfDay),
+          Filters.lt("createDate", endOfDay)
+        )
+      )
+      .toFuture()
+      .map(_.toInt)
+  }

@@ -27,13 +27,15 @@ import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
+import uk.gov.hmrc.tradereportingextracts.config.AppConfig
 
 class ReportRequestController @Inject() (
   cc: ControllerComponents,
   customsDataStoreConnector: CustomsDataStoreConnector,
   reportRequestService: ReportRequestService,
   reportRequestTransformationService: ReportRequestTransformationService,
-  eisService: EisService
+  eisService: EisService,
+  appConfig: AppConfig
 )(implicit executionContext: ExecutionContext)
     extends BackendController(cc) {
 
@@ -75,6 +77,17 @@ class ReportRequestController @Inject() (
         }
       case JsError(_)          =>
         Future.successful(BadRequest(Json.obj("error" -> "Invalid request format")))
+    }
+  }
+
+  def hasReachedSubmissionLimit(eori: String) = Action.async {
+    val limit = appConfig.dailySubmissionLimit
+    reportRequestService.countReportSubmissionsForEoriOnDate(eori, limit).map { reached =>
+      if (reached) {
+        TooManyRequests
+      } else {
+        NoContent
+      }
     }
   }
 

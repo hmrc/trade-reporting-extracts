@@ -16,6 +16,7 @@
 
 package uk.gov.hmrc.tradereportingextracts.services
 
+import java.time.LocalDate
 import play.api.mvc.Headers
 import uk.gov.hmrc.tradereportingextracts.connectors.CustomsDataStoreConnector
 import uk.gov.hmrc.tradereportingextracts.models.eis.EisReportStatusHeaders.XCorrelationID
@@ -141,3 +142,8 @@ class ReportRequestService @Inject() (
       case (_, notifications) if notifications.exists(_.statusType == StatusType.ERROR) => ReportStatus.ERROR
       case _                                                                            => ReportStatus.IN_PROGRESS
   }
+
+  def countReportSubmissionsForEoriOnDate(eori: String, limit: Int, date: LocalDate = LocalDate.now())(implicit
+    ec: ExecutionContext
+  ): Future[Boolean] =
+    reportRequestRepository.countReportSubmissionsForEoriOnDate(eori, date).map(_ >= limit)

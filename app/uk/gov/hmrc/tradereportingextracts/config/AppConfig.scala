@@ -54,3 +54,5 @@ class AppConfig @Inject() (val config: Configuration, servicesConfig: ServicesCo
     config.get[Int]("microservice.services.eis.request-trader-report.max-retries")
   lazy val eisRequestTraderReportRetryDelay: Int =
     config.get[Int]("microservice.services.eis.request-trader-report.retry-delay")
+
+  lazy val dailySubmissionLimit: Int = config.get[Int]("reportRequest.dailySubmissionLimit")
