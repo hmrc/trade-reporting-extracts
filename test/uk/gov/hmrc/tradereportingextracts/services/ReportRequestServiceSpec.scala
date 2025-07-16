@@ -16,19 +16,40 @@
 
 package uk.gov.hmrc.tradereportingextracts.services
 
+import org.mockito.Mockito.{reset, verify, when}
+import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
+import org.scalatestplus.mockito.MockitoSugar
+import org.scalatestplus.mockito.MockitoSugar.mock
 import uk.gov.hmrc.crypto.Sensitive.SensitiveString
 import uk.gov.hmrc.tradereportingextracts.models.*
 import uk.gov.hmrc.tradereportingextracts.models.eis.EisReportStatusRequest
 import uk.gov.hmrc.tradereportingextracts.models.eis.EisReportStatusRequest.StatusType
+import uk.gov.hmrc.tradereportingextracts.repositories.ReportRequestRepository
+import org.mockito.ArgumentMatchers.{any, eq as eqTo}
+import org.scalatest.matchers.must.Matchers.{mustBe, mustEqual}
+import uk.gov.hmrc.tradereportingextracts.connectors.CustomsDataStoreConnector
+import uk.gov.hmrc.tradereportingextracts.utils.WireMockHelper
 
-import java.time.Instant
+import java.time.{Instant, LocalDate}
+import scala.concurrent.{ExecutionContext, Future}
 
-class ReportRequestServiceSpec extends AnyWordSpec with Matchers {
+class ReportRequestServiceSpec
+    extends AnyWordSpec
+    with Matchers
+    with MockitoSugar
+    with ScalaFutures
+    with WireMockHelper {
 
-  val service = new ReportRequestService(null, null) // nulls are fine here since we’re only testing private logic
+  val service                       = new ReportRequestService(null, null) // nulls are fine here since we’re only testing private logic
+  implicit val ec: ExecutionContext = scala.concurrent.ExecutionContext.Implicits.global
+  val mockReportRequestRepository   = mock[ReportRequestRepository]
 
+  override def beforeEach(): Unit = {
+    super.beforeEach()
+    reset(mockReportRequestRepository)
+  }
   "determineReportStatus" should {
 
     "return COMPLETE when fileNotifications contain the final part" in {
@@ -210,6 +231,51 @@ class ReportRequestServiceSpec extends AnyWordSpec with Matchers {
       )
 
       service.invokePrivateMethod("determineReportStatus", reportRequest) shouldBe ReportStatus.IN_PROGRESS
+    }
+  }
+
+  "countReportSubmissionsForEoriOnDate" should {
+    val mockCustomsDataStoreConnector = mock[CustomsDataStoreConnector]
+
+    val service = new ReportRequestService(mockReportRequestRepository, mockCustomsDataStoreConnector)
+
+    val eori  = "EORI123456"
+    val limit = 5
+    val date  = LocalDate.of(2025, 7, 16)
+
+    "must return true when submissions are greater than or equal to the limit" in {
+      implicit val ec: ExecutionContext = scala.concurrent.ExecutionContext.global
+
+      when(mockReportRequestRepository.countReportSubmissionsForEoriOnDate(eori, date)).thenReturn(Future.successful(5))
+
+      val result = service.countReportSubmissionsForEoriOnDate(eori, limit, date)
+
+      result.futureValue mustBe true
+      verify(mockReportRequestRepository).countReportSubmissionsForEoriOnDate(eori, date)
+    }
+
+    "must return false when submissions are below the limit" in {
+      when(mockReportRequestRepository.countReportSubmissionsForEoriOnDate(eori, date))
+        .thenReturn(Future.successful(3))
+
+      val resultFuture = service.countReportSubmissionsForEoriOnDate(eori, limit, date)
+
+      val result = resultFuture.futureValue
+      result mustBe false
+
+      verify(mockReportRequestRepository).countReportSubmissionsForEoriOnDate(eori, date)
+    }
+
+    "must fail when repository throws an exception" in {
+      val expectedException = new RuntimeException("failure")
+      when(mockReportRequestRepository.countReportSubmissionsForEoriOnDate(eori, date))
+        .thenReturn(Future.failed(expectedException))
+
+      val result = service.countReportSubmissionsForEoriOnDate(eori, limit, date)
+
+      whenReady(result.failed) { ex =>
+        ex mustEqual expectedException
+      }
     }
   }
 
