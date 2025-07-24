@@ -17,28 +17,24 @@
 package uk.gov.hmrc.tradereportingextracts.controllers
 
 import org.apache.pekko.Done
-
-import scala.jdk.CollectionConverters.*
 import org.mockito.ArgumentCaptor
-import org.mockito.ArgumentMatchers.any
-import play.api.test.Helpers.*
-import play.api.test.*
-import play.api.libs.json.*
-import play.api.inject.bind
+import org.mockito.ArgumentMatchers.{any, eq as eqTo}
 import org.mockito.Mockito.*
 import org.scalatest.matchers.must.Matchers.{must, mustBe}
+import play.api.inject.bind
 import play.api.inject.guice.GuiceApplicationBuilder
+import play.api.libs.json.*
+import play.api.test.*
+import play.api.test.Helpers.*
 import uk.gov.hmrc.tradereportingextracts.connectors.CustomsDataStoreConnector
 import uk.gov.hmrc.tradereportingextracts.models.{EoriHistory, EoriHistoryResponse, NotificationEmail, ReportRequest}
 import uk.gov.hmrc.tradereportingextracts.services.{EisService, ReportRequestService, RequestReferenceService}
 import uk.gov.hmrc.tradereportingextracts.utils.{SpecBase, WireMockHelper}
 
-import scala.concurrent.{ExecutionContext, Future}
-import java.time.{Instant, LocalDate, LocalDateTime}
+import java.time.LocalDateTime
+import scala.concurrent.Future
 
 class ReportRequestControllerSpec extends SpecBase with WireMockHelper {
-
-  val ec: ExecutionContext                                     = ExecutionContext.global
   val mockCustomsDataStoreConnector: CustomsDataStoreConnector = mock[CustomsDataStoreConnector]
   val mockReportRequestService: ReportRequestService           = mock[ReportRequestService]
   val mockRequestReferenceService: RequestReferenceService     = mock[RequestReferenceService]
@@ -274,4 +270,36 @@ class ReportRequestControllerSpec extends SpecBase with WireMockHelper {
       thrown.getMessage must include("CDS Unavailable")
     }
   }
+
+  "hasReachedSubmissionLimit" should {
+
+    "return TooManyRequests when submission limit is reached" in {
+      val eori = "GB123456789014"
+
+      when(mockReportRequestService.countReportSubmissionsForEoriOnDate(eqTo(eori), any(), any())(any()))
+        .thenReturn(Future.successful(true))
+
+      val request = FakeRequest(GET, s"/trade-reporting-extracts/report-submission-limit/$eori").withHeaders(
+        "Content-Type" -> "application/json"
+      )
+
+      val result = route(app, request).value
+
+      status(result) mustBe TOO_MANY_REQUESTS
+    }
+
+    "return NoContent when submission limit is not reached" in {
+      val eori = "GB123456789014"
+
+      when(mockReportRequestService.countReportSubmissionsForEoriOnDate(eqTo(eori), any(), any())(any()))
+        .thenReturn(Future.successful(false))
+
+      val request = FakeRequest(GET, s"/trade-reporting-extracts/report-submission-limit/$eori")
+
+      val result = route(app, request).value
+
+      status(result) mustBe NO_CONTENT
+    }
+  }
+
 }

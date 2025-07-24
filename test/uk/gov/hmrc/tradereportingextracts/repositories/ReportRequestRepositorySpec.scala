@@ -29,7 +29,7 @@ import uk.gov.hmrc.tradereportingextracts.config.{AppConfig, CryptoProvider}
 import uk.gov.hmrc.tradereportingextracts.models.eis.EisReportStatusRequest
 import uk.gov.hmrc.tradereportingextracts.models.*
 
-import java.time.Instant
+import java.time.{Instant, LocalDate, ZoneOffset}
 import scala.concurrent.ExecutionContext.Implicits.global
 
 implicit val eqReportRequest: Equality[ReportRequest] = (a, b) => a == b
@@ -317,5 +317,67 @@ class ReportRequestRepositorySpec
 
       val count = reportRequestRepository.countAvailableReports("EORI-4").futureValue
       count mustEqual 0
+    }
+  }
+
+  "countReportSubmissionsForEoriOnDate" should {
+    "return correct count of reports submitted on a specific date" in {
+      val targetDate = LocalDate.of(2023, 7, 15)
+      val startOfDay = targetDate.atStartOfDay().toInstant(ZoneOffset.UTC)
+      val endOfDay   = targetDate.plusDays(1).atStartOfDay().toInstant(ZoneOffset.UTC)
+
+      val eori = "EORI-TEST-1"
+
+      val report1             = reportRequest.copy(
+        reportRequestId = "REQ-DATE-1",
+        requesterEORI = eori,
+        createDate = startOfDay.plusSeconds(1)
+      )
+      val report2             = reportRequest.copy(
+        reportRequestId = "REQ-DATE-2",
+        requesterEORI = eori,
+        createDate = startOfDay.plusSeconds(10)
+      )
+      val reportOutsideWindow = reportRequest.copy(
+        reportRequestId = "REQ-DATE-OUT",
+        requesterEORI = eori,
+        createDate = endOfDay.plusSeconds(1)
+      )
+
+      reportRequestRepository.insertAll(Seq(report1, report2, reportOutsideWindow)).futureValue
+
+      val count = reportRequestRepository.countReportSubmissionsForEoriOnDate(eori, targetDate).futureValue
+      count mustEqual 2
+    }
+
+    "return 0 when no reports exist for the given date and EORI" in {
+      val eori       = "EORI-NONE"
+      val targetDate = LocalDate.of(2023, 7, 16)
+
+      val count = reportRequestRepository.countReportSubmissionsForEoriOnDate(eori, targetDate).futureValue
+      count mustEqual 0
+    }
+
+    "not count reports from a different EORI" in {
+      val eori1 = "EORI-A"
+      val eori2 = "EORI-B"
+      val date  = LocalDate.of(2023, 7, 17)
+
+      val validReport = reportRequest.copy(
+        reportRequestId = "REQ-EORI-A",
+        requesterEORI = eori1,
+        createDate = date.atStartOfDay(ZoneOffset.UTC).plusSeconds(5).toInstant()
+      )
+
+      val otherEoriReport = reportRequest.copy(
+        reportRequestId = "REQ-EORI-B",
+        requesterEORI = eori2,
+        createDate = date.atStartOfDay(ZoneOffset.UTC).plusSeconds(5).toInstant()
+      )
+
+      reportRequestRepository.insertAll(Seq(validReport, otherEoriReport)).futureValue
+
+      val count = reportRequestRepository.countReportSubmissionsForEoriOnDate(eori1, date).futureValue
+      count mustEqual 1
     }
   }
