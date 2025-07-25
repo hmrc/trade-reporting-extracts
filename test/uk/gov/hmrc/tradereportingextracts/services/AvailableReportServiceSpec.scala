@@ -80,8 +80,8 @@ class AvailableReportServiceSpec extends AnyWordSpec with Matchers with ScalaFut
         "Core-ID",
         "req-id-456",
         "IMPORTS-ITEM-REPORT",
-        "1Of1",
-        "last",
+        "1",
+        "true",
         ""
       )
       val reportRequest                            = ReportRequest(
@@ -157,7 +157,7 @@ class AvailableReportServiceSpec extends AnyWordSpec with Matchers with ScalaFut
       val mockAppConfig: AppConfig = mock[AppConfig]
 
       when(mockReportRequestService.countAvailableReports(any())(using any()))
-        .thenReturn(Future.failed(new RuntimeException("error")))
+        .thenReturn(Future.failed(new RuntimeException("error - this is a error generated for testing!!!")))
 
       val service = new AvailableReportService(mockReportRequestService, mockSDESConnector, mockAppConfig)
 
