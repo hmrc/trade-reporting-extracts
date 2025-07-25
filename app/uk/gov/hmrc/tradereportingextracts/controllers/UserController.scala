@@ -62,8 +62,18 @@ class UserController @Inject() (
           .recover { case e: Exception =>
             InternalServerError(e.getMessage)
           }
+      case JsError(_)         =>
+        Future.successful(BadRequest("Missing or invalid 'eori' field"))
+    }
+  }
 
-      case JsError(_) =>
+  def getUserAndEmail: Action[JsValue] = Action.async(parse.json) { implicit request =>
+    (request.body \ "eori").validate[String] match {
+      case JsSuccess(eori, _) =>
+        userService.getUserAndEmailDetails(eori).map { userDetails =>
+          Created(Json.toJson(userDetails))
+        }
+      case JsError(_)         =>
         Future.successful(BadRequest("Missing or invalid 'eori' field"))
     }
   }

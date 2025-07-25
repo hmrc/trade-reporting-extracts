@@ -18,7 +18,7 @@ package uk.gov.hmrc.tradereportingextracts.services
 
 import uk.gov.hmrc.tradereportingextracts.connectors.CustomsDataStoreConnector
 import uk.gov.hmrc.tradereportingextracts.models.etmp.EoriUpdate
-import uk.gov.hmrc.tradereportingextracts.models.{NotificationEmail, User, UserDetails}
+import uk.gov.hmrc.tradereportingextracts.models.{AddressInformation, NotificationEmail, User, UserDetails}
 import uk.gov.hmrc.tradereportingextracts.repositories.UserRepository
 
 import javax.inject.{Inject, Singleton}
@@ -59,3 +59,18 @@ class UserService @Inject() (
 
   def getNotificationEmail(eori: String): Future[NotificationEmail] =
     customsDataStoreConnector.getNotificationEmail(eori)
+
+  def getUserAndEmailDetails(eori: String): Future[UserDetails] =
+    for {
+      user               <- userRepository.getOrCreateUser(eori)
+      companyInformation <- customsDataStoreConnector.getCompanyInformation(eori)
+      notificationEmail  <- customsDataStoreConnector.getNotificationEmail(eori)
+    } yield UserDetails(
+      eori = user.eori,
+      additionalEmails = user.additionalEmails,
+      authorisedUsers = user.authorisedUsers,
+      companyInformation = companyInformation.copy(
+        address = AddressInformation()
+      ),
+      notificationEmail = notificationEmail
+    )
