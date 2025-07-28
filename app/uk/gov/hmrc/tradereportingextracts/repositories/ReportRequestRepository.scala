@@ -105,22 +105,9 @@ class ReportRequestRepository @Inject() (appConfig: AppConfig, mongoComponent: M
       .find(Filters.equal("requesterEORI", eori))
       .toFuture()
       .map { reportRequests =>
-        val notificationsWithParent = for {
-          req   <- reportRequests
-          notif <- req.fileNotifications.getOrElse(Seq.empty)
-        } yield (req, notif)
-        notificationsWithParent
-          .flatMap { case (req, notif) =>
-            notif.reportFilesParts match {
-              case StringFieldRegex.filePartPattern(part, total) =>
-                Some(((req.reportRequestId, total.toInt), part.toInt))
-              case _                                             => None
-            }
-          }
-          .groupBy(_._1)
-          .count { case ((_, total), values) =>
-            values.map(_._2).distinct.sorted == (1 to total)
-          }
+        reportRequests.count { reportRequest =>
+          isReportStatusComplete(reportRequest)
+        }
       }
 
   def countReportSubmissionsForEoriOnDate(eori: String, date: LocalDate)(implicit ec: ExecutionContext): Future[Int] = {

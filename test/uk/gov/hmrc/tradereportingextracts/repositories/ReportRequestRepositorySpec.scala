@@ -73,8 +73,8 @@ class ReportRequestRepositorySpec
           mDTPReportXCorrelationID = "X-Correlation-ID",
           mDTPReportRequestID = "Request-ID",
           mDTPReportTypeName = "IMPORTS-ITEM-REPORT",
-          reportFilesParts = "Part1",
-          reportLastFile = "LastFile",
+          reportFilesParts = "1",
+          reportLastFile = "true",
           fileCreationTimestamp = "2023-01-01T10:00:00Z"
         )
       )
@@ -161,8 +161,8 @@ class ReportRequestRepositorySpec
           notifications = Seq.empty,
           fileNotifications = Some(
             Seq(
-              FileNotification("f1", 1, 1, "CSV", "x", "y", "IMPORTS-ITEM-REPORT", "1", "", ""),
-              FileNotification("f2", 1, 1, "CSV", "x", "y", "IMPORTS-ITEM-REPORT", "2", "", ""),
+              FileNotification("f1", 1, 1, "CSV", "x", "y", "IMPORTS-ITEM-REPORT", "1", "false", ""),
+              FileNotification("f2", 1, 1, "CSV", "x", "y", "IMPORTS-ITEM-REPORT", "2", "false", ""),
               FileNotification("f3", 1, 1, "CSV", "x", "y", "IMPORTS-ITEM-REPORT", "3", "true", "")
             )
           ),
@@ -185,7 +185,7 @@ class ReportRequestRepositorySpec
           notifications = Seq.empty,
           fileNotifications = Some(
             Seq(
-              FileNotification("f4", 1, 1, "CSV", "x", "y", "IMPORTS-ITEM-REPORT", "1", "", "")
+              FileNotification("f4", 1, 1, "CSV", "x", "y", "IMPORTS-ITEM-REPORT", "1", "false", "")
             )
           ),
           updateDate = Instant.now
@@ -216,7 +216,7 @@ class ReportRequestRepositorySpec
         notifications = Seq.empty,
         fileNotifications = Some(
           Seq(
-            FileNotification("f5", 1, 1, "CSV", "x", "y", "IMPORTS-ITEM-REPORT", "1Of2", "", "")
+            FileNotification("f5", 1, 1, "CSV", "x", "y", "IMPORTS-ITEM-REPORT", "1", "false", "")
             // Missing 2Of2
           )
         ),
@@ -251,9 +251,9 @@ class ReportRequestRepositorySpec
           notifications = Seq.empty,
           fileNotifications = Some(
             Seq(
-              FileNotification("f6", 1, 1, "CSV", "x", "y", "IMPORTS-ITEM-REPORT", "1Of3", "", ""),
-              FileNotification("f7", 1, 1, "CSV", "x", "y", "IMPORTS-ITEM-REPORT", "2Of3", "", ""),
-              FileNotification("f8", 1, 1, "CSV", "x", "y", "IMPORTS-ITEM-REPORT", "3Of3", "", "")
+              FileNotification("f6", 1, 1, "CSV", "x", "y", "IMPORTS-ITEM-REPORT", "1", "false", ""),
+              FileNotification("f7", 1, 1, "CSV", "x", "y", "IMPORTS-ITEM-REPORT", "2", "false", ""),
+              FileNotification("f8", 1, 1, "CSV", "x", "y", "IMPORTS-ITEM-REPORT", "3", "true", "")
             )
           ),
           updateDate = Instant.now
@@ -275,7 +275,7 @@ class ReportRequestRepositorySpec
           notifications = Seq.empty,
           fileNotifications = Some(
             Seq(
-              FileNotification("f9", 1, 1, "CSV", "x", "y", "IMPORTS-ITEM-REPORT", "1Of2", "", "")
+              FileNotification("f9", 1, 1, "CSV", "x", "y", "IMPORTS-ITEM-REPORT", "1", "false", "")
             )
           ),
           updateDate = Instant.now
@@ -306,7 +306,7 @@ class ReportRequestRepositorySpec
         notifications = Seq.empty,
         fileNotifications = Some(
           Seq(
-            FileNotification("f10", 1, 1, "CSV", "x", "y", "IMPORTS-ITEM-REPORT", "1Of2", "", "")
+            FileNotification("f10", 1, 1, "CSV", "x", "y", "IMPORTS-ITEM-REPORT", "1", "false", "")
             // Missing 2Of2
           )
         ),

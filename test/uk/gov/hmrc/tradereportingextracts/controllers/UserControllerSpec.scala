@@ -22,7 +22,7 @@ import play.api.libs.json.{JsArray, JsObject, JsString, Json}
 import play.api.mvc.{AnyContentAsEmpty, Result}
 import play.api.test.Helpers.*
 import play.api.test.{FakeRequest, Helpers}
-import uk.gov.hmrc.tradereportingextracts.models.{CompanyInformation, NotificationEmail, UserDetails}
+import uk.gov.hmrc.tradereportingextracts.models.{AddressInformation, CompanyInformation, NotificationEmail, UserDetails}
 import uk.gov.hmrc.tradereportingextracts.services.UserService
 import uk.gov.hmrc.tradereportingextracts.utils.SpecBase
 
@@ -146,6 +146,37 @@ class UserControllerSpec extends SpecBase {
 
       status(result)        shouldBe INTERNAL_SERVER_ERROR
       contentAsString(result) should include("Service failure")
+    }
+  }
+
+  "UserController.getUserDetails" should {
+
+    "return 201 OK with user details when valid EORI is provided" in new Setup {
+      val eori                     = "GB123456789000"
+      val userDetails: UserDetails = UserDetails(
+        eori = eori,
+        additionalEmails = Seq.empty,
+        authorisedUsers = Seq.empty,
+        companyInformation = CompanyInformation(
+          name = "Test Company",
+          consent = "1",
+          address = AddressInformation(
+            streetAndNumber = "123 Test Street",
+            city = "Test City",
+            postalCode = Some("12345"),
+            countryCode = "GB"
+          )
+        ),
+        notificationEmail = NotificationEmail("test@test.com", LocalDateTime.now())
+      )
+      when(mockUserService.getUserAndEmailDetails(eori)).thenReturn(Future.successful(userDetails))
+
+      val request: FakeRequest[JsObject] = FakeRequest(GET, routes.UserController.getUserAndEmail.url)
+        .withHeaders("Content-Type" -> "application/json")
+        .withBody(Json.obj("eori" -> eori))
+      val result: Future[Result]         = route(app, request).value
+      status(result)        shouldBe CREATED
+      contentAsJson(result) shouldBe Json.toJson(userDetails)
     }
   }
 

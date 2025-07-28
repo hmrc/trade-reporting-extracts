@@ -24,8 +24,11 @@ import org.scalatest.{OptionValues, TryValues}
 import org.scalatestplus.mockito.MockitoSugar
 import org.scalatestplus.mockito.MockitoSugar.mock
 import uk.gov.hmrc.tradereportingextracts.connectors.CustomsDataStoreConnector
+import uk.gov.hmrc.tradereportingextracts.models.{AddressInformation, CompanyInformation, NotificationEmail, User, UserDetails}
+import uk.gov.hmrc.tradereportingextracts.models.etmp.EoriUpdate
 import uk.gov.hmrc.tradereportingextracts.repositories.UserRepository
 
+import java.time.LocalDateTime
 import scala.concurrent.{ExecutionContext, Future}
 
 class UserServiceSpec
@@ -36,16 +39,103 @@ class UserServiceSpec
     with ScalaFutures
     with IntegrationPatience {
 
-  "UserInformationServiceSpec" - {
-    val ec: ExecutionContext = scala.concurrent.ExecutionContext.Implicits.global
+  implicit val ec: ExecutionContext = ExecutionContext.global
+
+  "UserService" - {
 
     val mockRepository                = mock[UserRepository]
     val mockCustomsDataStoreConnector = mock[CustomsDataStoreConnector]
 
-    val service = new UserService(mockRepository, mockCustomsDataStoreConnector)(using ec: ExecutionContext)
+    val service = new UserService(mockRepository, mockCustomsDataStoreConnector)
 
     val eori            = "EORI1234"
     val authorisedEoris = Seq("AUTH-EORI-1", "AUTH-EORI-2")
+
+    "insert" - {
+
+      "must insert user when repository returns true" in {
+        val user = User(eori, additionalEmails = Seq(), authorisedUsers = Seq.empty)
+        when(mockRepository.insert(user)).thenReturn(Future.successful(true))
+
+        val result = service.insert(user)
+
+        result.futureValue mustEqual true
+        verify(mockRepository).insert(user)
+      }
+
+      "must fail when repository returns false" in {
+        val user = User(eori, additionalEmails = Seq(), authorisedUsers = Seq())
+        when(mockRepository.insert(user)).thenReturn(Future.successful(false))
+
+        val result = service.insert(user)
+
+        result.futureValue mustEqual false
+      }
+    }
+
+    "update" - {
+
+      "must update user when repository returns true" in {
+        val user = User(eori, additionalEmails = Seq(), authorisedUsers = Seq.empty)
+        when(mockRepository.update(user)).thenReturn(Future.successful(true))
+
+        val result = service.update(user)
+
+        result.futureValue mustEqual true
+        verify(mockRepository).update(user)
+      }
+
+      "must fail when repository returns false" in {
+        val user = User(eori, additionalEmails = Seq(), authorisedUsers = Seq())
+        when(mockRepository.update(user)).thenReturn(Future.successful(false))
+
+        val result = service.update(user)
+
+        result.futureValue mustEqual false
+      }
+    }
+
+    "updateEori" - {
+
+      "must update EORI when repository returns true" in {
+        val eoriUpdate = EoriUpdate("EORI1234", "EORI5678")
+        when(mockRepository.updateEori(eoriUpdate)).thenReturn(Future.successful(true))
+
+        val result = service.updateEori(eoriUpdate)
+
+        result.futureValue mustEqual true
+        verify(mockRepository).updateEori(eoriUpdate)
+      }
+
+      "must fail when repository returns false" in {
+        val eoriUpdate = EoriUpdate("EORI1234", "EORI5678")
+        when(mockRepository.updateEori(eoriUpdate)).thenReturn(Future.successful(false))
+
+        val result = service.updateEori(eoriUpdate)
+
+        result.futureValue mustEqual false
+      }
+    }
+
+    "deleteByEori" - {
+
+      "must delete user when repository returns true" in {
+        when(mockRepository.deleteByEori(eori)).thenReturn(Future.successful(true))
+
+        val result = service.deleteByEori(eori)
+
+        result.futureValue mustEqual true
+        verify(mockRepository).deleteByEori(eori)
+      }
+
+      "must fail when repository returns false" in {
+        when(mockRepository.deleteByEori(eori)).thenReturn(Future.successful(false))
+
+        val result = service.deleteByEori(eori)
+
+        result.futureValue mustEqual false
+      }
+    }
 
     "getAuthorisedEoris" - {
 
@@ -72,7 +162,7 @@ class UserServiceSpec
 
     "getNotificationEmail" - {
       val eori              = "EORI1234"
-      val notificationEmail = uk.gov.hmrc.tradereportingextracts.models.NotificationEmail("test@email.com")
+      val notificationEmail = NotificationEmail("test@email.com")
 
       "must return notification email when connector returns it" in {
         when(mockCustomsDataStoreConnector.getNotificationEmail(eori)).thenReturn(Future.successful(notificationEmail))
@@ -87,6 +177,53 @@ class UserServiceSpec
         whenReady(result.failed) { ex =>
           ex mustEqual expectedException
         }
+      }
+    }
+
+    "getUserAndEmailDetails" - {
+
+      "must return user details with notification email when both user and email are found" in {
+        val user               = User(eori, additionalEmails = Seq(), authorisedUsers = Seq.empty)
+        val companyInformation = CompanyInformation(
+          name = "Test Company",
+          consent = "Yes"
+        )
+        val notificationEmail  =
+          NotificationEmail("test@test.com", LocalDateTime.now())
+        when(mockCustomsDataStoreConnector.getCompanyInformation(eori))
+          .thenReturn(Future.successful(companyInformation))
+        when(mockRepository.getOrCreateUser(eori)).thenReturn(Future.successful(user))
+        when(mockCustomsDataStoreConnector.getNotificationEmail(eori)).thenReturn(Future.successful(notificationEmail))
+        val result             = service.getUserAndEmailDetails(eori)
+        result.futureValue mustEqual UserDetails(
+          eori = user.eori,
+          additionalEmails = user.additionalEmails,
+          authorisedUsers = user.authorisedUsers,
+          companyInformation = companyInformation,
+          notificationEmail = notificationEmail
+        )
+      }
+
+      "must return user details without notification email when email is not found" in {
+        val user               = User(eori, additionalEmails = Seq(), authorisedUsers = Seq.empty)
+        val companyInformation = CompanyInformation(
+          name = "Test Company",
+          consent = "1",
+          address = AddressInformation()
+        )
+        val notificationEmail  = NotificationEmail()
+        when(mockCustomsDataStoreConnector.getCompanyInformation(eori))
+          .thenReturn(Future.successful(companyInformation))
+        when(mockRepository.getOrCreateUser(eori)).thenReturn(Future.successful(user))
+        when(mockCustomsDataStoreConnector.getNotificationEmail(eori)).thenReturn(Future.successful(notificationEmail))
+        val result             = service.getUserAndEmailDetails(eori)
+        result.futureValue mustEqual UserDetails(
+          eori = user.eori,
+          additionalEmails = user.additionalEmails,
+          authorisedUsers = user.authorisedUsers,
+          companyInformation = companyInformation,
+          notificationEmail = notificationEmail
+        )
       }
     }
   }
