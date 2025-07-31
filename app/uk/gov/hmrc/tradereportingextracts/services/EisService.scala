@@ -49,33 +49,30 @@ class EisService @Inject() (
 
   def requestTraderReport(payload: EisReportRequest, reportRequest: ReportRequest)(implicit
     hc: HeaderCarrier
-  ): Future[Done] = {
+  ): Future[ReportRequest] = {
 
-    def attempt(remainingAttempts: Int): Future[Done] =
+    def attempt(remainingAttempts: Int): Future[ReportRequest] = {
       val clock = Clock.systemUTC()
       connector
         .requestTraderReport(payload, reportRequest.correlationId)
         .flatMap { response =>
           response.status match {
-            case OK | ACCEPTED | NO_CONTENT                                                                           =>
-              val updatedRequest: ReportRequest =
-                reportRequest.copy(notifications =
-                  reportRequest.notifications :+
-                    EisReportStatusRequest(
-                      applicationComponent = EisReportStatusRequest.ApplicationComponent.TRE,
-                      statusCode = INITIATED.toString,
-                      statusMessage = "Report sent to EIS successfully",
-                      statusTimestamp = LocalDate.now(clock).toString,
-                      statusType = EisReportStatusRequest.StatusType.INFORMATION
-                    )
-                )
-              reportRequestService.update(updatedRequest).flatMap { _ =>
-                Future.successful(Done)
-              }
+            case OK | ACCEPTED | NO_CONTENT =>
+              val updatedRequest = reportRequest.copy(notifications =
+                reportRequest.notifications :+
+                  EisReportStatusRequest(
+                    applicationComponent = EisReportStatusRequest.ApplicationComponent.TRE,
+                    statusCode = INITIATED.toString,
+                    statusMessage = "Report sent to EIS successfully",
+                    statusTimestamp = LocalDate.now(clock).toString,
+                    statusType = EisReportStatusRequest.StatusType.INFORMATION
+                  )
+              )
+              reportRequestService.update(updatedRequest).map(_ => updatedRequest)
+
             case INTERNAL_SERVER_ERROR | SERVICE_UNAVAILABLE | BAD_GATEWAY | GATEWAY_TIMEOUT if remainingAttempts > 1 =>
               logger.warn(
-                s"EIS request failed with status ${response.status}. " +
-                  s"Retrying... Attempts left: ${remainingAttempts - 1}"
+                s"EIS request failed with status ${response.status}. Retrying... Attempts left: ${remainingAttempts - 1}"
               )
               after(RetryDelay.second, actorSystem.scheduler)(attempt(remainingAttempts - 1))
             case status                                                                                               =>
@@ -88,22 +85,22 @@ class EisService @Inject() (
                   s"EIS Error: ${value.errorDetail.errorMessage}"
               }
 
-              val updatedRequest: ReportRequest =
-                reportRequest.copy(notifications =
-                  reportRequest.notifications :+
-                    EisReportStatusRequest(
-                      applicationComponent = EisReportStatusRequest.ApplicationComponent.TRE,
-                      statusCode = FAILED.toString,
-                      statusMessage = errorMessage,
-                      statusTimestamp = LocalDate.now(clock).toString,
-                      statusType = EisReportStatusRequest.StatusType.ERROR
-                    )
-                )
+              val updatedRequest = reportRequest.copy(notifications =
+                reportRequest.notifications :+
+                  EisReportStatusRequest(
+                    applicationComponent = EisReportStatusRequest.ApplicationComponent.TRE,
+                    statusCode = FAILED.toString,
+                    statusMessage = errorMessage,
+                    statusTimestamp = LocalDate.now(clock).toString,
+                    statusType = EisReportStatusRequest.StatusType.ERROR
+                  )
+              )
               reportRequestService.update(updatedRequest).flatMap { _ =>
                 Future.failed(UpstreamErrorResponse(response.body, status))
               }
           }
         }
+    }
 
     attempt(MaxRetries)
   }
