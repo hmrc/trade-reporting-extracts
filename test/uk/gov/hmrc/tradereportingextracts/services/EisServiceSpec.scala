@@ -27,6 +27,7 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 import org.scalatestplus.mockito.MockitoSugar
 import play.api.http.Status.{ACCEPTED, INTERNAL_SERVER_ERROR, NO_CONTENT, OK}
+import play.api.test.Helpers.running
 import uk.gov.hmrc.crypto.Sensitive.SensitiveString
 import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse, UpstreamErrorResponse}
 import uk.gov.hmrc.tradereportingextracts.config.AppConfig
@@ -93,17 +94,19 @@ class EisServiceSpec extends AnyWordSpec with Matchers with MockitoSugar with Sc
 
   "EisService.requestTraderReport" should {
 
-    "return Done for OK, ACCEPTED, or NO_CONTENT" in {
-      Seq(OK, ACCEPTED, NO_CONTENT).foreach { status =>
+    "return updated ReportRequest for OK, ACCEPTED, or NO_CONTENT" in {
+      Seq(OK, ACCEPTED, NO_CONTENT).foreach { responseStatus =>
         reset(mockConnector, mockReportRequestService)
+
         when(mockConnector.requestTraderReport(any(), any())(any()))
-          .thenReturn(Future.successful(httpResponse(status)))
+          .thenReturn(Future.successful(httpResponse(responseStatus)))
+
         when(mockReportRequestService.update(any())(any()))
           .thenReturn(Future.successful(true))
 
         val result = service.requestTraderReport(eisReportRequest, reportRequest)
 
-        whenReady(result) { status =>
+        whenReady(result) { updatedReportRequest =>
           val captor = ArgumentCaptor.forClass(classOf[ReportRequest])
           verify(mockReportRequestService).update(captor.capture())(any())
 
@@ -119,24 +122,28 @@ class EisServiceSpec extends AnyWordSpec with Matchers with MockitoSugar with Sc
 
           verify(mockConnector, times(1))
             .requestTraderReport(eqTo(eisReportRequest), eqTo(reportRequest.correlationId))(any())
-          status shouldBe Done
+
+          updatedReportRequest mustBe persistedReportRequestAfterEis
         }
       }
     }
 
     "retry on INTERNAL_SERVER_ERROR and succeed if a later attempt is OK" in {
       reset(mockConnector, mockReportRequestService)
+
       when(mockConnector.requestTraderReport(any(), any())(any()))
         .thenReturn(
           Future.successful(httpResponse(INTERNAL_SERVER_ERROR)),
           Future.successful(httpResponse(INTERNAL_SERVER_ERROR)),
           Future.successful(httpResponse(OK))
         )
+
       when(mockReportRequestService.update(any())(any()))
         .thenReturn(Future.successful(true))
 
       val result = service.requestTraderReport(eisReportRequest, reportRequest)
-      whenReady(result) { status =>
+
+      whenReady(result) { updatedReportRequest =>
         val captor = ArgumentCaptor.forClass(classOf[ReportRequest])
         verify(mockReportRequestService).update(captor.capture())(any())
 
@@ -150,10 +157,10 @@ class EisServiceSpec extends AnyWordSpec with Matchers with MockitoSugar with Sc
             statusType = StatusType.INFORMATION
           )
 
-        verify(mockConnector, times(3)).requestTraderReport(eqTo(eisReportRequest), eqTo(reportRequest.correlationId))(
-          any()
-        )
-        status shouldBe Done
+        verify(mockConnector, times(3))
+          .requestTraderReport(eqTo(eisReportRequest), eqTo(reportRequest.correlationId))(any())
+
+        updatedReportRequest mustBe persistedReportRequestAfterEis
       }
     }
 

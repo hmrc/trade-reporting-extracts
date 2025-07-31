@@ -16,7 +16,6 @@
 
 package uk.gov.hmrc.tradereportingextracts.controllers
 
-import org.apache.pekko.Done
 import org.mockito.ArgumentCaptor
 import org.mockito.ArgumentMatchers.{any, eq as eqTo}
 import org.mockito.Mockito.*
@@ -26,7 +25,9 @@ import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.*
 import play.api.test.*
 import play.api.test.Helpers.*
+import uk.gov.hmrc.play.audit.http.connector.AuditConnector
 import uk.gov.hmrc.tradereportingextracts.connectors.CustomsDataStoreConnector
+import uk.gov.hmrc.tradereportingextracts.models.audit.ReportRequestSubmittedEvent
 import uk.gov.hmrc.tradereportingextracts.models.{EoriHistory, EoriHistoryResponse, NotificationEmail, ReportRequest}
 import uk.gov.hmrc.tradereportingextracts.services.{EisService, ReportRequestService, RequestReferenceService}
 import uk.gov.hmrc.tradereportingextracts.utils.{SpecBase, WireMockHelper}
@@ -39,6 +40,7 @@ class ReportRequestControllerSpec extends SpecBase with WireMockHelper {
   val mockReportRequestService: ReportRequestService           = mock[ReportRequestService]
   val mockRequestReferenceService: RequestReferenceService     = mock[RequestReferenceService]
   val mockEisService: EisService                               = mock[EisService]
+  val mockAuditConnector: AuditConnector                       = mock[AuditConnector]
 
   override def beforeEach(): Unit = {
     super.beforeEach()
@@ -93,12 +95,19 @@ class ReportRequestControllerSpec extends SpecBase with WireMockHelper {
           )
         )
 
-      when(mockRequestReferenceService.generateUnique()).thenReturn(Future.successful("REF-00000001"))
+      when(mockRequestReferenceService.generateUnique())
+        .thenReturn(Future.successful("REF-00000001"))
 
       when(mockReportRequestService.createAll(any())(any()))
         .thenReturn(Future.successful(true))
 
-      when(mockEisService.requestTraderReport(any(), any())(any())).thenReturn(Future.successful(Done))
+      val reportRequestCaptor = ArgumentCaptor.forClass(classOf[ReportRequest])
+      when(mockEisService.requestTraderReport(any(), reportRequestCaptor.capture())(any()))
+        .thenAnswer(_ => Future.successful(reportRequestCaptor.getValue))
+
+      doNothing()
+        .when(mockAuditConnector)
+        .sendExplicitAudit(any[String], any[ReportRequestSubmittedEvent])(any(), any(), any())
 
       val request = FakeRequest(POST, "/trade-reporting-extracts/create-report-request")
         .withHeaders("Content-Type" -> "application/json")
@@ -109,9 +118,11 @@ class ReportRequestControllerSpec extends SpecBase with WireMockHelper {
       status(result) mustBe OK
       contentAsJson(result) mustBe Json.obj("references" -> Seq("REF-00000001"))
 
-      val captor = ArgumentCaptor.forClass(classOf[Seq[ReportRequest]])
       verify(mockReportRequestService).createAll(any())(any())
 
+      val capturedRequest = reportRequestCaptor.getValue
+      capturedRequest.reportRequestId mustBe "REF-00000001"
+      capturedRequest.requesterEORI mustBe "GB123456789014"
     }
 
     "return OK and 2 report IDs when 2 report types are requested" in {
@@ -155,7 +166,13 @@ class ReportRequestControllerSpec extends SpecBase with WireMockHelper {
       when(mockReportRequestService.createAll(any())(any()))
         .thenReturn(Future.successful(true))
 
-      when(mockEisService.requestTraderReport(any(), any())(any())).thenReturn(Future.successful(Done))
+      val reportRequestCaptor = ArgumentCaptor.forClass(classOf[ReportRequest])
+      when(mockEisService.requestTraderReport(any(), reportRequestCaptor.capture())(any()))
+        .thenAnswer(_ => Future.successful(reportRequestCaptor.getValue))
+
+      doNothing()
+        .when(mockAuditConnector)
+        .sendExplicitAudit(any[String], any[ReportRequestSubmittedEvent])(any(), any(), any())
 
       val request = FakeRequest(POST, "/trade-reporting-extracts/create-report-request")
         .withHeaders("Content-Type" -> "application/json")
@@ -213,7 +230,13 @@ class ReportRequestControllerSpec extends SpecBase with WireMockHelper {
       when(mockReportRequestService.createAll(any())(any()))
         .thenReturn(Future.successful(true))
 
-      when(mockEisService.requestTraderReport(any(), any())(any())).thenReturn(Future.successful(Done))
+      val reportRequestCaptor = ArgumentCaptor.forClass(classOf[ReportRequest])
+      when(mockEisService.requestTraderReport(any(), reportRequestCaptor.capture())(any()))
+        .thenAnswer(_ => Future.successful(reportRequestCaptor.getValue))
+
+      doNothing()
+        .when(mockAuditConnector)
+        .sendExplicitAudit(any[String], any[ReportRequestSubmittedEvent])(any(), any(), any())
 
       val request = FakeRequest(POST, "/trade-reporting-extracts/create-report-request")
         .withHeaders("Content-Type" -> "application/json")
