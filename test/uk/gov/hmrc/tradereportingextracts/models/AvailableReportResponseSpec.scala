@@ -38,6 +38,9 @@ class AvailableReportResponseSpec extends PlaySpec {
     reportName = "User Report 1",
     expiryDate = instantNow,
     reportType = ReportTypeName.IMPORTS_ITEM_REPORT,
+    reportFilesParts = "1",
+    requesterEORI = "GB000123456789",
+    reportSubjectEori = "GB000123456789",
     action = Seq(sampleAction)
   )
 
@@ -47,6 +50,9 @@ class AvailableReportResponseSpec extends PlaySpec {
     expiryDate = instantNow,
     reportType = ReportTypeName.EXPORTS_ITEM_REPORT,
     companyName = "Test Company",
+    reportFilesParts = "1",
+    requesterEORI = "GB000123456789",
+    reportSubjectEori = "GB000123456789",
     action = Seq(sampleAction)
   )
 
@@ -128,6 +134,9 @@ class AvailableReportResponseSpec extends PlaySpec {
         expiryDate = instantNow,
         reportType = ReportTypeName.EXPORTS_ITEM_REPORT,
         companyName = "Another Company",
+        reportFilesParts = "1",
+        requesterEORI = "GB000123456789",
+        reportSubjectEori = "GB000123456789",
         action = Seq(sampleAction, sampleAction.copy(fileName = "report2.csv", fileType = FileType.CSV))
       )
       val json   = Json.toJson(report)
@@ -141,6 +150,9 @@ class AvailableReportResponseSpec extends PlaySpec {
         expiryDate = instantNow,
         reportType = ReportTypeName.EXPORTS_ITEM_REPORT,
         companyName = "Empty Action Co",
+        reportFilesParts = "1",
+        requesterEORI = "GB000123456789",
+        reportSubjectEori = "GB000123456789",
         action = Seq.empty
       )
       val json   = Json.toJson(report)
@@ -155,6 +167,9 @@ class AvailableReportResponseSpec extends PlaySpec {
         reportName = "User Report 2",
         expiryDate = instantNow,
         reportType = ReportTypeName.IMPORTS_ITEM_REPORT,
+        reportFilesParts = "1",
+        requesterEORI = "GB000123456789",
+        reportSubjectEori = "GB000123456789",
         action = Seq(sampleAction, sampleAction.copy(fileName = "user_report.csv", fileType = FileType.CSV))
       )
       val json   = Json.toJson(report)
@@ -167,6 +182,9 @@ class AvailableReportResponseSpec extends PlaySpec {
         reportName = "User Report 3",
         expiryDate = instantNow,
         reportType = ReportTypeName.EXPORTS_ITEM_REPORT,
+        reportFilesParts = "1",
+        requesterEORI = "GB000123456789",
+        reportSubjectEori = "GB000123456789",
         action = Seq.empty
       )
       val json   = Json.toJson(report)

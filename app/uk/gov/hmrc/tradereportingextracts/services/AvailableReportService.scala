@@ -81,6 +81,13 @@ class AvailableReportService @Inject() (
         reportName = req.reportName,
         reportType = req.reportTypeName,
         expiryDate = req.updateDate.plus(appConfig.reportRequestTTLDays, DAYS),
+        requesterEORI = req.requesterEORI,
+        reportSubjectEori = req.requesterEORI,
+        reportFilesParts = req.fileNotifications
+          .flatMap { notifications =>
+            notifications.find(_.reportLastFile == "true").map(_.reportFilesParts)
+          }
+          .getOrElse("0"),
         action = toAvailableReportActions(
           sdesResponse.filter(_.metadata.exists {
             case FileAvailableMetadataItem.MDTPReportRequestIDMetadataItem(value) =>
