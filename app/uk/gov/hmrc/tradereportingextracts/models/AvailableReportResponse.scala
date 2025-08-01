@@ -36,6 +36,9 @@ case class AvailableThirdPartyReportResponse(
   expiryDate: Instant,
   reportType: ReportTypeName,
   companyName: String,
+  reportFilesParts: String,
+  requesterEORI: String,
+  reportSubjectEori: String,
   action: Seq[AvailableReportAction]
 )
 object AvailableThirdPartyReportResponse {
@@ -47,6 +50,9 @@ case class AvailableUserReportResponse(
   reportName: String,
   expiryDate: Instant,
   reportType: ReportTypeName,
+  reportFilesParts: String,
+  requesterEORI: String,
+  reportSubjectEori: String,
   action: Seq[AvailableReportAction]
 )
 
