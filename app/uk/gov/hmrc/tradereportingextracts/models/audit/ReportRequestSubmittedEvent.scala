@@ -29,7 +29,6 @@ final case class ReportRequestSubmittedEvent(
   reportAlias: String,
   reportStart: Instant,
   reportEnd: Instant,
-  createDate: Instant,
   submittedAt: Instant,
   recipientEmails: Seq[String],
   reports: Seq[ReportDetail]

@@ -58,8 +58,7 @@ class AuditService @Inject() (
           reportAlias = baseRequest.reportName,
           reportStart = baseRequest.reportStart,
           reportEnd = baseRequest.reportEnd,
-          createDate = baseRequest.createDate,
-          submittedAt = baseRequest.updateDate,
+          submittedAt = baseRequest.createDate,
           recipientEmails = baseRequest.recipientEmails,
           reports = reportDetails
         )
