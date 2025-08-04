@@ -44,7 +44,6 @@ class ReportRequestSubmittedEventSpec extends AnyFreeSpec with Matchers {
       reportAlias = "Trader Report",
       reportStart = now,
       reportEnd = now,
-      createDate = now,
       submittedAt = now,
       recipientEmails = Seq("user@example.com"),
       reports = Seq(reportDetail)
