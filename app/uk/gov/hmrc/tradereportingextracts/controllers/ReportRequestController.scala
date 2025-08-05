@@ -20,8 +20,8 @@ import play.api.libs.json.{JsError, JsSuccess, JsValue, Json}
 import play.api.mvc.{Action, ControllerComponents}
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 import uk.gov.hmrc.tradereportingextracts.connectors.CustomsDataStoreConnector
-import uk.gov.hmrc.tradereportingextracts.models.ReportRequestUserAnswersModel
-import uk.gov.hmrc.tradereportingextracts.services.{EisService, ReportRequestService, ReportRequestTransformationService}
+import uk.gov.hmrc.tradereportingextracts.models.{ReportRequestUserAnswersModel, ReportStatus, ReportSubmissionStatus}
+import uk.gov.hmrc.tradereportingextracts.services.{AuditService, EisService, ReportRequestService, ReportRequestTransformationService}
 
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
@@ -35,6 +35,7 @@ class ReportRequestController @Inject() (
   reportRequestService: ReportRequestService,
   reportRequestTransformationService: ReportRequestTransformationService,
   eisService: EisService,
+  auditService: AuditService,
   appConfig: AppConfig
 )(implicit executionContext: ExecutionContext)
     extends BackendController(cc) {
@@ -70,8 +71,13 @@ class ReportRequestController @Inject() (
                   eisService.requestTraderReport(eisRequest, reportRequest)
                 }
               )
-              .map(_ => Ok(Json.obj("references" -> reportRequests.map(_.reportRequestId))))
+              .map { updatedReports =>
+                auditService.auditReportRequestSubmitted(updatedReports, ReportSubmissionStatus.Complete.value).recover
+
+                Ok(Json.obj("references" -> updatedReports.map(_.reportRequestId)))
+              }
           } else {
+            auditService.auditReportRequestSubmitted(reportRequests, ReportSubmissionStatus.Incomplete.value).recover
             Future.successful(InternalServerError(Json.obj("error" -> "Failed to create report requests")))
           }
         }
