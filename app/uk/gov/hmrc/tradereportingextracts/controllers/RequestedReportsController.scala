@@ -19,6 +19,7 @@ package uk.gov.hmrc.tradereportingextracts.controllers
 import play.api.Logging
 import play.api.libs.json.{JsValue, Json}
 import play.api.mvc.{Action, ControllerComponents, Request}
+import uk.gov.hmrc.internalauth.client.*
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 import uk.gov.hmrc.tradereportingextracts.services.ReportRequestService
 
@@ -28,12 +29,20 @@ import scala.concurrent.{ExecutionContext, Future}
 @Singleton
 class RequestedReportsController @Inject() (
   cc: ControllerComponents,
+  auth: BackendAuthComponents,
   reportRequestService: ReportRequestService
 )(using ec: ExecutionContext)
     extends BackendController(cc)
     with Logging:
 
-  def getRequestedReports: Action[JsValue] = Action.async(parse.json) { implicit request: Request[JsValue] =>
+  private val authorised                   = auth.authorizedAction(
+    predicate = Predicate.Permission(
+      Resource(ResourceType("trade-reporting-extracts"), ResourceLocation("trade-reporting-extracts/*")),
+      IAAction("READ")
+    ),
+    retrieval = Retrieval.username
+  )
+  def getRequestedReports: Action[JsValue] = authorised.async(parse.json) { implicit request: Request[JsValue] =>
     val eoriOpt = (request.body \ "eori").asOpt[String]
 
     eoriOpt match {

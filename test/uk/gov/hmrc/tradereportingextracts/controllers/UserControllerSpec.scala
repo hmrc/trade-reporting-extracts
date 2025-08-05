@@ -17,19 +17,33 @@
 package uk.gov.hmrc.tradereportingextracts.controllers
 
 import org.mockito.Mockito.when
-import play.api.{Application, inject}
+import play.api.Application
 import play.api.libs.json.{JsArray, JsObject, JsString, Json}
 import play.api.mvc.{AnyContentAsEmpty, Result}
 import play.api.test.Helpers.*
 import play.api.test.{FakeRequest, Helpers}
+import uk.gov.hmrc.internalauth.client.*
+import uk.gov.hmrc.internalauth.client.test.{BackendAuthComponentsStub, StubBehaviour}
 import uk.gov.hmrc.tradereportingextracts.models.{AddressInformation, CompanyInformation, NotificationEmail, UserDetails}
 import uk.gov.hmrc.tradereportingextracts.services.UserService
 import uk.gov.hmrc.tradereportingextracts.utils.SpecBase
 
 import java.time.LocalDateTime
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 class UserControllerSpec extends SpecBase {
+
+  implicit val ec: ExecutionContext                        = ExecutionContext.Implicits.global
+  private val mockUserService: UserService                 = mock[UserService]
+  private val mockStubBehaviour                            = mock[StubBehaviour]
+  private val backendAuthComponents: BackendAuthComponents =
+    BackendAuthComponentsStub(mockStubBehaviour)(Helpers.stubControllerComponents())
+  val controller                                           =
+    new UserController(mockUserService, Helpers.stubControllerComponents(), backendAuthComponents)(using ec)
+  val permission                                           = Predicate.Permission(
+    Resource(ResourceType("trade-reporting-extracts"), ResourceLocation("trade-reporting-extracts/*")),
+    IAAction("READ")
+  )
 
   "UserController.getNotificationEmail" should {
 
@@ -39,23 +53,27 @@ class UserControllerSpec extends SpecBase {
 
       when(mockUserService.getNotificationEmail(eori))
         .thenReturn(Future.successful(email))
+      when(mockStubBehaviour.stubAuth(Some(permission), Retrieval.username))
+        .thenReturn(Future.successful(Retrieval.Username("test-service")))
 
       val request: FakeRequest[JsObject] = FakeRequest(POST, routes.UserController.getNotificationEmail.url)
-        .withHeaders("Content-Type" -> "application/json")
+        .withHeaders("Content-Type" -> "application/json", AUTHORIZATION -> "my-token")
         .withBody(Json.obj("eori" -> eori))
 
-      val result: Future[Result] = route(app, request).value
+      val result: Future[Result] = controller.getNotificationEmail.apply(request)
 
       status(result)        shouldBe OK
       contentAsJson(result) shouldBe Json.toJson(email)
     }
 
     "return 400 BadRequest when EORI is missing" in new Setup {
+      when(mockStubBehaviour.stubAuth(Some(permission), Retrieval.username))
+        .thenReturn(Future.successful(Retrieval.Username("test-service")))
       val request: FakeRequest[JsObject] = FakeRequest(POST, routes.UserController.getNotificationEmail.url)
-        .withHeaders("Content-Type" -> "application/json")
+        .withHeaders("Content-Type" -> "application/json", AUTHORIZATION -> "my-token")
         .withBody(Json.obj("invalidField" -> "value"))
 
-      val result: Future[Result] = route(app, request).value
+      val result: Future[Result] = controller.getNotificationEmail.apply(request)
 
       status(result)        shouldBe BAD_REQUEST
       contentAsString(result) should include("Missing or invalid 'eori' field")
@@ -66,12 +84,13 @@ class UserControllerSpec extends SpecBase {
 
       when(mockUserService.getNotificationEmail(eori))
         .thenReturn(Future.failed(new RuntimeException("Service failure")))
-
+      when(mockStubBehaviour.stubAuth(Some(permission), Retrieval.username))
+        .thenReturn(Future.successful(Retrieval.Username("test-service")))
       val request: FakeRequest[JsObject] = FakeRequest(POST, routes.UserController.getNotificationEmail.url)
-        .withHeaders("Content-Type" -> "application/json")
+        .withHeaders("Content-Type" -> "application/json", AUTHORIZATION -> "my-token")
         .withBody(Json.obj("eori" -> eori))
 
-      val result: Future[Result] = route(app, request).value
+      val result: Future[Result] = controller.getNotificationEmail.apply(request)
 
       status(result)        shouldBe INTERNAL_SERVER_ERROR
       contentAsString(result) should include("Service failure")
@@ -92,23 +111,27 @@ class UserControllerSpec extends SpecBase {
 
       when(mockUserService.getOrCreateUser(eori))
         .thenReturn(Future.successful(userDetails))
+      when(mockStubBehaviour.stubAuth(Some(permission), Retrieval.username))
+        .thenReturn(Future.successful(Retrieval.Username("test-service")))
 
       val request: FakeRequest[JsObject] = FakeRequest(GET, routes.UserController.setupUser().url)
-        .withHeaders("Content-Type" -> "application/json")
+        .withHeaders("Content-Type" -> "application/json", AUTHORIZATION -> "my-token")
         .withBody(Json.obj("eori" -> eori))
 
-      val result: Future[Result] = route(app, request).value
+      val result: Future[Result] = controller.setupUser().apply(request)
 
       status(result)        shouldBe CREATED
       contentAsJson(result) shouldBe Json.toJson(userDetails)
     }
 
     "return 400 BadRequest when EORI is missing" in new Setup {
+      when(mockStubBehaviour.stubAuth(Some(permission), Retrieval.username))
+        .thenReturn(Future.successful(Retrieval.Username("test-service")))
       val request: FakeRequest[JsObject] = FakeRequest(GET, routes.UserController.setupUser().url)
-        .withHeaders("Content-Type" -> "application/json")
+        .withHeaders("Content-Type" -> "application/json", AUTHORIZATION -> "my-token")
         .withBody(Json.obj("wrongField" -> "value"))
 
-      val result: Future[Result] = route(app, request).value
+      val result: Future[Result] = controller.setupUser().apply(request)
 
       status(result)        shouldBe BAD_REQUEST
       contentAsString(result) should include("Missing or invalid 'eori' field")
@@ -123,11 +146,13 @@ class UserControllerSpec extends SpecBase {
 
       when(mockUserService.getAuthorisedEoris(eori))
         .thenReturn(Future.successful(authorisedEoris))
-
+      when(mockStubBehaviour.stubAuth(Some(permission), Retrieval.username))
+        .thenReturn(Future.successful(Retrieval.Username("test-service")))
       val request: FakeRequest[AnyContentAsEmpty.type] =
         FakeRequest(GET, routes.UserController.getAuthorisedEoris(eori).url)
+          .withHeaders(AUTHORIZATION -> "my-token")
 
-      val result: Future[Result] = route(app, request).value
+      val result: Future[Result] = controller.getAuthorisedEoris(eori).apply(request)
 
       status(result)        shouldBe OK
       contentAsJson(result) shouldBe JsArray(authorisedEoris.map(JsString(_)))
@@ -138,11 +163,12 @@ class UserControllerSpec extends SpecBase {
 
       when(mockUserService.getAuthorisedEoris(eori))
         .thenReturn(Future.failed(new RuntimeException("Service failure")))
-
+      when(mockStubBehaviour.stubAuth(Some(permission), Retrieval.username))
+        .thenReturn(Future.successful(Retrieval.Username("test-service")))
       val request: FakeRequest[AnyContentAsEmpty.type] =
-        FakeRequest(GET, routes.UserController.getAuthorisedEoris(eori).url)
+        FakeRequest(GET, routes.UserController.getAuthorisedEoris(eori).url).withHeaders(AUTHORIZATION -> "my-token")
 
-      val result: Future[Result] = route(app, request).value
+      val result: Future[Result] = controller.getAuthorisedEoris(eori).apply(request)
 
       status(result)        shouldBe INTERNAL_SERVER_ERROR
       contentAsString(result) should include("Service failure")
@@ -152,8 +178,8 @@ class UserControllerSpec extends SpecBase {
   "UserController.getUserDetails" should {
 
     "return 201 OK with user details when valid EORI is provided" in new Setup {
-      val eori                     = "GB123456789000"
-      val userDetails: UserDetails = UserDetails(
+      val eori                           = "GB123456789000"
+      val userDetails: UserDetails       = UserDetails(
         eori = eori,
         additionalEmails = Seq.empty,
         authorisedUsers = Seq.empty,
@@ -170,21 +196,19 @@ class UserControllerSpec extends SpecBase {
         notificationEmail = NotificationEmail("test@test.com", LocalDateTime.now())
       )
       when(mockUserService.getUserAndEmailDetails(eori)).thenReturn(Future.successful(userDetails))
-
+      when(mockStubBehaviour.stubAuth(Some(permission), Retrieval.username))
+        .thenReturn(Future.successful(Retrieval.Username("test-service")))
       val request: FakeRequest[JsObject] = FakeRequest(GET, routes.UserController.getUserAndEmail.url)
-        .withHeaders("Content-Type" -> "application/json")
+        .withHeaders("Content-Type" -> "application/json", AUTHORIZATION -> "my-token")
         .withBody(Json.obj("eori" -> eori))
-      val result: Future[Result]         = route(app, request).value
+      val result: Future[Result]         = controller.getUserAndEmail.apply(request)
       status(result)        shouldBe CREATED
       contentAsJson(result) shouldBe Json.toJson(userDetails)
     }
   }
 
   trait Setup {
-    val mockUserService: UserService = mock[UserService]
-
     val app: Application = application
-      .overrides(inject.bind[UserService].toInstance(mockUserService))
       .build()
   }
 }
