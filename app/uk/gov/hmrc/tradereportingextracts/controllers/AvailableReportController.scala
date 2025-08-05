@@ -18,9 +18,10 @@ package uk.gov.hmrc.tradereportingextracts.controllers
 
 import play.api.Logger
 import play.api.libs.json.Json
-import play.api.mvc.{Action, AnyContent, ControllerComponents}
+import play.api.mvc.{Action, AnyContent, ControllerComponents, Result}
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
+import uk.gov.hmrc.tradereportingextracts.models.audit.AuditDownloadRequest
 import uk.gov.hmrc.tradereportingextracts.services.AvailableReportService
 import uk.gov.hmrc.tradereportingextracts.utils.ApplicationConstants.eori
 
@@ -52,5 +53,16 @@ class AvailableReportController @Inject() (cc: ControllerComponents, availableRe
       case _               =>
         Future.successful(BadRequest("Missing or invalid EORI in request body"))
     }
+  }
+
+  def auditReportDownload: Action[AnyContent] = Action.async { implicit request =>
+    availableReportService
+      .processReportDownloadAudit(
+        request.body.asJson.flatMap(_.validate[AuditDownloadRequest].asOpt)
+      )
+      .map {
+        case Right(_)    => NoContent
+        case Left(error) => error
+      }
   }
 }
