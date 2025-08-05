@@ -137,10 +137,10 @@ class AvailableReportService @Inject() (
     auditService.audit(
       ReportRequestDownloadedEvent(
         requestId = auditRequest.reportReference,
-        totalReportParts = report.fileNotifications.map(_.size).getOrElse(0).toString,
+        totalReportParts = report.fileNotifications.map(_.size).getOrElse(0),
         fileUrl = auditRequest.fileUrl,
         fileName = auditRequest.fileName,
-        fileSizeBytes = notification.fileSize.toString,
+        fileSizeBytes = notification.fileSize,
         reportSubjectEori = report.requesterEORI,
         reportTypeName = report.reportTypeName.toString,
         requesterEori = report.requesterEORI
