@@ -23,6 +23,8 @@ import org.mockito.ArgumentMatchers.*
 import play.api.test.Helpers.*
 import play.api.test.{FakeRequest, Helpers}
 import play.api.libs.json.Json
+import uk.gov.hmrc.internalauth.client.*
+import uk.gov.hmrc.internalauth.client.test.{BackendAuthComponentsStub, StubBehaviour}
 import uk.gov.hmrc.tradereportingextracts.models.AvailableReportResponse
 import uk.gov.hmrc.tradereportingextracts.services.AvailableReportService
 import uk.gov.hmrc.tradereportingextracts.utils.ApplicationConstants.eori
@@ -31,9 +33,17 @@ import scala.concurrent.{ExecutionContext, Future}
 
 class AvailableReportControllerSpec extends PlaySpec with MockitoSugar {
 
-  implicit val ec: ExecutionContext = ExecutionContext.Implicits.global
-  val mockService                   = mock[AvailableReportService]
-  val controller                    = new AvailableReportController(Helpers.stubControllerComponents(), mockService)(using ec)
+  implicit val ec: ExecutionContext                        = ExecutionContext.Implicits.global
+  val mockService                                          = mock[AvailableReportService]
+  private val mockStubBehaviour                            = mock[StubBehaviour]
+  private val backendAuthComponents: BackendAuthComponents =
+    BackendAuthComponentsStub(mockStubBehaviour)(Helpers.stubControllerComponents())
+  val controller                                           =
+    new AvailableReportController(Helpers.stubControllerComponents(), backendAuthComponents, mockService)(using ec)
+  val permission                                           = Predicate.Permission(
+    Resource(ResourceType("trade-reporting-extracts"), ResourceLocation("trade-reporting-extracts/*")),
+    IAAction("READ")
+  )
 
   "getAvailableReports" should {
     "return Ok with reports when EORI is present" in {
@@ -46,8 +56,10 @@ class AvailableReportControllerSpec extends PlaySpec with MockitoSugar {
             )
           )
         )
+      when(mockStubBehaviour.stubAuth(Some(permission), Retrieval.username))
+        .thenReturn(Future.successful(Retrieval.Username("test-service")))
       val request = FakeRequest(GET, s"/api/available-reports")
-        .withHeaders(CONTENT_TYPE -> JSON)
+        .withHeaders(CONTENT_TYPE -> JSON, AUTHORIZATION -> "my-token")
         .withJsonBody(Json.obj(eori -> "GB123456789000"))
 
       // val request = FakeRequest("GET", "/api/available-reports").withJsonBody(Json.obj(eori -> "GB123456789000"))
@@ -64,7 +76,9 @@ class AvailableReportControllerSpec extends PlaySpec with MockitoSugar {
     }
 
     "return BadRequest when EORI is missing" in {
-      val request = FakeRequest().withJsonBody(Json.obj())
+      when(mockStubBehaviour.stubAuth(Some(permission), Retrieval.username))
+        .thenReturn(Future.successful(Retrieval.Username("test-service")))
+      val request = FakeRequest().withJsonBody(Json.obj()).withHeaders(AUTHORIZATION -> "my-token")
       val result  = controller.getAvailableReports()(request)
 
       status(result) mustBe BAD_REQUEST
@@ -75,8 +89,10 @@ class AvailableReportControllerSpec extends PlaySpec with MockitoSugar {
     "return Ok with count when EORI is present" in {
       when(mockService.getAvailableReportsCount(any[String]))
         .thenReturn(Future.successful(5L))
-
-      val request = FakeRequest().withJsonBody(Json.obj("eori" -> "GB123456789000"))
+      when(mockStubBehaviour.stubAuth(Some(permission), Retrieval.username))
+        .thenReturn(Future.successful(Retrieval.Username("test-service")))
+      val request =
+        FakeRequest().withJsonBody(Json.obj("eori" -> "GB123456789000")).withHeaders(AUTHORIZATION -> "my-token")
       val result  = controller.getAvailableReportsCount()(request)
 
       status(result) mustBe OK
@@ -84,7 +100,9 @@ class AvailableReportControllerSpec extends PlaySpec with MockitoSugar {
     }
 
     "return BadRequest when EORI is missing" in {
-      val request = FakeRequest().withJsonBody(Json.obj())
+      when(mockStubBehaviour.stubAuth(Some(permission), Retrieval.username))
+        .thenReturn(Future.successful(Retrieval.Username("test-service")))
+      val request = FakeRequest().withJsonBody(Json.obj()).withHeaders(AUTHORIZATION -> "my-token")
       val result  = controller.getAvailableReportsCount()(request)
 
       status(result) mustBe BAD_REQUEST

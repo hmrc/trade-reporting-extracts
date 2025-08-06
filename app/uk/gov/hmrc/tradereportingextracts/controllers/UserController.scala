@@ -18,6 +18,7 @@ package uk.gov.hmrc.tradereportingextracts.controllers
 
 import play.api.libs.json.{JsError, JsSuccess, JsValue, Json}
 import play.api.mvc.{Action, AnyContent, ControllerComponents}
+import uk.gov.hmrc.internalauth.client.*
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 import uk.gov.hmrc.tradereportingextracts.services.UserService
 
@@ -27,11 +28,20 @@ import scala.concurrent.{ExecutionContext, Future}
 @Singleton()
 class UserController @Inject() (
   userService: UserService,
-  cc: ControllerComponents
+  cc: ControllerComponents,
+  auth: BackendAuthComponents
 )(using executionContext: ExecutionContext)
     extends BackendController(cc):
 
-  def setupUser(): Action[JsValue] = Action.async(parse.json) { implicit request =>
+  private val authorised = auth.authorizedAction(
+    predicate = Predicate.Permission(
+      Resource(ResourceType("trade-reporting-extracts"), ResourceLocation("trade-reporting-extracts/*")),
+      IAAction("READ")
+    ),
+    retrieval = Retrieval.username
+  )
+
+  def setupUser(): Action[JsValue] = authorised.async(parse.json) { implicit request =>
     (request.body \ "eori").validate[String] match {
       case JsSuccess(eori, _) =>
         userService.getOrCreateUser(eori).map { userDetails =>
@@ -53,7 +63,7 @@ class UserController @Inject() (
       }
   }
 
-  def getNotificationEmail: Action[JsValue] = Action.async(parse.json) { implicit request =>
+  def getNotificationEmail: Action[JsValue] = authorised.async(parse.json) { implicit request =>
     (request.body \ "eori").validate[String] match {
       case JsSuccess(eori, _) =>
         userService
@@ -67,7 +77,7 @@ class UserController @Inject() (
     }
   }
 
-  def getUserAndEmail: Action[JsValue] = Action.async(parse.json) { implicit request =>
+  def getUserAndEmail: Action[JsValue] = authorised.async(parse.json) { implicit request =>
     (request.body \ "eori").validate[String] match {
       case JsSuccess(eori, _) =>
         userService.getUserAndEmailDetails(eori).map { userDetails =>

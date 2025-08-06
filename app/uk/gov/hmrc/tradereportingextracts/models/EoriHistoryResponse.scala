@@ -18,7 +18,7 @@ package uk.gov.hmrc.tradereportingextracts.models
 
 import play.api.libs.json.{Json, OFormat}
 
-import java.time.{Instant, LocalDate, ZoneOffset}
+import java.time.LocalDate
 
 case class EoriHistoryResponse(var eoriHistory: Seq[EoriHistory]) {
   def filterByDateRange(from: LocalDate, until: LocalDate): Seq[EoriHistory] =

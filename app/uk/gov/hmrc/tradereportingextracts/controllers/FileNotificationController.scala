@@ -18,21 +18,16 @@ package uk.gov.hmrc.tradereportingextracts.controllers
 
 import play.api.libs.json.*
 import play.api.mvc.*
-import uk.gov.hmrc.tradereportingextracts.config.AppConfig
 import uk.gov.hmrc.tradereportingextracts.models.sdes.FileNotificationResponse
-import uk.gov.hmrc.tradereportingextracts.services.{FileNotificationService, ReportRequestService}
+import uk.gov.hmrc.tradereportingextracts.services.FileNotificationService
 
 import javax.inject.{Inject, Singleton}
-import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
 class FileNotificationController @Inject() (
   cc: ControllerComponents,
-  appConfig: AppConfig,
-  reportRequestService: ReportRequestService,
   fileNotificationService: FileNotificationService
-)(implicit ec: ExecutionContext)
-    extends AbstractController(cc) {
+) extends AbstractController(cc) {
 
   def fileNotification(): Action[AnyContent] = Action { request =>
     request.body.asJson match {

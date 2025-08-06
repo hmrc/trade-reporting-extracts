@@ -16,7 +16,6 @@
 
 package uk.gov.hmrc.tradereportingextracts.services
 
-import org.apache.pekko.Done
 import org.apache.pekko.actor.ActorSystem
 import org.apache.pekko.pattern.after
 import play.api.Logging

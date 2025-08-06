@@ -1,24 +1,26 @@
 {
   "environment": "qa",
-  "host": "https://release.dev.mdg/gbe/requesttraderreport/v1",
+  "host": "https://if.ws.ibt.hmrc.gov.uk/gbe/requesttraderreport/v1",
   "method": "PUT",
   "header": {
     "accept": "application/json",
-    "authorization": "3i1lBi8y0cDjhSo1pZPMhgyNZhikZvzxXJ",
+    "authorization": "*********************",
     "content-type": "application/json",
     "date": "Mon, 02 Oct 2023 14:30:00 GMT",
     "x-correlation-id": "46cd6ed6-21ba-4e05-975e-56d02011243c",
-    "x-forwarded-host": "CDAP"
+    "x-forwarded-host": "MDTP"
   },
   "body": {
-    "endDate": "2024-06-30T23:59:59Z",
-    "eori": ["GB123456789012", "GB123456789013"],
-    "eoriRole": "TRADER",
-    "reportTypeName": "IMPORTS-ITEM-REPORT",
-    "requestID": "RE57965342",
-    "requestTimestamp": "2024-06-01T12:00:00Z",
-    "requesterEori": "GB123456789012",
-    "startDate": "2024-06-01T00:00:00Z"
+    "endDate": "2025-06-30",
+    "eori": [
+      "GB711414237000"
+    ],
+    "eoriRole": "DECLARANT",
+    "reportTypeName": "IMPORTS-HEADER-REPORT",
+    "requestID": "RE60417653",
+    "requestTimestamp": "2025-07-28T16:01:27.057Z",
+    "requesterEori": "GB711414237000",
+    "startDate": "2025-06-01"
   }
 }
 
