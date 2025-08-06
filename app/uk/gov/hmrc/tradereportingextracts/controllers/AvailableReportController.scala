@@ -16,7 +16,6 @@
 
 package uk.gov.hmrc.tradereportingextracts.controllers
 
-import play.api.Logger
 import play.api.libs.json.Json
 import play.api.mvc.{Action, AnyContent, ControllerComponents}
 import uk.gov.hmrc.http.HeaderCarrier
@@ -35,7 +34,6 @@ class AvailableReportController @Inject() (
 )(using
   executionContext: ExecutionContext
 ) extends BackendController(cc) {
-  private val log: Logger                     = Logger(this.getClass)
   private val authorised                      = auth.authorizedAction(
     predicate = Predicate.Permission(
       Resource(ResourceType("trade-reporting-extracts"), ResourceLocation("trade-reporting-extracts/*")),

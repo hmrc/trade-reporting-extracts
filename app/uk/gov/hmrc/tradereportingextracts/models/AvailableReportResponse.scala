@@ -17,7 +17,6 @@
 package uk.gov.hmrc.tradereportingextracts.models
 
 import play.api.libs.json.{Json, OFormat}
-import uk.gov.hmrc.tradereportingextracts.models.{FileType, ReportTypeName}
 
 import java.time.Instant
 

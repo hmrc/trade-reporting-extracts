@@ -16,17 +16,16 @@
 
 package uk.gov.hmrc.tradereportingextracts.repositories
 
-import java.time.{Instant, LocalDate, ZoneOffset}
-import org.mongodb.scala.model.Filters
 import org.mongodb.scala.*
 import org.mongodb.scala.model.{Filters, IndexModel, IndexOptions, Indexes}
 import uk.gov.hmrc.crypto.{Decrypter, Encrypter}
 import uk.gov.hmrc.mongo.MongoComponent
 import uk.gov.hmrc.mongo.play.json.PlayMongoRepository
 import uk.gov.hmrc.tradereportingextracts.config.AppConfig
-import uk.gov.hmrc.tradereportingextracts.models.{ReportRequest, StringFieldRegex}
+import uk.gov.hmrc.tradereportingextracts.models.ReportRequest
 import uk.gov.hmrc.tradereportingextracts.utils.ReportRequestUtil.isReportStatusComplete
 
+import java.time.{LocalDate, ZoneOffset}
 import java.util.concurrent.TimeUnit
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
