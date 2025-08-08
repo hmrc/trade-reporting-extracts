@@ -28,7 +28,7 @@ import play.api.test.Helpers.*
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
 import uk.gov.hmrc.tradereportingextracts.connectors.CustomsDataStoreConnector
 import uk.gov.hmrc.tradereportingextracts.models.audit.ReportRequestSubmittedEvent
-import uk.gov.hmrc.tradereportingextracts.models.{EoriHistory, EoriHistoryResponse, NotificationEmail, ReportRequest}
+import uk.gov.hmrc.tradereportingextracts.models.{EoriHistory, EoriHistoryResponse, NotificationEmail, ReportConfirmation, ReportRequest}
 import uk.gov.hmrc.tradereportingextracts.services.{EisService, ReportRequestService, RequestReferenceService}
 import uk.gov.hmrc.tradereportingextracts.utils.{SpecBase, WireMockHelper}
 
@@ -116,7 +116,12 @@ class ReportRequestControllerSpec extends SpecBase with WireMockHelper {
       val result = route(app, request).value
 
       status(result) mustBe OK
-      contentAsJson(result) mustBe Json.obj("references" -> Seq("REF-00000001"))
+      contentAsJson(result) mustBe Json.arr(
+        Json.obj(
+          "reportName" -> "MyReport",
+          "reportType" -> "importHeader",
+          "reportReference" -> "REF-00000001"
+        ))
 
       verify(mockReportRequestService).createAll(any())(any())
 
@@ -181,7 +186,18 @@ class ReportRequestControllerSpec extends SpecBase with WireMockHelper {
       val result = route(app, request).value
 
       status(result) mustBe OK
-      contentAsJson(result) mustBe Json.obj("references" -> Seq("REF-00000001", "REF-00000002"))
+      contentAsJson(result) mustBe Json.arr(
+        Json.obj(
+          "reportName" -> "MyReport",
+          "reportType" -> "importHeader",
+          "reportReference" -> "REF-00000001"
+        ),
+        Json.obj(
+          "reportName" -> "MyReport",
+          "reportType" -> "importItem",
+          "reportReference" -> "REF-00000002"
+        )
+      )
 
       val captor = ArgumentCaptor.forClass(classOf[Seq[ReportRequest]])
       verify(mockReportRequestService, times(1)).createAll(captor.capture())(any())
@@ -245,7 +261,23 @@ class ReportRequestControllerSpec extends SpecBase with WireMockHelper {
       val result = route(app, request).value
 
       status(result) mustBe OK
-      contentAsJson(result) mustBe Json.obj("references" -> Seq("REF-00000001", "REF-00000002", "REF-00000003"))
+      contentAsJson(result) mustBe Json.arr(
+        Json.obj(
+          "reportName" -> "MyReport",
+          "reportType" -> "importHeader",
+          "reportReference" -> "REF-00000001"
+        ),
+        Json.obj(
+          "reportName" -> "MyReport",
+          "reportType" -> "importItem",
+          "reportReference" -> "REF-00000002"
+        ),
+        Json.obj(
+          "reportName" -> "MyReport",
+          "reportType" -> "importTaxLine",
+          "reportReference" -> "REF-00000003"
+        )
+      )
 
       val captor = ArgumentCaptor.forClass(classOf[Seq[ReportRequest]])
       verify(mockReportRequestService, times(1)).createAll(captor.capture())(any())
