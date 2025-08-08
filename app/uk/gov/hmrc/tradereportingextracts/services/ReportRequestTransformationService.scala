@@ -20,7 +20,7 @@ import uk.gov.hmrc.crypto.Sensitive.SensitiveString
 
 import javax.inject.{Inject, Singleton}
 import uk.gov.hmrc.tradereportingextracts.models.eis.EisReportRequest
-import uk.gov.hmrc.tradereportingextracts.models.{EoriRole, ReportRequest, ReportRequestUserAnswersModel, ReportTypeName}
+import uk.gov.hmrc.tradereportingextracts.models.{EoriRole, ReportConfirmation, ReportRequest, ReportRequestUserAnswersModel, ReportTypeName}
 
 import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
@@ -79,25 +79,41 @@ class ReportRequestTransformationService @Inject() (
     }
   }
 
-  def toEisReportRequest(reportRequest: ReportRequest): EisReportRequest =
+  def toEisReportRequest(reportRequest: ReportRequest): EisReportRequest = {
     EisReportRequest(
       endDate = DateTimeFormatter.ISO_LOCAL_DATE.format(reportRequest.reportEnd.atZone(ZoneOffset.UTC)),
       eori = reportRequest.reportEORIs.toList,
       eoriRole = reportRequest.eoriRole match {
-        case EoriRole.TRADER           => EisReportRequest.EoriRole.TRADER
-        case EoriRole.DECLARANT        => EisReportRequest.EoriRole.DECLARANT
+        case EoriRole.TRADER => EisReportRequest.EoriRole.TRADER
+        case EoriRole.DECLARANT => EisReportRequest.EoriRole.DECLARANT
         case EoriRole.TRADER_DECLARANT => EisReportRequest.EoriRole.TRADERDECLARANT
       },
       reportTypeName = reportRequest.reportTypeName match {
-        case ReportTypeName.IMPORTS_ITEM_REPORT    => EisReportRequest.ReportTypeName.IMPORTSITEMREPORT
-        case ReportTypeName.IMPORTS_HEADER_REPORT  => EisReportRequest.ReportTypeName.IMPORTSHEADERREPORT
+        case ReportTypeName.IMPORTS_ITEM_REPORT => EisReportRequest.ReportTypeName.IMPORTSITEMREPORT
+        case ReportTypeName.IMPORTS_HEADER_REPORT => EisReportRequest.ReportTypeName.IMPORTSHEADERREPORT
         case ReportTypeName.IMPORTS_TAXLINE_REPORT => EisReportRequest.ReportTypeName.IMPORTSTAXLINEREPORT
-        case ReportTypeName.EXPORTS_ITEM_REPORT    => EisReportRequest.ReportTypeName.EXPORTSITEMREPORT
+        case ReportTypeName.EXPORTS_ITEM_REPORT => EisReportRequest.ReportTypeName.EXPORTSITEMREPORT
       },
       requestID = reportRequest.reportRequestId,
       requestTimestamp = DateTimeFormatter.ISO_INSTANT.format(reportRequest.createDate.truncatedTo(ChronoUnit.MILLIS)),
       requesterEori = reportRequest.requesterEORI,
       startDate = DateTimeFormatter.ISO_LOCAL_DATE.format(reportRequest.reportStart.atZone(ZoneOffset.UTC))
     )
+  }
+
+    def reportConfirmationTransformer(updatedReports: Seq[ReportRequest]): Seq[ReportConfirmation] = {
+      updatedReports.map { report =>
+        ReportConfirmation(
+          reportName = report.reportName,
+          reportType = report.reportTypeName match {
+            case ReportTypeName.IMPORTS_ITEM_REPORT => "importItem"
+            case ReportTypeName.IMPORTS_HEADER_REPORT => "importHeader"
+            case ReportTypeName.IMPORTS_TAXLINE_REPORT => "importTaxLine"
+            case ReportTypeName.EXPORTS_ITEM_REPORT => "exportItem"
+          },
+          reportReference = report.reportRequestId
+        )
+      }
+    }
 
 }

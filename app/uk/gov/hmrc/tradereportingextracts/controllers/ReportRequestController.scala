@@ -20,7 +20,7 @@ import play.api.libs.json.{JsError, JsSuccess, JsValue, Json}
 import play.api.mvc.{Action, ControllerComponents}
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 import uk.gov.hmrc.tradereportingextracts.connectors.CustomsDataStoreConnector
-import uk.gov.hmrc.tradereportingextracts.models.{ReportRequestUserAnswersModel, ReportStatus, ReportSubmissionStatus}
+import uk.gov.hmrc.tradereportingextracts.models.{ReportConfirmation, ReportRequestUserAnswersModel, ReportSubmissionStatus}
 import uk.gov.hmrc.tradereportingextracts.services.{AuditService, EisService, ReportRequestService, ReportRequestTransformationService}
 
 import java.time.LocalDate
@@ -73,8 +73,7 @@ class ReportRequestController @Inject() (
               )
               .map { updatedReports =>
                 auditService.auditReportRequestSubmitted(updatedReports, ReportSubmissionStatus.Complete.value).recover
-
-                Ok(Json.obj("references" -> updatedReports.map(_.reportRequestId)))
+                Ok(Json.toJson(reportRequestTransformationService.reportConfirmationTransformer(updatedReports)))
               }
           } else {
             auditService.auditReportRequestSubmitted(reportRequests, ReportSubmissionStatus.Incomplete.value).recover
