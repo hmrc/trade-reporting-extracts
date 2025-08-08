@@ -20,7 +20,7 @@ import uk.gov.hmrc.crypto.Sensitive.SensitiveString
 
 import javax.inject.{Inject, Singleton}
 import uk.gov.hmrc.tradereportingextracts.models.eis.EisReportRequest
-import uk.gov.hmrc.tradereportingextracts.models.{EoriRole, ReportRequest, ReportRequestUserAnswersModel, ReportTypeName}
+import uk.gov.hmrc.tradereportingextracts.models.{EoriRole, ReportConfirmation, ReportRequest, ReportRequestUserAnswersModel, ReportTypeName}
 
 import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
@@ -99,5 +99,19 @@ class ReportRequestTransformationService @Inject() (
       requesterEori = reportRequest.requesterEORI,
       startDate = DateTimeFormatter.ISO_LOCAL_DATE.format(reportRequest.reportStart.atZone(ZoneOffset.UTC))
     )
+
+  def reportConfirmationTransformer(updatedReports: Seq[ReportRequest]): Seq[ReportConfirmation] =
+    updatedReports.map { report =>
+      ReportConfirmation(
+        reportName = report.reportName,
+        reportType = report.reportTypeName match {
+          case ReportTypeName.IMPORTS_ITEM_REPORT    => "importItem"
+          case ReportTypeName.IMPORTS_HEADER_REPORT  => "importHeader"
+          case ReportTypeName.IMPORTS_TAXLINE_REPORT => "importTaxLine"
+          case ReportTypeName.EXPORTS_ITEM_REPORT    => "exportItem"
+        },
+        reportReference = report.reportRequestId
+      )
+    }
 
 }
