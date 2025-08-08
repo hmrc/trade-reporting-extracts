@@ -75,7 +75,7 @@ class AuditServiceSpec extends SpecBase {
           .when(mockAuditConnector)
           .sendExplicitAudit(anyString(), any[ReportRequestSubmittedEvent])(any(), any(), any())
 
-        val result = service.auditReportRequestSubmitted(Seq(reportRequest), "Complete")
+        val result = service.auditReportRequestSubmitted(Seq(reportRequest))
 
         whenReady(result) { _ =>
 
@@ -90,7 +90,7 @@ class AuditServiceSpec extends SpecBase {
 
     "return Future.unit when reportRequests is empty" in new Setup {
       running(app) {
-        val result = service.auditReportRequestSubmitted(Seq.empty, "Incomplete")
+        val result = service.auditReportRequestSubmitted(Seq.empty)
         whenReady(result)(_ shouldBe ())
       }
     }
