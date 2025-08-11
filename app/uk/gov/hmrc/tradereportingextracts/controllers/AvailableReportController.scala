@@ -23,6 +23,7 @@ import uk.gov.hmrc.internalauth.client.*
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 import uk.gov.hmrc.tradereportingextracts.services.AvailableReportService
 import uk.gov.hmrc.tradereportingextracts.utils.ApplicationConstants.eori
+import uk.gov.hmrc.tradereportingextracts.utils.PermissionsUtil.readPermission
 
 import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
@@ -34,14 +35,8 @@ class AvailableReportController @Inject() (
 )(using
   executionContext: ExecutionContext
 ) extends BackendController(cc) {
-  private val authorised                      = auth.authorizedAction(
-    predicate = Predicate.Permission(
-      Resource(ResourceType("trade-reporting-extracts"), ResourceLocation("trade-reporting-extracts/*")),
-      IAAction("READ")
-    ),
-    retrieval = Retrieval.username
-  )
-  def getAvailableReports: Action[AnyContent] = authorised.async { implicit request =>
+  
+  def getAvailableReports: Action[AnyContent] = auth.authorizedAction(readPermission).async { implicit request =>
     implicit val hc: HeaderCarrier = HeaderCarrier()
     request.body.asJson.flatMap(json => (json \ eori).asOpt[String]) match {
       case Some(eoriValue) =>
@@ -53,7 +48,7 @@ class AvailableReportController @Inject() (
     }
   }
 
-  def getAvailableReportsCount: Action[AnyContent] = authorised.async { implicit request =>
+  def getAvailableReportsCount: Action[AnyContent] = auth.authorizedAction(readPermission).async { implicit request =>
     request.body.asJson.flatMap(json => (json \ eori).asOpt[String]) match {
       case Some(eoriValue) =>
         availableReportService.getAvailableReportsCount(eoriValue).map { count =>

@@ -21,6 +21,7 @@ import play.api.mvc.{Action, AnyContent, ControllerComponents}
 import uk.gov.hmrc.internalauth.client.*
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 import uk.gov.hmrc.tradereportingextracts.services.UserService
+import uk.gov.hmrc.tradereportingextracts.utils.PermissionsUtil.readPermission
 
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
@@ -33,15 +34,7 @@ class UserController @Inject() (
 )(using executionContext: ExecutionContext)
     extends BackendController(cc):
 
-  private val authorised = auth.authorizedAction(
-    predicate = Predicate.Permission(
-      Resource(ResourceType("trade-reporting-extracts"), ResourceLocation("trade-reporting-extracts/*")),
-      IAAction("READ")
-    ),
-    retrieval = Retrieval.username
-  )
-
-  def setupUser(): Action[JsValue] = authorised.async(parse.json) { implicit request =>
+  def setupUser(): Action[JsValue] = auth.authorizedAction(readPermission).async(parse.json) { implicit request =>
     (request.body \ "eori").validate[String] match {
       case JsSuccess(eori, _) =>
         userService.getOrCreateUser(eori).map { userDetails =>
@@ -63,7 +56,7 @@ class UserController @Inject() (
       }
   }
 
-  def getNotificationEmail: Action[JsValue] = authorised.async(parse.json) { implicit request =>
+  def getNotificationEmail: Action[JsValue] = auth.authorizedAction(readPermission).async(parse.json) { implicit request =>
     (request.body \ "eori").validate[String] match {
       case JsSuccess(eori, _) =>
         userService
@@ -77,7 +70,7 @@ class UserController @Inject() (
     }
   }
 
-  def getUserAndEmail: Action[JsValue] = authorised.async(parse.json) { implicit request =>
+  def getUserAndEmail: Action[JsValue] = auth.authorizedAction(readPermission).async(parse.json) { implicit request =>
     (request.body \ "eori").validate[String] match {
       case JsSuccess(eori, _) =>
         userService.getUserAndEmailDetails(eori).map { userDetails =>
