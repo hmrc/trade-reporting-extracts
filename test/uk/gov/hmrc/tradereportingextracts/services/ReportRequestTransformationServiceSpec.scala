@@ -197,12 +197,12 @@ class ReportRequestTransformationServiceSpec extends AsyncFreeSpec with Matchers
       confirmations mustBe Seq(
         ReportConfirmation("Name1", "importHeader", "REF-1"),
         ReportConfirmation("Name2", "importItem", "REF-2"),
-        ReportConfirmation("Name3", "importTaxLine", "REF-3"),
+        ReportConfirmation("Name3", "importTaxLine", "REF-3")
       )
     }
 
     "shoudl tranform export items correctly" in {
-      val requests = Seq (
+      val requests = Seq(
         ReportRequest(
           reportRequestId = "REF-1",
           correlationId = "corr-1",

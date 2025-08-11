@@ -118,10 +118,11 @@ class ReportRequestControllerSpec extends SpecBase with WireMockHelper {
       status(result) mustBe OK
       contentAsJson(result) mustBe Json.arr(
         Json.obj(
-          "reportName" -> "MyReport",
-          "reportType" -> "importHeader",
+          "reportName"      -> "MyReport",
+          "reportType"      -> "importHeader",
           "reportReference" -> "REF-00000001"
-        ))
+        )
+      )
 
       verify(mockReportRequestService).createAll(any())(any())
 
@@ -188,13 +189,13 @@ class ReportRequestControllerSpec extends SpecBase with WireMockHelper {
       status(result) mustBe OK
       contentAsJson(result) mustBe Json.arr(
         Json.obj(
-          "reportName" -> "MyReport",
-          "reportType" -> "importHeader",
+          "reportName"      -> "MyReport",
+          "reportType"      -> "importHeader",
           "reportReference" -> "REF-00000001"
         ),
         Json.obj(
-          "reportName" -> "MyReport",
-          "reportType" -> "importItem",
+          "reportName"      -> "MyReport",
+          "reportType"      -> "importItem",
           "reportReference" -> "REF-00000002"
         )
       )
@@ -263,18 +264,18 @@ class ReportRequestControllerSpec extends SpecBase with WireMockHelper {
       status(result) mustBe OK
       contentAsJson(result) mustBe Json.arr(
         Json.obj(
-          "reportName" -> "MyReport",
-          "reportType" -> "importHeader",
+          "reportName"      -> "MyReport",
+          "reportType"      -> "importHeader",
           "reportReference" -> "REF-00000001"
         ),
         Json.obj(
-          "reportName" -> "MyReport",
-          "reportType" -> "importItem",
+          "reportName"      -> "MyReport",
+          "reportType"      -> "importItem",
           "reportReference" -> "REF-00000002"
         ),
         Json.obj(
-          "reportName" -> "MyReport",
-          "reportType" -> "importTaxLine",
+          "reportName"      -> "MyReport",
+          "reportType"      -> "importTaxLine",
           "reportReference" -> "REF-00000003"
         )
       )

@@ -32,7 +32,7 @@ class ReportConfirmationSpec extends AnyFreeSpec with Matchers {
     }
 
     "must serialize to JSON" in {
-      val rc = ReportConfirmation("MyReport", "importHeader", "RE00000001")
+      val rc   = ReportConfirmation("MyReport", "importHeader", "RE00000001")
       val json = Json.toJson(rc)
       (json \ "reportName").as[String] mustBe "MyReport"
       (json \ "reportType").as[String] mustBe "importHeader"
@@ -47,7 +47,7 @@ class ReportConfirmationSpec extends AnyFreeSpec with Matchers {
           "reportReference": "RE00000001"
         }
       """)
-      val rc = json.as[ReportConfirmation]
+      val rc   = json.as[ReportConfirmation]
       rc mustBe ReportConfirmation("MyReport", "importHeader", "RE00000001")
     }
   }

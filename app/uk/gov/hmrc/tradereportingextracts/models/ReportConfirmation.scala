@@ -18,11 +18,11 @@ package uk.gov.hmrc.tradereportingextracts.models
 
 import play.api.libs.json.{Json, OFormat}
 
-case class ReportConfirmation (
+case class ReportConfirmation(
   reportName: String,
   reportType: String,
   reportReference: String
-                              )
+)
 
 object ReportConfirmation:
   implicit val format: OFormat[ReportConfirmation] = Json.format[ReportConfirmation]
