@@ -24,6 +24,7 @@ import play.api.test.Helpers.*
 import play.api.test.{FakeRequest, Helpers}
 import play.api.libs.json.Json
 import uk.gov.hmrc.internalauth.client.*
+import uk.gov.hmrc.internalauth.client.Retrieval.EmptyRetrieval
 import uk.gov.hmrc.internalauth.client.test.{BackendAuthComponentsStub, StubBehaviour}
 import uk.gov.hmrc.tradereportingextracts.models.AvailableReportResponse
 import uk.gov.hmrc.tradereportingextracts.services.AvailableReportService
@@ -56,8 +57,8 @@ class AvailableReportControllerSpec extends PlaySpec with MockitoSugar {
             )
           )
         )
-      when(mockStubBehaviour.stubAuth(Some(permission), Retrieval.username))
-        .thenReturn(Future.successful(Retrieval.Username("test-service")))
+      when(mockStubBehaviour.stubAuth(Some(permission), EmptyRetrieval))
+        .thenReturn(Future.successful(EmptyRetrieval))
       val request = FakeRequest(GET, s"/api/available-reports")
         .withHeaders(CONTENT_TYPE -> JSON, AUTHORIZATION -> "my-token")
         .withJsonBody(Json.obj(eori -> "GB123456789000"))
@@ -76,8 +77,8 @@ class AvailableReportControllerSpec extends PlaySpec with MockitoSugar {
     }
 
     "return BadRequest when EORI is missing" in {
-      when(mockStubBehaviour.stubAuth(Some(permission), Retrieval.username))
-        .thenReturn(Future.successful(Retrieval.Username("test-service")))
+      when(mockStubBehaviour.stubAuth(Some(permission), EmptyRetrieval))
+        .thenReturn(Future.successful(EmptyRetrieval))
       val request = FakeRequest().withJsonBody(Json.obj()).withHeaders(AUTHORIZATION -> "my-token")
       val result  = controller.getAvailableReports()(request)
 
@@ -89,8 +90,8 @@ class AvailableReportControllerSpec extends PlaySpec with MockitoSugar {
     "return Ok with count when EORI is present" in {
       when(mockService.getAvailableReportsCount(any[String]))
         .thenReturn(Future.successful(5L))
-      when(mockStubBehaviour.stubAuth(Some(permission), Retrieval.username))
-        .thenReturn(Future.successful(Retrieval.Username("test-service")))
+      when(mockStubBehaviour.stubAuth(Some(permission), EmptyRetrieval))
+        .thenReturn(Future.successful(EmptyRetrieval))
       val request =
         FakeRequest().withJsonBody(Json.obj("eori" -> "GB123456789000")).withHeaders(AUTHORIZATION -> "my-token")
       val result  = controller.getAvailableReportsCount()(request)
@@ -100,8 +101,8 @@ class AvailableReportControllerSpec extends PlaySpec with MockitoSugar {
     }
 
     "return BadRequest when EORI is missing" in {
-      when(mockStubBehaviour.stubAuth(Some(permission), Retrieval.username))
-        .thenReturn(Future.successful(Retrieval.Username("test-service")))
+      when(mockStubBehaviour.stubAuth(Some(permission), EmptyRetrieval))
+        .thenReturn(Future.successful(EmptyRetrieval))
       val request = FakeRequest().withJsonBody(Json.obj()).withHeaders(AUTHORIZATION -> "my-token")
       val result  = controller.getAvailableReportsCount()(request)
 

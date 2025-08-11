@@ -35,7 +35,7 @@ class AvailableReportController @Inject() (
 )(using
   executionContext: ExecutionContext
 ) extends BackendController(cc) {
-  
+
   def getAvailableReports: Action[AnyContent] = auth.authorizedAction(readPermission).async { implicit request =>
     implicit val hc: HeaderCarrier = HeaderCarrier()
     request.body.asJson.flatMap(json => (json \ eori).asOpt[String]) match {

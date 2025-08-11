@@ -36,29 +36,29 @@ class RequestedReportsController @Inject() (
     extends BackendController(cc)
     with Logging:
 
-  def getRequestedReports: Action[JsValue] = auth.authorizedAction(readPermission).async(parse.json) {
-    implicit request: Request[JsValue] =>
-    val eoriOpt = (request.body \ "eori").asOpt[String]
+  def getRequestedReports: Action[JsValue] =
+    auth.authorizedAction(readPermission).async(parse.json) { implicit request: Request[JsValue] =>
+      val eoriOpt = (request.body \ "eori").asOpt[String]
 
-    eoriOpt match {
-      case Some(eori) =>
-        reportRequestService
-          .getReportRequestsForUser(eori)
-          .map { response =>
-            if (response.userReports.isEmpty && response.thirdPartyReports.isEmpty) {
-              logger.info(s"No reports found for EORI: $eori")
-              NoContent
-            } else {
-              Ok(Json.toJson(response))
+      eoriOpt match {
+        case Some(eori) =>
+          reportRequestService
+            .getReportRequestsForUser(eori)
+            .map { response =>
+              if (response.userReports.isEmpty && response.thirdPartyReports.isEmpty) {
+                logger.info(s"No reports found for EORI: $eori")
+                NoContent
+              } else {
+                Ok(Json.toJson(response))
+              }
             }
-          }
-          .recover { case ex: Exception =>
-            logger.error(s"Error fetching reports for EORI: $eori", ex)
-            InternalServerError(Json.obj("error" -> "Internal server error"))
-          }
+            .recover { case ex: Exception =>
+              logger.error(s"Error fetching reports for EORI: $eori", ex)
+              InternalServerError(Json.obj("error" -> "Internal server error"))
+            }
 
-      case None =>
-        logger.warn("Missing 'eori' in request body")
-        Future.successful(BadRequest(Json.obj("error" -> "Missing 'eori' in request body")))
+        case None =>
+          logger.warn("Missing 'eori' in request body")
+          Future.successful(BadRequest(Json.obj("error" -> "Missing 'eori' in request body")))
+      }
     }
-  }

@@ -26,6 +26,7 @@ import play.api.test.Helpers.{AUTHORIZATION, CONTENT_TYPE, GET, contentAsJson, s
 import play.api.test.{FakeRequest, Helpers}
 import uk.gov.hmrc.http.Authorization
 import uk.gov.hmrc.internalauth.client.*
+import uk.gov.hmrc.internalauth.client.Retrieval.EmptyRetrieval
 import uk.gov.hmrc.internalauth.client.test.{BackendAuthComponentsStub, StubBehaviour}
 import uk.gov.hmrc.tradereportingextracts.models.ReportStatus.IN_PROGRESS
 import uk.gov.hmrc.tradereportingextracts.models.ReportTypeName.EXPORTS_ITEM_REPORT
@@ -74,8 +75,8 @@ class RequestedReportsControllerSpec extends SpecBase:
 
       when(mockReportRequestService.getReportRequestsForUser(eori))
         .thenReturn(Future.successful(expectedResponse))
-      when(mockStubBehaviour.stubAuth(Some(permission), Retrieval.username))
-        .thenReturn(Future.successful(Retrieval.Username("test-service")))
+      when(mockStubBehaviour.stubAuth(Some(permission), EmptyRetrieval))
+        .thenReturn(Future.successful(EmptyRetrieval))
 
       val request: Request[JsValue] = FakeRequest(GET, "/requested-reports")
         .withHeaders(AUTHORIZATION -> "my-token")
@@ -92,8 +93,8 @@ class RequestedReportsControllerSpec extends SpecBase:
 
       when(mockReportRequestService.getReportRequestsForUser(eori))
         .thenReturn(Future.successful(GetReportRequestsResponse(None, None)))
-      when(mockStubBehaviour.stubAuth(Some(permission), Retrieval.username))
-        .thenReturn(Future.successful(Retrieval.Username("test-service")))
+      when(mockStubBehaviour.stubAuth(Some(permission), EmptyRetrieval))
+        .thenReturn(Future.successful(EmptyRetrieval))
 
       val request: Request[JsValue] = FakeRequest(GET, "/requested-reports")
         .withHeaders(AUTHORIZATION -> "my-token")
@@ -105,8 +106,8 @@ class RequestedReportsControllerSpec extends SpecBase:
     }
 
     "return 400 BadRequest when EORI is missing" in {
-      when(mockStubBehaviour.stubAuth(Some(permission), Retrieval.username))
-        .thenReturn(Future.successful(Retrieval.Username("test-service")))
+      when(mockStubBehaviour.stubAuth(Some(permission), EmptyRetrieval))
+        .thenReturn(Future.successful(EmptyRetrieval))
       val request: Request[JsValue] = FakeRequest(GET, "/requested-reports")
         .withHeaders(AUTHORIZATION -> "my-token")
         .withBody(Json.obj())

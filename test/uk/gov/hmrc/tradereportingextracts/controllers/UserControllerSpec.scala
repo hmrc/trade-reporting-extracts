@@ -23,6 +23,7 @@ import play.api.mvc.{AnyContentAsEmpty, Result}
 import play.api.test.Helpers.*
 import play.api.test.{FakeRequest, Helpers}
 import uk.gov.hmrc.internalauth.client.*
+import uk.gov.hmrc.internalauth.client.Retrieval.EmptyRetrieval
 import uk.gov.hmrc.internalauth.client.test.{BackendAuthComponentsStub, StubBehaviour}
 import uk.gov.hmrc.tradereportingextracts.models.{AddressInformation, CompanyInformation, NotificationEmail, UserDetails}
 import uk.gov.hmrc.tradereportingextracts.services.UserService
@@ -53,8 +54,8 @@ class UserControllerSpec extends SpecBase {
 
       when(mockUserService.getNotificationEmail(eori))
         .thenReturn(Future.successful(email))
-      when(mockStubBehaviour.stubAuth(Some(permission), Retrieval.username))
-        .thenReturn(Future.successful(Retrieval.Username("test-service")))
+      when(mockStubBehaviour.stubAuth(Some(permission), EmptyRetrieval))
+        .thenReturn(Future.successful(EmptyRetrieval))
 
       val request: FakeRequest[JsObject] = FakeRequest(POST, routes.UserController.getNotificationEmail.url)
         .withHeaders("Content-Type" -> "application/json", AUTHORIZATION -> "my-token")
@@ -67,8 +68,8 @@ class UserControllerSpec extends SpecBase {
     }
 
     "return 400 BadRequest when EORI is missing" in new Setup {
-      when(mockStubBehaviour.stubAuth(Some(permission), Retrieval.username))
-        .thenReturn(Future.successful(Retrieval.Username("test-service")))
+      when(mockStubBehaviour.stubAuth(Some(permission), EmptyRetrieval))
+        .thenReturn(Future.successful(EmptyRetrieval))
       val request: FakeRequest[JsObject] = FakeRequest(POST, routes.UserController.getNotificationEmail.url)
         .withHeaders("Content-Type" -> "application/json", AUTHORIZATION -> "my-token")
         .withBody(Json.obj("invalidField" -> "value"))
@@ -84,8 +85,8 @@ class UserControllerSpec extends SpecBase {
 
       when(mockUserService.getNotificationEmail(eori))
         .thenReturn(Future.failed(new RuntimeException("Service failure")))
-      when(mockStubBehaviour.stubAuth(Some(permission), Retrieval.username))
-        .thenReturn(Future.successful(Retrieval.Username("test-service")))
+      when(mockStubBehaviour.stubAuth(Some(permission), EmptyRetrieval))
+        .thenReturn(Future.successful(EmptyRetrieval))
       val request: FakeRequest[JsObject] = FakeRequest(POST, routes.UserController.getNotificationEmail.url)
         .withHeaders("Content-Type" -> "application/json", AUTHORIZATION -> "my-token")
         .withBody(Json.obj("eori" -> eori))
@@ -111,8 +112,8 @@ class UserControllerSpec extends SpecBase {
 
       when(mockUserService.getOrCreateUser(eori))
         .thenReturn(Future.successful(userDetails))
-      when(mockStubBehaviour.stubAuth(Some(permission), Retrieval.username))
-        .thenReturn(Future.successful(Retrieval.Username("test-service")))
+      when(mockStubBehaviour.stubAuth(Some(permission), EmptyRetrieval))
+        .thenReturn(Future.successful(EmptyRetrieval))
 
       val request: FakeRequest[JsObject] = FakeRequest(GET, routes.UserController.setupUser().url)
         .withHeaders("Content-Type" -> "application/json", AUTHORIZATION -> "my-token")
@@ -125,8 +126,8 @@ class UserControllerSpec extends SpecBase {
     }
 
     "return 400 BadRequest when EORI is missing" in new Setup {
-      when(mockStubBehaviour.stubAuth(Some(permission), Retrieval.username))
-        .thenReturn(Future.successful(Retrieval.Username("test-service")))
+      when(mockStubBehaviour.stubAuth(Some(permission), EmptyRetrieval))
+        .thenReturn(Future.successful(EmptyRetrieval))
       val request: FakeRequest[JsObject] = FakeRequest(GET, routes.UserController.setupUser().url)
         .withHeaders("Content-Type" -> "application/json", AUTHORIZATION -> "my-token")
         .withBody(Json.obj("wrongField" -> "value"))
@@ -146,8 +147,8 @@ class UserControllerSpec extends SpecBase {
 
       when(mockUserService.getAuthorisedEoris(eori))
         .thenReturn(Future.successful(authorisedEoris))
-      when(mockStubBehaviour.stubAuth(Some(permission), Retrieval.username))
-        .thenReturn(Future.successful(Retrieval.Username("test-service")))
+      when(mockStubBehaviour.stubAuth(Some(permission), EmptyRetrieval))
+        .thenReturn(Future.successful(EmptyRetrieval))
       val request: FakeRequest[AnyContentAsEmpty.type] =
         FakeRequest(GET, routes.UserController.getAuthorisedEoris(eori).url)
           .withHeaders(AUTHORIZATION -> "my-token")
@@ -163,8 +164,8 @@ class UserControllerSpec extends SpecBase {
 
       when(mockUserService.getAuthorisedEoris(eori))
         .thenReturn(Future.failed(new RuntimeException("Service failure")))
-      when(mockStubBehaviour.stubAuth(Some(permission), Retrieval.username))
-        .thenReturn(Future.successful(Retrieval.Username("test-service")))
+      when(mockStubBehaviour.stubAuth(Some(permission), EmptyRetrieval))
+        .thenReturn(Future.successful(EmptyRetrieval))
       val request: FakeRequest[AnyContentAsEmpty.type] =
         FakeRequest(GET, routes.UserController.getAuthorisedEoris(eori).url).withHeaders(AUTHORIZATION -> "my-token")
 
@@ -196,8 +197,8 @@ class UserControllerSpec extends SpecBase {
         notificationEmail = NotificationEmail("test@test.com", LocalDateTime.now())
       )
       when(mockUserService.getUserAndEmailDetails(eori)).thenReturn(Future.successful(userDetails))
-      when(mockStubBehaviour.stubAuth(Some(permission), Retrieval.username))
-        .thenReturn(Future.successful(Retrieval.Username("test-service")))
+      when(mockStubBehaviour.stubAuth(Some(permission), EmptyRetrieval))
+        .thenReturn(Future.successful(EmptyRetrieval))
       val request: FakeRequest[JsObject] = FakeRequest(GET, routes.UserController.getUserAndEmail.url)
         .withHeaders("Content-Type" -> "application/json", AUTHORIZATION -> "my-token")
         .withBody(Json.obj("eori" -> eori))
