@@ -21,7 +21,6 @@ import play.api.libs.json.Json
 import play.api.test.Helpers.*
 import play.api.test.{FakeRequest, Helpers}
 import uk.gov.hmrc.tradereportingextracts.models.eis.EisReportStatusRequest
-import uk.gov.hmrc.tradereportingextracts.models.sdes.*
 import uk.gov.hmrc.tradereportingextracts.utils.SpecBase
 
 class ReportStatusControllerSpec extends SpecBase {

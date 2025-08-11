@@ -18,7 +18,6 @@ package uk.gov.hmrc.tradereportingextracts.services
 
 import org.mockito.Mockito.when
 import org.scalatest.concurrent.ScalaFutures
-import org.scalatest.matchers.must.Matchers.mustBe
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AsyncWordSpec
 import org.scalatestplus.mockito.MockitoSugar
@@ -27,7 +26,6 @@ import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.tradereportingextracts.connectors.CustomsDataStoreConnector
 import uk.gov.hmrc.tradereportingextracts.models.{EoriHistory, EoriHistoryResponse}
 
-import java.time.{Instant, LocalDate}
 import scala.concurrent.{ExecutionContext, Future}
 
 class EoriHistoryServiceSpec extends AsyncWordSpec with Matchers with ScalaFutures with MockitoSugar {

@@ -29,7 +29,6 @@ import uk.gov.hmrc.tradereportingextracts.models.*
 import uk.gov.hmrc.tradereportingextracts.models.StatusCode.INITIATED
 import uk.gov.hmrc.tradereportingextracts.models.audit.{AuditEvent, ReportRequestSubmittedEvent}
 import uk.gov.hmrc.tradereportingextracts.models.eis.EisReportStatusRequest
-import uk.gov.hmrc.tradereportingextracts.services.AuditService
 import uk.gov.hmrc.tradereportingextracts.utils.SpecBase
 
 import java.time.{Instant, LocalDate}

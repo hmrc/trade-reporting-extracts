@@ -18,11 +18,10 @@ package uk.gov.hmrc.tradereportingextracts.controllers
 
 import org.mockito.Mockito.when
 import org.scalatestplus.mockito.MockitoSugar
-import play.api.{Application, inject}
-import play.api.libs.json.{JsObject, Json}
+import play.api.libs.json.Json
 import play.api.test.Helpers.*
 import play.api.test.{FakeRequest, Helpers}
-import uk.gov.hmrc.tradereportingextracts.models.FileNotification
+import play.api.{Application, inject}
 import uk.gov.hmrc.tradereportingextracts.models.sdes.*
 import uk.gov.hmrc.tradereportingextracts.services.FileNotificationService
 import uk.gov.hmrc.tradereportingextracts.utils.SpecBase

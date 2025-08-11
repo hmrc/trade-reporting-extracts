@@ -21,16 +21,15 @@ import org.mockito.ArgumentMatchers.{any, eq as eqTo}
 import org.mockito.Mockito.*
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.matchers.should.Matchers
-import org.scalatestplus.mockito.MockitoSugar
 import org.scalatest.wordspec.AnyWordSpec
+import org.scalatestplus.mockito.MockitoSugar
 import play.api.http.Status.{BAD_REQUEST, CREATED, NOT_FOUND}
 import uk.gov.hmrc.crypto.Sensitive.SensitiveString
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.tradereportingextracts.connectors.EmailConnector
+import uk.gov.hmrc.tradereportingextracts.models.ReportStatus.COMPLETE
 import uk.gov.hmrc.tradereportingextracts.models.sdes.{FileNotificationMetadata, FileNotificationResponse}
-import uk.gov.hmrc.tradereportingextracts.models.{FileNotification as TreFileNotification, FileType, ReportTypeName}
-import uk.gov.hmrc.tradereportingextracts.models.ReportRequest
-import uk.gov.hmrc.tradereportingextracts.models.ReportStatus.{COMPLETE, IN_PROGRESS}
+import uk.gov.hmrc.tradereportingextracts.models.{FileNotification as TreFileNotification, ReportRequest, ReportTypeName}
 import uk.gov.hmrc.tradereportingextracts.utils.WireMockHelper
 
 import scala.concurrent.{ExecutionContext, Future}

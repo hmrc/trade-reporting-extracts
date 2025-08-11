@@ -17,12 +17,12 @@
 package uk.gov.hmrc.tradereportingextracts.controllers
 
 import play.api.libs.json.{JsError, JsSuccess, JsValue, Json}
-import play.api.mvc.{Action, ControllerComponents}
+import play.api.mvc.{Action, AnyContent, ControllerComponents}
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 import uk.gov.hmrc.tradereportingextracts.config.AppConfig
 import uk.gov.hmrc.tradereportingextracts.connectors.CustomsDataStoreConnector
 import uk.gov.hmrc.tradereportingextracts.models.ReportRequestUserAnswersModel
-import uk.gov.hmrc.tradereportingextracts.services.{AuditService, EisService, ReportRequestService, ReportRequestTransformationService}
+import uk.gov.hmrc.tradereportingextracts.services.*
 
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
@@ -84,7 +84,7 @@ class ReportRequestController @Inject() (
     }
   }
 
-  def hasReachedSubmissionLimit(eori: String) = Action.async {
+  def hasReachedSubmissionLimit(eori: String): Action[AnyContent] = Action.async {
     val limit = appConfig.dailySubmissionLimit
     reportRequestService.countReportSubmissionsForEoriOnDate(eori, limit).map { reached =>
       if (reached) {

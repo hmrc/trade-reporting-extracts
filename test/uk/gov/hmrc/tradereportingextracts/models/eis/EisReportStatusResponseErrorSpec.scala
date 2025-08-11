@@ -25,7 +25,7 @@ class EisReportStatusResponseErrorSpec extends AnyFreeSpec with Matchers {
   "EisReportStatusResponseError" - {
 
     "must serialize and deserialize correctly with ErrorDetailSourceFaultDetail" in {
-      var sourceFaultDetail = EisReportStatusResponseErrorDetailSourceFaultDetail(
+      val sourceFaultDetail = EisReportStatusResponseErrorDetailSourceFaultDetail(
         detail = List("Status fault", "Another status fault"),
         restFault = Some(Json.obj("error" -> "REST status error")),
         soapFault = Some(Json.obj("error" -> "SOAP status error"))

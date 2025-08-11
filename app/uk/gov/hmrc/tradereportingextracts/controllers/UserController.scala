@@ -18,8 +18,10 @@ package uk.gov.hmrc.tradereportingextracts.controllers
 
 import play.api.libs.json.{JsError, JsSuccess, JsValue, Json}
 import play.api.mvc.{Action, AnyContent, ControllerComponents}
+import uk.gov.hmrc.internalauth.client.*
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 import uk.gov.hmrc.tradereportingextracts.services.UserService
+import uk.gov.hmrc.tradereportingextracts.utils.PermissionsUtil.readPermission
 
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
@@ -27,11 +29,12 @@ import scala.concurrent.{ExecutionContext, Future}
 @Singleton()
 class UserController @Inject() (
   userService: UserService,
-  cc: ControllerComponents
+  cc: ControllerComponents,
+  auth: BackendAuthComponents
 )(using executionContext: ExecutionContext)
     extends BackendController(cc):
 
-  def setupUser(): Action[JsValue] = Action.async(parse.json) { implicit request =>
+  def setupUser(): Action[JsValue] = auth.authorizedAction(readPermission).async(parse.json) { implicit request =>
     (request.body \ "eori").validate[String] match {
       case JsSuccess(eori, _) =>
         userService.getOrCreateUser(eori).map { userDetails =>
@@ -53,21 +56,22 @@ class UserController @Inject() (
       }
   }
 
-  def getNotificationEmail: Action[JsValue] = Action.async(parse.json) { implicit request =>
-    (request.body \ "eori").validate[String] match {
-      case JsSuccess(eori, _) =>
-        userService
-          .getNotificationEmail(eori)
-          .map(email => Ok(Json.toJson(email)))
-          .recover { case e: Exception =>
-            InternalServerError(e.getMessage)
-          }
-      case JsError(_)         =>
-        Future.successful(BadRequest("Missing or invalid 'eori' field"))
+  def getNotificationEmail: Action[JsValue] =
+    auth.authorizedAction(readPermission).async(parse.json) { implicit request =>
+      (request.body \ "eori").validate[String] match {
+        case JsSuccess(eori, _) =>
+          userService
+            .getNotificationEmail(eori)
+            .map(email => Ok(Json.toJson(email)))
+            .recover { case e: Exception =>
+              InternalServerError(e.getMessage)
+            }
+        case JsError(_)         =>
+          Future.successful(BadRequest("Missing or invalid 'eori' field"))
+      }
     }
-  }
 
-  def getUserAndEmail: Action[JsValue] = Action.async(parse.json) { implicit request =>
+  def getUserAndEmail: Action[JsValue] = auth.authorizedAction(readPermission).async(parse.json) { implicit request =>
     (request.body \ "eori").validate[String] match {
       case JsSuccess(eori, _) =>
         userService.getUserAndEmailDetails(eori).map { userDetails =>

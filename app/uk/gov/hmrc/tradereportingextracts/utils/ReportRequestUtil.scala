@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.tradereportingextracts.utils
 
-import uk.gov.hmrc.tradereportingextracts.models.{ReportRequest, ReportStatus}
+import uk.gov.hmrc.tradereportingextracts.models.ReportRequest
 
 import scala.util.{Failure, Success, Try}
 

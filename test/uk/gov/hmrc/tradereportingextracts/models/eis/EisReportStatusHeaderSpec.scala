@@ -18,7 +18,6 @@ package uk.gov.hmrc.tradereportingextracts.models.eis
 
 import org.scalatest.freespec.AnyFreeSpec
 import org.scalatest.matchers.must.Matchers
-import uk.gov.hmrc.tradereportingextracts.models.eis.EisReportStatusHeaders
 
 class EisReportStatusHeadersSpec extends AnyFreeSpec with Matchers {
 

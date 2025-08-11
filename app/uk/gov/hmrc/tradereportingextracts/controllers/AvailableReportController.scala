@@ -16,23 +16,28 @@
 
 package uk.gov.hmrc.tradereportingextracts.controllers
 
-import play.api.Logger
 import play.api.libs.json.Json
 import play.api.mvc.{Action, AnyContent, ControllerComponents, Result}
 import uk.gov.hmrc.http.HeaderCarrier
+import uk.gov.hmrc.internalauth.client.*
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 import uk.gov.hmrc.tradereportingextracts.models.audit.AuditDownloadRequest
 import uk.gov.hmrc.tradereportingextracts.services.AvailableReportService
 import uk.gov.hmrc.tradereportingextracts.utils.ApplicationConstants.eori
+import uk.gov.hmrc.tradereportingextracts.utils.PermissionsUtil.readPermission
 
 import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
 
-class AvailableReportController @Inject() (cc: ControllerComponents, availableReportService: AvailableReportService)(
-  using executionContext: ExecutionContext
+class AvailableReportController @Inject() (
+  cc: ControllerComponents,
+  auth: BackendAuthComponents,
+  availableReportService: AvailableReportService
+)(using
+  executionContext: ExecutionContext
 ) extends BackendController(cc) {
-  private val log: Logger                     = Logger(this.getClass)
-  def getAvailableReports: Action[AnyContent] = Action.async { implicit request =>
+
+  def getAvailableReports: Action[AnyContent] = auth.authorizedAction(readPermission).async { implicit request =>
     implicit val hc: HeaderCarrier = HeaderCarrier()
     request.body.asJson.flatMap(json => (json \ eori).asOpt[String]) match {
       case Some(eoriValue) =>
@@ -44,7 +49,7 @@ class AvailableReportController @Inject() (cc: ControllerComponents, availableRe
     }
   }
 
-  def getAvailableReportsCount: Action[AnyContent] = Action.async { implicit request =>
+  def getAvailableReportsCount: Action[AnyContent] = auth.authorizedAction(readPermission).async { implicit request =>
     request.body.asJson.flatMap(json => (json \ eori).asOpt[String]) match {
       case Some(eoriValue) =>
         availableReportService.getAvailableReportsCount(eoriValue).map { count =>

@@ -14,24 +14,17 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.tradereportingextracts.config
+package uk.gov.hmrc.tradereportingextracts.utils
 
-import org.scalatest.matchers.should.Matchers
-import play.api.Application
-import uk.gov.hmrc.tradereportingextracts.utils.SpecBase
+import uk.gov.hmrc.internalauth.client.*
 
-class ModuleSpec extends SpecBase with Matchers {
-
-  "Module" should {
-
-    "bind AppConfig, CryptoProvider as an eager singleton" in new Setup {
-      val appConfig: AppConfig           = app.injector.instanceOf[AppConfig]
-      val cryptoProvider: CryptoProvider = app.injector.instanceOf[CryptoProvider]
-      appConfig should not be null
-    }
-  }
-
-  trait Setup {
-    val app: Application = application.build()
-  }
+object PermissionsUtil {
+  val readPermission  = Predicate.Permission(
+    Resource(ResourceType("trade-reporting-extracts"), ResourceLocation("trade-reporting-extracts/*")),
+    IAAction("READ")
+  )
+  val writePermission = Predicate.Permission(
+    Resource(ResourceType("trade-reporting-extracts"), ResourceLocation("trade-reporting-extracts/*")),
+    IAAction("WRITE")
+  )
 }

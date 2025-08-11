@@ -16,16 +16,15 @@
 
 package uk.gov.hmrc.tradereportingextracts.services
 
-import java.time.LocalDate
 import play.api.mvc.Headers
 import uk.gov.hmrc.tradereportingextracts.connectors.CustomsDataStoreConnector
 import uk.gov.hmrc.tradereportingextracts.models.eis.EisReportStatusHeaders.XCorrelationID
 import uk.gov.hmrc.tradereportingextracts.models.eis.EisReportStatusRequest
-import uk.gov.hmrc.tradereportingextracts.models.{FileNotification, GetReportRequestsResponse, ReportRequest, ReportStatus, StringFieldRegex, ThirdPartyReport, UserReport}
 import uk.gov.hmrc.tradereportingextracts.models.eis.EisReportStatusRequest.StatusType
-import uk.gov.hmrc.tradereportingextracts.models.StatusCode
+import uk.gov.hmrc.tradereportingextracts.models.*
 import uk.gov.hmrc.tradereportingextracts.repositories.ReportRequestRepository
 
+import java.time.LocalDate
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}

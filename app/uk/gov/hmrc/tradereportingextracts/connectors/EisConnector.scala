@@ -29,7 +29,6 @@ import uk.gov.hmrc.tradereportingextracts.models.eis.EisReportRequest
 import java.time.format.DateTimeFormatter
 import java.time.{ZoneOffset, ZonedDateTime}
 import javax.inject.Inject
-import scala.concurrent.duration.{Duration, SECONDS}
 import scala.concurrent.{ExecutionContext, Future}
 
 class EisConnector @Inject() (

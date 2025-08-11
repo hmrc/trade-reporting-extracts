@@ -18,7 +18,6 @@ package uk.gov.hmrc.tradereportingextracts.models
 
 import org.scalatestplus.play.PlaySpec
 import play.api.libs.json.{JsSuccess, Json}
-import uk.gov.hmrc.tradereportingextracts.models.{FileType, ReportTypeName}
 
 import java.time.Instant
 

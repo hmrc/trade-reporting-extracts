@@ -28,10 +28,10 @@ import uk.gov.hmrc.crypto.Sensitive.SensitiveString
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.tradereportingextracts.config.AppConfig
 import uk.gov.hmrc.tradereportingextracts.connectors.SDESConnector
-import uk.gov.hmrc.tradereportingextracts.models.eis.EisReportStatusRequest
-import uk.gov.hmrc.tradereportingextracts.models.sdes.{FileAvailableMetadataItem, FileAvailableResponse, FileNotificationMetadata}
 import uk.gov.hmrc.tradereportingextracts.models.*
 import uk.gov.hmrc.tradereportingextracts.models.audit.AuditDownloadRequest
+import uk.gov.hmrc.tradereportingextracts.models.eis.EisReportStatusRequest
+import uk.gov.hmrc.tradereportingextracts.models.sdes.{FileAvailableMetadataItem, FileAvailableResponse}
 
 import java.time.Instant
 import scala.concurrent.{ExecutionContext, Future}
@@ -63,22 +63,13 @@ class AvailableReportServiceSpec extends AnyWordSpec with Matchers with ScalaFut
     }
 
     "return availableUserReports with actions when report requests and SDES responses exist" in {
-      val mockReportRequestService                 = mock[ReportRequestService]
-      val mockSDESConnector                        = mock[SDESConnector]
-      val eori                                     = "GB123456789000"
-      var reportRequestId                          = "req-1"
-      val mockAppConfig: AppConfig                 = mock[AppConfig]
-      val mockAuditService                         = mock[AuditService]
-      val metadata: List[FileNotificationMetadata] = List(
-        FileNotificationMetadata.RetentionDaysMetadataItem("30"),
-        FileNotificationMetadata.FileTypeMetadataItem("CSV"),
-        FileNotificationMetadata.EORIMetadataItem("GB123456789000"),
-        FileNotificationMetadata.MDTPReportXCorrelationIDMetadataItem("corr-id-123"),
-        FileNotificationMetadata.MDTPReportRequestIDMetadataItem("req-id-456"),
-        FileNotificationMetadata.MDTPReportTypeNameMetadataItem("IMPORTS_ITEM_REPORT"),
-        FileNotificationMetadata.ReportFilesPartsMetadataItem("1")
-      )
-      val fileNotification                         = FileNotification(
+      val mockReportRequestService = mock[ReportRequestService]
+      val mockSDESConnector        = mock[SDESConnector]
+      val eori                     = "GB123456789000"
+      val reportRequestId          = "req-1"
+      val mockAppConfig: AppConfig = mock[AppConfig]
+      val mockAuditService         = mock[AuditService]
+      val fileNotification         = FileNotification(
         "file.csv",
         123L,
         30,
@@ -90,7 +81,7 @@ class AvailableReportServiceSpec extends AnyWordSpec with Matchers with ScalaFut
         "true",
         ""
       )
-      val reportRequest                            = ReportRequest(
+      val reportRequest            = ReportRequest(
         reportRequestId = reportRequestId,
         correlationId = "ABCD-DEFG",
         reportName = "Jan Report",
@@ -115,7 +106,7 @@ class AvailableReportServiceSpec extends AnyWordSpec with Matchers with ScalaFut
         fileNotifications = Some(Seq(fileNotification)),
         updateDate = Instant.parse("2023-01-03T10:00:00Z")
       )
-      val sdesResponse                             = Seq(
+      val sdesResponse             = Seq(
         FileAvailableResponse(
           filename = "file.csv",
           downloadURL = "http://example.com/file.csv",
@@ -222,14 +213,6 @@ class AvailableReportServiceSpec extends AnyWordSpec with Matchers with ScalaFut
         ),
         fileNotifications = Some(Seq(fileNotification)),
         updateDate = Instant.parse("2023-01-03T10:00:00Z")
-      )
-      val sdesResponse     = Seq(
-        FileAvailableResponse(
-          filename = "file.csv",
-          downloadURL = "http://example.com/file.csv",
-          fileSize = 123L,
-          metadata = Seq(FileAvailableMetadataItem.MDTPReportRequestIDMetadataItem(reportId))
-        )
       )
 
       when(mockReportRequestService.get(eqTo(reportId))(any())).thenReturn(Future.successful(Some(reportRequest)))
