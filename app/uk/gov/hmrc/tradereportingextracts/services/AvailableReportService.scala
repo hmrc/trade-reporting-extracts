@@ -17,11 +17,15 @@
 package uk.gov.hmrc.tradereportingextracts.services
 
 import play.api.Logger
+import play.api.libs.json.JsValue
+import play.api.mvc.Result
+import play.api.mvc.Results.{BadRequest, NotFound}
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.tradereportingextracts.config.AppConfig
 import uk.gov.hmrc.tradereportingextracts.connectors.SDESConnector
 import uk.gov.hmrc.tradereportingextracts.models.sdes.{FileAvailableMetadataItem, FileAvailableResponse}
 import uk.gov.hmrc.tradereportingextracts.models.*
+import uk.gov.hmrc.tradereportingextracts.models.audit.{AuditDownloadRequest, ReportRequestDownloadedEvent}
 
 import java.time.Instant
 import java.time.temporal.ChronoUnit.DAYS
@@ -31,6 +35,7 @@ import scala.concurrent.{ExecutionContext, Future}
 class AvailableReportService @Inject() (
   reportRequestService: ReportRequestService,
   sdesConnector: SDESConnector,
+  auditService: AuditService,
   appConfig: AppConfig
 )(implicit
   ec: ExecutionContext
@@ -99,4 +104,46 @@ class AvailableReportService @Inject() (
       0L
     }
 
+  def findByReportRequestId(reportRequestId: String)(implicit hc: HeaderCarrier): Future[Option[ReportRequest]] =
+    reportRequestService.get(reportRequestId)
+
+  def processReportDownloadAudit(
+    auditRequest: Option[AuditDownloadRequest]
+  )(implicit hc: HeaderCarrier): Future[Either[Result, Unit]] =
+    auditRequest match {
+      case Some(auditRequest) =>
+        findByReportRequestId(auditRequest.reportReference).map {
+          case Some(report) =>
+            report.fileNotifications
+              .flatMap(_.find(_.fileName == auditRequest.fileName))
+              .fold[Either[Result, Unit]](
+                Left(BadRequest(s"File ${auditRequest.fileName} not found in report ${auditRequest.reportReference}"))
+              ) { notification =>
+                callReportDownloadedAudit(auditRequest, report, notification)
+                Right(())
+              }
+          case None         =>
+            Left(NotFound(s"Report with reference ${auditRequest.reportReference} not found"))
+        }
+      case None               =>
+        Future.successful(Left(BadRequest("Missing or invalid request parameters")))
+    }
+
+  private def callReportDownloadedAudit(
+    auditRequest: AuditDownloadRequest,
+    report: ReportRequest,
+    notification: FileNotification
+  )(implicit hc: HeaderCarrier): Unit =
+    auditService.audit(
+      ReportRequestDownloadedEvent(
+        requestId = auditRequest.reportReference,
+        totalReportParts = report.fileNotifications.map(_.size).getOrElse(0),
+        fileUrl = auditRequest.fileUrl,
+        fileName = auditRequest.fileName,
+        fileSizeBytes = notification.fileSize,
+        reportSubjectEori = report.requesterEORI,
+        reportTypeName = report.reportTypeName.toString,
+        requesterEori = report.requesterEORI
+      )
+    )
 }
