@@ -20,7 +20,7 @@ import play.api.libs.json.OWrites
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
 import uk.gov.hmrc.tradereportingextracts.models.audit.{AuditEvent, ReportDetail, ReportRequestSubmittedEvent}
-import uk.gov.hmrc.tradereportingextracts.models.{ReportRequest, StatusCode}
+import uk.gov.hmrc.tradereportingextracts.models.{ReportRequest, ReportSubmissionStatus, StatusCode}
 
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
@@ -34,8 +34,7 @@ class AuditService @Inject() (
     auditConnector.sendExplicitAudit(event.auditType, event)
 
   def auditReportRequestSubmitted(
-    reportRequests: Seq[ReportRequest],
-    submissionStatus: String
+    reportRequests: Seq[ReportRequest]
   )(using HeaderCarrier): Future[Unit] =
     reportRequests.headOption match {
       case Some(baseRequest) =>
@@ -48,8 +47,10 @@ class AuditService @Inject() (
             outcomeStatusCode = notif.map(_.statusCode).getOrElse(StatusCode.FAILED.toString)
           )
         }
-
-        val event = ReportRequestSubmittedEvent(
+        val submissionStatus                 =
+          if (reportDetails.forall(_.outcomeIsSuccessful)) ReportSubmissionStatus.Complete.value
+          else ReportSubmissionStatus.Incomplete.value
+        val event                            = ReportRequestSubmittedEvent(
           submissionStatus = submissionStatus,
           numberOfReports = reportDetails.size,
           requesterEori = baseRequest.requesterEORI,
