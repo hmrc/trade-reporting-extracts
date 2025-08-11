@@ -23,6 +23,9 @@ import org.mockito.ArgumentMatchers.*
 import play.api.test.Helpers.*
 import play.api.test.{FakeRequest, Helpers}
 import play.api.libs.json.Json
+import play.api.mvc.Result
+import play.api.mvc.Results.BadRequest
+import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.tradereportingextracts.models.AvailableReportResponse
 import uk.gov.hmrc.tradereportingextracts.services.AvailableReportService
 import uk.gov.hmrc.tradereportingextracts.utils.ApplicationConstants.eori
@@ -32,6 +35,7 @@ import scala.concurrent.{ExecutionContext, Future}
 class AvailableReportControllerSpec extends PlaySpec with MockitoSugar {
 
   implicit val ec: ExecutionContext = ExecutionContext.Implicits.global
+  implicit val hc: HeaderCarrier    = HeaderCarrier()
   val mockService                   = mock[AvailableReportService]
   val controller                    = new AvailableReportController(Helpers.stubControllerComponents(), mockService)(using ec)
 
@@ -88,6 +92,28 @@ class AvailableReportControllerSpec extends PlaySpec with MockitoSugar {
       val result  = controller.getAvailableReportsCount()(request)
 
       status(result) mustBe BAD_REQUEST
+    }
+  }
+
+  "auditReportDownload" should {
+    "return NoContent when audit succeeds" in {
+      when(mockService.processReportDownloadAudit(any())(any())).thenReturn(Future.successful(Right(())))
+
+      val request                = FakeRequest().withJsonBody(Json.obj("foo" -> "bar"))
+      val result: Future[Result] = controller.auditReportDownload(request)
+
+      status(result) mustBe NO_CONTENT
+    }
+
+    "return error result when audit fails" in {
+      val errorResult = BadRequest("error")
+      when(mockService.processReportDownloadAudit(any())(any())).thenReturn(Future.successful(Left(errorResult)))
+
+      val request                = FakeRequest().withJsonBody(Json.obj("foo" -> "bar"))
+      val result: Future[Result] = controller.auditReportDownload(request)
+
+      status(result) mustBe BAD_REQUEST
+      contentAsString(result) must include("error")
     }
   }
 }
