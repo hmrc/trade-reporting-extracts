@@ -64,7 +64,6 @@ class InternalAuthTokenInitializerImpl @Inject() (
         Future.successful(Done)
       } else {
         createClientAuthToken()
-        addDmsSubmissionGrants()
       }
     }
 
@@ -81,6 +80,11 @@ class InternalAuthTokenInitializerImpl @Inject() (
               "resourceType"     -> "trade-reporting-extracts",
               "resourceLocation" -> "trade-reporting-extracts/*",
               "actions"          -> List("WRITE", "READ", "DELETE")
+            ),
+            Json.obj(
+              "resourceType"     -> "user-allow-list",
+              "resourceLocation" -> "trade-reporting-extracts-frontend",
+              "actions"          -> List("READ")
             )
           )
         )
@@ -92,34 +96,6 @@ class InternalAuthTokenInitializerImpl @Inject() (
           Future.successful(Done)
         } else {
           Future.failed(new RuntimeException("Unable to initialise internal-auth token"))
-        }
-      }
-  }
-
-  private def addDmsSubmissionGrants(): Future[Done] = {
-    logger.info("Initialising trade-reporting-extracts grants")
-    httpClient
-      .post(url"${servicesConfig.baseUrl("internal-auth")}/test-only/token")(HeaderCarrier())
-      .withBody(
-        Json.obj(
-          "token"       -> UUID.randomUUID(),
-          "principal"   -> "trade-reporting-extracts-frontend",
-          "permissions" -> Seq(
-            Json.obj(
-              "resourceType"     -> "trade-reporting-extracts",
-              "resourceLocation" -> "trade-reporting-extracts/*",
-              "actions"          -> List("WRITE", "READ", "DELETE")
-            )
-          )
-        )
-      )
-      .execute
-      .flatMap { response =>
-        if (response.status == 201) {
-          logger.info("trade-reporting-extracts grants added")
-          Future.successful(Done)
-        } else {
-          Future.failed(new RuntimeException("Unable to add trade-reporting-extracts grants"))
         }
       }
   }
