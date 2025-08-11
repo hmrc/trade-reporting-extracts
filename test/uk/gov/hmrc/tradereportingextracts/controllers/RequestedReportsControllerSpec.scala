@@ -16,15 +16,13 @@
 
 package uk.gov.hmrc.tradereportingextracts.controllers
 
-import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito.when
 import org.scalatest.matchers.must.Matchers.mustBe
 import play.api.http.Status.*
 import play.api.libs.json.{JsValue, Json}
 import play.api.mvc.{Request, Result}
-import play.api.test.Helpers.{AUTHORIZATION, CONTENT_TYPE, GET, contentAsJson, status}
+import play.api.test.Helpers.{AUTHORIZATION, GET, contentAsJson, status}
 import play.api.test.{FakeRequest, Helpers}
-import uk.gov.hmrc.http.Authorization
 import uk.gov.hmrc.internalauth.client.*
 import uk.gov.hmrc.internalauth.client.Retrieval.EmptyRetrieval
 import uk.gov.hmrc.internalauth.client.test.{BackendAuthComponentsStub, StubBehaviour}

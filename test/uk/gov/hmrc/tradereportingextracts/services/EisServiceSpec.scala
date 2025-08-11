@@ -16,7 +16,6 @@
 
 package uk.gov.hmrc.tradereportingextracts.services
 
-import org.apache.pekko.Done
 import org.apache.pekko.actor.ActorSystem
 import org.mockito.ArgumentCaptor
 import org.mockito.ArgumentMatchers.{any, eq as eqTo}
@@ -27,7 +26,6 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 import org.scalatestplus.mockito.MockitoSugar
 import play.api.http.Status.{ACCEPTED, INTERNAL_SERVER_ERROR, NO_CONTENT, OK}
-import play.api.test.Helpers.running
 import uk.gov.hmrc.crypto.Sensitive.SensitiveString
 import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse, UpstreamErrorResponse}
 import uk.gov.hmrc.tradereportingextracts.config.AppConfig

@@ -25,12 +25,11 @@ import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import play.api.Application
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.test.Helpers.*
-import uk.gov.hmrc.http.UpstreamErrorResponse
 import uk.gov.hmrc.tradereportingextracts.config.AppConfig
 import uk.gov.hmrc.tradereportingextracts.models.{CompanyInformation, EoriHistory, EoriHistoryResponse, NotificationEmail}
 import uk.gov.hmrc.tradereportingextracts.utils.{SpecBase, WireMockHelper}
 
-import java.time.{Instant, LocalDateTime}
+import java.time.LocalDateTime
 
 class CustomsDataStoreConnectorSpec
     extends SpecBase

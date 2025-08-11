@@ -18,7 +18,6 @@ package uk.gov.hmrc.tradereportingextracts.config
 
 import org.scalatest.matchers.should.Matchers
 import play.api.Application
-import play.api.inject.guice.GuiceApplicationBuilder
 import uk.gov.hmrc.tradereportingextracts.utils.SpecBase
 
 class ModuleSpec extends SpecBase with Matchers {

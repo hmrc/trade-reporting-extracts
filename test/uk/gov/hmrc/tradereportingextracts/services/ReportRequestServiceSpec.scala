@@ -18,18 +18,17 @@ package uk.gov.hmrc.tradereportingextracts.services
 
 import org.mockito.Mockito.{reset, verify, when}
 import org.scalatest.concurrent.ScalaFutures
+import org.scalatest.matchers.must.Matchers.{mustBe, mustEqual}
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 import org.scalatestplus.mockito.MockitoSugar
 import org.scalatestplus.mockito.MockitoSugar.mock
 import uk.gov.hmrc.crypto.Sensitive.SensitiveString
+import uk.gov.hmrc.tradereportingextracts.connectors.CustomsDataStoreConnector
 import uk.gov.hmrc.tradereportingextracts.models.*
 import uk.gov.hmrc.tradereportingextracts.models.eis.EisReportStatusRequest
 import uk.gov.hmrc.tradereportingextracts.models.eis.EisReportStatusRequest.StatusType
 import uk.gov.hmrc.tradereportingextracts.repositories.ReportRequestRepository
-import org.mockito.ArgumentMatchers.{any, eq as eqTo}
-import org.scalatest.matchers.must.Matchers.{mustBe, mustEqual}
-import uk.gov.hmrc.tradereportingextracts.connectors.CustomsDataStoreConnector
 import uk.gov.hmrc.tradereportingextracts.utils.WireMockHelper
 
 import java.time.{Instant, LocalDate}

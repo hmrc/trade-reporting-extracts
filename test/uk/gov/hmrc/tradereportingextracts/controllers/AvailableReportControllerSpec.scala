@@ -37,11 +37,8 @@ import scala.concurrent.{ExecutionContext, Future}
 
 class AvailableReportControllerSpec extends PlaySpec with MockitoSugar {
 
-  implicit val ec: ExecutionContext = ExecutionContext.Implicits.global
-  implicit val hc: HeaderCarrier    = HeaderCarrier()
-  val mockService                   = mock[AvailableReportService]
-  val controller                    = new AvailableReportController(Helpers.stubControllerComponents(), mockService)(using ec)
   implicit val ec: ExecutionContext                        = ExecutionContext.Implicits.global
+  implicit val hc: HeaderCarrier                           = HeaderCarrier()
   val mockService                                          = mock[AvailableReportService]
   private val mockStubBehaviour                            = mock[StubBehaviour]
   private val backendAuthComponents: BackendAuthComponents =

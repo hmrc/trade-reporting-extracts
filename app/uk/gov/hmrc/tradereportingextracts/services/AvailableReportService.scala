@@ -17,15 +17,14 @@
 package uk.gov.hmrc.tradereportingextracts.services
 
 import play.api.Logger
-import play.api.libs.json.JsValue
 import play.api.mvc.Result
 import play.api.mvc.Results.{BadRequest, NotFound}
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.tradereportingextracts.config.AppConfig
 import uk.gov.hmrc.tradereportingextracts.connectors.SDESConnector
-import uk.gov.hmrc.tradereportingextracts.models.sdes.{FileAvailableMetadataItem, FileAvailableResponse}
 import uk.gov.hmrc.tradereportingextracts.models.*
 import uk.gov.hmrc.tradereportingextracts.models.audit.{AuditDownloadRequest, ReportRequestDownloadedEvent}
+import uk.gov.hmrc.tradereportingextracts.models.sdes.{FileAvailableMetadataItem, FileAvailableResponse}
 
 import java.time.Instant
 import java.time.temporal.ChronoUnit.DAYS

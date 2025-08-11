@@ -16,7 +16,6 @@
 
 package uk.gov.hmrc.tradereportingextracts.models.etmp
 
-import org.scalatest.OptionValues.*
 import org.scalatest.freespec.AnyFreeSpec
 import org.scalatest.matchers.must.Matchers
 import play.api.libs.json.*

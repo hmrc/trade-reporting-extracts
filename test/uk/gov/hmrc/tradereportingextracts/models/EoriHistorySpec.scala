@@ -15,11 +15,12 @@
  */
 
 package models
-import java.time.{Instant, LocalDate}
 import org.scalatest.freespec.AnyFreeSpec
 import org.scalatest.matchers.must.Matchers
 import play.api.libs.json.*
 import uk.gov.hmrc.tradereportingextracts.models.EoriHistory
+
+import java.time.LocalDate
 
 class EoriHistorySpec extends AnyFreeSpec with Matchers {
 
