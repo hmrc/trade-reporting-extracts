@@ -21,6 +21,7 @@ import play.api.mvc.{Action, AnyContent, ControllerComponents}
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 import uk.gov.hmrc.tradereportingextracts.config.AppConfig
 import uk.gov.hmrc.tradereportingextracts.connectors.CustomsDataStoreConnector
+import uk.gov.hmrc.tradereportingextracts.models.ReportRequestUserAnswersModel
 import uk.gov.hmrc.tradereportingextracts.models.{ReportRequestUserAnswersModel, ReportSubmissionStatus}
 import uk.gov.hmrc.tradereportingextracts.services.{AuditService, EisService, ReportRequestService, ReportRequestTransformationService}
 
@@ -72,12 +73,10 @@ class ReportRequestController @Inject() (
                 }
               )
               .map { updatedReports =>
-                auditService.auditReportRequestSubmitted(updatedReports, ReportSubmissionStatus.Complete.value).recover
-
+                auditService.auditReportRequestSubmitted(updatedReports).recover
                 Ok(Json.obj("references" -> updatedReports.map(_.reportRequestId)))
               }
           } else {
-            auditService.auditReportRequestSubmitted(reportRequests, ReportSubmissionStatus.Incomplete.value).recover
             Future.successful(InternalServerError(Json.obj("error" -> "Failed to create report requests")))
           }
         }
