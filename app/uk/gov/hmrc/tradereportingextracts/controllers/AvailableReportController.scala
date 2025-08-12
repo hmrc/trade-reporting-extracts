@@ -60,7 +60,7 @@ class AvailableReportController @Inject() (
     }
   }
 
-  def auditReportDownload: Action[AnyContent] = Action.async { implicit request =>
+  def auditReportDownload: Action[AnyContent] = auth.authorizedAction(readPermission).async { implicit request =>
     availableReportService
       .processReportDownloadAudit(
         request.body.asJson.flatMap(_.validate[AuditDownloadRequest].asOpt)
