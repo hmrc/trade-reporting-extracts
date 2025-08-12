@@ -116,9 +116,11 @@ class AvailableReportControllerSpec extends PlaySpec with MockitoSugar {
 
   "auditReportDownload" should {
     "return NoContent when audit succeeds" in {
+      when(mockStubBehaviour.stubAuth(Some(permission), EmptyRetrieval))
+        .thenReturn(Future.successful(EmptyRetrieval))
       when(mockService.processReportDownloadAudit(any())(any())).thenReturn(Future.successful(Right(())))
 
-      val request                = FakeRequest().withJsonBody(Json.obj("foo" -> "bar"))
+      val request                = FakeRequest().withHeaders(AUTHORIZATION -> "my-token").withJsonBody(Json.obj("foo" -> "bar"))
       val result: Future[Result] = controller.auditReportDownload(request)
 
       status(result) mustBe NO_CONTENT
@@ -126,9 +128,11 @@ class AvailableReportControllerSpec extends PlaySpec with MockitoSugar {
 
     "return error result when audit fails" in {
       val errorResult = BadRequest("error")
+      when(mockStubBehaviour.stubAuth(Some(permission), EmptyRetrieval))
+        .thenReturn(Future.successful(EmptyRetrieval))
       when(mockService.processReportDownloadAudit(any())(any())).thenReturn(Future.successful(Left(errorResult)))
 
-      val request                = FakeRequest().withJsonBody(Json.obj("foo" -> "bar"))
+      val request                = FakeRequest().withHeaders(AUTHORIZATION -> "my-token").withJsonBody(Json.obj("foo" -> "bar"))
       val result: Future[Result] = controller.auditReportDownload(request)
 
       status(result) mustBe BAD_REQUEST
