@@ -35,10 +35,7 @@ class SDESConnector @Inject() (appConfig: AppConfig, httpClient: HttpClientV2)(u
     hc: HeaderCarrier
   ): Future[Seq[FileAvailableResponse]] = {
     val requestAvailableReportFileUrl = url"${appConfig.sdes}"
-    logger.info(
-      s"Fetching available reports using $xSDESKey : $eori and $xClientId : ${appConfig.treXClientId}" +
-        s"with SDES URL: $requestAvailableReportFileUrl"
-    )
+    logger.info(s"Fetching available reports from : $requestAvailableReportFileUrl")
     httpClient
       .get(requestAvailableReportFileUrl)
       .setHeader(

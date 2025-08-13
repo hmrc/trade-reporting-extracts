@@ -22,25 +22,22 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AsyncWordSpec
 import org.scalatestplus.mockito.MockitoSugar
 import org.scalatestplus.mockito.MockitoSugar.mock
-import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.tradereportingextracts.connectors.CustomsDataStoreConnector
 import uk.gov.hmrc.tradereportingextracts.models.{EoriHistory, EoriHistoryResponse}
 
 import scala.concurrent.{ExecutionContext, Future}
 
 class EoriHistoryServiceSpec extends AsyncWordSpec with Matchers with ScalaFutures with MockitoSugar {
-  implicit val ec: ExecutionContext = ExecutionContext.Implicits.global
-  val mockConnector                 = mock[CustomsDataStoreConnector]
-  val service                       = new EoriHistoryService(mockConnector)(using ec)
+  implicit val ec: ExecutionContext            = ExecutionContext.Implicits.global
+  val mockConnector: CustomsDataStoreConnector = mock[CustomsDataStoreConnector]
+  val service                                  = new EoriHistoryService(mockConnector)(using ec)
 
   val eori                        = "GB123456789012"
-  val history1                    =
+  val history1: EoriHistory       =
     EoriHistory(eori, Some("2024-01-01"), Some("2024-06-30"))
-  val history2                    =
+  val history2: EoriHistory       =
     EoriHistory(eori, Some("2024-07-01"), Some("2024-12-31"))
   val histories: Seq[EoriHistory] = Seq(history1, history2)
-
-  private given HeaderCarrier = HeaderCarrier()
 
   "EoriHistoryService.fetchEoriHistory" should {
     "return Some(seq) when connector returns non-empty sequence" in {

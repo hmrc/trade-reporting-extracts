@@ -16,9 +16,6 @@
 
 package uk.gov.hmrc.tradereportingextracts.repositories
 
-import org.mongodb.scala.{MongoDatabase, SingleObservableFuture}
-import org.mongodb.scala.bson.collection.immutable.Document
-import org.mongodb.scala.model.IndexOptions
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.concurrent.IntegrationPatience
 import org.scalatest.matchers.must.Matchers.{must, mustBe, mustEqual}
@@ -33,9 +30,8 @@ import uk.gov.hmrc.tradereportingextracts.models.etmp.EoriUpdate
 import uk.gov.hmrc.tradereportingextracts.models.{AuthorisedUser, User}
 
 import java.time.Instant
+import scala.concurrent.ExecutionContext
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.duration.*
-import scala.concurrent.{ExecutionContext, Future}
 
 class UserRepositorySpec
     extends AnyWordSpec,
@@ -71,22 +67,6 @@ class UserRepositorySpec
     ),
     accessDate = Instant.parse("2023-01-01T00:00:00Z")
   )
-
-  private def createIndex(
-    mdb: MongoDatabase,
-    collectionName: String,
-    fieldName: String,
-    indexName: String
-  ): Future[String] =
-    mdb
-      .getCollection(collectionName)
-      .createIndex(
-        key = Document(fieldName -> 1),
-        options = IndexOptions()
-          .name(indexName)
-          .expireAfter(3, SECONDS)
-      )
-      .toFuture()
 
   "UserRepositorySpec" should {
 
@@ -158,8 +138,8 @@ class UserRepositorySpec
     "getAuthorisedEoris" should {
 
       "must return all authorised EORIs for a given user" in {
-        val insertResult = userRepository.insert(user).futureValue
-        val result       = userRepository.getAuthorisedEoris(user.eori).futureValue
+        userRepository.insert(user).futureValue
+        val result = userRepository.getAuthorisedEoris(user.eori).futureValue
 
         result mustEqual Seq("AUTH-EORI-1", "AUTH-EORI-2")
       }
