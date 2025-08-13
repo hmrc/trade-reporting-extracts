@@ -94,9 +94,7 @@ class EisService @Inject() (
                     statusType = EisReportStatusRequest.StatusType.ERROR
                   )
               )
-              reportRequestService.update(updatedRequest).flatMap { _ =>
-                Future.failed(UpstreamErrorResponse(response.body, status))
-              }
+              reportRequestService.update(updatedRequest).map(_ => updatedRequest)
           }
         }
     }
