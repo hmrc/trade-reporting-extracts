@@ -162,24 +162,29 @@ class EisServiceSpec extends AnyWordSpec with Matchers with MockitoSugar with Sc
       }
     }
 
-    "fail with UpstreamErrorResponse if all retries exhausted with INTERNAL_SERVER_ERROR" in {
+    "return updated ReportRequest with FAILED status if all retries exhausted with INTERNAL_SERVER_ERROR" in {
       reset(mockConnector, mockReportRequestService)
+
       when(mockConnector.requestTraderReport(any(), any())(any()))
         .thenReturn(
           Future.successful(httpResponse(INTERNAL_SERVER_ERROR)),
           Future.successful(httpResponse(INTERNAL_SERVER_ERROR)),
           Future.successful(httpResponse(INTERNAL_SERVER_ERROR))
         )
+
       when(mockReportRequestService.update(any())(any()))
         .thenReturn(Future.successful(true))
 
       val result = service.requestTraderReport(eisReportRequest, reportRequest)
-      whenReady(result.failed) { ex =>
+
+      whenReady(result) { updatedReportRequest =>
         val captor = ArgumentCaptor.forClass(classOf[ReportRequest])
         verify(mockReportRequestService).update(captor.capture())(any())
 
         val persistedReportRequestAfterEis: ReportRequest = captor.getValue
-        persistedReportRequestAfterEis.notifications.head.copy(statusTimestamp = null) mustBe
+        val notification                                  = persistedReportRequestAfterEis.notifications.head
+
+        notification.copy(statusTimestamp = null) mustBe
           EisReportStatusRequest(
             applicationComponent = ApplicationComponent.TRE,
             statusCode = FAILED.toString,
@@ -188,8 +193,6 @@ class EisServiceSpec extends AnyWordSpec with Matchers with MockitoSugar with Sc
             statusType = StatusType.ERROR
           )
 
-        ex                                              shouldBe a[UpstreamErrorResponse]
-        ex.asInstanceOf[UpstreamErrorResponse].reportAs shouldBe INTERNAL_SERVER_ERROR
         verify(mockConnector, times(3)).requestTraderReport(eqTo(eisReportRequest), eqTo(reportRequest.correlationId))(
           any()
         )
