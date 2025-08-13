@@ -35,6 +35,7 @@ class CustomsDataStoreConnector @Inject() (appConfig: AppConfig, httpClient: Htt
   implicit val hc: HeaderCarrier = HeaderCarrier()
 
   def getCompanyInformation(eori: String): Future[CompanyInformation] =
+    logger.info(s"Requesting company information at : ${appConfig.companyInformationUrl}")
     httpClient
       .post(url"${appConfig.companyInformationUrl}")
       .withBody(Json.obj("eori" -> eori))
@@ -43,12 +44,13 @@ class CustomsDataStoreConnector @Inject() (appConfig: AppConfig, httpClient: Htt
         response.status match {
           case OK => Future.successful(response.json.as[CompanyInformation])
           case _  =>
-            logger.error(s"Unexpected response from call to /eori/company-information status : ${response.status}")
+            logger.error(s"Unexpected response from : ${appConfig.companyInformationUrl}")
             Future.successful(CompanyInformation())
         }
       }
 
   def getEoriHistory(eori: String): Future[EoriHistoryResponse] =
+    logger.info(s"Requesting EORI history at : ${appConfig.eoriHistoryUrl}")
     httpClient
       .post(url"${appConfig.eoriHistoryUrl}")
       .withBody(Json.obj("eori" -> eori))
@@ -57,12 +59,13 @@ class CustomsDataStoreConnector @Inject() (appConfig: AppConfig, httpClient: Htt
         response.status match {
           case OK => Future.successful(response.json.as[EoriHistoryResponse])
           case _  =>
-            logger.error(s"Unexpected response from call to /eori/eori-history status : ${response.status}")
+            logger.error(s"Unexpected response from : ${appConfig.eoriHistoryUrl}")
             Future.successful(EoriHistoryResponse(Seq.empty[EoriHistory]))
         }
       }
 
   def getNotificationEmail(eori: String): Future[NotificationEmail] =
+    logger.info(s"Requesting notification email at : ${appConfig.verifiedEmailUrl}")
     httpClient
       .post(url"${appConfig.verifiedEmailUrl}")
       .withBody(Json.obj("eori" -> eori))
@@ -71,7 +74,7 @@ class CustomsDataStoreConnector @Inject() (appConfig: AppConfig, httpClient: Htt
         response.status match {
           case OK => Future.successful(response.json.as[NotificationEmail])
           case _  =>
-            logger.error(s"Unexpected response from call to /eori/verified-email status : ${response.status}")
+            logger.error(s"Unexpected response from : ${appConfig.verifiedEmailUrl}")
             Future.successful(NotificationEmail())
         }
       }
