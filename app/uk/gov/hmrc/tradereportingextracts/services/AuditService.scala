@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.tradereportingextracts.services
 
-import play.api.libs.json.{JsObject, Json, OWrites}
+import play.api.libs.json.OWrites
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
 import uk.gov.hmrc.tradereportingextracts.models.audit.{AuditEvent, ReportDetail, ReportRequestSubmittedEvent}
