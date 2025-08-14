@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.tradereportingextracts.services
 
-import play.api.libs.json.OWrites
+import play.api.libs.json.{JsObject, Json, OWrites}
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
 import uk.gov.hmrc.tradereportingextracts.models.audit.{AuditEvent, ReportDetail, ReportRequestSubmittedEvent}
@@ -30,11 +30,16 @@ class AuditService @Inject() (
   auditConnector: AuditConnector
 )(using ExecutionContext) {
 
-  def audit[A <: AuditEvent](event: A)(using OWrites[A], HeaderCarrier): Unit =
+  def audit[A <: AuditEvent](event: A)(using OWrites[A], HeaderCarrier): Unit = {
+    println("============================================================")
+    println(event.auditType)
+    println(Json.toJson(event).as[JsObject])
     auditConnector.sendExplicitAudit(event.auditType, event)
+  }
 
   def auditReportRequestSubmitted(
-    reportRequests: Seq[ReportRequest]
+    reportRequests: Seq[ReportRequest],
+    eoriRoles: Set[String]
   )(using HeaderCarrier): Future[Unit] =
     reportRequests.headOption match {
       case Some(baseRequest) =>
@@ -43,8 +48,7 @@ class AuditService @Inject() (
           ReportDetail(
             requestId = request.reportRequestId,
             reportTypeName = request.reportTypeName.toString,
-            outcomeIsSuccessful = notif.exists(_.statusCode == StatusCode.INITIATED.toString),
-            outcomeStatusCode = notif.map(_.statusCode).getOrElse(StatusCode.FAILED.toString)
+            outcomeIsSuccessful = notif.exists(_.statusCode == StatusCode.INITIATED.toString)
           )
         }
         val submissionStatus                 =
@@ -55,12 +59,11 @@ class AuditService @Inject() (
           numberOfReports = reportDetails.size,
           requesterEori = baseRequest.requesterEORI,
           reportSubjectEori = baseRequest.reportEORIs.mkString(", "),
-          eoriRole = baseRequest.eoriRole.toString,
+          reportSubjectRole = eoriRoles,
           reportAlias = baseRequest.reportName,
           reportStart = baseRequest.reportStart,
           reportEnd = baseRequest.reportEnd,
           submittedAt = baseRequest.createDate,
-          recipientEmails = baseRequest.recipientEmails,
           reports = reportDetails
         )
 

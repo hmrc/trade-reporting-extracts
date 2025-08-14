@@ -28,24 +28,19 @@ class ReportRequestSubmittedEventSpec extends AnyFreeSpec with Matchers {
 
     val now = Instant.parse("2025-07-30T12:00:00Z")
 
-    val reportDetail = ReportDetail(
-      requestId = "REQ123",
-      reportTypeName = "IMPORTS_ITEM_REPORT",
-      outcomeIsSuccessful = true,
-      outcomeStatusCode = "INITIATED"
-    )
+    val reportDetail =
+      ReportDetail(requestId = "REQ123", reportTypeName = "IMPORTS_ITEM_REPORT", outcomeIsSuccessful = true)
 
     val event = ReportRequestSubmittedEvent(
       submissionStatus = "Complete",
       numberOfReports = 1,
       requesterEori = "GB123456789000",
       reportSubjectEori = "GB987654321000",
-      eoriRole = "TRADER",
+      reportSubjectRole = Set("importer"),
       reportAlias = "Trader Report",
       reportStart = now,
       reportEnd = now,
       submittedAt = now,
-      recipientEmails = Seq("user@example.com"),
       reports = Seq(reportDetail)
     )
 
