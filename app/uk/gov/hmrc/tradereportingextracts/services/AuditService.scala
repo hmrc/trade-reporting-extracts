@@ -30,12 +30,8 @@ class AuditService @Inject() (
   auditConnector: AuditConnector
 )(using ExecutionContext) {
 
-  def audit[A <: AuditEvent](event: A)(using OWrites[A], HeaderCarrier): Unit = {
-    println("============================================================")
-    println(event.auditType)
-    println(Json.toJson(event).as[JsObject])
+  def audit[A <: AuditEvent](event: A)(using OWrites[A], HeaderCarrier): Unit =
     auditConnector.sendExplicitAudit(event.auditType, event)
-  }
 
   def auditReportRequestSubmitted(
     reportRequests: Seq[ReportRequest],
