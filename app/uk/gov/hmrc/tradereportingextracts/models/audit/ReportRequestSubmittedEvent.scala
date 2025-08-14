@@ -25,12 +25,11 @@ final case class ReportRequestSubmittedEvent(
   numberOfReports: Int,
   requesterEori: String,
   reportSubjectEori: String,
-  eoriRole: String,
+  reportSubjectRole: Set[String],
   reportAlias: String,
   reportStart: Instant,
   reportEnd: Instant,
   submittedAt: Instant,
-  recipientEmails: Seq[String],
   reports: Seq[ReportDetail]
 ) extends AuditEvent {
   override def auditType: String = "ReportRequestSubmitted"
@@ -39,8 +38,7 @@ final case class ReportRequestSubmittedEvent(
 final case class ReportDetail(
   requestId: String,
   reportTypeName: String,
-  outcomeIsSuccessful: Boolean,
-  outcomeStatusCode: String
+  outcomeIsSuccessful: Boolean
 )
 
 object ReportRequestSubmittedEvent {

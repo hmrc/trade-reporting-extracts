@@ -72,7 +72,7 @@ class ReportRequestController @Inject() (
                 }
               )
               .map { updatedReports =>
-                auditService.auditReportRequestSubmitted(updatedReports).recover
+                auditService.auditReportRequestSubmitted(updatedReports, value.eoriRole).recover
                 Ok(Json.obj("references" -> updatedReports.map(_.reportRequestId)))
               }
           } else {
