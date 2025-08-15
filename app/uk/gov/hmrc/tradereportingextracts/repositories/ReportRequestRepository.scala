@@ -21,9 +21,9 @@ import org.mongodb.scala.model.{Filters, IndexModel, IndexOptions, Indexes}
 import uk.gov.hmrc.crypto.{Decrypter, Encrypter}
 import uk.gov.hmrc.mongo.MongoComponent
 import uk.gov.hmrc.mongo.play.json.PlayMongoRepository
+import uk.gov.hmrc.play.http.logging.Mdc
 import uk.gov.hmrc.tradereportingextracts.config.AppConfig
 import uk.gov.hmrc.tradereportingextracts.models.ReportRequest
-import uk.gov.hmrc.tradereportingextracts.utils.ReportRequestUtil.isReportStatusComplete
 
 import java.time.{LocalDate, ZoneOffset}
 import java.util.concurrent.TimeUnit
@@ -48,78 +48,86 @@ class ReportRequestRepository @Inject() (appConfig: AppConfig, mongoComponent: M
       replaceIndexes = true
     ):
 
-  def insert(reportRequest: ReportRequest)(implicit ec: ExecutionContext): Future[Boolean] =
+  def insert(reportRequest: ReportRequest)(implicit ec: ExecutionContext): Future[Boolean] = Mdc.preservingMdc {
     collection
       .insertOne(reportRequest)
       .head()
       .map(_.wasAcknowledged())
+  }
 
   def insertAll(reportRequests: Seq[ReportRequest])(implicit ec: ExecutionContext): Future[Boolean] =
-    if (reportRequests.isEmpty) Future.successful(true)
-    else
-      collection
-        .insertMany(reportRequests)
-        .head()
-        .map(_.wasAcknowledged())
+    Mdc.preservingMdc {
+      if (reportRequests.isEmpty) Future.successful(true)
+      else
+        collection
+          .insertMany(reportRequests)
+          .head()
+          .map(_.wasAcknowledged())
+    }
 
   def findByReportRequestId(reportRequestId: String)(implicit ec: ExecutionContext): Future[Option[ReportRequest]] =
-    collection
-      .find(Filters.equal("reportRequestId", reportRequestId))
-      .headOption()
+    Mdc.preservingMdc {
+      collection
+        .find(Filters.equal("reportRequestId", reportRequestId))
+        .headOption()
+    }
 
   def findByCorrelationId(correlationId: String)(implicit ec: ExecutionContext): Future[Option[ReportRequest]] =
-    collection
-      .find(Filters.equal("correlationId", correlationId))
-      .headOption()
+    Mdc.preservingMdc {
+      collection
+        .find(Filters.equal("correlationId", correlationId))
+        .headOption()
+    }
 
-  def update(reportRequest: ReportRequest)(implicit ec: ExecutionContext): Future[Boolean] =
+  def update(reportRequest: ReportRequest)(implicit ec: ExecutionContext): Future[Boolean] = Mdc.preservingMdc {
     collection
       .replaceOne(Filters.equal("reportRequestId", reportRequest.reportRequestId), reportRequest)
       .toFuture()
       .map(_.wasAcknowledged())
+  }
 
-  def delete(reportRequest: ReportRequest)(implicit ec: ExecutionContext): Future[Boolean] =
+  def delete(reportRequest: ReportRequest)(implicit ec: ExecutionContext): Future[Boolean] = Mdc.preservingMdc {
     collection
       .deleteOne(Filters.equal("reportRequestId", reportRequest.reportRequestId))
       .toFuture()
       .map(_.wasAcknowledged())
+  }
 
   def findByRequesterEORI(requesterEORI: String)(using ec: ExecutionContext): Future[Seq[ReportRequest]] =
-    collection
-      .find(Filters.equal("requesterEORI", requesterEORI))
-      .toFuture()
+    Mdc.preservingMdc {
+      collection
+        .find(Filters.equal("requesterEORI", requesterEORI))
+        .toFuture()
+    }
 
-  def getAvailableReports(eori: String)(using ec: ExecutionContext): Future[Seq[ReportRequest]] =
+  def getAvailableReports(eori: String)(using ec: ExecutionContext): Future[Seq[ReportRequest]] = Mdc.preservingMdc {
     collection
       .find(Filters.equal("requesterEORI", eori))
       .toFuture()
-      .map { reportRequests =>
-        reportRequests.filter { reportRequest =>
-          isReportStatusComplete(reportRequest)
-        }
-      }
-
-  def countAvailableReports(eori: String)(using ec: ExecutionContext): Future[Long] =
-    collection
-      .find(Filters.equal("requesterEORI", eori))
-      .toFuture()
-      .map { reportRequests =>
-        reportRequests.count { reportRequest =>
-          isReportStatusComplete(reportRequest)
-        }
-      }
-
-  def countReportSubmissionsForEoriOnDate(eori: String, date: LocalDate)(implicit ec: ExecutionContext): Future[Int] = {
-    val startOfDay = date.atStartOfDay().toInstant(ZoneOffset.UTC)
-    val endOfDay   = date.plusDays(1).atStartOfDay().toInstant(ZoneOffset.UTC)
-    collection
-      .countDocuments(
-        Filters.and(
-          Filters.equal("requesterEORI", eori),
-          Filters.gte("createDate", startOfDay),
-          Filters.lt("createDate", endOfDay)
-        )
-      )
-      .toFuture()
-      .map(_.toInt)
+      .map(_.filter(_.isReportStatusComplete()))
   }
+
+  def countAvailableReports(eori: String)(using ec: ExecutionContext): Future[Long] = Mdc.preservingMdc {
+    collection
+      .find(Filters.equal("requesterEORI", eori))
+      .toFuture()
+      .map { reportRequests =>
+        reportRequests.count(_.isReportStatusComplete())
+      }
+  }
+
+  def countReportSubmissionsForEoriOnDate(eori: String, date: LocalDate)(implicit ec: ExecutionContext): Future[Int] =
+    Mdc.preservingMdc {
+      val startOfDay = date.atStartOfDay().toInstant(ZoneOffset.UTC)
+      val endOfDay   = date.plusDays(1).atStartOfDay().toInstant(ZoneOffset.UTC)
+      collection
+        .countDocuments(
+          Filters.and(
+            Filters.equal("requesterEORI", eori),
+            Filters.gte("createDate", startOfDay),
+            Filters.lt("createDate", endOfDay)
+          )
+        )
+        .toFuture()
+        .map(_.toInt)
+    }

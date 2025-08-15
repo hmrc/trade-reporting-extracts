@@ -118,21 +118,8 @@ class ReportRequestService @Inject() (
 
   }
 
-  def determineReportStatus(reportRequest: ReportRequest): ReportStatus = {
-    val isComplete = reportRequest.fileNotifications.exists { notifications =>
-      val notificationsCount = notifications.size
-      val lastNotification   = notifications.find(_.reportLastFile == "true")
-      lastNotification match {
-        case Some(last) =>
-          Try(last.reportFilesParts.toInt) match {
-            case Success(parts) => notificationsCount == parts
-            case Failure(_)     => false
-          }
-        case _          => false
-      }
-    }
-
-    (isComplete, reportRequest.notifications) match
+  def determineReportStatus(reportRequest: ReportRequest): ReportStatus =
+    (reportRequest.isReportStatusComplete(), reportRequest.notifications) match
       case (true, _)                                                                    => ReportStatus.COMPLETE
       case (_, notifications)
           if notifications
@@ -140,7 +127,6 @@ class ReportRequestService @Inject() (
         ReportStatus.NO_DATA_AVAILABLE
       case (_, notifications) if notifications.exists(_.statusType == StatusType.ERROR) => ReportStatus.ERROR
       case _                                                                            => ReportStatus.IN_PROGRESS
-  }
 
   def countReportSubmissionsForEoriOnDate(eori: String, limit: Int, date: LocalDate = LocalDate.now())(implicit
     ec: ExecutionContext
