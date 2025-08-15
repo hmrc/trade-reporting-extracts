@@ -21,7 +21,7 @@ import org.apache.pekko.pattern.after
 import play.api.Logging
 import play.api.http.Status.*
 import play.api.libs.json.{JsError, JsSuccess, Json}
-import uk.gov.hmrc.http.{HeaderCarrier, UpstreamErrorResponse}
+import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.tradereportingextracts.config.AppConfig
 import uk.gov.hmrc.tradereportingextracts.connectors.EisConnector
 import uk.gov.hmrc.tradereportingextracts.models.ReportRequest

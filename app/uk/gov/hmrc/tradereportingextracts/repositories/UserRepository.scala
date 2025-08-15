@@ -21,6 +21,7 @@ import org.mongodb.scala.*
 import org.mongodb.scala.model.*
 import uk.gov.hmrc.mongo.MongoComponent
 import uk.gov.hmrc.mongo.play.json.PlayMongoRepository
+import uk.gov.hmrc.play.http.logging.Mdc
 import uk.gov.hmrc.tradereportingextracts.config.AppConfig
 import uk.gov.hmrc.tradereportingextracts.models.User
 import uk.gov.hmrc.tradereportingextracts.models.etmp.EoriUpdate
@@ -47,18 +48,20 @@ class UserRepository @Inject() (appConfig: AppConfig, mongoComponent: MongoCompo
       replaceIndexes = true
     ):
 
-  def insert(user: User)(using ec: ExecutionContext): Future[Boolean] =
+  def insert(user: User)(using ec: ExecutionContext): Future[Boolean] = Mdc.preservingMdc {
     collection
       .insertOne(user)
       .head()
       .map(_.wasAcknowledged())
+  }
 
-  def findByEori(eori: String)(using ec: ExecutionContext): Future[Option[User]] =
+  def findByEori(eori: String)(using ec: ExecutionContext): Future[Option[User]] = Mdc.preservingMdc {
     collection
       .find(Filters.equal("eori", eori))
       .headOption()
+  }
 
-  def getOrCreateUser(eori: String): Future[User] =
+  def getOrCreateUser(eori: String): Future[User] = Mdc.preservingMdc {
     findByEori(eori).flatMap {
       case Some(existingUser) =>
         val updatedUser = existingUser.copy(accessDate = java.time.Instant.now())
@@ -67,14 +70,16 @@ class UserRepository @Inject() (appConfig: AppConfig, mongoComponent: MongoCompo
         val newUser = User(eori)
         insert(newUser).map(_ => newUser)
     }
+  }
 
-  def update(user: User): Future[Boolean] =
+  def update(user: User): Future[Boolean] = Mdc.preservingMdc {
     collection
       .replaceOne(Filters.equal("eori", user.eori), user)
       .toFuture()
       .map(_.wasAcknowledged())
+  }
 
-  def updateEori(eoriUpdate: EoriUpdate): Future[Boolean] =
+  def updateEori(eoriUpdate: EoriUpdate): Future[Boolean] = Mdc.preservingMdc {
     val updateQuery  = Filters.equal("eori", eoriUpdate.oldEori)
     val updateAction = Updates.combine(
       Updates.set("eori", eoriUpdate.newEori)
@@ -86,14 +91,16 @@ class UserRepository @Inject() (appConfig: AppConfig, mongoComponent: MongoCompo
       )
       .toFuture()
       .map(_.wasAcknowledged())
+  }
 
-  def deleteByEori(eori: String): Future[Boolean] =
+  def deleteByEori(eori: String): Future[Boolean] = Mdc.preservingMdc {
     collection
       .deleteOne(Filters.equal("eori", eori))
       .toFuture()
       .map(_.wasAcknowledged())
+  }
 
-  def getAuthorisedEoris(eori: String): Future[Seq[String]] =
+  def getAuthorisedEoris(eori: String): Future[Seq[String]] = Mdc.preservingMdc {
     findByEori(eori).flatMap {
       case Some(user) =>
         val authorisedEoris = user.authorisedUsers.map(_.eori)
@@ -102,3 +109,4 @@ class UserRepository @Inject() (appConfig: AppConfig, mongoComponent: MongoCompo
       case None =>
         Future.failed(new Exception(s"User with EORI $eori not found"))
     }
+  }

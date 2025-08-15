@@ -24,6 +24,7 @@ import uk.gov.hmrc.mongo.play.json.formats.MongoJavatimeFormats.Implicits.*
 import uk.gov.hmrc.tradereportingextracts.models.eis.EisReportStatusRequest
 
 import java.time.Instant
+import scala.util.{Failure, Success, Try}
 
 case class ReportRequest(
   reportRequestId: String,
@@ -41,7 +42,22 @@ case class ReportRequest(
   notifications: Seq[EisReportStatusRequest],
   fileNotifications: Option[Seq[FileNotification]],
   updateDate: Instant
-)
+) {
+
+  def isReportStatusComplete(): Boolean =
+    fileNotifications.exists { notifications =>
+      val notificationsCount = notifications.size
+      val lastNotification   = notifications.find(_.reportLastFile == "true")
+      lastNotification match {
+        case Some(last) =>
+          Try(last.reportFilesParts.toInt) match {
+            case Success(parts) => notificationsCount == parts
+            case Failure(_)     => false
+          }
+        case _          => false
+      }
+    }
+}
 
 case class FileNotification(
   fileName: String,
