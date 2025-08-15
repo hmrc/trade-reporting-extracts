@@ -119,20 +119,7 @@ class ReportRequestService @Inject() (
   }
 
   def determineReportStatus(reportRequest: ReportRequest): ReportStatus = {
-    val isComplete = reportRequest.fileNotifications.exists { notifications =>
-      val notificationsCount = notifications.size
-      val lastNotification   = notifications.find(_.reportLastFile == "true")
-      lastNotification match {
-        case Some(last) =>
-          Try(last.reportFilesParts.toInt) match {
-            case Success(parts) => notificationsCount == parts
-            case Failure(_)     => false
-          }
-        case _          => false
-      }
-    }
-
-    (isComplete, reportRequest.notifications) match
+    (reportRequest.isReportStatusComplete(), reportRequest.notifications) match
       case (true, _)                                                                    => ReportStatus.COMPLETE
       case (_, notifications)
           if notifications
