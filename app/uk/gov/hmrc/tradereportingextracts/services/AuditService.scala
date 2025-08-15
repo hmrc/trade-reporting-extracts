@@ -55,7 +55,7 @@ class AuditService @Inject() (
           numberOfReports = reportDetails.size,
           requesterEori = baseRequest.requesterEORI,
           reportSubjectEori = baseRequest.reportEORIs.mkString(", "),
-          reportSubjectRole = eoriRoles,
+          reportSubjectRole = eoriRoles.mkString(", "),
           reportAlias = baseRequest.reportName,
           reportStart = baseRequest.reportStart,
           reportEnd = baseRequest.reportEnd,

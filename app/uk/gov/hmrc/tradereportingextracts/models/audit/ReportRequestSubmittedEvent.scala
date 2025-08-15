@@ -25,7 +25,7 @@ final case class ReportRequestSubmittedEvent(
   numberOfReports: Int,
   requesterEori: String,
   reportSubjectEori: String,
-  reportSubjectRole: Set[String],
+  reportSubjectRole: String,
   reportAlias: String,
   reportStart: Instant,
   reportEnd: Instant,
