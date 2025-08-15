@@ -36,7 +36,7 @@ class ReportRequestSubmittedEventSpec extends AnyFreeSpec with Matchers {
       numberOfReports = 1,
       requesterEori = "GB123456789000",
       reportSubjectEori = "GB987654321000",
-      reportSubjectRole = Set("importer"),
+      reportSubjectRole = "importer",
       reportAlias = "Trader Report",
       reportStart = now,
       reportEnd = now,
