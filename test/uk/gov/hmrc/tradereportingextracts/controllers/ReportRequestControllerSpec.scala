@@ -26,6 +26,7 @@ import play.api.libs.json.*
 import play.api.test.*
 import play.api.test.Helpers.*
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
+import uk.gov.hmrc.tradereportingextracts.config.AppConfig
 import uk.gov.hmrc.tradereportingextracts.connectors.CustomsDataStoreConnector
 import uk.gov.hmrc.tradereportingextracts.models.audit.ReportRequestSubmittedEvent
 import uk.gov.hmrc.tradereportingextracts.models.{EoriHistory, EoriHistoryResponse, NotificationEmail, ReportRequest}
@@ -41,6 +42,7 @@ class ReportRequestControllerSpec extends SpecBase with WireMockHelper {
   val mockRequestReferenceService: RequestReferenceService     = mock[RequestReferenceService]
   val mockEisService: EisService                               = mock[EisService]
   val mockAuditConnector: AuditConnector                       = mock[AuditConnector]
+  val mockAppConfig: AppConfig                                 = mock[AppConfig]
 
   override def beforeEach(): Unit = {
     super.beforeEach()
@@ -325,4 +327,15 @@ class ReportRequestControllerSpec extends SpecBase with WireMockHelper {
     }
   }
 
+  "getReportRequestLimitNumber" should {
+    "return report request limit number" in {
+      when(mockAppConfig.dailySubmissionLimit).thenReturn(25)
+
+      val request = FakeRequest(GET, "/trade-reporting-extracts/report-request-limit-number")
+
+      val result = route(app, request).value
+
+      contentAsJson(result) mustBe Json.toJson("25")
+    }
+  }
 }
