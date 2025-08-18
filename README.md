@@ -21,19 +21,12 @@ To use the service manager CLI (sm2), please refer to the [official setup guide]
 Once set up:
 - To start the service:
   ```sh
-  sm2 --start TRADE_REPORTING_EXTRACTS
+  sm2 --start TRE_ALL
   ```
 - To stop the service:
   ```sh
-  sm2 --stop TRADE_REPORTING_EXTRACTS
+  sm2 --stop TRE_ALL
   ```
-
-> **Note:**
-> - While running this backend service locally, you must also start the `TRADE_REPORTING_EXTRACTS_STUB` service. This is required for the APIs to fetch mock data from the stub.
-> - You can start the stub using:
->   ```sh
->   sm2 --start TRADE_REPORTING_EXTRACTS_STUB
->   ```
 
 ## Login enrolments
 
