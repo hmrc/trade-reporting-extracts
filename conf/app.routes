@@ -22,3 +22,5 @@ GET   /trade-reporting-extracts/report-submission-limit/:eori   uk.gov.hmrc.trad
 GET         /trade-reporting-extracts/eori/get-user-detail                    uk.gov.hmrc.tradereportingextracts.controllers.UserController.getUserAndEmail
 
 GET         /trade-reporting-extracts/downloaded-audit                    uk.gov.hmrc.tradereportingextracts.controllers.AvailableReportController.auditReportDownload()
+
+POST        /trade-reporting-extracts/company-information                 uk.gov.hmrc.tradereportingextracts.controllers.CompanyInformationController.getCompanyInformation
