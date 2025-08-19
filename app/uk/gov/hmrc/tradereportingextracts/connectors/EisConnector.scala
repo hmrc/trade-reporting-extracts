@@ -45,7 +45,7 @@ class EisConnector @Inject() (
       .now(ZoneOffset.UTC)
       .format(DateTimeFormatter.ofPattern("EEE, dd MMM yyyy HH:mm:ss 'GMT'"))
     val eisAuthToken           = "Bearer " + appConfig.eisAuthToken
-    logger.info(s"Requesting trader report at : $requestTraderReportUrl")
+    logger.warn(s"Requesting trader report at : $requestTraderReportUrl")
     httpClient
       .put(requestTraderReportUrl)
       .withBody(Json.toJson(payload))

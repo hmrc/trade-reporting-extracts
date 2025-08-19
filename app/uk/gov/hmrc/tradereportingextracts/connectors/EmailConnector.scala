@@ -47,7 +47,7 @@ class EmailConnector @Inject() (
       templateId = templateId,
       parameters = params
     )
-    logger.info(s"Sending email at : $emailUrl")
+    logger.warn(s"Sending email at : $emailUrl")
     httpClient
       .post(emailUrl)
       .withBody(Json.toJson(body))
