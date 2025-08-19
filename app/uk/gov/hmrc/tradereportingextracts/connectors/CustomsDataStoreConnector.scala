@@ -35,7 +35,7 @@ class CustomsDataStoreConnector @Inject() (appConfig: AppConfig, httpClient: Htt
   implicit val hc: HeaderCarrier = HeaderCarrier()
 
   def getCompanyInformation(eori: String): Future[CompanyInformation] =
-    logger.info(s"Requesting company information at : ${appConfig.companyInformationUrl}")
+    logger.warn(s"Requesting company information at : ${appConfig.companyInformationUrl}")
     httpClient
       .post(url"${appConfig.companyInformationUrl}")
       .withBody(Json.obj("eori" -> eori))
@@ -50,7 +50,7 @@ class CustomsDataStoreConnector @Inject() (appConfig: AppConfig, httpClient: Htt
       }
 
   def getEoriHistory(eori: String): Future[EoriHistoryResponse] =
-    logger.info(s"Requesting EORI history at : ${appConfig.eoriHistoryUrl}")
+    logger.warn(s"Requesting EORI history at : ${appConfig.eoriHistoryUrl}")
     httpClient
       .post(url"${appConfig.eoriHistoryUrl}")
       .withBody(Json.obj("eori" -> eori))
@@ -65,7 +65,7 @@ class CustomsDataStoreConnector @Inject() (appConfig: AppConfig, httpClient: Htt
       }
 
   def getNotificationEmail(eori: String): Future[NotificationEmail] =
-    logger.info(s"Requesting notification email at : ${appConfig.verifiedEmailUrl}")
+    logger.warn(s"Requesting notification email at : ${appConfig.verifiedEmailUrl}")
     httpClient
       .post(url"${appConfig.verifiedEmailUrl}")
       .withBody(Json.obj("eori" -> eori))
