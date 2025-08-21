@@ -19,6 +19,8 @@ PUT         /tre/updateeori/v1                                           uk.gov.
 
 GET   /trade-reporting-extracts/report-submission-limit/:eori   uk.gov.hmrc.tradereportingextracts.controllers.ReportRequestController.hasReachedSubmissionLimit(eori: String)
 
+GET         /trade-reporting-extracts/report-request-limit-number uk.gov.hmrc.tradereportingextracts.controllers.ReportRequestController.getReportRequestLimitNumber
+
 GET         /trade-reporting-extracts/eori/get-user-detail                    uk.gov.hmrc.tradereportingextracts.controllers.UserController.getUserAndEmail
 
 GET         /trade-reporting-extracts/downloaded-audit                    uk.gov.hmrc.tradereportingextracts.controllers.AvailableReportController.auditReportDownload()
