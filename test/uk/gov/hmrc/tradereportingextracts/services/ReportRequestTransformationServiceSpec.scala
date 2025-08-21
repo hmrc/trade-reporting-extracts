@@ -20,6 +20,7 @@ import org.mockito.Mockito.*
 import org.scalatest.freespec.AsyncFreeSpec
 import org.scalatest.matchers.must.Matchers
 import org.scalatestplus.mockito.MockitoSugar
+import uk.gov.hmrc.crypto.Sensitive.SensitiveString
 import uk.gov.hmrc.tradereportingextracts.models.*
 import uk.gov.hmrc.tradereportingextracts.models.eis.EisReportRequest
 
@@ -133,6 +134,98 @@ class ReportRequestTransformationServiceSpec extends AsyncFreeSpec with Matchers
           eisRequest.startDate mustBe "2025-04-01"
           eisRequest.endDate mustBe "2025-04-30"
         }
+    }
+  }
+
+  "reportConfirmationTransformer" - {
+    "should transform ReportRequest to ReportConfirmation for all report types" in {
+      val requests = Seq(
+        ReportRequest(
+          reportRequestId = "REF-1",
+          correlationId = "corr-1",
+          reportName = "Name1",
+          requesterEORI = "EORI1",
+          eoriRole = EoriRole.DECLARANT,
+          reportEORIs = Seq("EORI1"),
+          userEmail = Some(SensitiveString("user1@test.com")),
+          recipientEmails = Seq("user1@test.com"),
+          reportTypeName = ReportTypeName.IMPORTS_HEADER_REPORT,
+          reportStart = Instant.now,
+          reportEnd = Instant.now,
+          createDate = Instant.now,
+          notifications = Seq(),
+          fileNotifications = None,
+          updateDate = Instant.now
+        ),
+        ReportRequest(
+          reportRequestId = "REF-2",
+          correlationId = "corr-2",
+          reportName = "Name2",
+          requesterEORI = "EORI2",
+          eoriRole = EoriRole.TRADER,
+          reportEORIs = Seq("EORI2"),
+          userEmail = Some(SensitiveString("user2@test.com")),
+          recipientEmails = Seq("user2@test.com"),
+          reportTypeName = ReportTypeName.IMPORTS_ITEM_REPORT,
+          reportStart = Instant.now,
+          reportEnd = Instant.now,
+          createDate = Instant.now,
+          notifications = Seq(),
+          fileNotifications = None,
+          updateDate = Instant.now
+        ),
+        ReportRequest(
+          reportRequestId = "REF-3",
+          correlationId = "corr-3",
+          reportName = "Name3",
+          requesterEORI = "EORI3",
+          eoriRole = EoriRole.TRADER_DECLARANT,
+          reportEORIs = Seq("EORI3"),
+          userEmail = Some(SensitiveString("user3@test.com")),
+          recipientEmails = Seq("user3@test.com"),
+          reportTypeName = ReportTypeName.IMPORTS_TAXLINE_REPORT,
+          reportStart = Instant.now,
+          reportEnd = Instant.now,
+          createDate = Instant.now,
+          notifications = Seq(),
+          fileNotifications = None,
+          updateDate = Instant.now
+        )
+      )
+
+      val confirmations = service.reportConfirmationTransformer(requests)
+      confirmations mustBe Seq(
+        ReportConfirmation("Name1", "importHeader", "REF-1"),
+        ReportConfirmation("Name2", "importItem", "REF-2"),
+        ReportConfirmation("Name3", "importTaxLine", "REF-3")
+      )
+    }
+
+    "shoudl tranform export items correctly" in {
+      val requests = Seq(
+        ReportRequest(
+          reportRequestId = "REF-1",
+          correlationId = "corr-1",
+          reportName = "Name1",
+          requesterEORI = "EORI1",
+          eoriRole = EoriRole.TRADER,
+          reportEORIs = Seq("EORI1"),
+          userEmail = Some(SensitiveString("user1@test.com")),
+          recipientEmails = Seq("user1@test.com"),
+          reportTypeName = ReportTypeName.EXPORTS_ITEM_REPORT,
+          reportStart = Instant.now,
+          reportEnd = Instant.now,
+          createDate = Instant.now,
+          notifications = Seq(),
+          fileNotifications = None,
+          updateDate = Instant.now
+        )
+      )
+
+      val confirmations = service.reportConfirmationTransformer(requests)
+      confirmations mustBe Seq(
+        ReportConfirmation("Name1", "exportItem", "REF-1")
+      )
     }
   }
 }
