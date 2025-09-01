@@ -96,4 +96,8 @@ class ReportRequestController @Inject() (
     }
   }
 
+  def getReportRequestLimitNumber: Action[AnyContent] = Action.async {
+    Future.successful(Ok(Json.toJson(appConfig.dailySubmissionLimit.toString)))
+  }
+
 }
