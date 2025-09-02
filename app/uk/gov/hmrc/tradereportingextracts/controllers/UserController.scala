@@ -45,16 +45,22 @@ class UserController @Inject() (
     }
   }
 
-  def getAuthorisedEoris(eori: String): Action[AnyContent] = Action.async {
-    userService
-      .getAuthorisedEoris(eori)
-      .map { authorisedEoris =>
-        Ok(Json.toJson(authorisedEoris))
+  def getAuthorisedEoris: Action[JsValue] =
+    auth.authorizedAction(readPermission).async(parse.json) { implicit request =>
+      (request.body \ "eori").validate[String] match {
+        case JsSuccess(eori, _) =>
+          userService
+            .getAuthorisedEoris(eori)
+            .map { authorisedEoris =>
+              Ok(Json.toJson(authorisedEoris))
+            }
+            .recover { case e: Exception =>
+              InternalServerError(e.getMessage)
+            }
+        case JsError(_)         =>
+          Future.successful(BadRequest("Missing or invalid 'eori' field"))
       }
-      .recover { case e: Exception =>
-        InternalServerError(e.getMessage)
-      }
-  }
+    }
 
   def getNotificationEmail: Action[JsValue] =
     auth.authorizedAction(readPermission).async(parse.json) { implicit request =>

@@ -19,7 +19,7 @@ package uk.gov.hmrc.tradereportingextracts.controllers
 import org.mockito.Mockito.when
 import play.api.Application
 import play.api.libs.json.{JsArray, JsObject, JsString, Json}
-import play.api.mvc.{AnyContentAsEmpty, Result}
+import play.api.mvc.Result
 import play.api.test.Helpers.*
 import play.api.test.{FakeRequest, Helpers}
 import uk.gov.hmrc.internalauth.client.*
@@ -149,11 +149,12 @@ class UserControllerSpec extends SpecBase {
         .thenReturn(Future.successful(authorisedEoris))
       when(mockStubBehaviour.stubAuth(Some(permission), EmptyRetrieval))
         .thenReturn(Future.successful(EmptyRetrieval))
-      val request: FakeRequest[AnyContentAsEmpty.type] =
-        FakeRequest(GET, routes.UserController.getAuthorisedEoris(eori).url)
-          .withHeaders(AUTHORIZATION -> "my-token")
 
-      val result: Future[Result] = controller.getAuthorisedEoris(eori).apply(request)
+      val request: FakeRequest[JsObject] = FakeRequest(POST, routes.UserController.getAuthorisedEoris.url)
+        .withHeaders("Content-Type" -> "application/json", AUTHORIZATION -> "my-token")
+        .withBody(Json.obj("eori" -> eori))
+
+      val result: Future[Result] = controller.getAuthorisedEoris.apply(request)
 
       status(result)        shouldBe OK
       contentAsJson(result) shouldBe JsArray(authorisedEoris.map(JsString(_)))
@@ -166,10 +167,11 @@ class UserControllerSpec extends SpecBase {
         .thenReturn(Future.failed(new RuntimeException("Service failure")))
       when(mockStubBehaviour.stubAuth(Some(permission), EmptyRetrieval))
         .thenReturn(Future.successful(EmptyRetrieval))
-      val request: FakeRequest[AnyContentAsEmpty.type] =
-        FakeRequest(GET, routes.UserController.getAuthorisedEoris(eori).url).withHeaders(AUTHORIZATION -> "my-token")
+      val request: FakeRequest[JsObject] = FakeRequest(POST, routes.UserController.getAuthorisedEoris.url)
+        .withHeaders("Content-Type" -> "application/json", AUTHORIZATION -> "my-token")
+        .withBody(Json.obj("eori" -> eori))
 
-      val result: Future[Result] = controller.getAuthorisedEoris(eori).apply(request)
+      val result: Future[Result] = controller.getAuthorisedEoris.apply(request)
 
       status(result)        shouldBe INTERNAL_SERVER_ERROR
       contentAsString(result) should include("Service failure")
