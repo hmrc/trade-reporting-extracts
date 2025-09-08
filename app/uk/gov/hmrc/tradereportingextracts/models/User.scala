@@ -37,14 +37,18 @@ case class AuthorisedUser(
   accessType: AccessType
 )
 
-object User:
+object MongoInstantFormat:
   private val instantReads: Reads[Instant]    = Reads { js =>
     (js \ "$date" \ "$numberLong").validate[String].map(str => Instant.ofEpochMilli(str.toLong))
   }
   private val instantWrites: Writes[Instant]  =
-    (instant: Instant) => Json.obj("$date" -> instant.toEpochMilli)
+    (instant: Instant) => Json.obj("$date" -> Json.obj("$numberLong" -> instant.toEpochMilli.toString))
   implicit val instantFormat: Format[Instant] = Format(instantReads, instantWrites)
-  given format: Format[User]                  = Json.format[User]
+
+object User:
+  import MongoInstantFormat._
+  given format: Format[User] = Json.format[User]
 
 object AuthorisedUser:
+  import MongoInstantFormat._
   given Format[AuthorisedUser] = Json.format[AuthorisedUser]
