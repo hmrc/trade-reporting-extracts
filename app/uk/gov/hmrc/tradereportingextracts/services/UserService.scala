@@ -18,7 +18,8 @@ package uk.gov.hmrc.tradereportingextracts.services
 
 import uk.gov.hmrc.tradereportingextracts.connectors.CustomsDataStoreConnector
 import uk.gov.hmrc.tradereportingextracts.models.etmp.EoriUpdate
-import uk.gov.hmrc.tradereportingextracts.models.{AddressInformation, NotificationEmail, User, UserDetails}
+import uk.gov.hmrc.tradereportingextracts.models.thirdParty.ThirdPartyAddedConfirmation
+import uk.gov.hmrc.tradereportingextracts.models.{AddressInformation, AuthorisedUser, NotificationEmail, User, UserDetails}
 import uk.gov.hmrc.tradereportingextracts.repositories.UserRepository
 
 import javax.inject.{Inject, Singleton}
@@ -74,3 +75,6 @@ class UserService @Inject() (
       ),
       notificationEmail = notificationEmail
     )
+
+  def addAuthorisedUser(eori: String, authorisedUser: AuthorisedUser): Future[ThirdPartyAddedConfirmation] =
+    userRepository.addAuthorisedUser(eori, authorisedUser)
