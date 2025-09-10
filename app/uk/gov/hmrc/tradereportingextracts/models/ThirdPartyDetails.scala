@@ -14,17 +14,21 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.tradereportingextracts.utils
+package uk.gov.hmrc.tradereportingextracts.models
 
-import org.scalatest.freespec.AnyFreeSpec
-import org.scalatest.matchers.must.Matchers
+import play.api.libs.json.{Json, OFormat}
 
-class HttpDateFormatterSpec extends AnyFreeSpec with Matchers {
-  "HttpDateFormatter" - {
+import java.time.LocalDate
 
-    "must format current date in HTTP date format" in {
-      val httpDate = HttpDateFormatter.getCurrentHttpDate
-      httpDate must fullyMatch regex """[A-Za-z]{3}, \d{2} [A-Za-z]{3,4} \d{4} \d{2}:\d{2}:\d{2} GMT"""
-    }
-  }
+case class ThirdPartyDetails(
+  referenceName: Option[String],
+  accessStartDate: LocalDate,
+  accessEndDate: Option[LocalDate],
+  dataTypes: Set[String],
+  dataStartDate: Option[LocalDate],
+  dataEndDate: Option[LocalDate]
+)
+
+object ThirdPartyDetails {
+  implicit val format: OFormat[ThirdPartyDetails] = Json.format[ThirdPartyDetails]
 }

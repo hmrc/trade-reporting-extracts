@@ -25,12 +25,13 @@ import org.scalatest.{OptionValues, TryValues}
 import org.scalatestplus.mockito.MockitoSugar
 import org.scalatestplus.mockito.MockitoSugar.mock
 import uk.gov.hmrc.tradereportingextracts.connectors.CustomsDataStoreConnector
+import uk.gov.hmrc.tradereportingextracts.models.AccessType.IMPORTS
 import uk.gov.hmrc.tradereportingextracts.models.{AddressInformation, AuthorisedUser, CompanyInformation, NotificationEmail, User, UserDetails}
 import uk.gov.hmrc.tradereportingextracts.models.etmp.EoriUpdate
 import uk.gov.hmrc.tradereportingextracts.models.thirdParty.ThirdPartyAddedConfirmation
 import uk.gov.hmrc.tradereportingextracts.repositories.UserRepository
 
-import java.time.{Instant, LocalDateTime}
+import java.time._
 import scala.concurrent.{ExecutionContext, Future}
 
 class UserServiceSpec
@@ -273,6 +274,75 @@ class UserServiceSpec
           ex.getMessage must include("User not found")
         }
       }
+    }
+
+    "getAuthorisedUser" - {
+
+      val eori           = "123"
+      val thirdPartyEori = "456"
+
+      val authorisedUser = AuthorisedUser(
+        eori = thirdPartyEori,
+        accessStart = Instant.parse("2023-01-01T00:00:00Z"),
+        accessEnd = Some(Instant.parse("2023-12-31T23:59:59Z")),
+        reportDataStart = Some(Instant.parse("2023-01-01T10:00:00Z")),
+        reportDataEnd = Some(Instant.parse("2023-12-31T23:59:59Z")),
+        accessType = Set(IMPORTS)
+      )
+
+      "must return authorised user when found" in {
+        when(mockRepository.getAuthorisedUser(any(), any())).thenReturn(Future.successful(Some(authorisedUser)))
+
+        val result = service.getAuthorisedUser(eori, thirdPartyEori).futureValue
+        result mustBe Some(authorisedUser)
+      }
+
+      "return none when no authorised user found" in {
+        when(mockRepository.getAuthorisedUser(any(), any())).thenReturn(Future.successful(None))
+
+        val result = service.getAuthorisedUser(eori, thirdPartyEori).futureValue
+        result mustBe None
+      }
+    }
+
+    "transformToThirdPartyDetails" - {
+
+      val eori           = "123"
+      val thirdPartyEori = "456"
+
+      val authorisedUser = AuthorisedUser(
+        eori = thirdPartyEori,
+        accessStart = Instant.parse("2023-01-01T00:00:00Z"),
+        accessEnd = Some(Instant.parse("2023-12-31T23:59:59Z")),
+        reportDataStart = Some(Instant.parse("2023-01-01T10:00:00Z")),
+        reportDataEnd = Some(Instant.parse("2023-12-31T23:59:59Z")),
+        accessType = Set(IMPORTS),
+        referenceName = Some("foo")
+      )
+
+      "should transform AuthorisedUser to ThirdPartyDetails correctly with optional dates" in {
+        val result = service.transformToThirdPartyDetails(authorisedUser)
+
+        result.referenceName mustBe Some("foo")
+        result.accessStartDate mustBe LocalDate.of(2023, 1, 1)
+        result.accessEndDate mustBe Some(LocalDate.of(2023, 12, 31))
+        result.dataTypes mustBe Set("imports")
+        result.dataStartDate mustBe Some(LocalDate.of(2023, 1, 1))
+        result.dataEndDate mustBe Some(LocalDate.of(2023, 12, 31))
+      }
+
+      "should transform AuthorisedUser to ThirdPartyDetails correctly without optional dates" in {
+        val authoriseduUserOngoing = authorisedUser.copy(accessEnd = None, reportDataStart = None, reportDataEnd = None)
+        val result                 = service.transformToThirdPartyDetails(authoriseduUserOngoing)
+
+        result.referenceName mustBe Some("foo")
+        result.accessStartDate mustBe LocalDate.of(2023, 1, 1)
+        result.accessEndDate mustBe None
+        result.dataTypes mustBe Set("imports")
+        result.dataStartDate mustBe None
+        result.dataEndDate mustBe None
+      }
+
     }
   }
 }
