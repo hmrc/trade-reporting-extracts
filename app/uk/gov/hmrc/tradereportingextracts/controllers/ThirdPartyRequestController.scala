@@ -27,11 +27,9 @@ import uk.gov.hmrc.tradereportingextracts.services.UserService
 import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
 
-class ThirdPartyRequestController @Inject() (cc: ControllerComponents,
-                                             userService: UserService
-                                            ) (
-  implicit executionContext: ExecutionContext)
-    extends BackendController(cc){
+class ThirdPartyRequestController @Inject() (cc: ControllerComponents, userService: UserService)(implicit
+  executionContext: ExecutionContext
+) extends BackendController(cc) {
 
   implicit val hc: HeaderCarrier = HeaderCarrier()
 
@@ -50,13 +48,13 @@ class ThirdPartyRequestController @Inject() (cc: ControllerComponents,
         (for {
           thirdPartyAddedConfirmed <- userService.addAuthorisedUser(value.userEORI, authorisedUser)
           // TODO TRE-709 - Email functionality to be implemented in third party confirmation
-          //userEmail      <- customsDataStoreConnector.getNotificationEmail(value.userEORI).map(_.address)
+          // userEmail      <- customsDataStoreConnector.getNotificationEmail(value.userEORI).map(_.address)
           // _              <- sendThirdPartyRegisteredEmail(userEmail)
         } yield Ok(Json.toJson(thirdPartyAddedConfirmed)))
-          .recover {
-            case ex => BadRequest(Json.obj("error" -> ex.getMessage))
+          .recover { case ex =>
+            BadRequest(Json.obj("error" -> ex.getMessage))
           }
-      case JsError(_) =>
+      case JsError(_)          =>
         Future.successful(BadRequest(Json.obj("error" -> "Invalid request format")))
     }
   }
@@ -76,6 +74,6 @@ class ThirdPartyRequestController @Inject() (cc: ControllerComponents,
     accessTypes.flatMap {
       case s if s.equalsIgnoreCase("IMPORT") => Some(AccessType.IMPORTS)
       case s if s.equalsIgnoreCase("EXPORT") => Some(AccessType.EXPORTS)
-      case _ => None
+      case _                                 => None
     }
 }

@@ -55,7 +55,7 @@ class ThirdPartyRequestSpec extends AnyFreeSpec with Matchers {
       )
 
       request.userEORI mustBe "GB1"
-      request.accessType must contain ("IMPORT")
+      request.accessType must contain("IMPORT")
       request.accessEnd mustBe None
     }
   }

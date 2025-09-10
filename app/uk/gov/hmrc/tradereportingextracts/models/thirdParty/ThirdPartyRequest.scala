@@ -20,16 +20,16 @@ import play.api.libs.json.{Json, OFormat, Reads}
 
 import java.time.Instant
 
-case class ThirdPartyRequest (
-                        userEORI: String,
-                        thirdPartyEORI: String,
-                        accessStart: Instant,
-                        accessEnd: Option[Instant],
-                        reportDateStart:Option[Instant],
-                        reportDateEnd: Option[Instant],
-                        accessType: Set[String],
-                        referenceName: Option[String]
-) 
+case class ThirdPartyRequest(
+  userEORI: String,
+  thirdPartyEORI: String,
+  accessStart: Instant,
+  accessEnd: Option[Instant],
+  reportDateStart: Option[Instant],
+  reportDateEnd: Option[Instant],
+  accessType: Set[String],
+  referenceName: Option[String]
+)
 
 object ThirdPartyRequest {
   implicit val format: OFormat[ThirdPartyRequest] = Json.format[ThirdPartyRequest]

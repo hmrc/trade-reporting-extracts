@@ -32,22 +32,17 @@ import uk.gov.hmrc.tradereportingextracts.services.UserService
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class ThirdPartyRequestControllerSpec
-  extends AnyFreeSpec
-    with Matchers
-    with MockitoSugar
-    with ScalaFutures {
+class ThirdPartyRequestControllerSpec extends AnyFreeSpec with Matchers with MockitoSugar with ScalaFutures {
 
-  val cc: ControllerComponents = Helpers.stubControllerComponents()
-  val userService: UserService = mock[UserService]
-  implicit val ec: ExecutionContext                        = ExecutionContext.Implicits.global
-  val controller = new ThirdPartyRequestController(cc, userService)
+  val cc: ControllerComponents      = Helpers.stubControllerComponents()
+  val userService: UserService      = mock[UserService]
+  implicit val ec: ExecutionContext = ExecutionContext.Implicits.global
+  val controller                    = new ThirdPartyRequestController(cc, userService)
 
   "addThirdPartyRequest" - {
 
     "should return 200 OK with confirmation for valid request" in {
-      val requestBody = Json.parse(
-        """
+      val requestBody = Json.parse("""
           |{
           |  "userEORI":"GB987654321098",
           |  "thirdPartyEORI":"GB123456123456",
@@ -74,7 +69,7 @@ class ThirdPartyRequestControllerSpec
 
     "should return 400 BadRequest for invalid JSON" in {
       val invalidJson = Json.parse("""{"foo": "bar"}""")
-      val result = controller.addThirdPartyRequest()(FakeRequest().withBody(invalidJson))
+      val result      = controller.addThirdPartyRequest()(FakeRequest().withBody(invalidJson))
       status(result) mustBe BAD_REQUEST
       (contentAsJson(result) \ "error").as[String] must include("Invalid request format")
     }
