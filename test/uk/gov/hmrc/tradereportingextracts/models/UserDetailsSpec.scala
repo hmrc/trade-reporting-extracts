@@ -31,10 +31,10 @@ class UserDetailsSpec extends AnyFreeSpec with Matchers {
       val authorisedUser    = AuthorisedUser(
         eori = "GB123456789000",
         accessStart = Instant.parse("2024-06-01T00:00:00Z"),
-        accessEnd = Instant.parse("2024-12-31T23:59:59Z"),
-        reportDataStart = Instant.parse("2024-06-01T00:00:00Z"),
-        reportDataEnd = Instant.parse("2024-12-31T23:59:59Z"),
-        accessType = IMPORTS
+        accessEnd = Some(Instant.parse("2024-12-31T23:59:59Z")),
+        reportDataStart = Some(Instant.parse("2024-06-01T00:00:00Z")),
+        reportDataEnd = Some(Instant.parse("2024-12-31T23:59:59Z")),
+        accessType = Set(IMPORTS)
       )
       val companyInfo       = CompanyInformation()
       val notificationEmail = NotificationEmail()
