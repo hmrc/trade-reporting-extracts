@@ -16,6 +16,7 @@
 
 package uk.gov.hmrc.tradereportingextracts.services
 
+import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito.{verify, when}
 import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}
 import org.scalatest.freespec.AnyFreeSpec
@@ -24,11 +25,12 @@ import org.scalatest.{OptionValues, TryValues}
 import org.scalatestplus.mockito.MockitoSugar
 import org.scalatestplus.mockito.MockitoSugar.mock
 import uk.gov.hmrc.tradereportingextracts.connectors.CustomsDataStoreConnector
-import uk.gov.hmrc.tradereportingextracts.models.{AddressInformation, CompanyInformation, NotificationEmail, User, UserDetails}
+import uk.gov.hmrc.tradereportingextracts.models.AccessType.IMPORTS
+import uk.gov.hmrc.tradereportingextracts.models.{AddressInformation, AuthorisedUser, CompanyInformation, NotificationEmail, User, UserDetails}
 import uk.gov.hmrc.tradereportingextracts.models.etmp.EoriUpdate
 import uk.gov.hmrc.tradereportingextracts.repositories.UserRepository
 
-import java.time.LocalDateTime
+import java.time.{Instant, LocalDate, LocalDateTime}
 import scala.concurrent.{ExecutionContext, Future}
 
 class UserServiceSpec
@@ -43,12 +45,12 @@ class UserServiceSpec
 
   "UserService" - {
 
-    val mockRepository                = mock[UserRepository]
+    val mockRepository = mock[UserRepository]
     val mockCustomsDataStoreConnector = mock[CustomsDataStoreConnector]
 
     val service = new UserService(mockRepository, mockCustomsDataStoreConnector)
 
-    val eori            = "EORI1234"
+    val eori = "EORI1234"
     val authorisedEoris = Seq("AUTH-EORI-1", "AUTH-EORI-2")
 
     "insert" - {
@@ -161,7 +163,7 @@ class UserServiceSpec
     }
 
     "getNotificationEmail" - {
-      val eori              = "EORI1234"
+      val eori = "EORI1234"
       val notificationEmail = NotificationEmail("test@email.com")
 
       "must return notification email when connector returns it" in {
@@ -173,7 +175,7 @@ class UserServiceSpec
       "must fail when connector returns failed Future" in {
         val expectedException = new Exception("Email not found")
         when(mockCustomsDataStoreConnector.getNotificationEmail(eori)).thenReturn(Future.failed(expectedException))
-        val result            = service.getNotificationEmail(eori)
+        val result = service.getNotificationEmail(eori)
         whenReady(result.failed) { ex =>
           ex mustEqual expectedException
         }
@@ -183,18 +185,18 @@ class UserServiceSpec
     "getUserAndEmailDetails" - {
 
       "must return user details with notification email when both user and email are found" in {
-        val user               = User(eori, additionalEmails = Seq(), authorisedUsers = Seq.empty)
+        val user = User(eori, additionalEmails = Seq(), authorisedUsers = Seq.empty)
         val companyInformation = CompanyInformation(
           name = "Test Company",
           consent = "Yes"
         )
-        val notificationEmail  =
+        val notificationEmail =
           NotificationEmail("test@test.com", LocalDateTime.now())
         when(mockCustomsDataStoreConnector.getCompanyInformation(eori))
           .thenReturn(Future.successful(companyInformation))
         when(mockRepository.getOrCreateUser(eori)).thenReturn(Future.successful(user))
         when(mockCustomsDataStoreConnector.getNotificationEmail(eori)).thenReturn(Future.successful(notificationEmail))
-        val result             = service.getUserAndEmailDetails(eori)
+        val result = service.getUserAndEmailDetails(eori)
         result.futureValue mustEqual UserDetails(
           eori = user.eori,
           additionalEmails = user.additionalEmails,
@@ -205,18 +207,18 @@ class UserServiceSpec
       }
 
       "must return user details without notification email when email is not found" in {
-        val user               = User(eori, additionalEmails = Seq(), authorisedUsers = Seq.empty)
+        val user = User(eori, additionalEmails = Seq(), authorisedUsers = Seq.empty)
         val companyInformation = CompanyInformation(
           name = "Test Company",
           consent = "1",
           address = AddressInformation()
         )
-        val notificationEmail  = NotificationEmail()
+        val notificationEmail = NotificationEmail()
         when(mockCustomsDataStoreConnector.getCompanyInformation(eori))
           .thenReturn(Future.successful(companyInformation))
         when(mockRepository.getOrCreateUser(eori)).thenReturn(Future.successful(user))
         when(mockCustomsDataStoreConnector.getNotificationEmail(eori)).thenReturn(Future.successful(notificationEmail))
-        val result             = service.getUserAndEmailDetails(eori)
+        val result = service.getUserAndEmailDetails(eori)
         result.futureValue mustEqual UserDetails(
           eori = user.eori,
           additionalEmails = user.additionalEmails,
@@ -225,6 +227,75 @@ class UserServiceSpec
           notificationEmail = notificationEmail
         )
       }
+    }
+
+    "getAuthorisedUser" - {
+
+      val eori = "123"
+      val thirdPartyEori = "456"
+
+      val authorisedUser = AuthorisedUser(
+        eori = thirdPartyEori,
+        accessStart = Instant.parse("2023-01-01T00:00:00Z"),
+        accessEnd = Some(Instant.parse("2023-12-31T23:59:59Z")),
+        reportDataStart = Some(Instant.parse("2023-01-01T10:00:00Z")),
+        reportDataEnd = Some(Instant.parse("2023-12-31T23:59:59Z")),
+        accessType = Set(IMPORTS)
+      )
+
+      "must return authorised user when found" in {
+        when(mockRepository.getAuthorisedUser(any(), any())).thenReturn(Future.successful(Some(authorisedUser)))
+
+        val result = service.getAuthorisedUser(eori, thirdPartyEori).futureValue
+        result mustBe Some(authorisedUser)
+      }
+
+      "return none when no authorised user found" in {
+        when(mockRepository.getAuthorisedUser(any(), any())).thenReturn(Future.successful(None))
+
+        val result = service.getAuthorisedUser(eori, thirdPartyEori).futureValue
+        result mustBe None
+      }
+    }
+
+    "transformToThirdPartyDetails" - {
+
+      val eori = "123"
+      val thirdPartyEori = "456"
+
+      val authorisedUser = AuthorisedUser(
+        eori = thirdPartyEori,
+        accessStart = Instant.parse("2023-01-01T00:00:00Z"),
+        accessEnd = Some(Instant.parse("2023-12-31T23:59:59Z")),
+        reportDataStart = Some(Instant.parse("2023-01-01T10:00:00Z")),
+        reportDataEnd = Some(Instant.parse("2023-12-31T23:59:59Z")),
+        accessType = Set(IMPORTS),
+        referenceName = Some("foo")
+      )
+
+      "should transform AuthorisedUser to ThirdPartyDetails correctly with optional dates" in {
+        val result = service.transformToThirdPartyDetails(authorisedUser)
+
+        result.referenceName mustBe Some("foo")
+        result.accessStartDate mustBe LocalDate.of(2023, 1, 1)
+        result.accessEndDate mustBe Some(LocalDate.of(2023, 12, 31))
+        result.dataTypes mustBe Set("imports")
+        result.dataStartDate mustBe Some(LocalDate.of(2023, 1, 1))
+        result.dataEndDate mustBe Some(LocalDate.of(2023, 12, 31))
+      }
+
+      "should transform AuthorisedUser to ThirdPartyDetails correctly without optional dates" in {
+        val authoriseduUserOngoing = authorisedUser.copy(accessEnd = None, reportDataStart = None, reportDataEnd = None)
+        val result = service.transformToThirdPartyDetails(authoriseduUserOngoing)
+
+        result.referenceName mustBe Some("foo")
+        result.accessStartDate mustBe LocalDate.of(2023, 1, 1)
+        result.accessEndDate mustBe None
+        result.dataTypes mustBe Set("imports")
+        result.dataStartDate mustBe None
+        result.dataEndDate mustBe None
+      }
+
     }
   }
 }
