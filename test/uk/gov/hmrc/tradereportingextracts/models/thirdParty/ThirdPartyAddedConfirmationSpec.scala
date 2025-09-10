@@ -26,8 +26,7 @@ class ThirdPartyAddedConfirmationSpec extends AnyFreeSpec with Matchers {
 
     "must serialize and deserialize correctly" in {
       val confirmation = ThirdPartyAddedConfirmation(
-        thirdPartyEori = "GB123456789000",
-        addedTimeStamp = "2025-09-09T10:59:38.334Z"
+        thirdPartyEori = "GB123456789000"
       )
 
       val json = Json.toJson(confirmation)
@@ -36,12 +35,10 @@ class ThirdPartyAddedConfirmationSpec extends AnyFreeSpec with Matchers {
 
     "must have correct field values" in {
       val confirmation = ThirdPartyAddedConfirmation(
-        thirdPartyEori = "GB987654321098",
-        addedTimeStamp = "2025-09-10T12:00:00.000Z"
+        thirdPartyEori = "GB987654321098"
       )
 
       confirmation.thirdPartyEori mustBe "GB987654321098"
-      confirmation.addedTimeStamp mustBe "2025-09-10T12:00:00.000Z"
     }
   }
 }

@@ -19,8 +19,7 @@ package uk.gov.hmrc.tradereportingextracts.models.thirdParty
 import play.api.libs.json.{Json, OFormat}
 
 case class ThirdPartyAddedConfirmation(
-  thirdPartyEori: String,
-  addedTimeStamp: String)
+  thirdPartyEori: String)
 
 object ThirdPartyAddedConfirmation:
   implicit val format: OFormat[ThirdPartyAddedConfirmation] = Json.format[ThirdPartyAddedConfirmation]

@@ -28,6 +28,7 @@ import uk.gov.hmrc.tradereportingextracts.models.etmp.EoriUpdate
 import uk.gov.hmrc.tradereportingextracts.models.AuthorisedUser
 import uk.gov.hmrc.tradereportingextracts.models.thirdParty.ThirdPartyAddedConfirmation
 
+import java.time.LocalDate
 import java.util.concurrent.TimeUnit
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -119,7 +120,7 @@ class UserRepository @Inject() (appConfig: AppConfig, mongoComponent: MongoCompo
           val updatedAuthorisedUsers =
             existingUser.authorisedUsers.filterNot(_.eori == authorisedUser.eori) :+ authorisedUser
           val updatedUser            = existingUser.copy(authorisedUsers = updatedAuthorisedUsers)
-          update(updatedUser).map(_ => ThirdPartyAddedConfirmation(authorisedUser.eori, java.time.Instant.now.toString))
+          update(updatedUser).map(_ => ThirdPartyAddedConfirmation(authorisedUser.eori))
         case None               =>
           Future.failed(new Exception(s"User with EORI $eori not found"))
       }

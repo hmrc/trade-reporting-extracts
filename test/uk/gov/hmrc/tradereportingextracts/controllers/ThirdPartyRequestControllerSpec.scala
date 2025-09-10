@@ -61,8 +61,7 @@ class ThirdPartyRequestControllerSpec
         """.stripMargin)
 
       val confirmation = ThirdPartyAddedConfirmation(
-        thirdPartyEori = "GB123456123456",
-        addedTimeStamp = "2025-09-09T10:59:38.334Z"
+        thirdPartyEori = "GB123456123456"
       )
 
       when(userService.addAuthorisedUser(any(), any()))

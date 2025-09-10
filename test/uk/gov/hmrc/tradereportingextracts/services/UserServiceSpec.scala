@@ -241,8 +241,7 @@ class UserServiceSpec
           accessType = Set.empty
         )
         val confirmation   = ThirdPartyAddedConfirmation(
-          thirdPartyEori = "GB123456789001",
-          addedTimeStamp = "2024-01-01T00:00:00Z"
+          thirdPartyEori = "GB123456789001"
         )
 
         when(mockRepository.addAuthorisedUser(any(), any()))
