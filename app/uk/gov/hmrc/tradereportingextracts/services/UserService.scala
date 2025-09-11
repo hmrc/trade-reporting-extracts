@@ -20,8 +20,10 @@ import uk.gov.hmrc.tradereportingextracts.connectors.CustomsDataStoreConnector
 import uk.gov.hmrc.tradereportingextracts.models.etmp.EoriUpdate
 import uk.gov.hmrc.tradereportingextracts.models.thirdParty.ThirdPartyAddedConfirmation
 import uk.gov.hmrc.tradereportingextracts.models.{AddressInformation, AuthorisedUser, NotificationEmail, User, UserDetails}
+import uk.gov.hmrc.tradereportingextracts.models.{AddressInformation, AuthorisedUser, NotificationEmail, ThirdPartyDetails, User, UserDetails}
 import uk.gov.hmrc.tradereportingextracts.repositories.UserRepository
 
+import java.time.{LocalDate, ZoneOffset}
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -78,3 +80,25 @@ class UserService @Inject() (
 
   def addAuthorisedUser(eori: String, authorisedUser: AuthorisedUser): Future[ThirdPartyAddedConfirmation] =
     userRepository.addAuthorisedUser(eori, authorisedUser)
+
+  def getAuthorisedUser(eori: String, thirdPartyEori: String): Future[Option[AuthorisedUser]] =
+    userRepository.getAuthorisedUser(eori, thirdPartyEori)
+
+  def transformToThirdPartyDetails(authorisedUser: AuthorisedUser): ThirdPartyDetails =
+    ThirdPartyDetails(
+      referenceName = authorisedUser.referenceName,
+      accessStartDate = LocalDate.ofInstant(authorisedUser.accessStart, ZoneOffset.UTC),
+      accessEndDate = authorisedUser.accessEnd match {
+        case Some(value) => Some(LocalDate.ofInstant(value, ZoneOffset.UTC))
+        case _           => None
+      },
+      dataTypes = authorisedUser.accessType.map(_.toString.toLowerCase),
+      dataStartDate = authorisedUser.reportDataStart match {
+        case Some(value) => Some(LocalDate.ofInstant(value, ZoneOffset.UTC))
+        case _           => None
+      },
+      dataEndDate = authorisedUser.reportDataEnd match {
+        case Some(value) => Some(LocalDate.ofInstant(value, ZoneOffset.UTC))
+        case _           => None
+      }
+    )

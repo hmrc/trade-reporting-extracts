@@ -23,7 +23,7 @@ import uk.gov.hmrc.mongo.MongoComponent
 import uk.gov.hmrc.mongo.play.json.PlayMongoRepository
 import uk.gov.hmrc.play.http.logging.Mdc
 import uk.gov.hmrc.tradereportingextracts.config.AppConfig
-import uk.gov.hmrc.tradereportingextracts.models.User
+import uk.gov.hmrc.tradereportingextracts.models.{AuthorisedUser, User}
 import uk.gov.hmrc.tradereportingextracts.models.etmp.EoriUpdate
 import uk.gov.hmrc.tradereportingextracts.models.AuthorisedUser
 import uk.gov.hmrc.tradereportingextracts.models.thirdParty.ThirdPartyAddedConfirmation
@@ -125,3 +125,12 @@ class UserRepository @Inject() (appConfig: AppConfig, mongoComponent: MongoCompo
           Future.failed(new Exception(s"User with EORI $eori not found"))
       }
     }
+
+  def getAuthorisedUser(eori: String, authorisedEori: String): Future[Option[AuthorisedUser]] = Mdc.preservingMdc {
+    findByEori(eori).map {
+      case Some(user) =>
+        user.authorisedUsers.find(_.eori == authorisedEori)
+      case None       =>
+        None
+    }
+  }

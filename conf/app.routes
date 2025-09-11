@@ -17,14 +17,16 @@ GET         /trade-reporting-extracts/api/available-reports-count        uk.gov.
 
 PUT         /tre/updateeori/v1                                           uk.gov.hmrc.tradereportingextracts.controllers.EoriUpdateController.eoriUpdate()
 
-GET         /trade-reporting-extracts/report-submission-limit/:eori      uk.gov.hmrc.tradereportingextracts.controllers.ReportRequestController.hasReachedSubmissionLimit(eori: String)
+GET   /trade-reporting-extracts/report-submission-limit/:eori   uk.gov.hmrc.tradereportingextracts.controllers.ReportRequestController.hasReachedSubmissionLimit(eori: String)
 
-GET         /trade-reporting-extracts/report-request-limit-number        uk.gov.hmrc.tradereportingextracts.controllers.ReportRequestController.getReportRequestLimitNumber
+GET         /trade-reporting-extracts/report-request-limit-number uk.gov.hmrc.tradereportingextracts.controllers.ReportRequestController.getReportRequestLimitNumber
 
-GET         /trade-reporting-extracts/eori/get-user-detail               uk.gov.hmrc.tradereportingextracts.controllers.UserController.getUserAndEmail
+GET         /trade-reporting-extracts/eori/get-user-detail                    uk.gov.hmrc.tradereportingextracts.controllers.UserController.getUserAndEmail
 
-GET         /trade-reporting-extracts/downloaded-audit                   uk.gov.hmrc.tradereportingextracts.controllers.AvailableReportController.auditReportDownload()
+GET         /trade-reporting-extracts/downloaded-audit                    uk.gov.hmrc.tradereportingextracts.controllers.AvailableReportController.auditReportDownload()
 
-POST        /trade-reporting-extracts/company-information                uk.gov.hmrc.tradereportingextracts.controllers.CompanyInformationController.getCompanyInformation
+POST        /trade-reporting-extracts/company-information                 uk.gov.hmrc.tradereportingextracts.controllers.CompanyInformationController.getCompanyInformation
+
+GET        /trade-reporting-extracts/third-party-details                                           uk.gov.hmrc.tradereportingextracts.controllers.UserController.getThirdPartyDetails
 
 POST        /trade-reporting-extracts/add-third-party-request            uk.gov.hmrc.tradereportingextracts.controllers.ThirdPartyRequestController.addThirdPartyRequest()

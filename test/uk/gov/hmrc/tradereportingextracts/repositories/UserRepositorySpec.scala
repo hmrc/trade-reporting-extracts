@@ -206,4 +206,31 @@ class UserRepositorySpec
         }
       }
     }
+
+    "getAuthorisedUser" should {
+      "return authorised user if there is one" in {
+
+        val eori           = "EORI1234"
+        val thirdPartyEori = "AUTH-EORI-1"
+        val insertResult   = userRepository.insert(user).futureValue
+        val result         = userRepository.getAuthorisedUser(eori, thirdPartyEori).futureValue
+        result mustBe Some(
+          AuthorisedUser(
+            eori = "AUTH-EORI-1",
+            accessStart = Instant.parse("2023-01-01T00:00:00Z"),
+            accessEnd = Some(Instant.parse("2023-12-31T23:59:59Z")),
+            reportDataStart = Some(Instant.parse("2023-01-01T10:00:00Z")),
+            reportDataEnd = Some(Instant.parse("2023-12-31T23:59:59Z")),
+            accessType = Set(IMPORTS)
+          )
+        )
+      }
+
+      "return none if no authorised user found" in {
+        val eori           = "EORI1234"
+        val thirdPartyEori = "NON-AUTH-EORI"
+        val result         = userRepository.getAuthorisedUser(eori, thirdPartyEori).futureValue
+        result mustBe None
+      }
+    }
   }
