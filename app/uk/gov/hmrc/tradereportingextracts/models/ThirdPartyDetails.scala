@@ -21,13 +21,13 @@ import play.api.libs.json.{Json, OFormat}
 import java.time.LocalDate
 
 case class ThirdPartyDetails(
-                              referenceName: Option[String],
-                              accessStartDate: LocalDate,
-                              accessEndDate: Option[LocalDate],
-                              dataTypes: Set[String],
-                              dataStartDate: Option[LocalDate],
-                              dataEndDate: Option[LocalDate]
-                            )
+  referenceName: Option[String],
+  accessStartDate: LocalDate,
+  accessEndDate: Option[LocalDate],
+  dataTypes: Set[String],
+  dataStartDate: Option[LocalDate],
+  dataEndDate: Option[LocalDate]
+)
 
 object ThirdPartyDetails {
   implicit val format: OFormat[ThirdPartyDetails] = Json.format[ThirdPartyDetails]

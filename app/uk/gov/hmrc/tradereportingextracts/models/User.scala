@@ -22,21 +22,21 @@ import uk.gov.hmrc.crypto.Sensitive.*
 import java.time.Instant
 
 case class User(
-                 eori: String,
-                 additionalEmails: Seq[String] = Seq.empty,
-                 authorisedUsers: Seq[AuthorisedUser] = Seq.empty,
-                 accessDate: Instant = Instant.now()
-               )
+  eori: String,
+  additionalEmails: Seq[String] = Seq.empty,
+  authorisedUsers: Seq[AuthorisedUser] = Seq.empty,
+  accessDate: Instant = Instant.now()
+)
 
 case class AuthorisedUser(
-                           eori: String,
-                           accessStart: Instant,
-                           accessEnd: Option[Instant],
-                           reportDataStart: Option[Instant],
-                           reportDataEnd: Option[Instant],
-                           accessType: Set[AccessType],
-                           referenceName: Option[String] = None
-                         )
+  eori: String,
+  accessStart: Instant,
+  accessEnd: Option[Instant],
+  reportDataStart: Option[Instant],
+  reportDataEnd: Option[Instant],
+  accessType: Set[AccessType],
+  referenceName: Option[String] = None
+)
 
 object User:
   private val instantReads: Reads[Instant]    = Reads { js =>

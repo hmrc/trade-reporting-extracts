@@ -75,27 +75,25 @@ class UserService @Inject() (
       ),
       notificationEmail = notificationEmail
     )
-  
-  def getAuthorisedUser(eori: String, thirdPartyEori: String): Future[Option[AuthorisedUser]] = {
+
+  def getAuthorisedUser(eori: String, thirdPartyEori: String): Future[Option[AuthorisedUser]] =
     userRepository.getAuthorisedUser(eori, thirdPartyEori)
-  }
-  
-  def transformToThirdPartyDetails(authorisedUser: AuthorisedUser): ThirdPartyDetails = {
+
+  def transformToThirdPartyDetails(authorisedUser: AuthorisedUser): ThirdPartyDetails =
     ThirdPartyDetails(
       referenceName = authorisedUser.referenceName,
       accessStartDate = LocalDate.ofInstant(authorisedUser.accessStart, ZoneOffset.UTC),
       accessEndDate = authorisedUser.accessEnd match {
         case Some(value) => Some(LocalDate.ofInstant(value, ZoneOffset.UTC))
-        case _ => None
+        case _           => None
       },
       dataTypes = authorisedUser.accessType.map(_.toString.toLowerCase),
       dataStartDate = authorisedUser.reportDataStart match {
         case Some(value) => Some(LocalDate.ofInstant(value, ZoneOffset.UTC))
-        case _ => None
+        case _           => None
       },
       dataEndDate = authorisedUser.reportDataEnd match {
         case Some(value) => Some(LocalDate.ofInstant(value, ZoneOffset.UTC))
-        case _ => None
+        case _           => None
       }
     )
-  }

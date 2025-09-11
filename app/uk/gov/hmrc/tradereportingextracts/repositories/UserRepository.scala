@@ -110,7 +110,7 @@ class UserRepository @Inject() (appConfig: AppConfig, mongoComponent: MongoCompo
         Future.failed(new Exception(s"User with EORI $eori not found"))
     }
   }
-  
+
   def getAuthorisedUser(eori: String, authorisedEori: String): Future[Option[AuthorisedUser]] = Mdc.preservingMdc {
     findByEori(eori).map {
       case Some(user) =>
