@@ -126,6 +126,18 @@ class UserRepository @Inject() (appConfig: AppConfig, mongoComponent: MongoCompo
       }
     }
 
+  def deleteAuthorisedUser(eori: String, authorisedEori: String): Future[Boolean] =
+    Mdc.preservingMdc {
+      findByEori(eori).flatMap {
+        case Some(existingUser) =>
+          val updatedAuthorisedUsers = existingUser.authorisedUsers.filterNot(_.eori == authorisedEori)
+          val updatedUser = existingUser.copy(authorisedUsers = updatedAuthorisedUsers)
+          update(updatedUser)
+        case None =>
+          Future.failed(new Exception(s"User with EORI $eori not found"))
+      }
+    }
+
   def getAuthorisedUser(eori: String, authorisedEori: String): Future[Option[AuthorisedUser]] = Mdc.preservingMdc {
     findByEori(eori).map {
       case Some(user) =>

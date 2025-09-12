@@ -105,3 +105,19 @@ class UserController @Inject() (
         case (_, JsError(_))                                    => Future.successful(BadRequest("Missing or invalid 'thirdPartyEori' field"))
       }
     }
+
+  def deleteThirdPartyDetails: Action[JsValue] =
+    auth.authorizedAction(readPermission).async(parse.json) { implicit request =>
+      val eoriResult = (request.body \ "eori").validate[String]
+      val thirdPartyEoriResult = (request.body \ "thirdPartyEori").validate[String]
+
+      (eoriResult, thirdPartyEoriResult) match {
+        case (JsSuccess(eori, _), JsSuccess(thirdPartyEori, _)) =>
+          userService.deleteAuthorisedUser(eori, thirdPartyEori).map {
+            case true => NoContent
+            case false => NotFound("No authorised user found for third party EORI")
+          }
+        case (JsError(_), _) => Future.successful(BadRequest("Missing or invalid 'eori' field"))
+        case (_, JsError(_)) => Future.successful(BadRequest("Missing or invalid 'thirdPartyEori' field"))
+      }
+    }

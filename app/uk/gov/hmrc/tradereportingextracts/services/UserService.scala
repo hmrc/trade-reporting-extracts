@@ -102,3 +102,6 @@ class UserService @Inject() (
         case _           => None
       }
     )
+
+  def deleteAuthorisedUser(eori: String, thirdPartyEori: String): Future[Boolean] =
+    userRepository.deleteAuthorisedUser(eori, thirdPartyEori)
