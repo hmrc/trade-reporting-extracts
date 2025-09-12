@@ -27,6 +27,7 @@ import uk.gov.hmrc.internalauth.client.*
 import uk.gov.hmrc.internalauth.client.Retrieval.EmptyRetrieval
 import uk.gov.hmrc.internalauth.client.test.{BackendAuthComponentsStub, StubBehaviour}
 import uk.gov.hmrc.tradereportingextracts.models.{AccessType, AddressInformation, AuthorisedUser, CompanyInformation, NotificationEmail, ThirdPartyDetails, User, UserDetails}
+import uk.gov.hmrc.tradereportingextracts.repositories.ReportRequestRepository
 import uk.gov.hmrc.tradereportingextracts.services.UserService
 import uk.gov.hmrc.tradereportingextracts.utils.SpecBase
 
@@ -40,11 +41,24 @@ class UserControllerSpec extends SpecBase {
   private val mockStubBehaviour                            = mock[StubBehaviour]
   private val backendAuthComponents: BackendAuthComponents =
     BackendAuthComponentsStub(mockStubBehaviour)(Helpers.stubControllerComponents())
+  private val mockReportRequestRepository                  = mock[ReportRequestRepository]
   val controller                                           =
+    new UserController(
+      mockUserService,
+      Helpers.stubControllerComponents(),
+      backendAuthComponents,
+      mockReportRequestRepository
+    )(using ec)
+  val readPermission                                       = Predicate.Permission(
     new UserController(mockUserService, Helpers.stubControllerComponents(), backendAuthComponents)(using ec)
   val permission: Predicate.Permission                     = Predicate.Permission(
     Resource(ResourceType("trade-reporting-extracts"), ResourceLocation("trade-reporting-extracts/*")),
     IAAction("READ")
+  )
+
+  val writePermission = Predicate.Permission(
+    Resource(ResourceType("trade-reporting-extracts"), ResourceLocation("trade-reporting-extracts/*")),
+    IAAction("WRITE")
   )
 
   "UserController.getNotificationEmail" should {
@@ -55,7 +69,7 @@ class UserControllerSpec extends SpecBase {
 
       when(mockUserService.getNotificationEmail(eori))
         .thenReturn(Future.successful(email))
-      when(mockStubBehaviour.stubAuth(Some(permission), EmptyRetrieval))
+      when(mockStubBehaviour.stubAuth(Some(readPermission), EmptyRetrieval))
         .thenReturn(Future.successful(EmptyRetrieval))
 
       val request: FakeRequest[JsObject] = FakeRequest(POST, routes.UserController.getNotificationEmail.url)
@@ -69,7 +83,7 @@ class UserControllerSpec extends SpecBase {
     }
 
     "return 400 BadRequest when EORI is missing" in new Setup {
-      when(mockStubBehaviour.stubAuth(Some(permission), EmptyRetrieval))
+      when(mockStubBehaviour.stubAuth(Some(readPermission), EmptyRetrieval))
         .thenReturn(Future.successful(EmptyRetrieval))
       val request: FakeRequest[JsObject] = FakeRequest(POST, routes.UserController.getNotificationEmail.url)
         .withHeaders("Content-Type" -> "application/json", AUTHORIZATION -> "my-token")
@@ -86,7 +100,7 @@ class UserControllerSpec extends SpecBase {
 
       when(mockUserService.getNotificationEmail(eori))
         .thenReturn(Future.failed(new RuntimeException("Service failure")))
-      when(mockStubBehaviour.stubAuth(Some(permission), EmptyRetrieval))
+      when(mockStubBehaviour.stubAuth(Some(readPermission), EmptyRetrieval))
         .thenReturn(Future.successful(EmptyRetrieval))
       val request: FakeRequest[JsObject] = FakeRequest(POST, routes.UserController.getNotificationEmail.url)
         .withHeaders("Content-Type" -> "application/json", AUTHORIZATION -> "my-token")
@@ -113,7 +127,7 @@ class UserControllerSpec extends SpecBase {
 
       when(mockUserService.getOrCreateUser(eori))
         .thenReturn(Future.successful(userDetails))
-      when(mockStubBehaviour.stubAuth(Some(permission), EmptyRetrieval))
+      when(mockStubBehaviour.stubAuth(Some(readPermission), EmptyRetrieval))
         .thenReturn(Future.successful(EmptyRetrieval))
 
       val request: FakeRequest[JsObject] = FakeRequest(GET, routes.UserController.setupUser().url)
@@ -127,7 +141,7 @@ class UserControllerSpec extends SpecBase {
     }
 
     "return 400 BadRequest when EORI is missing" in new Setup {
-      when(mockStubBehaviour.stubAuth(Some(permission), EmptyRetrieval))
+      when(mockStubBehaviour.stubAuth(Some(readPermission), EmptyRetrieval))
         .thenReturn(Future.successful(EmptyRetrieval))
       val request: FakeRequest[JsObject] = FakeRequest(GET, routes.UserController.setupUser().url)
         .withHeaders("Content-Type" -> "application/json", AUTHORIZATION -> "my-token")
@@ -148,7 +162,7 @@ class UserControllerSpec extends SpecBase {
 
       when(mockUserService.getAuthorisedEoris(eori))
         .thenReturn(Future.successful(authorisedEoris))
-      when(mockStubBehaviour.stubAuth(Some(permission), EmptyRetrieval))
+      when(mockStubBehaviour.stubAuth(Some(readPermission), EmptyRetrieval))
         .thenReturn(Future.successful(EmptyRetrieval))
 
       val request: FakeRequest[JsObject] = FakeRequest(POST, routes.UserController.getAuthorisedEoris.url)
@@ -166,7 +180,7 @@ class UserControllerSpec extends SpecBase {
 
       when(mockUserService.getAuthorisedEoris(eori))
         .thenReturn(Future.failed(new RuntimeException("Service failure")))
-      when(mockStubBehaviour.stubAuth(Some(permission), EmptyRetrieval))
+      when(mockStubBehaviour.stubAuth(Some(readPermission), EmptyRetrieval))
         .thenReturn(Future.successful(EmptyRetrieval))
       val request: FakeRequest[JsObject] = FakeRequest(POST, routes.UserController.getAuthorisedEoris.url)
         .withHeaders("Content-Type" -> "application/json", AUTHORIZATION -> "my-token")
@@ -200,7 +214,7 @@ class UserControllerSpec extends SpecBase {
         notificationEmail = NotificationEmail("test@test.com", LocalDateTime.now())
       )
       when(mockUserService.getUserAndEmailDetails(eori)).thenReturn(Future.successful(userDetails))
-      when(mockStubBehaviour.stubAuth(Some(permission), EmptyRetrieval))
+      when(mockStubBehaviour.stubAuth(Some(readPermission), EmptyRetrieval))
         .thenReturn(Future.successful(EmptyRetrieval))
       val request: FakeRequest[JsObject] = FakeRequest(GET, routes.UserController.getUserAndEmail.url)
         .withHeaders("Content-Type" -> "application/json", AUTHORIZATION -> "my-token")
@@ -323,6 +337,115 @@ class UserControllerSpec extends SpecBase {
         .withBody(Json.obj("thirdPartyEori" -> authorisedEori))
       val result: Future[Result]         = controller.getUsersByAuthorisedEori.apply(request)
       contentAsJson(result) shouldBe Json.toJson(users)
+    }
+  }
+
+  "UserController.thirdPartyAccessSelfRemoval" should {
+
+    "return an OK when authorised user deleted and third party reports removed" in new Setup {
+      val traderEori     = "123"
+      val thirdPartyEori = "456"
+
+      when(mockUserService.deleteAuthorisedUser(traderEori, thirdPartyEori))
+        .thenReturn(Future.successful(true))
+      when(mockReportRequestRepository.deleteReportsForThirdPartyRemoval(traderEori, thirdPartyEori))
+        .thenReturn(Future.successful(true))
+      when(mockStubBehaviour.stubAuth(Some(writePermission), EmptyRetrieval))
+        .thenReturn(Future.successful(EmptyRetrieval))
+
+      val request: FakeRequest[JsObject] = FakeRequest(POST, routes.UserController.thirdPartyAccessSelfRemoval.url)
+        .withHeaders("Content-Type" -> "application/json", AUTHORIZATION -> "my-token")
+        .withBody(Json.obj("traderEori" -> traderEori, "thirdPartyEori" -> thirdPartyEori))
+
+      val result: Future[Result] = controller.thirdPartyAccessSelfRemoval.apply(request)
+
+      status(result) shouldBe OK
+    }
+
+    "return an internal server error when authorised user delete fails" in new Setup {
+      val traderEori     = "123"
+      val thirdPartyEori = "456"
+
+      when(mockUserService.deleteAuthorisedUser(traderEori, thirdPartyEori))
+        .thenReturn(Future.successful(false))
+      when(mockStubBehaviour.stubAuth(Some(writePermission), EmptyRetrieval))
+        .thenReturn(Future.successful(EmptyRetrieval))
+
+      val request: FakeRequest[JsObject] = FakeRequest(POST, routes.UserController.thirdPartyAccessSelfRemoval.url)
+        .withHeaders("Content-Type" -> "application/json", AUTHORIZATION -> "my-token")
+        .withBody(Json.obj("traderEori" -> traderEori, "thirdPartyEori" -> thirdPartyEori))
+
+      val result: Future[Result] = controller.thirdPartyAccessSelfRemoval.apply(request)
+
+      status(result)        shouldBe INTERNAL_SERVER_ERROR
+      contentAsString(result) should include("Failed to remove third party access")
+    }
+
+    "return an internal server error when deleteReportsForThirdParty fails" in new Setup {
+      val traderEori     = "123"
+      val thirdPartyEori = "456"
+
+      when(mockUserService.deleteAuthorisedUser(traderEori, thirdPartyEori))
+        .thenReturn(Future.successful(true))
+      when(mockReportRequestRepository.deleteReportsForThirdPartyRemoval(traderEori, thirdPartyEori))
+        .thenReturn(Future.successful(false))
+      when(mockStubBehaviour.stubAuth(Some(writePermission), EmptyRetrieval))
+        .thenReturn(Future.successful(EmptyRetrieval))
+
+      val request: FakeRequest[JsObject] = FakeRequest(POST, routes.UserController.thirdPartyAccessSelfRemoval.url)
+        .withHeaders("Content-Type" -> "application/json", AUTHORIZATION -> "my-token")
+        .withBody(Json.obj("traderEori" -> traderEori, "thirdPartyEori" -> thirdPartyEori))
+
+      val result: Future[Result] = controller.thirdPartyAccessSelfRemoval.apply(request)
+
+      status(result)        shouldBe INTERNAL_SERVER_ERROR
+      contentAsString(result) should include("Failed to remove reports for third party access removal")
+    }
+
+    "return a bad request when invalid traderEori" in new Setup {
+      val thirdPartyEori = "456"
+
+      when(mockStubBehaviour.stubAuth(Some(writePermission), EmptyRetrieval))
+        .thenReturn(Future.successful(EmptyRetrieval))
+
+      val request: FakeRequest[JsObject] = FakeRequest(POST, routes.UserController.thirdPartyAccessSelfRemoval.url)
+        .withHeaders("Content-Type" -> "application/json", AUTHORIZATION -> "my-token")
+        .withBody(Json.obj("wrongField" -> "value", "thirdPartyEori" -> thirdPartyEori))
+
+      val result: Future[Result] = controller.thirdPartyAccessSelfRemoval.apply(request)
+
+      status(result)        shouldBe BAD_REQUEST
+      contentAsString(result) should include("Missing or invalid 'traderEori' field")
+    }
+
+    "return a bad request when invalid thirdPartyEori" in new Setup {
+      val traderEori = "123"
+
+      when(mockStubBehaviour.stubAuth(Some(writePermission), EmptyRetrieval))
+        .thenReturn(Future.successful(EmptyRetrieval))
+
+      val request: FakeRequest[JsObject] = FakeRequest(POST, routes.UserController.thirdPartyAccessSelfRemoval.url)
+        .withHeaders("Content-Type" -> "application/json", AUTHORIZATION -> "my-token")
+        .withBody(Json.obj("traderEori" -> traderEori, "wrongField" -> "value"))
+
+      val result: Future[Result] = controller.thirdPartyAccessSelfRemoval.apply(request)
+
+      status(result)        shouldBe BAD_REQUEST
+      contentAsString(result) should include("Missing or invalid 'thirdPartyEori' field")
+    }
+
+    "return a bad request when both EORIs are invalid" in new Setup {
+      val request: FakeRequest[JsObject] = FakeRequest(POST, routes.UserController.thirdPartyAccessSelfRemoval.url)
+        .withHeaders("Content-Type" -> "application/json", AUTHORIZATION -> "my-token")
+        .withBody(Json.obj("foo" -> "bar", "fizz" -> "buzz"))
+
+      when(mockStubBehaviour.stubAuth(Some(writePermission), EmptyRetrieval))
+        .thenReturn(Future.successful(EmptyRetrieval))
+
+      val result: Future[Result] = controller.thirdPartyAccessSelfRemoval.apply(request)
+
+      status(result)        shouldBe BAD_REQUEST
+      contentAsString(result) should include("Missing or invalid 'traderEori' and 'thirdPartyEori' fields")
     }
   }
 

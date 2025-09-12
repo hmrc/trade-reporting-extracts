@@ -20,10 +20,12 @@ import play.api.libs.json.{JsError, JsSuccess, JsValue, Json}
 import play.api.mvc.{Action, ControllerComponents}
 import uk.gov.hmrc.internalauth.client.*
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
+import uk.gov.hmrc.tradereportingextracts.repositories.ReportRequestRepository
 import uk.gov.hmrc.tradereportingextracts.models.AuthorisedUser
 import uk.gov.hmrc.tradereportingextracts.services.UserService
-import uk.gov.hmrc.tradereportingextracts.utils.PermissionsUtil.readPermission
+import uk.gov.hmrc.tradereportingextracts.utils.PermissionsUtil.{readPermission, writePermission}
 
+import java.time.{LocalDate, ZoneOffset}
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -31,7 +33,8 @@ import scala.concurrent.{ExecutionContext, Future}
 class UserController @Inject() (
   userService: UserService,
   cc: ControllerComponents,
-  auth: BackendAuthComponents
+  auth: BackendAuthComponents,
+  reportRequestRepository: ReportRequestRepository
 )(using executionContext: ExecutionContext)
     extends BackendController(cc):
 
@@ -116,5 +119,26 @@ class UserController @Inject() (
               InternalServerError(e.getMessage)
             }
         case JsError(_)                   => Future.successful(BadRequest("Missing or invalid 'thirdPartyEori' field"))
+      }
+    }
+
+  def thirdPartyAccessSelfRemoval: Action[JsValue] =
+    auth.authorizedAction(writePermission).async(parse.json) { implicit request =>
+      ((request.body \ "traderEori").validate[String], (request.body \ "thirdPartyEori").validate[String]) match {
+        case (JsSuccess(traderEori, _), JsSuccess(thirdPartyEori, _)) =>
+          userService.deleteAuthorisedUser(traderEori, thirdPartyEori).flatMap {
+            case true  =>
+              reportRequestRepository.deleteReportsForThirdPartyRemoval(traderEori, thirdPartyEori).map {
+                case true  => Ok
+                case false => InternalServerError("Failed to remove reports for third party access removal")
+              }
+            case false => Future.successful(InternalServerError("Failed to remove third party access"))
+          }
+        case (JsError(_), JsError(_))                                 =>
+          Future.successful(BadRequest("Missing or invalid 'traderEori' and 'thirdPartyEori' fields"))
+        case (JsError(_), _)                                          =>
+          Future.successful(BadRequest("Missing or invalid 'traderEori' field"))
+        case (_, JsError(_))                                          =>
+          Future.successful(BadRequest("Missing or invalid 'thirdPartyEori' field"))
       }
     }
