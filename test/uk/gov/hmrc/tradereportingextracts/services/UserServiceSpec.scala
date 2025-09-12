@@ -16,6 +16,7 @@
 
 package uk.gov.hmrc.tradereportingextracts.services
 
+import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito.{verify, when}
 import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}
 import org.scalatest.freespec.AnyFreeSpec
@@ -24,11 +25,12 @@ import org.scalatest.{OptionValues, TryValues}
 import org.scalatestplus.mockito.MockitoSugar
 import org.scalatestplus.mockito.MockitoSugar.mock
 import uk.gov.hmrc.tradereportingextracts.connectors.CustomsDataStoreConnector
-import uk.gov.hmrc.tradereportingextracts.models.{AddressInformation, CompanyInformation, NotificationEmail, User, UserDetails}
+import uk.gov.hmrc.tradereportingextracts.models.{AddressInformation, AuthorisedUser, CompanyInformation, NotificationEmail, User, UserDetails}
 import uk.gov.hmrc.tradereportingextracts.models.etmp.EoriUpdate
+import uk.gov.hmrc.tradereportingextracts.models.thirdParty.ThirdPartyAddedConfirmation
 import uk.gov.hmrc.tradereportingextracts.repositories.UserRepository
 
-import java.time.LocalDateTime
+import java.time.{Instant, LocalDateTime}
 import scala.concurrent.{ExecutionContext, Future}
 
 class UserServiceSpec
@@ -224,6 +226,52 @@ class UserServiceSpec
           companyInformation = companyInformation,
           notificationEmail = notificationEmail
         )
+      }
+    }
+
+    "addAuthorisedUser" - {
+      "should return confirmation when user is added" in {
+        val eori           = "GB123456789000"
+        val authorisedUser = AuthorisedUser(
+          eori = "GB123456789001",
+          accessStart = Instant.parse("2024-01-01T00:00:00Z"),
+          accessEnd = Some(Instant.parse("2024-12-31T23:59:59Z")),
+          reportDataStart = Some(Instant.parse("2024-01-01T10:00:00Z")),
+          reportDataEnd = Some(Instant.parse("2024-12-31T23:59:59Z")),
+          accessType = Set.empty
+        )
+        val confirmation   = ThirdPartyAddedConfirmation(
+          thirdPartyEori = "GB123456789001"
+        )
+
+        when(mockRepository.addAuthorisedUser(any(), any()))
+          .thenReturn(Future.successful(confirmation))
+
+        val result = service.addAuthorisedUser(eori, authorisedUser)
+        whenReady(result) { res =>
+          res mustBe confirmation
+        }
+      }
+
+      "should fail if repository fails" in {
+        val eori           = "GB123456789000"
+        val authorisedUser = AuthorisedUser(
+          eori = "GB123456789001",
+          accessStart = Instant.parse("2024-01-01T00:00:00Z"),
+          accessEnd = Some(Instant.parse("2024-12-31T23:59:59Z")),
+          reportDataStart = Some(Instant.parse("2024-01-01T10:00:00Z")),
+          reportDataEnd = Some(Instant.parse("2024-12-31T23:59:59Z")),
+          accessType = Set.empty
+        )
+
+        when(mockRepository.addAuthorisedUser(any(), any()))
+          .thenReturn(Future.failed(new Exception("User not found")))
+
+        val result = service.addAuthorisedUser(eori, authorisedUser)
+        whenReady(result.failed) { ex =>
+          ex mustBe an[Exception]
+          ex.getMessage must include("User not found")
+        }
       }
     }
   }

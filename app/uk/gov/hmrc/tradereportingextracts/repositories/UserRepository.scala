@@ -25,7 +25,10 @@ import uk.gov.hmrc.play.http.logging.Mdc
 import uk.gov.hmrc.tradereportingextracts.config.AppConfig
 import uk.gov.hmrc.tradereportingextracts.models.User
 import uk.gov.hmrc.tradereportingextracts.models.etmp.EoriUpdate
+import uk.gov.hmrc.tradereportingextracts.models.AuthorisedUser
+import uk.gov.hmrc.tradereportingextracts.models.thirdParty.ThirdPartyAddedConfirmation
 
+import java.time.LocalDate
 import java.util.concurrent.TimeUnit
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -105,8 +108,20 @@ class UserRepository @Inject() (appConfig: AppConfig, mongoComponent: MongoCompo
       case Some(user) =>
         val authorisedEoris = user.authorisedUsers.map(_.eori)
         Future.successful(authorisedEoris)
-
-      case None =>
+      case None       =>
         Future.failed(new Exception(s"User with EORI $eori not found"))
     }
   }
+
+  def addAuthorisedUser(eori: String, authorisedUser: AuthorisedUser): Future[ThirdPartyAddedConfirmation] =
+    Mdc.preservingMdc {
+      findByEori(eori).flatMap {
+        case Some(existingUser) =>
+          val updatedAuthorisedUsers =
+            existingUser.authorisedUsers.filterNot(_.eori == authorisedUser.eori) :+ authorisedUser
+          val updatedUser            = existingUser.copy(authorisedUsers = updatedAuthorisedUsers)
+          update(updatedUser).map(_ => ThirdPartyAddedConfirmation(authorisedUser.eori))
+        case None               =>
+          Future.failed(new Exception(s"User with EORI $eori not found"))
+      }
+    }
