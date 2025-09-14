@@ -16,6 +16,7 @@
 
 package uk.gov.hmrc.tradereportingextracts.controllers
 
+import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito.when
 import play.api.Application
 import play.api.libs.json.{JsArray, JsObject, JsString, Json}
@@ -25,11 +26,11 @@ import play.api.test.{FakeRequest, Helpers}
 import uk.gov.hmrc.internalauth.client.*
 import uk.gov.hmrc.internalauth.client.Retrieval.EmptyRetrieval
 import uk.gov.hmrc.internalauth.client.test.{BackendAuthComponentsStub, StubBehaviour}
-import uk.gov.hmrc.tradereportingextracts.models.{AddressInformation, CompanyInformation, NotificationEmail, UserDetails}
+import uk.gov.hmrc.tradereportingextracts.models.{AccessType, AddressInformation, AuthorisedUser, CompanyInformation, NotificationEmail, ThirdPartyDetails, UserDetails}
 import uk.gov.hmrc.tradereportingextracts.services.UserService
 import uk.gov.hmrc.tradereportingextracts.utils.SpecBase
 
-import java.time.LocalDateTime
+import java.time.{Instant, LocalDate, LocalDateTime, ZoneOffset}
 import scala.concurrent.{ExecutionContext, Future}
 
 class UserControllerSpec extends SpecBase {
@@ -207,6 +208,97 @@ class UserControllerSpec extends SpecBase {
       val result: Future[Result]         = controller.getUserAndEmail.apply(request)
       status(result)        shouldBe CREATED
       contentAsJson(result) shouldBe Json.toJson(userDetails)
+    }
+  }
+
+  "UserController.getThirdPartyDetails" should {
+
+    val eori           = "123"
+    val thirdPartyEori = "456"
+
+    "return a 200 when provided a valid eori and thirdPartyEori" in new Setup {
+
+      val authUser = AuthorisedUser(
+        eori = thirdPartyEori,
+        referenceName = Some("foo"),
+        accessStart = Instant.now(),
+        accessEnd = Some(Instant.now()),
+        accessType = Set(AccessType.IMPORTS, AccessType.EXPORTS),
+        reportDataStart = Some(Instant.now()),
+        reportDataEnd = Some(Instant.now())
+      )
+
+      val thirdPartyDetails = ThirdPartyDetails(
+        referenceName = Some("foo"),
+        accessStartDate = LocalDate.ofInstant(Instant.now(), ZoneOffset.UTC),
+        accessEndDate = Some(LocalDate.ofInstant(Instant.now(), ZoneOffset.UTC)),
+        dataTypes = Set("imports", "exports"),
+        dataStartDate = Some(LocalDate.ofInstant(Instant.now(), ZoneOffset.UTC)),
+        dataEndDate = Some(LocalDate.ofInstant(Instant.now(), ZoneOffset.UTC))
+      )
+
+      when(mockUserService.getAuthorisedUser(any(), any())).thenReturn(Future.successful(Some(authUser)))
+
+      when(mockStubBehaviour.stubAuth(Some(permission), EmptyRetrieval))
+        .thenReturn(Future.successful(EmptyRetrieval))
+
+      when(mockUserService.transformToThirdPartyDetails(any())).thenReturn(thirdPartyDetails)
+
+      val request: FakeRequest[JsObject] = FakeRequest(GET, routes.UserController.getAuthorisedEoris.url)
+        .withHeaders(AUTHORIZATION -> "my-token")
+        .withBody(Json.obj("eori" -> eori, "thirdPartyEori" -> thirdPartyEori))
+
+      val result: Future[Result] = controller.getThirdPartyDetails.apply(request)
+      status(result)        shouldBe OK
+      contentAsJson(result) shouldBe Json.toJson(thirdPartyDetails)
+
+    }
+
+    "return a 404 when no authorised user is found" in new Setup {
+
+      when(mockUserService.getAuthorisedUser(any(), any())).thenReturn(Future.successful(None))
+
+      when(mockStubBehaviour.stubAuth(Some(permission), EmptyRetrieval))
+        .thenReturn(Future.successful(EmptyRetrieval))
+
+      val request: FakeRequest[JsObject] = FakeRequest(GET, routes.UserController.getAuthorisedEoris.url)
+        .withHeaders(AUTHORIZATION -> "my-token")
+        .withBody(Json.obj("eori" -> eori, "thirdPartyEori" -> thirdPartyEori))
+
+      val result: Future[Result] = controller.getThirdPartyDetails.apply(request)
+      status(result)        shouldBe NOT_FOUND
+      contentAsString(result) should include("No authorised user found for third party EORI")
+    }
+
+    "return a bad request when eori invalid" in new Setup {
+
+      val thirdPartyEori = "456"
+
+      when(mockStubBehaviour.stubAuth(Some(permission), EmptyRetrieval))
+        .thenReturn(Future.successful(EmptyRetrieval))
+
+      val request: FakeRequest[JsObject] = FakeRequest(GET, routes.UserController.getAuthorisedEoris.url)
+        .withHeaders(AUTHORIZATION -> "my-token")
+        .withBody(Json.obj("thirdPartyEori" -> thirdPartyEori))
+
+      val result: Future[Result] = controller.getThirdPartyDetails.apply(request)
+      status(result)        shouldBe BAD_REQUEST
+      contentAsString(result) should include("Missing or invalid 'eori' field")
+
+    }
+
+    "return a bad request when thirdPartyEori invalid" in new Setup {
+
+      when(mockStubBehaviour.stubAuth(Some(permission), EmptyRetrieval))
+        .thenReturn(Future.successful(EmptyRetrieval))
+
+      val request: FakeRequest[JsObject] = FakeRequest(GET, routes.UserController.getAuthorisedEoris.url)
+        .withHeaders(AUTHORIZATION -> "my-token")
+        .withBody(Json.obj("eori" -> eori))
+
+      val result: Future[Result] = controller.getThirdPartyDetails.apply(request)
+      status(result)        shouldBe BAD_REQUEST
+      contentAsString(result) should include("Missing or invalid 'thirdPartyEori' field")
     }
   }
 

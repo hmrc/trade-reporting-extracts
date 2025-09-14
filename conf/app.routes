@@ -28,3 +28,7 @@ GET         /trade-reporting-extracts/downloaded-audit                   uk.gov.
 POST        /trade-reporting-extracts/company-information                uk.gov.hmrc.tradereportingextracts.controllers.CompanyInformationController.getCompanyInformation
 
 POST        /trade-reporting-extracts/add-third-party-request            uk.gov.hmrc.tradereportingextracts.controllers.ThirdPartyRequestController.addThirdPartyRequest()
+
+POST        /trade-reporting-extracts/company-information                uk.gov.hmrc.tradereportingextracts.controllers.CompanyInformationController.getCompanyInformation
+
+GET        /trade-reporting-extracts/third-party-details                 uk.gov.hmrc.tradereportingextracts.controllers.UserController.getThirdPartyDetails
