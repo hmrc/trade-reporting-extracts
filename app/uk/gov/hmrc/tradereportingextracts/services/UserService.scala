@@ -87,6 +87,9 @@ class UserService @Inject() (
   def getAuthorisedUser(eori: String, thirdPartyEori: String): Future[Option[AuthorisedUser]] =
     userRepository.getAuthorisedUser(eori, thirdPartyEori)
 
+  def getAuthorisedBusiness(eori: String, businessEori: String): Future[Option[AuthorisedUser]] =
+    userRepository.getAuthorisedUser(businessEori, eori)
+
   def transformToThirdPartyDetails(authorisedUser: AuthorisedUser): ThirdPartyDetails =
     ThirdPartyDetails(
       referenceName = authorisedUser.referenceName,
