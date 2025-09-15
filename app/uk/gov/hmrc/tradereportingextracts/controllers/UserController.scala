@@ -110,17 +110,17 @@ class UserController @Inject() (
 
   def getAuthorisedBusinessDetails: Action[JsValue] =
     auth.authorizedAction(readPermission).async(parse.json) { implicit request =>
-      val eoriResult           = (request.body \ "eori").validate[String]
-      val thirdPartyEoriResult = (request.body \ "businessEori").validate[String]
+      val eoriResult           = (request.body \ "thirdPartyEori").validate[String]
+      val thirdPartyEoriResult = (request.body \ "traderEori").validate[String]
 
       (eoriResult, thirdPartyEoriResult) match {
-        case (JsSuccess(eori, _), JsSuccess(businessEori, _)) =>
-          userService.getAuthorisedBusiness(eori, businessEori).map {
+        case (JsSuccess(thirdPartyEori, _), JsSuccess(traderEori, _)) =>
+          userService.getAuthorisedBusiness(thirdPartyEori, traderEori).map {
             case Some(authorisedUser) => Ok(Json.toJson(userService.transformToThirdPartyDetails(authorisedUser)))
-            case None                 => NotFound(s"No authorised user found for the business EORI:")
+            case None                 => NotFound(s"No authorised user found for the trader EORI:")
           }
-        case (JsError(_), _)                                  => Future.successful(BadRequest("Missing or invalid 'eori' field"))
-        case (_, JsError(_))                                  => Future.successful(BadRequest("Missing or invalid 'businessEori' field"))
+        case (JsError(_), _)                                          => Future.successful(BadRequest("Missing or invalid 'thirdPartyEori' field"))
+        case (_, JsError(_))                                          => Future.successful(BadRequest("Missing or invalid 'traderEori' field"))
       }
     }
 
