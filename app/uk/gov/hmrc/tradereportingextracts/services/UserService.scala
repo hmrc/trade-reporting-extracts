@@ -101,6 +101,6 @@ class UserService @Inject() (
         case _           => None
       }
     )
-    
+
   def getUsersByAuthorisedEori(thirdPartyEori: String): Future[Seq[User]] =
     userRepository.getUsersByAuthorisedEori(thirdPartyEori)

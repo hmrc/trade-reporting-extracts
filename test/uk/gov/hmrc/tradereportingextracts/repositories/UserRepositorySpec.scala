@@ -233,7 +233,7 @@ class UserRepositorySpec
         result mustBe None
       }
     }
-    
+
     "getUsersByAuthorisedEori" should {
       "return users who have authorised a specific EORI" in {
 
