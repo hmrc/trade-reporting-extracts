@@ -348,7 +348,7 @@ class UserControllerSpec extends SpecBase {
 
       val request: FakeRequest[JsObject] = FakeRequest(GET, routes.UserController.getAuthorisedBusinessDetails.url)
         .withHeaders(AUTHORIZATION -> "my-token")
-        .withBody(Json.obj("eori" -> eori, "businessEori" -> businessEori))
+        .withBody(Json.obj("thirdPartyEori" -> eori, "traderEori" -> businessEori))
 
       val result: Future[Result] = controller.getAuthorisedBusinessDetails.apply(request)
       status(result)        shouldBe OK
@@ -365,11 +365,11 @@ class UserControllerSpec extends SpecBase {
 
       val request: FakeRequest[JsObject] = FakeRequest(GET, routes.UserController.getAuthorisedBusinessDetails.url)
         .withHeaders(AUTHORIZATION -> "my-token")
-        .withBody(Json.obj("eori" -> eori, "businessEori" -> businessEori))
+        .withBody(Json.obj("thirdPartyEori" -> eori, "traderEori" -> businessEori))
 
       val result: Future[Result] = controller.getAuthorisedBusinessDetails.apply(request)
       status(result)        shouldBe NOT_FOUND
-      contentAsString(result) should include("No authorised user found for the business EORI")
+      contentAsString(result) should include("No authorised user found for the trader EORI")
     }
 
   }
