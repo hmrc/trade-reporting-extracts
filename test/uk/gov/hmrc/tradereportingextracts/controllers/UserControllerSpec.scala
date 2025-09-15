@@ -26,7 +26,7 @@ import play.api.test.{FakeRequest, Helpers}
 import uk.gov.hmrc.internalauth.client.*
 import uk.gov.hmrc.internalauth.client.Retrieval.EmptyRetrieval
 import uk.gov.hmrc.internalauth.client.test.{BackendAuthComponentsStub, StubBehaviour}
-import uk.gov.hmrc.tradereportingextracts.models.{AccessType, AddressInformation, AuthorisedUser, CompanyInformation, NotificationEmail, ThirdPartyDetails, UserDetails}
+import uk.gov.hmrc.tradereportingextracts.models.{AccessType, AddressInformation, AuthorisedUser, CompanyInformation, NotificationEmail, ThirdPartyDetails, User, UserDetails}
 import uk.gov.hmrc.tradereportingextracts.services.UserService
 import uk.gov.hmrc.tradereportingextracts.utils.SpecBase
 
@@ -42,7 +42,7 @@ class UserControllerSpec extends SpecBase {
     BackendAuthComponentsStub(mockStubBehaviour)(Helpers.stubControllerComponents())
   val controller                                           =
     new UserController(mockUserService, Helpers.stubControllerComponents(), backendAuthComponents)(using ec)
-  val permission                                           = Predicate.Permission(
+  val permission: Predicate.Permission                     = Predicate.Permission(
     Resource(ResourceType("trade-reporting-extracts"), ResourceLocation("trade-reporting-extracts/*")),
     IAAction("READ")
   )
@@ -218,7 +218,7 @@ class UserControllerSpec extends SpecBase {
 
     "return a 200 when provided a valid eori and thirdPartyEori" in new Setup {
 
-      val authUser = AuthorisedUser(
+      val authUser: AuthorisedUser = AuthorisedUser(
         eori = thirdPartyEori,
         referenceName = Some("foo"),
         accessStart = Instant.now(),
@@ -228,7 +228,7 @@ class UserControllerSpec extends SpecBase {
         reportDataEnd = Some(Instant.now())
       )
 
-      val thirdPartyDetails = ThirdPartyDetails(
+      val thirdPartyDetails: ThirdPartyDetails = ThirdPartyDetails(
         referenceName = Some("foo"),
         accessStartDate = LocalDate.ofInstant(Instant.now(), ZoneOffset.UTC),
         accessEndDate = Some(LocalDate.ofInstant(Instant.now(), ZoneOffset.UTC)),
@@ -299,6 +299,30 @@ class UserControllerSpec extends SpecBase {
       val result: Future[Result] = controller.getThirdPartyDetails.apply(request)
       status(result)        shouldBe BAD_REQUEST
       contentAsString(result) should include("Missing or invalid 'thirdPartyEori' field")
+    }
+  }
+
+  "UserController.getUsersByAuthorisedEori" should {
+
+    "return 200 OK with list of users" in new Setup {
+      val authorisedEori                 = "GB111111111111"
+      val users: Seq[User]               = Seq(
+        User(
+          eori = "GB123456789000",
+          additionalEmails = Seq.empty,
+          authorisedUsers = Seq.empty,
+          accessDate = Instant.now()
+        )
+      )
+      when(mockUserService.getUsersByAuthorisedEori(authorisedEori))
+        .thenReturn(Future.successful(users))
+      when(mockStubBehaviour.stubAuth(Some(permission), EmptyRetrieval))
+        .thenReturn(Future.successful(EmptyRetrieval))
+      val request: FakeRequest[JsObject] = FakeRequest(GET, routes.UserController.getUsersByAuthorisedEori.url)
+        .withHeaders("Content-Type" -> "application/json", AUTHORIZATION -> "my-token")
+        .withBody(Json.obj("thirdPartyEori" -> authorisedEori))
+      val result: Future[Result]         = controller.getUsersByAuthorisedEori.apply(request)
+      contentAsJson(result) shouldBe Json.toJson(users)
     }
   }
 

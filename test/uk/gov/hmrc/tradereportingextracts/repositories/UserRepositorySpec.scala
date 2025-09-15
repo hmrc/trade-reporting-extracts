@@ -233,4 +233,37 @@ class UserRepositorySpec
         result mustBe None
       }
     }
+
+    "getUsersByAuthorisedEori" should {
+      "return users who have authorised a specific EORI" in {
+
+        val user1 = User(
+          eori = "EORI1",
+          authorisedUsers = Seq(
+            AuthorisedUser(
+              eori = "AUTH-EORI-1",
+              accessStart = Instant.parse("2023-01-01T00:00:00Z"),
+              accessEnd = Some(Instant.parse("2023-12-31T23:59:59Z")),
+              reportDataStart = Some(Instant.parse("2023-01-01T10:00:00Z")),
+              reportDataEnd = Some(Instant.parse("2023-12-31T23:59:59Z")),
+              accessType = Set(IMPORTS)
+            ),
+            AuthorisedUser(
+              eori = "AUTH-EORI-2",
+              accessStart = Instant.parse("2023-01-01T00:00:00Z"),
+              accessEnd = Some(Instant.parse("2023-12-31T23:59:59Z")),
+              reportDataStart = Some(Instant.parse("2023-01-01T10:00:00Z")),
+              reportDataEnd = Some(Instant.parse("2023-12-31T23:59:59Z")),
+              accessType = Set(IMPORTS)
+            )
+          ),
+          accessDate = Instant.parse("2023-01-01T00:00:00Z")
+        )
+
+        userRepository.insert(user).futureValue
+        userRepository.insert(user1).futureValue
+        val result = userRepository.getUsersByAuthorisedEori("AUTH-EORI-1").futureValue
+        result.map(_.eori) must contain theSameElementsAs Seq("EORI1234", "EORI1")
+      }
+    }
   }

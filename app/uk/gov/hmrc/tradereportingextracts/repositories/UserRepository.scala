@@ -133,3 +133,9 @@ class UserRepository @Inject() (appConfig: AppConfig, mongoComponent: MongoCompo
         None
     }
   }
+
+  def getUsersByAuthorisedEori(authorisedEori: String): Future[Seq[User]] = Mdc.preservingMdc {
+    collection
+      .find(Filters.elemMatch("authorisedUsers", Filters.equal("eori", authorisedEori)))
+      .toFuture()
+  }
