@@ -344,7 +344,40 @@ class UserServiceSpec
         result.dataStartDate mustBe None
         result.dataEndDate mustBe None
       }
-
     }
+
+    "deleteAuthorisedUser" - {
+
+      val eori           = "GB123456789000"
+      val thirdPartyEori = "GB123456789001"
+
+      "should return true when deletion succeeds" in {
+        when(mockRepository.deleteAuthorisedUser(any(), any()))
+          .thenReturn(Future.successful(true))
+
+        val result = service.deleteAuthorisedUser(eori, thirdPartyEori).futureValue
+        result mustBe true
+      }
+
+      "should return false when no user was deleted" in {
+        when(mockRepository.deleteAuthorisedUser(any(), any()))
+          .thenReturn(Future.successful(false))
+
+        val result = service.deleteAuthorisedUser(eori, thirdPartyEori).futureValue
+        result mustBe false
+      }
+
+      "should fail if repository fails" in {
+        when(mockRepository.deleteAuthorisedUser(any(), any()))
+          .thenReturn(Future.failed(new Exception("Delete failed")))
+
+        val result = service.deleteAuthorisedUser(eori, thirdPartyEori)
+        whenReady(result.failed) { ex =>
+          ex mustBe an[Exception]
+          ex.getMessage must include("Delete failed")
+        }
+      }
+    }
+
   }
 }

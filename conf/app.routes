@@ -30,3 +30,5 @@ POST        /trade-reporting-extracts/company-information                 uk.gov
 GET        /trade-reporting-extracts/third-party-details                                           uk.gov.hmrc.tradereportingextracts.controllers.UserController.getThirdPartyDetails
 
 POST        /trade-reporting-extracts/add-third-party-request            uk.gov.hmrc.tradereportingextracts.controllers.ThirdPartyRequestController.addThirdPartyRequest()
+
+DELETE      /trade-reporting-extracts/remove-third-party            uk.gov.hmrc.tradereportingextracts.controllers.ThirdPartyRequestController.deleteThirdPartyDetails()

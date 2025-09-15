@@ -16,6 +16,7 @@
 
 package uk.gov.hmrc.tradereportingextracts.repositories
 
+import org.mockito.Mockito.{verify, when}
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.concurrent.IntegrationPatience
 import org.scalatest.matchers.must.Matchers.{must, mustBe, mustEqual}
@@ -28,6 +29,7 @@ import uk.gov.hmrc.tradereportingextracts.config.AppConfig
 import uk.gov.hmrc.tradereportingextracts.models.AccessType.IMPORTS
 import uk.gov.hmrc.tradereportingextracts.models.etmp.EoriUpdate
 import uk.gov.hmrc.tradereportingextracts.models.{AuthorisedUser, User}
+import uk.gov.hmrc.tradereportingextracts.services.UserService
 
 import java.time.Instant
 import scala.concurrent.ExecutionContext
@@ -231,6 +233,61 @@ class UserRepositorySpec
         val thirdPartyEori = "NON-AUTH-EORI"
         val result         = userRepository.getAuthorisedUser(eori, thirdPartyEori).futureValue
         result mustBe None
+      }
+    }
+
+    "deleteAuthorisedUser" should {
+      "should return true when repository deletion succeeds" in {
+        val repo      = mock[UserRepository]
+        val cds       = mock[uk.gov.hmrc.tradereportingextracts.connectors.CustomsDataStoreConnector]
+        val service   = new UserService(repo, cds)
+        val eori      = "GB987654321098"
+        val thirdEori = "GB123456123456"
+
+        org.mockito.Mockito
+          .when(repo.deleteAuthorisedUser(eori, thirdEori))
+          .thenReturn(scala.concurrent.Future.successful(true))
+
+        whenReady(service.deleteAuthorisedUser(eori, thirdEori)) { result =>
+          result mustBe true
+          org.mockito.Mockito.verify(repo).deleteAuthorisedUser(eori, thirdEori)
+        }
+      }
+
+      "should return false when repository indicates not found" in {
+        val repo      = mock[UserRepository]
+        val cds       = mock[uk.gov.hmrc.tradereportingextracts.connectors.CustomsDataStoreConnector]
+        val service   = new UserService(repo, cds)
+        val eori      = "GB987654321098"
+        val thirdEori = "GB000000000000"
+
+        org.mockito.Mockito
+          .when(repo.deleteAuthorisedUser(eori, thirdEori))
+          .thenReturn(scala.concurrent.Future.successful(false))
+
+        whenReady(service.deleteAuthorisedUser(eori, thirdEori)) { result =>
+          result mustBe false
+          verify(repo).deleteAuthorisedUser(eori, thirdEori)
+        }
+      }
+
+      "should fail the future when repository fails" in {
+        val repo      = mock[UserRepository]
+        val cds       = mock[uk.gov.hmrc.tradereportingextracts.connectors.CustomsDataStoreConnector]
+        val service   = new UserService(repo, cds)
+        val eori      = "GB987654321098"
+        val thirdEori = "GB123456123456"
+
+        when(
+          repo.deleteAuthorisedUser(
+            org.mockito.ArgumentMatchers.any[String],
+            org.mockito.ArgumentMatchers.any[String]
+          )
+        ).thenReturn(scala.concurrent.Future.failed(new Exception("failure")))
+
+        whenReady(service.deleteAuthorisedUser(eori, thirdEori).failed) { ex =>
+          ex.getMessage must include("failure")
+        }
       }
     }
   }
