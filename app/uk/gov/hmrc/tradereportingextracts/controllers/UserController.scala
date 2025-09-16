@@ -17,14 +17,13 @@
 package uk.gov.hmrc.tradereportingextracts.controllers
 
 import play.api.libs.json.{JsError, JsSuccess, JsValue, Json}
-import play.api.mvc.{Action, AnyContent, ControllerComponents}
+import play.api.mvc.{Action, ControllerComponents}
 import uk.gov.hmrc.internalauth.client.*
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 import uk.gov.hmrc.tradereportingextracts.models.AuthorisedUser
 import uk.gov.hmrc.tradereportingextracts.services.UserService
 import uk.gov.hmrc.tradereportingextracts.utils.PermissionsUtil.readPermission
 
-import java.time.{LocalDate, ZoneOffset}
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -103,5 +102,19 @@ class UserController @Inject() (
           }
         case (JsError(_), _)                                    => Future.successful(BadRequest("Missing or invalid 'eori' field"))
         case (_, JsError(_))                                    => Future.successful(BadRequest("Missing or invalid 'thirdPartyEori' field"))
+      }
+    }
+
+  def getUsersByAuthorisedEori: Action[JsValue] =
+    auth.authorizedAction(readPermission).async(parse.json) { implicit request =>
+      (request.body \ "thirdPartyEori").validate[String] match {
+        case JsSuccess(thirdPartyEori, _) =>
+          userService
+            .getUsersByAuthorisedEori(thirdPartyEori)
+            .map(users => Ok(Json.toJson(users)))
+            .recover { case e: Exception =>
+              InternalServerError(e.getMessage)
+            }
+        case JsError(_)                   => Future.successful(BadRequest("Missing or invalid 'thirdPartyEori' field"))
       }
     }

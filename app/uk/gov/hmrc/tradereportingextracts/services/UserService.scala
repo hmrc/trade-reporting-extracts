@@ -102,5 +102,8 @@ class UserService @Inject() (
       }
     )
 
+  def getUsersByAuthorisedEori(thirdPartyEori: String): Future[Seq[User]] =
+    userRepository.getUsersByAuthorisedEori(thirdPartyEori)
+
   def deleteAuthorisedUser(eori: String, thirdPartyEori: String): Future[Boolean] =
     userRepository.deleteAuthorisedUser(eori, thirdPartyEori)
