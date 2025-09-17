@@ -23,6 +23,7 @@ import uk.gov.hmrc.internalauth.client.BackendAuthComponents
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 import uk.gov.hmrc.tradereportingextracts.models.{AccessType, AuthorisedUser}
 import uk.gov.hmrc.tradereportingextracts.models.thirdParty.ThirdPartyRequest
+import uk.gov.hmrc.tradereportingextracts.repositories.ReportRequestRepository
 import uk.gov.hmrc.tradereportingextracts.services.UserService
 import uk.gov.hmrc.tradereportingextracts.utils.PermissionsUtil.readPermission
 
@@ -32,6 +33,7 @@ import scala.concurrent.{ExecutionContext, Future}
 class ThirdPartyRequestController @Inject() (
   cc: ControllerComponents,
   userService: UserService,
+  reportRequestRepository: ReportRequestRepository,
   auth: BackendAuthComponents
 )(implicit
   executionContext: ExecutionContext
@@ -70,7 +72,7 @@ class ThirdPartyRequestController @Inject() (
 //    userEmail match {
 //      case userEmail =>
 //        emailConnector.sendEmailRequest(
-//          templateId = "tre_report_available", // TODO - Update template when TRE-709 is implemented
+//          templateId = "tre_report_available", // TODO - Update template when TRE-709 is Done
 //          email = userEmail,
 //          params = Map("reportRequestId" -> "maskedId")
 //        )
@@ -94,9 +96,10 @@ class ThirdPartyRequestController @Inject() (
             userService
               .deleteAuthorisedUser(eori, thirdPartyEori)
               .map {
-                case true  =>
+                case true  => // TODO - Update template when TRE-709 is done
                   // userEmail      <- customsDataStoreConnector.getNotificationEmail(value.userEORI).map(_.address)
                   // _              <- sendThirdPartyRegisteredEmail(userEmail)
+                  deleteReportThirdParty(eori, thirdPartyEori)
                   NoContent
                 case false => NotFound("No authorised user found for third party EORI")
               }
@@ -110,5 +113,11 @@ class ThirdPartyRequestController @Inject() (
         case ex: Exception =>
           Future.successful(InternalServerError(Json.obj("error" -> ex.getMessage)))
       }
+    }
+
+  private def deleteReportThirdParty(eori: String, thirdPartyEori: String) =
+    reportRequestRepository.deleteReportsForThirdPartyRemoval(thirdPartyEori, eori).map {
+      case true  => Ok
+      case false => InternalServerError("Failed to remove reports for third party access removal")
     }
 }

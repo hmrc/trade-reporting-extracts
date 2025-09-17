@@ -31,6 +31,7 @@ import uk.gov.hmrc.internalauth.client.{BackendAuthComponents, IAAction, Predica
 import uk.gov.hmrc.internalauth.client.test.{BackendAuthComponentsStub, StubBehaviour}
 import uk.gov.hmrc.tradereportingextracts.models.*
 import uk.gov.hmrc.tradereportingextracts.models.thirdParty.ThirdPartyAddedConfirmation
+import uk.gov.hmrc.tradereportingextracts.repositories.ReportRequestRepository
 import uk.gov.hmrc.tradereportingextracts.services.UserService
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -41,9 +42,11 @@ class ThirdPartyRequestControllerSpec extends AnyFreeSpec with Matchers with Moc
   private val cc: ControllerComponents                     = Helpers.stubControllerComponents()
   private val userService: UserService                     = mock[UserService]
   private val mockStubBehaviour                            = mock[StubBehaviour]
+  private val mockReportRequestRepository                  = mock[ReportRequestRepository]
   private val backendAuthComponents: BackendAuthComponents =
     BackendAuthComponentsStub(mockStubBehaviour)(cc)
-  private val controller                                   = new ThirdPartyRequestController(cc, userService, backendAuthComponents)
+  private val controller                                   =
+    new ThirdPartyRequestController(cc, userService, mockReportRequestRepository, backendAuthComponents)
   private val permission: Predicate.Permission             = Predicate.Permission(
     Resource(ResourceType("trade-reporting-extracts"), ResourceLocation("trade-reporting-extracts/*")),
     IAAction("READ")
@@ -100,7 +103,8 @@ class ThirdPartyRequestControllerSpec extends AnyFreeSpec with Matchers with Moc
 
       when(userService.deleteAuthorisedUser(any(), any()))
         .thenReturn(Future.successful(true))
-
+      when(mockReportRequestRepository.deleteReportsForThirdPartyRemoval(any(), any())(any()))
+        .thenReturn(Future.successful(true))
       val result = controller.deleteThirdPartyDetails()(
         FakeRequest().withHeaders(AUTHORIZATION -> "my-token").withBody(requestBody)
       )

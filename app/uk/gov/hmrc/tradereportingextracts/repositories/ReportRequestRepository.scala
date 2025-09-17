@@ -131,3 +131,17 @@ class ReportRequestRepository @Inject() (appConfig: AppConfig, mongoComponent: M
         .toFuture()
         .map(_.toInt)
     }
+
+  def deleteReportsForThirdPartyRemoval(traderEori: String, thirdPartyEori: String)(implicit
+    ec: ExecutionContext
+  ): Future[Boolean] = Mdc.preservingMdc {
+    collection
+      .deleteMany(
+        Filters.and(
+          Filters.equal("requesterEORI", thirdPartyEori),
+          Filters.in("reportEORIs", traderEori)
+        )
+      )
+      .toFuture()
+      .map(_ => true)
+  }
