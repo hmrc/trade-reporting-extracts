@@ -25,13 +25,15 @@ import org.scalatest.{OptionValues, TryValues}
 import org.scalatestplus.mockito.MockitoSugar
 import org.scalatestplus.mockito.MockitoSugar.mock
 import uk.gov.hmrc.tradereportingextracts.connectors.CustomsDataStoreConnector
+import uk.gov.hmrc.tradereportingextracts.models.{AddressInformation, AuthorisedUser, CompanyInformation, NotificationEmail, User, UserDetails}
 import uk.gov.hmrc.tradereportingextracts.models.AccessType.IMPORTS
 import uk.gov.hmrc.tradereportingextracts.models.{AddressInformation, AuthorisedUser, CompanyInformation, NotificationEmail, User, UserDetails}
 import uk.gov.hmrc.tradereportingextracts.models.etmp.EoriUpdate
 import uk.gov.hmrc.tradereportingextracts.models.thirdParty.ThirdPartyAddedConfirmation
 import uk.gov.hmrc.tradereportingextracts.repositories.UserRepository
 
-import java.time._
+import java.time.{Instant, LocalDateTime}
+import java.time.{Instant, LocalDate, LocalDateTime}
 import scala.concurrent.{ExecutionContext, Future}
 
 class UserServiceSpec
@@ -342,7 +344,39 @@ class UserServiceSpec
         result.dataStartDate mustBe None
         result.dataEndDate mustBe None
       }
+    }
 
+    "deleteAuthorisedUser" - {
+
+      val eori           = "GB123456789000"
+      val thirdPartyEori = "GB123456789001"
+
+      "should return true when deletion succeeds" in {
+        when(mockRepository.deleteAuthorisedUser(any(), any()))
+          .thenReturn(Future.successful(true))
+
+        val result = service.deleteAuthorisedUser(eori, thirdPartyEori).futureValue
+        result mustBe true
+      }
+
+      "should return false when no user was deleted" in {
+        when(mockRepository.deleteAuthorisedUser(any(), any()))
+          .thenReturn(Future.successful(false))
+
+        val result = service.deleteAuthorisedUser(eori, thirdPartyEori).futureValue
+        result mustBe false
+      }
+
+      "should fail if repository fails" in {
+        when(mockRepository.deleteAuthorisedUser(any(), any()))
+          .thenReturn(Future.failed(new Exception("Delete failed")))
+
+        val result = service.deleteAuthorisedUser(eori, thirdPartyEori)
+        whenReady(result.failed) { ex =>
+          ex mustBe an[Exception]
+          ex.getMessage must include("Delete failed")
+        }
+      }
     }
   }
 }

@@ -19,51 +19,60 @@ package uk.gov.hmrc.tradereportingextracts.controllers
 import play.api.libs.json.{JsError, JsSuccess, JsValue, Json}
 import play.api.mvc.{Action, ControllerComponents}
 import uk.gov.hmrc.http.HeaderCarrier
+import uk.gov.hmrc.internalauth.client.BackendAuthComponents
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 import uk.gov.hmrc.tradereportingextracts.models.{AccessType, AuthorisedUser}
 import uk.gov.hmrc.tradereportingextracts.models.thirdParty.ThirdPartyRequest
+import uk.gov.hmrc.tradereportingextracts.repositories.ReportRequestRepository
 import uk.gov.hmrc.tradereportingextracts.services.UserService
+import uk.gov.hmrc.tradereportingextracts.utils.PermissionsUtil.readPermission
 
 import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
 
-class ThirdPartyRequestController @Inject() (cc: ControllerComponents, userService: UserService)(implicit
+class ThirdPartyRequestController @Inject() (
+  cc: ControllerComponents,
+  userService: UserService,
+  reportRequestRepository: ReportRequestRepository,
+  auth: BackendAuthComponents
+)(implicit
   executionContext: ExecutionContext
 ) extends BackendController(cc) {
 
   implicit val hc: HeaderCarrier = HeaderCarrier()
 
-  def addThirdPartyRequest(): Action[JsValue] = Action.async(parse.json) { implicit request =>
-    request.body.validate[ThirdPartyRequest] match {
-      case JsSuccess(value, _) =>
-        val authorisedUser = AuthorisedUser(
-          eori = value.thirdPartyEORI,
-          accessStart = value.accessStart,
-          accessEnd = value.accessEnd,
-          reportDataStart = value.reportDateStart,
-          reportDataEnd = value.reportDateEnd,
-          accessType = getAccessType(value.accessType),
-          referenceName = value.referenceName
-        )
-        (for {
-          thirdPartyAddedConfirmed <- userService.addAuthorisedUser(value.userEORI, authorisedUser)
-          // TODO TRE-709 - Email functionality to be implemented in third party confirmation
-          // userEmail      <- customsDataStoreConnector.getNotificationEmail(value.userEORI).map(_.address)
-          // _              <- sendThirdPartyRegisteredEmail(userEmail)
-        } yield Ok(Json.toJson(thirdPartyAddedConfirmed)))
-          .recover { case ex =>
-            BadRequest(Json.obj("error" -> ex.getMessage))
-          }
-      case JsError(_)          =>
-        Future.successful(BadRequest(Json.obj("error" -> "Invalid request format")))
+  def addThirdPartyRequest(): Action[JsValue] =
+    auth.authorizedAction(readPermission).async(parse.json) { implicit request =>
+      request.body.validate[ThirdPartyRequest] match {
+        case JsSuccess(value, _) =>
+          val authorisedUser = AuthorisedUser(
+            eori = value.thirdPartyEORI,
+            accessStart = value.accessStart,
+            accessEnd = value.accessEnd,
+            reportDataStart = value.reportDateStart,
+            reportDataEnd = value.reportDateEnd,
+            accessType = getAccessType(value.accessType),
+            referenceName = value.referenceName
+          )
+          (for {
+            thirdPartyAddedConfirmed <- userService.addAuthorisedUser(value.userEORI, authorisedUser)
+            // TODO TRE-709 - Email functionality to be implemented in third party confirmation
+            // userEmail      <- customsDataStoreConnector.getNotificationEmail(value.userEORI).map(_.address)
+            // _              <- sendThirdPartyRegisteredEmail(userEmail)
+          } yield Ok(Json.toJson(thirdPartyAddedConfirmed)))
+            .recover { case ex =>
+              BadRequest(Json.obj("error" -> ex.getMessage))
+            }
+        case JsError(_)          =>
+          Future.successful(BadRequest(Json.obj("error" -> "Invalid request format")))
+      }
     }
-  }
 
 //  private def sendThirdPartyRegisteredEmail(userEmail: String) = {
 //    userEmail match {
 //      case userEmail =>
 //        emailConnector.sendEmailRequest(
-//          templateId = "tre_report_available", // TODO - Update template when TRE-709 is implemented
+//          templateId = "tre_report_available", // TODO - Update template when TRE-709 is Done
 //          email = userEmail,
 //          params = Map("reportRequestId" -> "maskedId")
 //        )
@@ -75,5 +84,40 @@ class ThirdPartyRequestController @Inject() (cc: ControllerComponents, userServi
       case s if s.equalsIgnoreCase("IMPORT") => Some(AccessType.IMPORTS)
       case s if s.equalsIgnoreCase("EXPORT") => Some(AccessType.EXPORTS)
       case _                                 => None
+    }
+
+  def deleteThirdPartyDetails(): Action[JsValue] =
+    auth.authorizedAction(readPermission).async(parse.json) { implicit request =>
+      try {
+        val eoriResult           = (request.body \ "eori").validate[String]
+        val thirdPartyEoriResult = (request.body \ "thirdPartyEori").validate[String]
+        (eoriResult, thirdPartyEoriResult) match {
+          case (JsSuccess(eori, _), JsSuccess(thirdPartyEori, _)) =>
+            userService
+              .deleteAuthorisedUser(eori, thirdPartyEori)
+              .map {
+                case true  => // TODO - Update template when TRE-709 is done
+                  // userEmail      <- customsDataStoreConnector.getNotificationEmail(value.userEORI).map(_.address)
+                  // _              <- sendThirdPartyRegisteredEmail(userEmail)
+                  deleteReportThirdParty(eori, thirdPartyEori)
+                  NoContent
+                case false => NotFound("No authorised user found for third party EORI")
+              }
+              .recover { case ex: Exception =>
+                InternalServerError(Json.obj("error" -> ex.getMessage))
+              }
+          case (JsError(_), _)                                    => Future.successful(BadRequest("Missing or invalid 'eori' field"))
+          case (_, JsError(_))                                    => Future.successful(BadRequest("Missing or invalid 'thirdPartyEori' field"))
+        }
+      } catch {
+        case ex: Exception =>
+          Future.successful(InternalServerError(Json.obj("error" -> ex.getMessage)))
+      }
+    }
+
+  private def deleteReportThirdParty(eori: String, thirdPartyEori: String) =
+    reportRequestRepository.deleteReportsForThirdPartyRemoval(thirdPartyEori, eori).map {
+      case true  => Ok
+      case false => InternalServerError("Failed to remove reports for third party access removal")
     }
 }

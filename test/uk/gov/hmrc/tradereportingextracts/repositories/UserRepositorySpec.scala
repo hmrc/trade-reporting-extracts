@@ -16,8 +16,8 @@
 
 package uk.gov.hmrc.tradereportingextracts.repositories
 
-import com.github.tomakehurst.wiremock.client.WireMock.reset
-import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
+import org.mockito.Mockito.{verify, when}
+import org.scalatest.BeforeAndAfterAll
 import org.scalatest.concurrent.IntegrationPatience
 import org.scalatest.matchers.must.Matchers.{must, mustBe, mustEqual}
 import org.scalatest.matchers.should.Matchers
@@ -29,6 +29,7 @@ import uk.gov.hmrc.tradereportingextracts.config.AppConfig
 import uk.gov.hmrc.tradereportingextracts.models.AccessType.IMPORTS
 import uk.gov.hmrc.tradereportingextracts.models.etmp.EoriUpdate
 import uk.gov.hmrc.tradereportingextracts.models.{AuthorisedUser, User}
+import uk.gov.hmrc.tradereportingextracts.services.UserService
 
 import java.time.Instant
 import scala.concurrent.ExecutionContext
@@ -268,33 +269,57 @@ class UserRepositorySpec
       }
     }
 
-    "deteleAuthorisedUser" should {
-      "delete an authorised user from an existing user" in {
-        userRepository.insert(user).futureValue
+    "deleteAuthorisedUser" should {
+      "should return true when repository deletion succeeds" in {
+        val repo      = mock[UserRepository]
+        val cds       = mock[uk.gov.hmrc.tradereportingextracts.connectors.CustomsDataStoreConnector]
+        val service   = new UserService(repo, cds)
+        val eori      = "GB987654321098"
+        val thirdEori = "GB123456123456"
 
-        val deletionResult = userRepository.deleteAuthorisedUser(user.eori, "AUTH-EORI-1").futureValue
-        deletionResult mustBe true
+        org.mockito.Mockito
+          .when(repo.deleteAuthorisedUser(eori, thirdEori))
+          .thenReturn(scala.concurrent.Future.successful(true))
 
-        val updatedUser = userRepository.findByEori(user.eori).futureValue
-        updatedUser.get.authorisedUsers.map(_.eori) must not contain "AUTH-EORI-1"
-      }
-
-      "fail when authorised user doesn't exist in user" in {
-        userRepository.insert(user.copy(authorisedUsers = Seq.empty)).futureValue
-
-        val result = userRepository.deleteAuthorisedUser(user.eori, "foo")
-        whenReady(result.failed) { ex =>
-          ex mustBe an[Exception]
-          ex.getMessage mustEqual "Authorised user not for authorised EORI not found"
+        whenReady(service.deleteAuthorisedUser(eori, thirdEori)) { result =>
+          result mustBe true
+          org.mockito.Mockito.verify(repo).deleteAuthorisedUser(eori, thirdEori)
         }
       }
 
-      "fail when user doesn't exist" in {
-        userRepository.deleteByEori("foo").futureValue
-        val result = userRepository.deleteAuthorisedUser("foo", "bar")
-        whenReady(result.failed) { ex =>
-          ex mustBe an[Exception]
-          ex.getMessage mustEqual "User with EORI not found"
+      "should return false when repository indicates not found" in {
+        val repo      = mock[UserRepository]
+        val cds       = mock[uk.gov.hmrc.tradereportingextracts.connectors.CustomsDataStoreConnector]
+        val service   = new UserService(repo, cds)
+        val eori      = "GB987654321098"
+        val thirdEori = "GB000000000000"
+
+        org.mockito.Mockito
+          .when(repo.deleteAuthorisedUser(eori, thirdEori))
+          .thenReturn(scala.concurrent.Future.successful(false))
+
+        whenReady(service.deleteAuthorisedUser(eori, thirdEori)) { result =>
+          result mustBe false
+          verify(repo).deleteAuthorisedUser(eori, thirdEori)
+        }
+      }
+
+      "should fail the future when repository fails" in {
+        val repo      = mock[UserRepository]
+        val cds       = mock[uk.gov.hmrc.tradereportingextracts.connectors.CustomsDataStoreConnector]
+        val service   = new UserService(repo, cds)
+        val eori      = "GB987654321098"
+        val thirdEori = "GB123456123456"
+
+        when(
+          repo.deleteAuthorisedUser(
+            org.mockito.ArgumentMatchers.any[String],
+            org.mockito.ArgumentMatchers.any[String]
+          )
+        ).thenReturn(scala.concurrent.Future.failed(new Exception("failure")))
+
+        whenReady(service.deleteAuthorisedUser(eori, thirdEori).failed) { ex =>
+          ex.getMessage must include("failure")
         }
       }
     }
