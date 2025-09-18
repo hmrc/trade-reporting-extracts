@@ -16,6 +16,7 @@
 
 package uk.gov.hmrc.tradereportingextracts.services
 
+import org.apache.pekko.Done
 import uk.gov.hmrc.tradereportingextracts.connectors.CustomsDataStoreConnector
 import uk.gov.hmrc.tradereportingextracts.models.etmp.EoriUpdate
 import uk.gov.hmrc.tradereportingextracts.models.thirdParty.ThirdPartyAddedConfirmation
@@ -43,6 +44,9 @@ class UserService @Inject() (
 
   def deleteByEori(eori: String): Future[Boolean] =
     userRepository.deleteByEori(eori)
+
+  def deleteAuthorisedUser(eori: String, authorisedEori: String): Future[Boolean] =
+    userRepository.deleteAuthorisedUser(eori, authorisedEori)
 
   def getOrCreateUser(eori: String): Future[UserDetails] =
     for {
@@ -104,6 +108,3 @@ class UserService @Inject() (
 
   def getUsersByAuthorisedEori(thirdPartyEori: String): Future[Seq[User]] =
     userRepository.getUsersByAuthorisedEori(thirdPartyEori)
-
-  def deleteAuthorisedUser(eori: String, thirdPartyEori: String): Future[Boolean] =
-    userRepository.deleteAuthorisedUser(eori, thirdPartyEori)

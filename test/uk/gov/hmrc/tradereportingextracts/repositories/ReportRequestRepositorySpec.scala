@@ -16,7 +16,9 @@
 
 package uk.gov.hmrc.tradereportingextracts.repositories
 
+import org.mongodb.scala.ObservableFuture
 import org.scalactic.Equality
+import org.scalatest.concurrent.IntegrationPatience
 import org.scalatest.matchers.must.Matchers.{must, mustBe, mustEqual}
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
@@ -39,6 +41,7 @@ class ReportRequestRepositorySpec
       MockitoSugar,
       GuiceOneAppPerSuite,
       CleanMongoCollectionSupport,
+      IntegrationPatience,
       Matchers:
 
   private val reportRequest               = ReportRequest(
@@ -379,5 +382,61 @@ class ReportRequestRepositorySpec
 
       val count = reportRequestRepository.countReportSubmissionsForEoriOnDate(eori1, date).futureValue
       count mustEqual 1
+    }
+  }
+
+  "deleteReportsForThirdPartyRemoval" should {
+
+    val traderEori          = "traderEori"
+    val differentTraderEori = "differentTraderEori"
+    val thirdPartyEori      = "thirdPartyEori"
+
+    "must delete third party reports for specific trader eori only" in {
+
+      val userReportForThirdParty = reportRequest.copy(
+        reportRequestId = "userRequest",
+        requesterEORI = thirdPartyEori,
+        reportEORIs = Seq(thirdPartyEori)
+      )
+
+      val thirdPartyRequestForTrader = reportRequest.copy(
+        reportRequestId = "thirdPartyRequest",
+        requesterEORI = thirdPartyEori,
+        reportEORIs = Seq(traderEori)
+      )
+
+      reportRequestRepository.insertAll(Seq(userReportForThirdParty, thirdPartyRequestForTrader)).futureValue
+
+      val result = reportRequestRepository.deleteReportsForThirdPartyRemoval(traderEori, thirdPartyEori).futureValue
+      result mustEqual true
+
+      val remaining = reportRequestRepository.getAvailableReports(thirdPartyEori).futureValue
+      remaining.map(_.reportRequestId) must contain only "userRequest"
+
+    }
+
+    "must not delete third party reports for other third parties" in {
+
+      val thirdPartyRequestForTrader = reportRequest.copy(
+        reportRequestId = "thirdPartyRequest",
+        requesterEORI = thirdPartyEori,
+        reportEORIs = Seq(traderEori)
+      )
+
+      val thirdPartyRequestForDifferentTrader = reportRequest.copy(
+        reportRequestId = "thirdPartyRequestDifferentTrader",
+        requesterEORI = thirdPartyEori,
+        reportEORIs = Seq(differentTraderEori)
+      )
+
+      reportRequestRepository
+        .insertAll(Seq(thirdPartyRequestForTrader, thirdPartyRequestForDifferentTrader))
+        .futureValue
+
+      val result    = reportRequestRepository.deleteReportsForThirdPartyRemoval(traderEori, thirdPartyEori).futureValue
+      result mustEqual true
+      val remaining = reportRequestRepository.getAvailableReports(thirdPartyEori).futureValue
+      remaining.map(_.reportRequestId) must contain only "thirdPartyRequestDifferentTrader"
+
     }
   }
