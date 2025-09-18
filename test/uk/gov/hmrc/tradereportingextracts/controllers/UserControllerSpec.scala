@@ -341,7 +341,7 @@ class UserControllerSpec extends SpecBase {
 
       when(mockUserService.getAuthorisedBusiness(any(), any())).thenReturn(Future.successful(Some(authUser)))
 
-      when(mockStubBehaviour.stubAuth(Some(permission), EmptyRetrieval))
+      when(mockStubBehaviour.stubAuth(Some(readPermission), EmptyRetrieval))
         .thenReturn(Future.successful(EmptyRetrieval))
 
       when(mockUserService.transformToThirdPartyDetails(any())).thenReturn(thirdPartyDetails)
@@ -360,7 +360,7 @@ class UserControllerSpec extends SpecBase {
 
       when(mockUserService.getAuthorisedBusiness(any(), any())).thenReturn(Future.successful(None))
 
-      when(mockStubBehaviour.stubAuth(Some(permission), EmptyRetrieval))
+      when(mockStubBehaviour.stubAuth(Some(readPermission), EmptyRetrieval))
         .thenReturn(Future.successful(EmptyRetrieval))
 
       val request: FakeRequest[JsObject] = FakeRequest(GET, routes.UserController.getAuthorisedBusinessDetails.url)

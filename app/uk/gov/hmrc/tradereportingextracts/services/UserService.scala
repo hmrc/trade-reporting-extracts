@@ -16,11 +16,10 @@
 
 package uk.gov.hmrc.tradereportingextracts.services
 
-import org.apache.pekko.Done
 import uk.gov.hmrc.tradereportingextracts.connectors.CustomsDataStoreConnector
 import uk.gov.hmrc.tradereportingextracts.models.etmp.EoriUpdate
 import uk.gov.hmrc.tradereportingextracts.models.thirdParty.ThirdPartyAddedConfirmation
-import uk.gov.hmrc.tradereportingextracts.models.{AddressInformation, AuthorisedUser, NotificationEmail, ThirdPartyDetails, User, UserDetails}
+import uk.gov.hmrc.tradereportingextracts.models.*
 import uk.gov.hmrc.tradereportingextracts.repositories.UserRepository
 
 import java.time.{LocalDate, ZoneOffset}
