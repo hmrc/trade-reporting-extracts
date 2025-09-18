@@ -49,14 +49,11 @@ class UserControllerSpec extends SpecBase {
       backendAuthComponents,
       mockReportRequestRepository
     )(using ec)
-  val readPermission                                       = Predicate.Permission(
-    new UserController(mockUserService, Helpers.stubControllerComponents(), backendAuthComponents)(using ec)
-  val permission: Predicate.Permission                     = Predicate.Permission(
+  val readPermission: Predicate.Permission                 = Predicate.Permission(
     Resource(ResourceType("trade-reporting-extracts"), ResourceLocation("trade-reporting-extracts/*")),
     IAAction("READ")
   )
-
-  val writePermission = Predicate.Permission(
+  val writePermission                                      = Predicate.Permission(
     Resource(ResourceType("trade-reporting-extracts"), ResourceLocation("trade-reporting-extracts/*")),
     IAAction("WRITE")
   )
@@ -253,7 +250,7 @@ class UserControllerSpec extends SpecBase {
 
       when(mockUserService.getAuthorisedUser(any(), any())).thenReturn(Future.successful(Some(authUser)))
 
-      when(mockStubBehaviour.stubAuth(Some(permission), EmptyRetrieval))
+      when(mockStubBehaviour.stubAuth(Some(readPermission), EmptyRetrieval))
         .thenReturn(Future.successful(EmptyRetrieval))
 
       when(mockUserService.transformToThirdPartyDetails(any())).thenReturn(thirdPartyDetails)
@@ -272,7 +269,7 @@ class UserControllerSpec extends SpecBase {
 
       when(mockUserService.getAuthorisedUser(any(), any())).thenReturn(Future.successful(None))
 
-      when(mockStubBehaviour.stubAuth(Some(permission), EmptyRetrieval))
+      when(mockStubBehaviour.stubAuth(Some(readPermission), EmptyRetrieval))
         .thenReturn(Future.successful(EmptyRetrieval))
 
       val request: FakeRequest[JsObject] = FakeRequest(GET, routes.UserController.getAuthorisedEoris.url)
@@ -288,7 +285,7 @@ class UserControllerSpec extends SpecBase {
 
       val thirdPartyEori = "456"
 
-      when(mockStubBehaviour.stubAuth(Some(permission), EmptyRetrieval))
+      when(mockStubBehaviour.stubAuth(Some(readPermission), EmptyRetrieval))
         .thenReturn(Future.successful(EmptyRetrieval))
 
       val request: FakeRequest[JsObject] = FakeRequest(GET, routes.UserController.getAuthorisedEoris.url)
@@ -303,7 +300,7 @@ class UserControllerSpec extends SpecBase {
 
     "return a bad request when thirdPartyEori invalid" in new Setup {
 
-      when(mockStubBehaviour.stubAuth(Some(permission), EmptyRetrieval))
+      when(mockStubBehaviour.stubAuth(Some(readPermission), EmptyRetrieval))
         .thenReturn(Future.successful(EmptyRetrieval))
 
       val request: FakeRequest[JsObject] = FakeRequest(GET, routes.UserController.getAuthorisedEoris.url)
@@ -330,7 +327,7 @@ class UserControllerSpec extends SpecBase {
       )
       when(mockUserService.getUsersByAuthorisedEori(authorisedEori))
         .thenReturn(Future.successful(users))
-      when(mockStubBehaviour.stubAuth(Some(permission), EmptyRetrieval))
+      when(mockStubBehaviour.stubAuth(Some(readPermission), EmptyRetrieval))
         .thenReturn(Future.successful(EmptyRetrieval))
       val request: FakeRequest[JsObject] = FakeRequest(GET, routes.UserController.getUsersByAuthorisedEori.url)
         .withHeaders("Content-Type" -> "application/json", AUTHORIZATION -> "my-token")
