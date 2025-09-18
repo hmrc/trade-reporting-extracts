@@ -17,6 +17,7 @@
 package uk.gov.hmrc.tradereportingextracts.repositories
 
 import com.google.inject.{Inject, Singleton}
+import org.apache.pekko.Done
 import org.mongodb.scala.*
 import org.mongodb.scala.model.*
 import uk.gov.hmrc.mongo.MongoComponent
@@ -139,3 +140,19 @@ class UserRepository @Inject() (appConfig: AppConfig, mongoComponent: MongoCompo
       .find(Filters.elemMatch("authorisedUsers", Filters.equal("eori", authorisedEori)))
       .toFuture()
   }
+
+  def deleteAuthorisedUser(eori: String, authorisedEori: String): Future[Boolean] =
+    Mdc.preservingMdc {
+      findByEori(eori).flatMap {
+        case Some(existingUser) =>
+          existingUser.authorisedUsers.exists(_.eori == authorisedEori) match {
+            case true =>
+              val updatedAuthorisedUsers = existingUser.authorisedUsers.filterNot(_.eori == authorisedEori)
+              val updatedUser            = existingUser.copy(authorisedUsers = updatedAuthorisedUsers)
+              update(updatedUser)
+            case _    => Future.failed(new Exception(s"Authorised user not for authorised EORI not found"))
+          }
+        case None               =>
+          Future.failed(new Exception(s"User with EORI not found"))
+      }
+    }

@@ -116,6 +116,20 @@ class ReportRequestRepository @Inject() (appConfig: AppConfig, mongoComponent: M
       }
   }
 
+  def deleteReportsForThirdPartyRemoval(traderEori: String, thirdPartyEori: String)(implicit
+    ec: ExecutionContext
+  ): Future[Boolean] = Mdc.preservingMdc {
+    collection
+      .deleteMany(
+        Filters.and(
+          Filters.equal("requesterEORI", thirdPartyEori),
+          Filters.in("reportEORIs", traderEori)
+        )
+      )
+      .toFuture()
+      .map(_ => true)
+  }
+
   def countReportSubmissionsForEoriOnDate(eori: String, date: LocalDate)(implicit ec: ExecutionContext): Future[Int] =
     Mdc.preservingMdc {
       val startOfDay = date.atStartOfDay().toInstant(ZoneOffset.UTC)

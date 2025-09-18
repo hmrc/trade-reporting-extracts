@@ -16,7 +16,8 @@
 
 package uk.gov.hmrc.tradereportingextracts.repositories
 
-import org.scalatest.BeforeAndAfterAll
+import com.github.tomakehurst.wiremock.client.WireMock.reset
+import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
 import org.scalatest.concurrent.IntegrationPatience
 import org.scalatest.matchers.must.Matchers.{must, mustBe, mustEqual}
 import org.scalatest.matchers.should.Matchers
@@ -264,6 +265,37 @@ class UserRepositorySpec
         userRepository.insert(user1).futureValue
         val result = userRepository.getUsersByAuthorisedEori("AUTH-EORI-1").futureValue
         result.map(_.eori) must contain theSameElementsAs Seq("EORI1234", "EORI1")
+      }
+    }
+
+    "deteleAuthorisedUser" should {
+      "delete an authorised user from an existing user" in {
+        userRepository.insert(user).futureValue
+
+        val deletionResult = userRepository.deleteAuthorisedUser(user.eori, "AUTH-EORI-1").futureValue
+        deletionResult mustBe true
+
+        val updatedUser = userRepository.findByEori(user.eori).futureValue
+        updatedUser.get.authorisedUsers.map(_.eori) must not contain "AUTH-EORI-1"
+      }
+
+      "fail when authorised user doesn't exist in user" in {
+        userRepository.insert(user.copy(authorisedUsers = Seq.empty)).futureValue
+
+        val result = userRepository.deleteAuthorisedUser(user.eori, "foo")
+        whenReady(result.failed) { ex =>
+          ex mustBe an[Exception]
+          ex.getMessage mustEqual "Authorised user not for authorised EORI not found"
+        }
+      }
+
+      "fail when user doesn't exist" in {
+        userRepository.deleteByEori("foo").futureValue
+        val result = userRepository.deleteAuthorisedUser("foo", "bar")
+        whenReady(result.failed) { ex =>
+          ex mustBe an[Exception]
+          ex.getMessage mustEqual "User with EORI not found"
+        }
       }
     }
   }
