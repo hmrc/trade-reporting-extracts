@@ -278,6 +278,81 @@ class ReportRequestServiceSpec
     }
   }
 
+  "getReportRequestsForUser" should {
+    val mockCustomsDataStoreConnector = mock[CustomsDataStoreConnector]
+    val mockReportRequestRepository   = mock[ReportRequestRepository]
+    val service                       = new ReportRequestService(mockReportRequestRepository, mockCustomsDataStoreConnector)
+    implicit val ec: ExecutionContext = scala.concurrent.ExecutionContext.Implicits.global
+
+    val eori                    = "GB123456789000"
+    val thirdPartyEori          = "GB999999999999"
+    val userReportRequest       = ReportRequest(
+      "REQ123",
+      "corr1",
+      "Monthly Report",
+      eori,
+      EoriRole.TRADER,
+      Seq(eori),
+      None,
+      Seq.empty,
+      ReportTypeName.EXPORTS_ITEM_REPORT,
+      Instant.parse("2024-06-01T00:00:00Z"),
+      Instant.parse("2024-06-30T23:59:59Z"),
+      Instant.parse("2024-07-01T10:00:00Z"),
+      Seq.empty,
+      None,
+      Instant.now()
+    )
+    val thirdPartyReportRequest = userReportRequest.copy(requesterEORI = thirdPartyEori)
+
+    "return user reports and third party reports correctly" in {
+      when(mockReportRequestRepository.findByRequesterEORI(eori))
+        .thenReturn(Future.successful(Seq(userReportRequest, thirdPartyReportRequest)))
+      when(mockCustomsDataStoreConnector.getCompanyInformation(thirdPartyEori))
+        .thenReturn(Future.successful(CompanyInformation("Company LTD")))
+
+      val result = service.getReportRequestsForUser(eori).futureValue
+
+      result.userReports mustBe Some(
+        Seq(
+          UserReport(
+            referenceNumber = "REQ123",
+            reportName = "Monthly Report",
+            requestedDate = Instant.parse("2024-07-01T10:00:00Z"),
+            reportType = ReportTypeName.EXPORTS_ITEM_REPORT,
+            reportStatus = ReportStatus.IN_PROGRESS,
+            reportStartDate = Instant.parse("2024-06-01T00:00:00Z"),
+            reportEndDate = Instant.parse("2024-06-30T23:59:59Z")
+          )
+        )
+      )
+      result.thirdPartyReports mustBe Some(
+        Seq(
+          ThirdPartyReport(
+            referenceNumber = "REQ123",
+            reportName = "Monthly Report",
+            requestedDate = Instant.parse("2024-07-01T10:00:00Z"),
+            reportType = ReportTypeName.EXPORTS_ITEM_REPORT,
+            companyName = "Company LTD",
+            reportStatus = ReportStatus.IN_PROGRESS,
+            reportStartDate = Instant.parse("2024-06-01T00:00:00Z"),
+            reportEndDate = Instant.parse("2024-06-30T23:59:59Z")
+          )
+        )
+      )
+    }
+
+    "return None for both when no reports" in {
+      when(mockReportRequestRepository.findByRequesterEORI(eori))
+        .thenReturn(Future.successful(Seq.empty))
+
+      val result = service.getReportRequestsForUser(eori).futureValue
+
+      result.userReports mustBe None
+      result.thirdPartyReports mustBe None
+    }
+  }
+
   // Helper to invoke private method
   extension (service: ReportRequestService)
     def invokePrivateMethod(methodName: String, reportRequest: ReportRequest): ReportStatus = {

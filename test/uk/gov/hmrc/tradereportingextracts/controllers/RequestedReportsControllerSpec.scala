@@ -54,6 +54,8 @@ class RequestedReportsControllerSpec extends SpecBase:
           reportName = "Monthly Report",
           requestedDate = Instant.parse("2024-07-01T10:00:00Z"),
           reportType = EXPORTS_ITEM_REPORT,
+          reportStartDate = Instant.parse("2024-06-01T00:00:00Z"),
+          reportEndDate = Instant.parse("2024-06-30T23:59:59Z"),
           reportStatus = IN_PROGRESS
         )
       )

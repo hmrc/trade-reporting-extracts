@@ -33,7 +33,9 @@ case class UserReport(
   reportName: String,
   requestedDate: Instant,
   reportType: ReportTypeName,
-  reportStatus: ReportStatus
+  reportStatus: ReportStatus,
+  reportStartDate: Instant,
+  reportEndDate: Instant
 ) extends ReportSummary
 
 object UserReport:
@@ -45,7 +47,9 @@ case class ThirdPartyReport(
   requestedDate: Instant,
   reportType: ReportTypeName,
   companyName: String,
-  reportStatus: ReportStatus
+  reportStatus: ReportStatus,
+  reportStartDate: Instant,
+  reportEndDate: Instant
 ) extends ReportSummary
 
 object ThirdPartyReport:
