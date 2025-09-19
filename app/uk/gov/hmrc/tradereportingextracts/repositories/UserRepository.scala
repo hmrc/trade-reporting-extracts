@@ -17,18 +17,16 @@
 package uk.gov.hmrc.tradereportingextracts.repositories
 
 import com.google.inject.{Inject, Singleton}
-import org.apache.pekko.Done
 import org.mongodb.scala.*
 import org.mongodb.scala.model.*
 import uk.gov.hmrc.mongo.MongoComponent
 import uk.gov.hmrc.mongo.play.json.PlayMongoRepository
 import uk.gov.hmrc.play.http.logging.Mdc
 import uk.gov.hmrc.tradereportingextracts.config.AppConfig
-import uk.gov.hmrc.tradereportingextracts.models.{AuthorisedUser, User}
 import uk.gov.hmrc.tradereportingextracts.models.etmp.EoriUpdate
 import uk.gov.hmrc.tradereportingextracts.models.thirdParty.ThirdPartyAddedConfirmation
+import uk.gov.hmrc.tradereportingextracts.models.{AuthorisedUser, User}
 
-import java.time.LocalDate
 import java.util.concurrent.TimeUnit
 import scala.concurrent.{ExecutionContext, Future}
 

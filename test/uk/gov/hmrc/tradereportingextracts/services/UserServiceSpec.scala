@@ -305,6 +305,35 @@ class UserServiceSpec
       }
     }
 
+    "getAuthorisedBusiness" - {
+
+      val eori         = "123"
+      val businessEori = "456"
+
+      val authorisedUser = AuthorisedUser(
+        eori = eori,
+        accessStart = Instant.parse("2023-01-01T00:00:00Z"),
+        accessEnd = Some(Instant.parse("2023-12-31T23:59:59Z")),
+        reportDataStart = Some(Instant.parse("2023-01-01T10:00:00Z")),
+        reportDataEnd = Some(Instant.parse("2023-12-31T23:59:59Z")),
+        accessType = Set(IMPORTS)
+      )
+
+      "must return authorised user when found" in {
+        when(mockRepository.getAuthorisedUser(any(), any())).thenReturn(Future.successful(Some(authorisedUser)))
+
+        val result = service.getAuthorisedBusiness(eori, businessEori).futureValue
+        result mustBe Some(authorisedUser)
+      }
+
+      "return none when no authorised user found" in {
+        when(mockRepository.getAuthorisedUser(any(), any())).thenReturn(Future.successful(None))
+
+        val result = service.getAuthorisedBusiness(eori, businessEori).futureValue
+        result mustBe None
+      }
+    }
+
     "transformToThirdPartyDetails" - {
 
       val eori           = "123"

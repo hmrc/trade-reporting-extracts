@@ -33,6 +33,10 @@ GET         /trade-reporting-extracts/third-party-details                  uk.go
 
 GET         /trade-reporting-extracts/get-users-by-authorised-eori         uk.gov.hmrc.tradereportingextracts.controllers.UserController.getUsersByAuthorisedEori
 
+GET        /trade-reporting-extracts/third-party-details                 uk.gov.hmrc.tradereportingextracts.controllers.UserController.getThirdPartyDetails
+
+GET        /trade-reporting-extracts/authorised-business-details         uk.gov.hmrc.tradereportingextracts.controllers.UserController.getAuthorisedBusinessDetails
+
 POST        /trade-reporting-extracts/company-information                  uk.gov.hmrc.tradereportingextracts.controllers.CompanyInformationController.getCompanyInformation
 
 DELETE      /trade-reporting-extracts/third-party-access-self-removal      uk.gov.hmrc.tradereportingextracts.controllers.UserController.thirdPartyAccessSelfRemoval
