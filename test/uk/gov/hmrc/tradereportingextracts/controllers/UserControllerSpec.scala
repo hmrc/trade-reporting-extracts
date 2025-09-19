@@ -313,6 +313,67 @@ class UserControllerSpec extends SpecBase {
     }
   }
 
+  "UserController.getAuthorisedBusinessDetails" should {
+
+    val eori         = "123"
+    val businessEori = "456"
+
+    "return a 200 when provided a valid eori and businessEori" in new Setup {
+
+      val authUser = AuthorisedUser(
+        eori = eori,
+        referenceName = Some("foo"),
+        accessStart = Instant.now(),
+        accessEnd = Some(Instant.now()),
+        accessType = Set(AccessType.IMPORTS, AccessType.EXPORTS),
+        reportDataStart = Some(Instant.now()),
+        reportDataEnd = Some(Instant.now())
+      )
+
+      val thirdPartyDetails = ThirdPartyDetails(
+        referenceName = Some("foo"),
+        accessStartDate = LocalDate.ofInstant(Instant.now(), ZoneOffset.UTC),
+        accessEndDate = Some(LocalDate.ofInstant(Instant.now(), ZoneOffset.UTC)),
+        dataTypes = Set("imports", "exports"),
+        dataStartDate = Some(LocalDate.ofInstant(Instant.now(), ZoneOffset.UTC)),
+        dataEndDate = Some(LocalDate.ofInstant(Instant.now(), ZoneOffset.UTC))
+      )
+
+      when(mockUserService.getAuthorisedBusiness(any(), any())).thenReturn(Future.successful(Some(authUser)))
+
+      when(mockStubBehaviour.stubAuth(Some(readPermission), EmptyRetrieval))
+        .thenReturn(Future.successful(EmptyRetrieval))
+
+      when(mockUserService.transformToThirdPartyDetails(any())).thenReturn(thirdPartyDetails)
+
+      val request: FakeRequest[JsObject] = FakeRequest(GET, routes.UserController.getAuthorisedBusinessDetails.url)
+        .withHeaders(AUTHORIZATION -> "my-token")
+        .withBody(Json.obj("thirdPartyEori" -> eori, "traderEori" -> businessEori))
+
+      val result: Future[Result] = controller.getAuthorisedBusinessDetails.apply(request)
+      status(result)        shouldBe OK
+      contentAsJson(result) shouldBe Json.toJson(thirdPartyDetails)
+
+    }
+
+    "return a 404 when no authorised user is found" in new Setup {
+
+      when(mockUserService.getAuthorisedBusiness(any(), any())).thenReturn(Future.successful(None))
+
+      when(mockStubBehaviour.stubAuth(Some(readPermission), EmptyRetrieval))
+        .thenReturn(Future.successful(EmptyRetrieval))
+
+      val request: FakeRequest[JsObject] = FakeRequest(GET, routes.UserController.getAuthorisedBusinessDetails.url)
+        .withHeaders(AUTHORIZATION -> "my-token")
+        .withBody(Json.obj("thirdPartyEori" -> eori, "traderEori" -> businessEori))
+
+      val result: Future[Result] = controller.getAuthorisedBusinessDetails.apply(request)
+      status(result)        shouldBe NOT_FOUND
+      contentAsString(result) should include("No authorised user found for the trader EORI")
+    }
+
+  }
+
   "UserController.getUsersByAuthorisedEori" should {
 
     "return 200 OK with list of users" in new Setup {
