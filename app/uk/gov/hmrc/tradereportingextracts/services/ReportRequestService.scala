@@ -54,7 +54,8 @@ class ReportRequestService @Inject() (
 
   def getReportRequestsForUser(eori: String)(using ec: ExecutionContext): Future[GetReportRequestsResponse] =
     reportRequestRepository.findByRequesterEORI(eori).flatMap { reportRequests =>
-      val (userRequests, thirdPartyRequests) = reportRequests.partition(_.requesterEORI == eori)
+      val (userRequests, thirdPartyRequests) =
+        reportRequests.partition(r => r.requesterEORI == eori && r.reportEORIs.contains(eori))
 
       val userReports = userRequests.map(toUserReport)
 
