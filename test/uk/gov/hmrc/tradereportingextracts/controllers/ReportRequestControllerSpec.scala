@@ -50,6 +50,7 @@ class ReportRequestControllerSpec extends SpecBase with WireMockHelper {
     reset(mockCustomsDataStoreConnector)
     reset(mockRequestReferenceService)
     reset(mockEisService)
+    reset(mockAppConfig)
   }
 
   private val app = new GuiceApplicationBuilder()
@@ -57,7 +58,8 @@ class ReportRequestControllerSpec extends SpecBase with WireMockHelper {
       bind[CustomsDataStoreConnector].toInstance(mockCustomsDataStoreConnector),
       bind[ReportRequestService].toInstance(mockReportRequestService),
       bind[RequestReferenceService].toInstance(mockRequestReferenceService),
-      bind[EisService].toInstance(mockEisService)
+      bind[EisService].toInstance(mockEisService),
+      bind[AppConfig].toInstance(mockAppConfig)
     )
     .build()
 
