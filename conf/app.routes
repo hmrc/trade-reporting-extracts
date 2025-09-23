@@ -40,3 +40,5 @@ GET        /trade-reporting-extracts/authorised-business-details         uk.gov.
 POST        /trade-reporting-extracts/company-information                  uk.gov.hmrc.tradereportingextracts.controllers.CompanyInformationController.getCompanyInformation
 
 DELETE      /trade-reporting-extracts/third-party-access-self-removal      uk.gov.hmrc.tradereportingextracts.controllers.UserController.thirdPartyAccessSelfRemoval
+
+DELETE      /trade-reporting-extracts/remove-third-party                    uk.gov.hmrc.tradereportingextracts.controllers.ThirdPartyRequestController.deleteThirdPartyDetails()

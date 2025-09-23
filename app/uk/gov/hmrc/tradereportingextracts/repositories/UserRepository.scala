@@ -113,15 +113,35 @@ class UserRepository @Inject() (appConfig: AppConfig, mongoComponent: MongoCompo
 
   def addAuthorisedUser(eori: String, authorisedUser: AuthorisedUser): Future[ThirdPartyAddedConfirmation] =
     Mdc.preservingMdc {
-      findByEori(eori).flatMap {
-        case Some(existingUser) =>
-          val updatedAuthorisedUsers =
-            existingUser.authorisedUsers.filterNot(_.eori == authorisedUser.eori) :+ authorisedUser
-          val updatedUser            = existingUser.copy(authorisedUsers = updatedAuthorisedUsers)
-          update(updatedUser).map(_ => ThirdPartyAddedConfirmation(authorisedUser.eori))
-        case None               =>
-          Future.failed(new Exception(s"User with EORI $eori not found"))
-      }
+      findByEori(eori)
+        .flatMap {
+          case Some(existingUser) =>
+            val updatedAuthorisedUsers =
+              existingUser.authorisedUsers :+ authorisedUser
+            val updatedUser            = existingUser.copy(authorisedUsers = updatedAuthorisedUsers)
+            update(updatedUser).map(_ => ThirdPartyAddedConfirmation(authorisedUser.eori))
+          case None               =>
+            Future.failed(new Exception(s"User with EORI $eori not found"))
+        }
+        .recoverWith { case ex: Exception =>
+          Future.failed(new Exception(s"Failed to add authorised user for EORI $eori: ${ex.getMessage}", ex))
+        }
+    }
+
+  def deleteAuthorisedUser(eori: String, authorisedEori: String): Future[Boolean] =
+    Mdc.preservingMdc {
+      findByEori(eori)
+        .flatMap {
+          case Some(existingUser) =>
+            val updatedAuthorisedUsers = existingUser.authorisedUsers.filterNot(_.eori == authorisedEori)
+            val updatedUser            = existingUser.copy(authorisedUsers = updatedAuthorisedUsers)
+            update(updatedUser)
+          case None               =>
+            Future.failed(new Exception(s"User with EORI $eori not found"))
+        }
+        .recoverWith { case ex: Exception =>
+          Future.failed(new Exception(s"Failed to delete authorised user for EORI $eori: ${ex.getMessage}", ex))
+        }
     }
 
   def getAuthorisedUser(eori: String, authorisedEori: String): Future[Option[AuthorisedUser]] = Mdc.preservingMdc {
@@ -138,19 +158,3 @@ class UserRepository @Inject() (appConfig: AppConfig, mongoComponent: MongoCompo
       .find(Filters.elemMatch("authorisedUsers", Filters.equal("eori", authorisedEori)))
       .toFuture()
   }
-
-  def deleteAuthorisedUser(eori: String, authorisedEori: String): Future[Boolean] =
-    Mdc.preservingMdc {
-      findByEori(eori).flatMap {
-        case Some(existingUser) =>
-          existingUser.authorisedUsers.exists(_.eori == authorisedEori) match {
-            case true =>
-              val updatedAuthorisedUsers = existingUser.authorisedUsers.filterNot(_.eori == authorisedEori)
-              val updatedUser            = existingUser.copy(authorisedUsers = updatedAuthorisedUsers)
-              update(updatedUser)
-            case _    => Future.failed(new Exception(s"Authorised user not for authorised EORI not found"))
-          }
-        case None               =>
-          Future.failed(new Exception(s"User with EORI not found"))
-      }
-    }
