@@ -84,7 +84,9 @@ class ReportRequestService @Inject() (
       reportName = req.reportName,
       requestedDate = req.createDate,
       reportType = req.reportTypeName,
-      reportStatus = determineReportStatus(req)
+      reportStatus = determineReportStatus(req),
+      reportStartDate = req.reportStart,
+      reportEndDate = req.reportEnd
     )
 
   private def toThirdPartyReport(req: ReportRequest, companyName: String): ThirdPartyReport =
@@ -94,7 +96,9 @@ class ReportRequestService @Inject() (
       requestedDate = req.createDate,
       reportType = req.reportTypeName,
       companyName = companyName,
-      reportStatus = determineReportStatus(req)
+      reportStatus = determineReportStatus(req),
+      reportStartDate = req.reportStart,
+      reportEndDate = req.reportEnd
     )
 
   def getAvailableReports(eori: String)(using ec: ExecutionContext): Future[Seq[ReportRequest]] =
