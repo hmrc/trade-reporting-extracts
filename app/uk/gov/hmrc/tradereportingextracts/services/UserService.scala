@@ -39,7 +39,10 @@ class UserService @Inject() (
     userRepository.update(user)
 
   def updateEori(eoriUpdate: EoriUpdate): Future[Boolean] =
-    userRepository.updateEori(eoriUpdate)
+    for {
+      userEoriUpdate            <- userRepository.updateEori(eoriUpdate)
+      authorisedUsersEoriUpdate <- userRepository.updateAuthorisedUserEori(eoriUpdate)
+    } yield userEoriUpdate && authorisedUsersEoriUpdate
 
   def deleteByEori(eori: String): Future[Boolean] =
     userRepository.deleteByEori(eori)
