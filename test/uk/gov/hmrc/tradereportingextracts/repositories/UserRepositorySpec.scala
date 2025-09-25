@@ -126,6 +126,21 @@ class UserRepositorySpec
       }
     }
 
+    "updateAuthorisedUserEori" should {
+      "must be able to update an existing authorised user" in {
+        val eoriNew                   = "EORI-NEW"
+        val insertResult              = userRepository.insert(user).futureValue
+        val fetchedBeforeUpdateRecord = userRepository.findByEori(user.eori).futureValue
+        val updatedRecord             =
+          userRepository.updateAuthorisedUserEori(EoriUpdate(eoriNew, user.authorisedUsers.head.eori)).futureValue
+        val fetchedRecord             = userRepository.findByEori(user.eori).futureValue
+        insertResult mustEqual true
+        fetchedBeforeUpdateRecord.get mustEqual user
+        updatedRecord mustEqual true
+        fetchedRecord.get.authorisedUsers.head.eori mustEqual eoriNew
+      }
+    }
+
     "deleteByUserId" should {
       "must be able to delete an existing user" in {
         val insertResult              = userRepository.insert(user).futureValue

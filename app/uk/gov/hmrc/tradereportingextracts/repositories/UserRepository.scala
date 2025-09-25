@@ -29,6 +29,7 @@ import uk.gov.hmrc.tradereportingextracts.models.{AuthorisedUser, User}
 
 import java.util.concurrent.TimeUnit
 import scala.concurrent.{ExecutionContext, Future}
+import scala.jdk.CollectionConverters.SeqHasAsJava
 
 @Singleton
 class UserRepository @Inject() (appConfig: AppConfig, mongoComponent: MongoComponent)(using ec: ExecutionContext)
@@ -89,6 +90,22 @@ class UserRepository @Inject() (appConfig: AppConfig, mongoComponent: MongoCompo
       .updateOne(
         filter = updateQuery,
         update = updateAction
+      )
+      .toFuture()
+      .map(_.wasAcknowledged())
+  }
+
+  def updateAuthorisedUserEori(eoriUpdate: EoriUpdate): Future[Boolean] = Mdc.preservingMdc {
+    val updateQuery   = Filters.equal("authorisedUsers.eori", eoriUpdate.oldEori)
+    val updateAction  = Updates.set("authorisedUsers.$[elem].eori", eoriUpdate.newEori)
+    val updateOptions = UpdateOptions().arrayFilters(
+      List(Filters.eq("elem.eori", eoriUpdate.oldEori)).asJava
+    )
+    collection
+      .updateMany(
+        filter = updateQuery,
+        update = updateAction,
+        options = updateOptions
       )
       .toFuture()
       .map(_.wasAcknowledged())
