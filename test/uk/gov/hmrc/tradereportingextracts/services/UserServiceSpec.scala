@@ -25,14 +25,12 @@ import org.scalatest.{OptionValues, TryValues}
 import org.scalatestplus.mockito.MockitoSugar
 import org.scalatestplus.mockito.MockitoSugar.mock
 import uk.gov.hmrc.tradereportingextracts.connectors.CustomsDataStoreConnector
-import uk.gov.hmrc.tradereportingextracts.models.{AddressInformation, AuthorisedUser, CompanyInformation, NotificationEmail, User, UserDetails}
 import uk.gov.hmrc.tradereportingextracts.models.AccessType.IMPORTS
-import uk.gov.hmrc.tradereportingextracts.models.{AddressInformation, AuthorisedUser, CompanyInformation, NotificationEmail, User, UserDetails}
 import uk.gov.hmrc.tradereportingextracts.models.etmp.EoriUpdate
 import uk.gov.hmrc.tradereportingextracts.models.thirdParty.ThirdPartyAddedConfirmation
+import uk.gov.hmrc.tradereportingextracts.models.*
 import uk.gov.hmrc.tradereportingextracts.repositories.UserRepository
 
-import java.time.{Instant, LocalDateTime}
 import java.time.{Instant, LocalDate, LocalDateTime}
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -105,16 +103,19 @@ class UserServiceSpec
       "must update EORI when repository returns true" in {
         val eoriUpdate = EoriUpdate("EORI1234", "EORI5678")
         when(mockRepository.updateEori(eoriUpdate)).thenReturn(Future.successful(true))
+        when(mockRepository.updateAuthorisedUserEori(eoriUpdate)).thenReturn(Future.successful(true))
 
         val result = service.updateEori(eoriUpdate)
 
         result.futureValue mustEqual true
         verify(mockRepository).updateEori(eoriUpdate)
+        verify(mockRepository).updateAuthorisedUserEori(eoriUpdate)
       }
 
       "must fail when repository returns false" in {
         val eoriUpdate = EoriUpdate("EORI1234", "EORI5678")
         when(mockRepository.updateEori(eoriUpdate)).thenReturn(Future.successful(false))
+        when(mockRepository.updateAuthorisedUserEori(eoriUpdate)).thenReturn(Future.successful(false))
 
         val result = service.updateEori(eoriUpdate)
 
