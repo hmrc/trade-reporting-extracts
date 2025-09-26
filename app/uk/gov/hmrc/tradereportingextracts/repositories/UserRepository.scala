@@ -30,6 +30,8 @@ import uk.gov.hmrc.tradereportingextracts.models.{AuthorisedUser, User}
 import java.util.concurrent.TimeUnit
 import scala.concurrent.{ExecutionContext, Future}
 import scala.jdk.CollectionConverters.SeqHasAsJava
+import java.time.{Instant, LocalDate, ZoneOffset}
+import java.time.temporal.ChronoUnit
 
 @Singleton
 class UserRepository @Inject() (appConfig: AppConfig, mongoComponent: MongoComponent)(using ec: ExecutionContext)
@@ -174,4 +176,34 @@ class UserRepository @Inject() (appConfig: AppConfig, mongoComponent: MongoCompo
     collection
       .find(Filters.elemMatch("authorisedUsers", Filters.equal("eori", authorisedEori)))
       .toFuture()
+  }
+
+  def getUsersByAuthorisedEoriWithDateFilter(authorisedEori: String): Future[Seq[User]] = Mdc.preservingMdc {
+    val cutoffDate = LocalDate.now(ZoneOffset.UTC).minusDays(3).atStartOfDay(ZoneOffset.UTC).toInstant.toEpochMilli
+    val now = LocalDate.now(ZoneOffset.UTC).atStartOfDay(ZoneOffset.UTC).toInstant.toEpochMilli
+
+    println(cutoffDate)
+
+
+    val filterT2 = Filters.elemMatch("authorisedUsers",
+      Filters.and(
+        //Filters.equal("eori", authorisedEori),
+        Filters.lt("reportDataStart", cutoffDate)
+        //Filters.exists("reportDataStart", false)
+      )
+    )
+
+    val accessFilter = Filters.elemMatch("authorisedUsers",
+      Filters.and(
+        Filters.lte("accessStart", now),
+        Filters.or(
+          Filters.gt("accessEnd", now),
+          Filters.exists("accessEnd", false)
+        )
+      )
+    )
+
+    val combinedFilter = Filters.and(filterT2, accessFilter)
+    collection.find(filterT2).toFuture()
+
   }
