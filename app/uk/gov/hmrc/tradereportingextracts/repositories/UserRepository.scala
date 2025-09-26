@@ -27,13 +27,16 @@ import uk.gov.hmrc.tradereportingextracts.models.etmp.EoriUpdate
 import uk.gov.hmrc.tradereportingextracts.models.thirdParty.ThirdPartyAddedConfirmation
 import uk.gov.hmrc.tradereportingextracts.models.{AuthorisedUser, User}
 
+import java.time.{Clock, Instant, LocalDate, ZoneOffset}
+import java.util.Date
 import java.util.concurrent.TimeUnit
 import scala.concurrent.{ExecutionContext, Future}
 import scala.jdk.CollectionConverters.SeqHasAsJava
 
 @Singleton
-class UserRepository @Inject() (appConfig: AppConfig, mongoComponent: MongoComponent)(using ec: ExecutionContext)
-    extends PlayMongoRepository[User](
+class UserRepository @Inject() (appConfig: AppConfig, mongoComponent: MongoComponent)(using
+  ec: ExecutionContext
+) extends PlayMongoRepository[User](
       collectionName = "tre-user",
       mongoComponent = mongoComponent,
       domainFormat = User.format,
@@ -174,4 +177,30 @@ class UserRepository @Inject() (appConfig: AppConfig, mongoComponent: MongoCompo
     collection
       .find(Filters.elemMatch("authorisedUsers", Filters.equal("eori", authorisedEori)))
       .toFuture()
+  }
+
+  def getUsersByAuthorisedEoriWithDateFilter(
+    authorisedEori: String,
+    clock: Clock = Clock.systemUTC()
+  ): Future[Seq[User]] = Mdc.preservingMdc {
+    val cutoffDate = Date.from(LocalDate.now(clock).minusDays(3).atStartOfDay(ZoneOffset.UTC).toInstant)
+    val now        = Date.from(LocalDate.now(clock).atStartOfDay(ZoneOffset.UTC).toInstant)
+
+    val filterT2AndAccess = Filters.elemMatch(
+      "authorisedUsers",
+      Filters.and(
+        Filters.equal("eori", authorisedEori),
+        Filters.lte("accessStart", now),
+        Filters.or(
+          Filters.gt("accessEnd", now),
+          Filters.exists("accessEnd", false)
+        ),
+        Filters.or(
+          Filters.lt("reportDataStart", cutoffDate),
+          Filters.exists("reportDataStart", false)
+        )
+      )
+    )
+    collection.find(filterT2AndAccess).toFuture()
+
   }

@@ -113,3 +113,6 @@ class UserService @Inject() (
 
   def getUsersByAuthorisedEori(thirdPartyEori: String): Future[Seq[User]] =
     userRepository.getUsersByAuthorisedEori(thirdPartyEori)
+
+  def getUsersByAuthorisedEoriWithDateFilter(thirdPartyEori: String): Future[Seq[User]] =
+    userRepository.getUsersByAuthorisedEoriWithDateFilter(thirdPartyEori)

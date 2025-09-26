@@ -138,6 +138,23 @@ class UserController @Inject() (
       }
     }
 
+  def getUsersByAuthorisedEoriWithDateFilter: Action[JsValue] =
+    auth.authorizedAction(readPermission).async(parse.json) { implicit request =>
+      (request.body \ "thirdPartyEori").validate[String] match {
+        case JsSuccess(thirdPartyEori, _) =>
+          userService
+            .getUsersByAuthorisedEoriWithDateFilter(thirdPartyEori)
+            .map(users =>
+              println(Json.toJson(users))
+              Ok(Json.toJson(users))
+            )
+            .recover { case e: Exception =>
+              InternalServerError(e.getMessage)
+            }
+        case JsError(_)                   => Future.successful(BadRequest("Missing or invalid 'thirdPartyEori' field"))
+      }
+    }
+
   def thirdPartyAccessSelfRemoval: Action[JsValue] =
     auth.authorizedAction(writePermission).async(parse.json) { implicit request =>
       ((request.body \ "traderEori").validate[String], (request.body \ "thirdPartyEori").validate[String]) match {
