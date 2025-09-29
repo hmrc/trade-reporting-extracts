@@ -285,15 +285,15 @@ class ReportRequestServiceSpec
     val service                       = new ReportRequestService(mockReportRequestRepository, mockCustomsDataStoreConnector)
     implicit val ec: ExecutionContext = scala.concurrent.ExecutionContext.Implicits.global
 
-    val eori                    = "GB123456789000"
-    val thirdPartyEori          = "GB999999999999"
-    val userReportRequest       = ReportRequest(
+    val eori              = "GB123456789000"
+    val thirdPartyEori    = "GB999999999999"
+    val userReportRequest = ReportRequest(
       "REQ123",
       "corr1",
       "Monthly Report",
       eori,
       EoriRole.TRADER,
-      Seq("EORI1","EORI2", "GB123456789000"),
+      Seq("EORI1", "EORI2", "GB123456789000"),
       None,
       Seq.empty,
       ReportTypeName.EXPORTS_ITEM_REPORT,
@@ -305,9 +305,9 @@ class ReportRequestServiceSpec
       Instant.now()
     )
 
-    val history1: EoriHistory =
+    val history1: EoriHistory       =
       EoriHistory("EORI1", Some("2024-01-01"), Some("2024-06-30"))
-    val history2: EoriHistory =
+    val history2: EoriHistory       =
       EoriHistory("EORI2", Some("2024-07-01"), Some("2024-12-31"))
     val histories: Seq[EoriHistory] = Seq(history1, history2)
 

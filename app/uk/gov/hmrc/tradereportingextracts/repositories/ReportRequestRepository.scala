@@ -97,24 +97,27 @@ class ReportRequestRepository @Inject() (appConfig: AppConfig, mongoComponent: M
   def findByRequesterEORI(requesterEORI: Seq[String])(using ec: ExecutionContext): Future[Seq[ReportRequest]] =
     Mdc.preservingMdc {
       collection
-        .find(Filters.or(
-          Filters.in("requesterEORI", requesterEORI: _*),
-          Filters.in("reportEORIs", requesterEORI: _*)
-        ))
+        .find(
+          Filters.or(
+            Filters.in("requesterEORI", requesterEORI: _*),
+            Filters.in("reportEORIs", requesterEORI: _*)
+          )
+        )
         .toFuture()
     }
 
-  def getAvailableReports(eori: Seq[String])(using ec: ExecutionContext): Future[Seq[ReportRequest]] = Mdc.preservingMdc {
-    collection
-      .find(
-        Filters.or(
-          Filters.in("requesterEORI", eori: _*),
-          Filters.in("reportEORIs", eori: _*)
+  def getAvailableReports(eori: Seq[String])(using ec: ExecutionContext): Future[Seq[ReportRequest]] =
+    Mdc.preservingMdc {
+      collection
+        .find(
+          Filters.or(
+            Filters.in("requesterEORI", eori: _*),
+            Filters.in("reportEORIs", eori: _*)
+          )
         )
-      )
-      .toFuture()
-      .map(_.filter(_.isReportStatusComplete()))
-  }
+        .toFuture()
+        .map(_.filter(_.isReportStatusComplete()))
+    }
 
   def countAvailableReports(eori: String)(using ec: ExecutionContext): Future[Long] = Mdc.preservingMdc {
     collection
@@ -159,12 +162,14 @@ class ReportRequestRepository @Inject() (appConfig: AppConfig, mongoComponent: M
     collection
       .find(Filters.or(Filters.equal("requesterEORI", eori), Filters.in("reportEORIs", eori)))
       .toFuture()
-      .map(_.map(reportRequest =>
-        ReportDataForStub(
-          correlationId = reportRequest.correlationId,
-          requesterEORI = reportRequest.reportEORIs,
-          reportRequestId = reportRequest.reportRequestId,
-          reportTypeName = reportRequest.reportTypeName
+      .map(
+        _.map(reportRequest =>
+          ReportDataForStub(
+            correlationId = reportRequest.correlationId,
+            requesterEORI = reportRequest.reportEORIs,
+            reportRequestId = reportRequest.reportRequestId,
+            reportTypeName = reportRequest.reportTypeName
+          )
         )
-      ))
+      )
   }

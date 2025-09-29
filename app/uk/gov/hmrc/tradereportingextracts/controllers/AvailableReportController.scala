@@ -69,18 +69,17 @@ class AvailableReportController @Inject() (
         case Right(_)    => NoContent
         case Left(error) => error
       }
-    }
-
-  def getReportStub: Action[AnyContent] = Action.async { implicit request =>
-        implicit val hc: HeaderCarrier = HeaderCarrier()
-        request.body.asJson.flatMap(json => (json \ eori).asOpt[String]) match {
-          case Some(eoriValue) =>
-            availableReportService.getReportStub(eoriValue).map { stubData =>
-              Ok(Json.toJson(stubData))
-            }
-          case _ =>
-            Future.successful(BadRequest("Missing or invalid EORI in request body"))
-        }
-      }
   }
 
+  def getReportStub: Action[AnyContent] = Action.async { implicit request =>
+    implicit val hc: HeaderCarrier = HeaderCarrier()
+    request.body.asJson.flatMap(json => (json \ eori).asOpt[String]) match {
+      case Some(eoriValue) =>
+        availableReportService.getReportStub(eoriValue).map { stubData =>
+          Ok(Json.toJson(stubData))
+        }
+      case _               =>
+        Future.successful(BadRequest("Missing or invalid EORI in request body"))
+    }
+  }
+}

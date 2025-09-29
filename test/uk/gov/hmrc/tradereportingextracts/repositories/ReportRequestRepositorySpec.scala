@@ -145,8 +145,8 @@ class ReportRequestRepositorySpec
 
   "getAvailableReports" should {
     "return only ReportRequests where all parts are present" in {
-      val reqId1 = "REQ123"
-      val reqId2 = "REQ124"
+      val reqId1         = "REQ123"
+      val reqId2         = "REQ124"
       val reportRequests = Seq(
         // Complete set: 1Of3, 2Of3, 3Of3
         ReportRequest(

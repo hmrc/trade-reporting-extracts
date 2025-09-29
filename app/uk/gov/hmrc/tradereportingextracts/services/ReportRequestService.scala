@@ -55,21 +55,22 @@ class ReportRequestService @Inject() (
 
   def getReportRequestsForUser(eori: String)(using ec: ExecutionContext): Future[GetReportRequestsResponse] =
     for
-      eoriHistory <- customsDataStoreConnector.getEoriHistory(eori)
-      eoriHistories = eoriHistory.eoriHistory.map(_.eori) :+ eori
-      reportRequests <- reportRequestRepository.findByRequesterEORI(eoriHistories)
-      (userRequests, thirdPartyRequests) = reportRequests.partition(r => r.requesterEORI == eori && r.reportEORIs.contains(eori))
-      userReports = userRequests.map(toUserReport)
-      thirdPartyReports <- Future.sequence(
-        thirdPartyRequests.map { req =>
-          customsDataStoreConnector
-            .getCompanyInformation(req.requesterEORI)
-            .map(companyInfo => toThirdPartyReport(req, companyInfo.name))
-            .recover { case _ =>
-              toThirdPartyReport(req, s"Unknown company (${req.requesterEORI})")
-            }
-        }
-      )
+      eoriHistory                       <- customsDataStoreConnector.getEoriHistory(eori)
+      eoriHistories                      = eoriHistory.eoriHistory.map(_.eori) :+ eori
+      reportRequests                    <- reportRequestRepository.findByRequesterEORI(eoriHistories)
+      (userRequests, thirdPartyRequests) =
+        reportRequests.partition(r => r.requesterEORI == eori && r.reportEORIs.contains(eori))
+      userReports                        = userRequests.map(toUserReport)
+      thirdPartyReports                 <- Future.sequence(
+                                             thirdPartyRequests.map { req =>
+                                               customsDataStoreConnector
+                                                 .getCompanyInformation(req.requesterEORI)
+                                                 .map(companyInfo => toThirdPartyReport(req, companyInfo.name))
+                                                 .recover { case _ =>
+                                                   toThirdPartyReport(req, s"Unknown company (${req.requesterEORI})")
+                                                 }
+                                             }
+                                           )
     yield GetReportRequestsResponse(
       userReports = if (userReports.nonEmpty) Some(userReports) else None,
       thirdPartyReports = if (thirdPartyReports.nonEmpty) Some(thirdPartyReports) else None

@@ -20,11 +20,11 @@ import play.api.libs.json.{Json, OFormat}
 import uk.gov.hmrc.tradereportingextracts.models.ReportTypeName
 
 case class ReportDataForStub(
-                              correlationId: String,
-                              requesterEORI: Seq[String],
-                              reportRequestId : String,
-                              reportTypeName : ReportTypeName
-                            )
+  correlationId: String,
+  requesterEORI: Seq[String],
+  reportRequestId: String,
+  reportTypeName: ReportTypeName
+)
 
 object ReportDataForStub {
   implicit val format: play.api.libs.json.OFormat[ReportDataForStub] =
