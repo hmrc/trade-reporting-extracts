@@ -42,3 +42,5 @@ POST        /trade-reporting-extracts/company-information                  uk.go
 DELETE      /trade-reporting-extracts/third-party-access-self-removal      uk.gov.hmrc.tradereportingextracts.controllers.UserController.thirdPartyAccessSelfRemoval
 
 DELETE      /trade-reporting-extracts/remove-third-party                    uk.gov.hmrc.tradereportingextracts.controllers.ThirdPartyRequestController.deleteThirdPartyDetails()
+
+GET         /trade-reporting-extracts/get-report-for-stub                   uk.gov.hmrc.tradereportingextracts.controllers.AvailableReportController.getReportStub()

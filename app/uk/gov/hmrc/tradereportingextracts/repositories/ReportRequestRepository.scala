@@ -24,6 +24,7 @@ import uk.gov.hmrc.mongo.play.json.PlayMongoRepository
 import uk.gov.hmrc.play.http.logging.Mdc
 import uk.gov.hmrc.tradereportingextracts.config.AppConfig
 import uk.gov.hmrc.tradereportingextracts.models.ReportRequest
+import uk.gov.hmrc.tradereportingextracts.models.availableReport.ReportDataForStub
 
 import java.time.{LocalDate, ZoneOffset}
 import java.util.concurrent.TimeUnit
@@ -93,16 +94,24 @@ class ReportRequestRepository @Inject() (appConfig: AppConfig, mongoComponent: M
       .map(_.wasAcknowledged())
   }
 
-  def findByRequesterEORI(requesterEORI: String)(using ec: ExecutionContext): Future[Seq[ReportRequest]] =
+  def findByRequesterEORI(requesterEORI: Seq[String])(using ec: ExecutionContext): Future[Seq[ReportRequest]] =
     Mdc.preservingMdc {
       collection
-        .find(Filters.or(Filters.equal("requesterEORI", requesterEORI), Filters.in("reportEORIs", requesterEORI)))
+        .find(Filters.or(
+          Filters.in("requesterEORI", requesterEORI: _*),
+          Filters.in("reportEORIs", requesterEORI: _*)
+        ))
         .toFuture()
     }
 
-  def getAvailableReports(eori: String)(using ec: ExecutionContext): Future[Seq[ReportRequest]] = Mdc.preservingMdc {
+  def getAvailableReports(eori: Seq[String])(using ec: ExecutionContext): Future[Seq[ReportRequest]] = Mdc.preservingMdc {
     collection
-      .find(Filters.equal("requesterEORI", eori))
+      .find(
+        Filters.or(
+          Filters.in("requesterEORI", eori: _*),
+          Filters.in("reportEORIs", eori: _*)
+        )
+      )
       .toFuture()
       .map(_.filter(_.isReportStatusComplete()))
   }
@@ -145,3 +154,17 @@ class ReportRequestRepository @Inject() (appConfig: AppConfig, mongoComponent: M
         .toFuture()
         .map(_.toInt)
     }
+
+  def getReportStub(eori: String)(using ec: ExecutionContext): Future[Seq[ReportDataForStub]] = Mdc.preservingMdc {
+    collection
+      .find(Filters.or(Filters.equal("requesterEORI", eori), Filters.in("reportEORIs", eori)))
+      .toFuture()
+      .map(_.map(reportRequest =>
+        ReportDataForStub(
+          correlationId = reportRequest.correlationId,
+          requesterEORI = reportRequest.reportEORIs,
+          reportRequestId = reportRequest.reportRequestId,
+          reportTypeName = reportRequest.reportTypeName
+        )
+      ))
+  }

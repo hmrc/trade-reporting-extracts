@@ -16,6 +16,7 @@
 
 package uk.gov.hmrc.tradereportingextracts.services
 
+import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito.{reset, verify, when}
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.matchers.must.Matchers.{mustBe, mustEqual}
@@ -292,7 +293,7 @@ class ReportRequestServiceSpec
       "Monthly Report",
       eori,
       EoriRole.TRADER,
-      Seq(eori),
+      Seq("EORI1","EORI2", "GB123456789000"),
       None,
       Seq.empty,
       ReportTypeName.EXPORTS_ITEM_REPORT,
@@ -303,13 +304,22 @@ class ReportRequestServiceSpec
       None,
       Instant.now()
     )
+
+    val history1: EoriHistory =
+      EoriHistory("EORI1", Some("2024-01-01"), Some("2024-06-30"))
+    val history2: EoriHistory =
+      EoriHistory("EORI2", Some("2024-07-01"), Some("2024-12-31"))
+    val histories: Seq[EoriHistory] = Seq(history1, history2)
+
     val thirdPartyReportRequest = userReportRequest.copy(requesterEORI = thirdPartyEori)
 
     "return user reports and third party reports correctly" in {
-      when(mockReportRequestRepository.findByRequesterEORI(eori))
+      when(mockReportRequestRepository.findByRequesterEORI(any())(using any()))
         .thenReturn(Future.successful(Seq(userReportRequest, thirdPartyReportRequest)))
-      when(mockCustomsDataStoreConnector.getCompanyInformation(thirdPartyEori))
+      when(mockCustomsDataStoreConnector.getCompanyInformation(any()))
         .thenReturn(Future.successful(CompanyInformation("Company LTD")))
+      when(mockCustomsDataStoreConnector.getEoriHistory(any()))
+        .thenReturn(Future.successful(EoriHistoryResponse(histories)))
 
       val result = service.getReportRequestsForUser(eori).futureValue
 
@@ -343,8 +353,10 @@ class ReportRequestServiceSpec
     }
 
     "return None for both when no reports" in {
-      when(mockReportRequestRepository.findByRequesterEORI(eori))
+      when(mockReportRequestRepository.findByRequesterEORI(any())(using any()))
         .thenReturn(Future.successful(Seq.empty))
+      when(mockCustomsDataStoreConnector.getEoriHistory(any()))
+        .thenReturn(Future.successful(EoriHistoryResponse(histories)))
 
       val result = service.getReportRequestsForUser(eori).futureValue
 

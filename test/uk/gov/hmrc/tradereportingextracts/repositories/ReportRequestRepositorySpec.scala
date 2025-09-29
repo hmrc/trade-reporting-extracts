@@ -145,16 +145,17 @@ class ReportRequestRepositorySpec
 
   "getAvailableReports" should {
     "return only ReportRequests where all parts are present" in {
-      val reqId          = "REQ123"
+      val reqId1 = "REQ123"
+      val reqId2 = "REQ124"
       val reportRequests = Seq(
         // Complete set: 1Of3, 2Of3, 3Of3
         ReportRequest(
-          reportRequestId = reqId,
+          reportRequestId = reqId1,
           correlationId = "C1",
           reportName = "Report1",
           requesterEORI = "EORI-1",
           eoriRole = EoriRole.TRADER,
-          reportEORIs = Array("EORI-1").toIndexedSeq,
+          reportEORIs = Array("EORI-1,EORI-2").toIndexedSeq,
           userEmail = Some(SensitiveString("test@example.com")),
           recipientEmails = Array("a@b.com").toIndexedSeq,
           reportTypeName = ReportTypeName.IMPORTS_ITEM_REPORT,
@@ -173,12 +174,12 @@ class ReportRequestRepositorySpec
         ),
         // Incomplete set: only 1Of2
         ReportRequest(
-          reportRequestId = "REQ124",
+          reportRequestId = reqId2,
           correlationId = "C2",
           reportName = "Report2",
           requesterEORI = "EORI-1",
           eoriRole = EoriRole.TRADER,
-          reportEORIs = Array("EORI-1").toIndexedSeq,
+          reportEORIs = Array("EORI-1,EORI-2").toIndexedSeq,
           userEmail = Some(SensitiveString("test@example.com")),
           recipientEmails = Array("a@b.com").toIndexedSeq,
           reportTypeName = ReportTypeName.IMPORTS_ITEM_REPORT,
@@ -196,9 +197,8 @@ class ReportRequestRepositorySpec
       )
 
       reportRequests.foreach(r => reportRequestRepository.insert(r).futureValue)
-
-      val result = reportRequestRepository.getAvailableReports("EORI-1").futureValue
-      result.map(_.reportRequestId) must contain only reqId
+      val result = reportRequestRepository.getAvailableReports(Array("EORI-1,EORI-2").toIndexedSeq).futureValue
+      result.map(_.reportRequestId) must contain(reqId1)
     }
 
     "not return ReportRequest if not all parts are present" in {
@@ -209,7 +209,7 @@ class ReportRequestRepositorySpec
         reportName = "Report3",
         requesterEORI = "EORI-2",
         eoriRole = EoriRole.TRADER,
-        reportEORIs = Array("EORI-2").toIndexedSeq,
+        reportEORIs = Array("EORI-1,EORI-2").toIndexedSeq,
         userEmail = Some(SensitiveString("test@example.com")),
         recipientEmails = Array("a@b.com").toIndexedSeq,
         reportTypeName = ReportTypeName.IMPORTS_ITEM_REPORT,
@@ -228,7 +228,7 @@ class ReportRequestRepositorySpec
 
       reportRequestRepository.insert(incompleteRequest).futureValue
 
-      val result = reportRequestRepository.getAvailableReports("EORI-2").futureValue
+      val result = reportRequestRepository.getAvailableReports(Array("EORI-1,EORI-2").toIndexedSeq).futureValue
       result mustBe empty
     }
   }
@@ -410,7 +410,7 @@ class ReportRequestRepositorySpec
       val result = reportRequestRepository.deleteReportsForThirdPartyRemoval(traderEori, thirdPartyEori).futureValue
       result mustEqual true
 
-      val remaining = reportRequestRepository.getAvailableReports(thirdPartyEori).futureValue
+      val remaining = reportRequestRepository.getAvailableReports(Seq(thirdPartyEori)).futureValue
       remaining.map(_.reportRequestId) must contain only "userRequest"
 
     }
@@ -435,7 +435,7 @@ class ReportRequestRepositorySpec
 
       val result    = reportRequestRepository.deleteReportsForThirdPartyRemoval(traderEori, thirdPartyEori).futureValue
       result mustEqual true
-      val remaining = reportRequestRepository.getAvailableReports(thirdPartyEori).futureValue
+      val remaining = reportRequestRepository.getAvailableReports(Seq(thirdPartyEori)).futureValue
       remaining.map(_.reportRequestId) must contain only "thirdPartyRequestDifferentTrader"
 
     }

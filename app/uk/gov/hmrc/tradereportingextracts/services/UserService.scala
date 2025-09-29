@@ -53,7 +53,7 @@ class UserService @Inject() (
   def getOrCreateUser(eori: String): Future[UserDetails] =
     for {
       user               <- userRepository.getOrCreateUser(eori)
-      companyInformation <- customsDataStoreConnector.getCompanyInformation(eori)
+    companyInformation <- customsDataStoreConnector.getCompanyInformation(eori)
     } yield UserDetails(
       eori = user.eori,
       additionalEmails = user.additionalEmails,

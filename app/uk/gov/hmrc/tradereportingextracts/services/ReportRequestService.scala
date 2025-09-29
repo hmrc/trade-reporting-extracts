@@ -19,6 +19,7 @@ package uk.gov.hmrc.tradereportingextracts.services
 import play.api.mvc.Headers
 import uk.gov.hmrc.tradereportingextracts.connectors.CustomsDataStoreConnector
 import uk.gov.hmrc.tradereportingextracts.models.*
+import uk.gov.hmrc.tradereportingextracts.models.availableReport.ReportDataForStub
 import uk.gov.hmrc.tradereportingextracts.models.eis.EisReportStatusHeaders.XCorrelationID
 import uk.gov.hmrc.tradereportingextracts.models.eis.EisReportStatusRequest
 import uk.gov.hmrc.tradereportingextracts.models.eis.EisReportStatusRequest.StatusType
@@ -49,34 +50,30 @@ class ReportRequestService @Inject() (
   def delete(reportRequest: ReportRequest)(implicit ec: ExecutionContext): Future[Boolean] =
     reportRequestRepository.delete(reportRequest)
 
-  def getByRequesterEORI(requesterEORI: String)(using ec: ExecutionContext): Future[Seq[ReportRequest]] =
+  def getByRequesterEORI(requesterEORI: Seq[String])(using ec: ExecutionContext): Future[Seq[ReportRequest]] =
     reportRequestRepository.findByRequesterEORI(requesterEORI)
 
   def getReportRequestsForUser(eori: String)(using ec: ExecutionContext): Future[GetReportRequestsResponse] =
-    reportRequestRepository.findByRequesterEORI(eori).flatMap { reportRequests =>
-      val (userRequests, thirdPartyRequests) =
-        reportRequests.partition(r => r.requesterEORI == eori && r.reportEORIs.contains(eori))
-
-      val userReports = userRequests.map(toUserReport)
-
-      val thirdPartyReportsFutures: Seq[Future[ThirdPartyReport]] = thirdPartyRequests.map { req =>
-        customsDataStoreConnector
-          .getCompanyInformation(req.requesterEORI)
-          .map { companyInfo =>
-            toThirdPartyReport(req, companyInfo.name)
-          }
-          .recover { case _ =>
-            toThirdPartyReport(req, s"Unknown company (${req.requesterEORI})")
-          }
-      }
-
-      Future.sequence(thirdPartyReportsFutures).map { thirdPartyReports =>
-        GetReportRequestsResponse(
-          userReports = if (userReports.nonEmpty) Some(userReports) else None,
-          thirdPartyReports = if (thirdPartyReports.nonEmpty) Some(thirdPartyReports) else None
-        )
-      }
-    }
+    for
+      eoriHistory <- customsDataStoreConnector.getEoriHistory(eori)
+      eoriHistories = eoriHistory.eoriHistory.map(_.eori) :+ eori
+      reportRequests <- reportRequestRepository.findByRequesterEORI(eoriHistories)
+      (userRequests, thirdPartyRequests) = reportRequests.partition(r => r.requesterEORI == eori && r.reportEORIs.contains(eori))
+      userReports = userRequests.map(toUserReport)
+      thirdPartyReports <- Future.sequence(
+        thirdPartyRequests.map { req =>
+          customsDataStoreConnector
+            .getCompanyInformation(req.requesterEORI)
+            .map(companyInfo => toThirdPartyReport(req, companyInfo.name))
+            .recover { case _ =>
+              toThirdPartyReport(req, s"Unknown company (${req.requesterEORI})")
+            }
+        }
+      )
+    yield GetReportRequestsResponse(
+      userReports = if (userReports.nonEmpty) Some(userReports) else None,
+      thirdPartyReports = if (thirdPartyReports.nonEmpty) Some(thirdPartyReports) else None
+    )
 
   private def toUserReport(req: ReportRequest): UserReport =
     UserReport(
@@ -101,7 +98,7 @@ class ReportRequestService @Inject() (
       reportEndDate = req.reportEnd
     )
 
-  def getAvailableReports(eori: String)(using ec: ExecutionContext): Future[Seq[ReportRequest]] =
+  def getAvailableReports(eori: Seq[String])(using ec: ExecutionContext): Future[Seq[ReportRequest]] =
     reportRequestRepository.getAvailableReports(eori)
 
   def countAvailableReports(eori: String)(using ec: ExecutionContext): Future[Long] =
@@ -136,3 +133,6 @@ class ReportRequestService @Inject() (
     ec: ExecutionContext
   ): Future[Boolean] =
     reportRequestRepository.countReportSubmissionsForEoriOnDate(eori, date).map(_ >= limit)
+
+  def getByRequesterForStub(requesterEORI: String)(using ec: ExecutionContext): Future[Seq[ReportDataForStub]] =
+    reportRequestRepository.getReportStub(requesterEORI)
