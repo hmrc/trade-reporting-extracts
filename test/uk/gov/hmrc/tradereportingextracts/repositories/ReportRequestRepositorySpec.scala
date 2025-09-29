@@ -110,7 +110,8 @@ class ReportRequestRepositorySpec
   "findByRequesterEoriHistory" should {
     "must be able to retrieve a report successfully using a requester EORI history" in {
       val insertResult  = reportRequestRepository.insert(reportRequest).futureValue
-      val fetchedRecord = reportRequestRepository.findByRequesterEoriHistory(Seq("EORI-UNKNOWN", reportRequest.requesterEORI)).futureValue
+      val fetchedRecord =
+        reportRequestRepository.findByRequesterEoriHistory(Seq("EORI-UNKNOWN", reportRequest.requesterEORI)).futureValue
       insertResult mustEqual true
       fetchedRecord contains reportRequest
     }
