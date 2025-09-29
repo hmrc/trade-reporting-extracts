@@ -55,18 +55,12 @@ class ReportRequestService @Inject() (
   def getReportRequestsForUser(eori: String)(using ec: ExecutionContext): Future[GetReportRequestsResponse] =
     for {
       eoriHistory                       <- customsDataStoreConnector.getEoriHistory(eori).map(_.eoriHistory.map(_.eori))
-      reportRequests                    <- reportRequestRepository.findByRequesterEORI(eori)
-      (userRequests, thirdPartyRequests) = reportRequests.partition(rr => eoriHistory.contains(rr.requesterEORI))
+      eoriHistoryWithCurrentEori         = if (eoriHistory.contains(eori)) eoriHistory else eoriHistory :+ eori
+      reportRequests                    <- reportRequestRepository.findByRequesterEoriHistory(eoriHistoryWithCurrentEori)
+      (userRequests, thirdPartyRequests) =
+        reportRequests.partition(rr => rr.reportEORIs.exists(eoriHistoryWithCurrentEori.contains))
       userReports                        = userRequests.map(toUserReport)
-      thirdPartyReports                 <-
-        Future.sequence(
-          thirdPartyRequests.map { req =>
-            customsDataStoreConnector
-              .getCompanyInformation(req.requesterEORI)
-              .map(companyInfo => toThirdPartyReport(req, companyInfo.name))
-              .recover { case _ => toThirdPartyReport(req, s"Unknown company (${req.requesterEORI})") }
-          }
-        )
+      thirdPartyReports                  = thirdPartyRequests.map(toThirdPartyReport(_, "Unknown company"))
     } yield GetReportRequestsResponse(
       userReports = if (userReports.nonEmpty) Some(userReports) else None,
       thirdPartyReports = if (thirdPartyReports.nonEmpty) Some(thirdPartyReports) else None
