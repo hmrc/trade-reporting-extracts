@@ -21,18 +21,23 @@ import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.matchers.must.Matchers.{mustBe, mustEqual}
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
-import org.scalatestplus.mockito.MockitoSugar
-import org.scalatestplus.mockito.MockitoSugar.mock
+import play.api.mvc.Headers
 import uk.gov.hmrc.crypto.Sensitive.SensitiveString
-import uk.gov.hmrc.tradereportingextracts.connectors.CustomsDataStoreConnector
+import uk.gov.hmrc.http.HeaderCarrier
+import uk.gov.hmrc.tradereportingextracts.connectors.{CustomsDataStoreConnector, EmailConnector}
 import uk.gov.hmrc.tradereportingextracts.models.*
 import uk.gov.hmrc.tradereportingextracts.models.eis.EisReportStatusRequest
 import uk.gov.hmrc.tradereportingextracts.models.eis.EisReportStatusRequest.StatusType
 import uk.gov.hmrc.tradereportingextracts.repositories.ReportRequestRepository
 import uk.gov.hmrc.tradereportingextracts.utils.WireMockHelper
+import org.mockito.Mockito.*
+import org.mockito.ArgumentMatchers.{eq as eqTo, *}
+import org.scalatestplus.mockito.MockitoSugar
+
+import scala.concurrent.{ExecutionContext, Future}
+import uk.gov.hmrc.tradereportingextracts.models.StatusCode.FAILED
 
 import java.time.{Instant, LocalDate}
-import scala.concurrent.{ExecutionContext, Future}
 
 class ReportRequestServiceSpec
     extends AnyWordSpec
@@ -41,13 +46,15 @@ class ReportRequestServiceSpec
     with ScalaFutures
     with WireMockHelper {
 
-  val service                                              = new ReportRequestService(null, null) // nulls are fine here since we’re only testing private logic
+  val service                                              = new ReportRequestService(null, null, null) // nulls are fine here since we’re only testing private logic
   implicit val ec: ExecutionContext                        = scala.concurrent.ExecutionContext.Implicits.global
   val mockReportRequestRepository: ReportRequestRepository = mock[ReportRequestRepository]
+  val mockEmailConnector: EmailConnector                   = mock[EmailConnector]
 
   override def beforeEach(): Unit = {
     super.beforeEach()
     reset(mockReportRequestRepository)
+    reset(mockEmailConnector)
   }
   "determineReportStatus" should {
 
@@ -233,10 +240,89 @@ class ReportRequestServiceSpec
     }
   }
 
+  "processReportStatus" should {
+    val service = new ReportRequestService(mockReportRequestRepository, null, mockEmailConnector)
+    val headers = new Headers(Seq("X-Correlation-ID" -> "correlationId"))
+
+    implicit val hc: HeaderCarrier = HeaderCarrier()
+
+    val reportRequest = ReportRequest(
+      "RE123456",
+      "correlationId",
+      "reportName",
+      "trader",
+      EoriRole.TRADER,
+      Seq("trader"),
+      Some(SensitiveString("user@email.com")),
+      Seq("additionalUser@email.com"),
+      ReportTypeName.IMPORTS_ITEM_REPORT,
+      Instant.now(),
+      Instant.now(),
+      Instant.now(),
+      Seq.empty,
+      None,
+      Instant.now()
+    )
+
+    val statusReq = EisReportStatusRequest(
+      applicationComponent = EisReportStatusRequest.ApplicationComponent.TRE,
+      statusCode = FAILED.toString,
+      statusMessage = "FAIL",
+      statusTimestamp = LocalDate.now().toString,
+      statusType = EisReportStatusRequest.StatusType.ERROR
+    )
+
+    "send failure emails and update when new ERROR and no previous ERROR" in {
+
+      when(mockReportRequestRepository.findByCorrelationId(any())(any()))
+        .thenReturn(Future.successful(Some(reportRequest)))
+      when(mockReportRequestRepository.update(any())(any())).thenReturn(Future.successful(true))
+      when(mockEmailConnector.sendEmailRequest(any(), any(), any())(any())).thenReturn(Future.successful(()))
+
+      service.processReportStatus(headers, statusReq).futureValue
+
+      verify(mockReportRequestRepository).update(any())(any())
+      verify(mockEmailConnector).sendEmailRequest(
+        eqTo("tre_report_failed"),
+        eqTo("user@email.com"),
+        eqTo(Map("reportRequestId" -> "XXXXX456"))
+      )(any())
+      verify(mockEmailConnector).sendEmailRequest(
+        eqTo("tre_report_failed_non_verified"),
+        eqTo("additionalUser@email.com"),
+        eqTo(Map("reportRequestId" -> "XXXXX456"))
+      )(any())
+    }
+
+    "only update when previous ERROR exists" in {
+
+      val reportRequestWithExistingError =
+        reportRequest.copy(notifications = Seq(EisReportStatusRequest(null, "CODE", "msg", "ts", StatusType.ERROR)))
+
+      when(mockReportRequestRepository.findByCorrelationId(any())(any()))
+        .thenReturn(Future.successful(Some(reportRequestWithExistingError)))
+      when(mockReportRequestRepository.update(any())(any())).thenReturn(Future.successful(true))
+      service.processReportStatus(headers, statusReq).futureValue
+
+      verify(mockReportRequestRepository).update(any())(any())
+      verifyNoInteractions(mockEmailConnector)
+    }
+
+    "do nothing if no reportRequest found" in {
+
+      when(mockReportRequestRepository.findByCorrelationId(any())(any())).thenReturn(Future.successful(None))
+
+      service.processReportStatus(headers, statusReq)
+
+      verify(mockReportRequestRepository, never).update(any())(any())
+      verifyNoInteractions(mockEmailConnector)
+    }
+  }
+
   "countReportSubmissionsForEoriOnDate" should {
     val mockCustomsDataStoreConnector = mock[CustomsDataStoreConnector]
 
-    val service = new ReportRequestService(mockReportRequestRepository, mockCustomsDataStoreConnector)
+    val service = new ReportRequestService(mockReportRequestRepository, mockCustomsDataStoreConnector, null)
 
     val eori  = "EORI123456"
     val limit = 5
@@ -281,7 +367,7 @@ class ReportRequestServiceSpec
   "getReportRequestsForUser" should {
     val mockCustomsDataStoreConnector = mock[CustomsDataStoreConnector]
     val mockReportRequestRepository   = mock[ReportRequestRepository]
-    val service                       = new ReportRequestService(mockReportRequestRepository, mockCustomsDataStoreConnector)
+    val service                       = new ReportRequestService(mockReportRequestRepository, mockCustomsDataStoreConnector, null)
     implicit val ec: ExecutionContext = scala.concurrent.ExecutionContext.Implicits.global
 
     val eori                    = "GB123456789000"
