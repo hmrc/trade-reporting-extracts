@@ -53,7 +53,7 @@ class AvailableReportService @Inject() (
       reportRequests          <- reportRequestService.getAvailableReports(eoriHistory.eoriHistory.map(_.eori) :+ eoriValue)
       sdesResponse            <- if (reportRequests.isEmpty) Future.successful(Seq.empty[FileAvailableResponse])
                                  else sdesConnector.fetchAvailableReportFileUrl(eoriValue)
-      avaialbleReportResponse <- toAvailableReportResponses(reportRequests, sdesResponse, eoriHistories)
+      availableReportResponse <- toAvailableReportResponses(reportRequests, sdesResponse, eoriHistories)
     } yield
       if (reportRequests.isEmpty) {
         logger.warn(s"No available reports found for EORI: $eoriValue")
@@ -62,7 +62,7 @@ class AvailableReportService @Inject() (
           availableThirdPartyReports = Some(Seq.empty[AvailableThirdPartyReportResponse])
         )
       } else {
-        avaialbleReportResponse
+        availableReportResponse
       }
 
   private def toAvailableReportActions(
@@ -86,57 +86,38 @@ class AvailableReportService @Inject() (
     sdesResponse: Seq[FileAvailableResponse],
     eoriHistories: Seq[String]
   ): Future[AvailableReportResponse] = {
-    val (userRequests, thirdPartyRequests)                     =
+    val (userRequests, thirdPartyRequests)                                 =
       reportRequests.partition(r => r.reportEORIs.exists(eoriHistories.contains))
-    val availableUserReports: Seq[AvailableUserReportResponse] = getAvailableUserReports(userRequests, sdesResponse)
-    getAvailableThirdPartyReports(thirdPartyRequests, sdesResponse).map { availableThirdPartyReports =>
+    val availableUserReports: Seq[AvailableUserReportResponse]             = getAvailableUserReports(userRequests, sdesResponse)
+    val availableThirdPartyReports: Seq[AvailableThirdPartyReportResponse] =
+      getAvailableReportsThirdParty(thirdPartyRequests, sdesResponse)
+    Future.successful(
       AvailableReportResponse(
         Some(availableUserReports),
         Some(availableThirdPartyReports)
       )
-    }
+    )
   }
-  private def getAvailableThirdPartyReports(
+
+  private def getAvailableReportsThirdParty(
     thirdPartyRequests: Seq[ReportRequest],
     sdesResponse: Seq[FileAvailableResponse]
-  ): Future[Seq[AvailableThirdPartyReportResponse]] =
-    Future.sequence {
-      thirdPartyRequests.map { req =>
-        customsDataStoreConnector
-          .getCompanyInformation(req.requesterEORI)
-          .map { companyInfo =>
-            AvailableThirdPartyReportResponse(
-              referenceNumber = req.reportRequestId,
-              reportName = req.reportName,
-              reportType = req.reportTypeName,
-              expiryDate = req.updateDate.plus(appConfig.reportRequestTTLDays, DAYS),
-              companyName = if (companyInfo.consent == "1") companyInfo.name else s"Unknown company",
-              action = toAvailableReportActions(
-                sdesResponse.filter(_.metadata.exists {
-                  case FileAvailableMetadataItem.MDTPReportRequestIDMetadataItem(value) =>
-                    value == req.reportRequestId
-                  case _                                                                => false
-                })
-              )
-            )
-          }
-          .recover { case _ =>
-            AvailableThirdPartyReportResponse(
-              referenceNumber = req.reportRequestId,
-              reportName = req.reportName,
-              reportType = req.reportTypeName,
-              expiryDate = req.updateDate.plus(appConfig.reportRequestTTLDays, DAYS),
-              companyName = "test",
-              action = toAvailableReportActions(
-                sdesResponse.filter(_.metadata.exists {
-                  case FileAvailableMetadataItem.MDTPReportRequestIDMetadataItem(value) =>
-                    value == req.reportRequestId
-                  case _                                                                => false
-                })
-              )
-            )
-          }
-      }
+  ) =
+    thirdPartyRequests.map { req =>
+      AvailableThirdPartyReportResponse(
+        referenceNumber = req.reportRequestId,
+        reportName = req.reportName,
+        reportType = req.reportTypeName,
+        expiryDate = req.updateDate.plus(appConfig.reportRequestTTLDays, DAYS),
+        companyName = "Test",
+        action = toAvailableReportActions(
+          sdesResponse.filter(_.metadata.exists {
+            case FileAvailableMetadataItem.MDTPReportRequestIDMetadataItem(value) =>
+              value == req.reportRequestId
+            case _                                                                => false
+          })
+        )
+      )
     }
 
   private def getAvailableUserReports(userRequests: Seq[ReportRequest], sdesResponse: Seq[FileAvailableResponse]) =
