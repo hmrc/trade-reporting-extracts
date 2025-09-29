@@ -21,7 +21,7 @@ import play.api.mvc.Result
 import play.api.mvc.Results.{BadRequest, NotFound}
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.tradereportingextracts.config.AppConfig
-import uk.gov.hmrc.tradereportingextracts.connectors.SDESConnector
+import uk.gov.hmrc.tradereportingextracts.connectors.{CustomsDataStoreConnector, SDESConnector}
 import uk.gov.hmrc.tradereportingextracts.models.*
 import uk.gov.hmrc.tradereportingextracts.models.audit.{AuditDownloadRequest, ReportRequestDownloadedEvent}
 import uk.gov.hmrc.tradereportingextracts.models.sdes.{FileAvailableMetadataItem, FileAvailableResponse}
@@ -34,6 +34,7 @@ import scala.concurrent.{ExecutionContext, Future}
 class AvailableReportService @Inject() (
   reportRequestService: ReportRequestService,
   sdesConnector: SDESConnector,
+  customsDataStoreConnector: CustomsDataStoreConnector,
   auditService: AuditService,
   appConfig: AppConfig
 )(implicit
@@ -45,9 +46,19 @@ class AvailableReportService @Inject() (
     hc: HeaderCarrier
   ): Future[AvailableReportResponse] =
     for {
-      reportRequests <- reportRequestService.getAvailableReports(eoriValue)
+      eoriHistory    <- customsDataStoreConnector.getEoriHistory(eoriValue).map(_.eoriHistory.map(_.eori))
+      reportRequests <- reportRequestService.getAvailableReportsByHistory(eoriHistory)
+      eoris           = reportRequests.map(_.requesterEORI)
       sdesResponse   <- if (reportRequests.isEmpty) Future.successful(Seq.empty[FileAvailableResponse])
-                        else sdesConnector.fetchAvailableReportFileUrl(eoriValue)
+                        else {
+                          eoris.foldLeft(Future.successful(Seq.empty[FileAvailableResponse])) { case (acc, eori) =>
+                            acc.flatMap { sdesResponse =>
+                              sdesConnector.fetchAvailableReportFileUrl(eori).map { sdesResponse =>
+                                sdesResponse ++ sdesResponse
+                              }
+                            }
+                          }
+                        }
     } yield
       if (reportRequests.isEmpty) {
         logger.warn(s"No available reports found for EORI: $eoriValue")
