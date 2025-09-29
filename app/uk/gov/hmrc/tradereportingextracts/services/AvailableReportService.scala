@@ -46,28 +46,29 @@ class AvailableReportService @Inject() (
     hc: HeaderCarrier
   ): Future[AvailableReportResponse] =
     for {
-      eoriHistory    <- customsDataStoreConnector.getEoriHistory(eoriValue).map(_.eoriHistory.map(_.eori))
-      reportRequests <- reportRequestService.getAvailableReportsByHistory(eoriHistory)
-      eoris           = reportRequests.map(_.requesterEORI)
-      sdesResponse   <- if (reportRequests.isEmpty) Future.successful(Seq.empty[FileAvailableResponse])
-                        else {
-                          eoris.foldLeft(Future.successful(Seq.empty[FileAvailableResponse])) { case (acc, eori) =>
-                            acc.flatMap { sdesResponse =>
-                              sdesConnector.fetchAvailableReportFileUrl(eori).map { sdesResponse =>
-                                sdesResponse ++ sdesResponse
-                              }
-                            }
-                          }
-                        }
+      eoriHistory               <- customsDataStoreConnector.getEoriHistory(eoriValue).map(_.eoriHistory.map(_.eori))
+      eoriHistoryWithCurrentEori = if (eoriHistory.contains(eoriValue)) eoriHistory else eoriHistory :+ eoriValue
+      reportRequests            <- reportRequestService.getAvailableReportsByHistory(eoriHistoryWithCurrentEori)
+      eoris                      = reportRequests.map(_.requesterEORI)
+      sdesResponse              <- if (reportRequests.isEmpty) Future.successful(Seq.empty[FileAvailableResponse])
+                                   else {
+                                     eoris.foldLeft(Future.successful(Seq.empty[FileAvailableResponse])) { case (acc, eori) =>
+                                       acc.flatMap { sdesResponse =>
+                                         sdesConnector.fetchAvailableReportFileUrl(eori).map { sdesResponse =>
+                                           sdesResponse ++ sdesResponse
+                                         }
+                                       }
+                                     }
+                                   }
     } yield
       if (reportRequests.isEmpty) {
         logger.warn(s"No available reports found for EORI: $eoriValue")
         AvailableReportResponse(
           availableUserReports = Some(Seq.empty[AvailableUserReportResponse]),
-          availableThirdPartyReports = None
+          availableThirdPartyReports = Some(Seq.empty[AvailableThirdPartyReportResponse])
         )
       } else {
-        toAvailableReportResponses(reportRequests, sdesResponse)
+        toAvailableReportResponses(eoriHistoryWithCurrentEori, reportRequests, sdesResponse)
       }
 
   private def toAvailableReportActions(
@@ -87,25 +88,42 @@ class AvailableReportService @Inject() (
     }
 
   private def toAvailableReportResponses(
+    eoriHistory: Seq[String],
     reportRequests: Seq[ReportRequest],
     sdesResponse: Seq[FileAvailableResponse]
   ): AvailableReportResponse = {
-    val availableUserReports = reportRequests.map { req =>
+    val (userReports, thirdPartyReports) = reportRequests.partition(req => req.reportEORIs.exists(eoriHistory.contains))
+
+    def actionsFor(req: ReportRequest) =
+      toAvailableReportActions(
+        sdesResponse.filter(_.metadata.exists {
+          case FileAvailableMetadataItem.MDTPReportRequestIDMetadataItem(value) => value == req.reportRequestId
+          case _                                                                => false
+        })
+      )
+
+    val availableUserReports = userReports.map { req =>
       AvailableUserReportResponse(
         referenceNumber = req.reportRequestId,
         reportName = req.reportName,
         reportType = req.reportTypeName,
         expiryDate = req.updateDate.plus(appConfig.reportRequestTTLDays, DAYS),
-        action = toAvailableReportActions(
-          sdesResponse.filter(_.metadata.exists {
-            case FileAvailableMetadataItem.MDTPReportRequestIDMetadataItem(value) =>
-              value == req.reportRequestId
-            case _                                                                => false
-          })
-        )
+        action = actionsFor(req)
       )
     }
-    AvailableReportResponse(Some(availableUserReports), None)
+
+    val availableThirdPartyReports = thirdPartyReports.map { req =>
+      AvailableThirdPartyReportResponse(
+        referenceNumber = req.reportRequestId,
+        reportName = req.reportName,
+        reportType = req.reportTypeName,
+        companyName = "Unknown company",
+        expiryDate = req.updateDate.plus(appConfig.reportRequestTTLDays, DAYS),
+        action = actionsFor(req)
+      )
+    }
+
+    AvailableReportResponse(Some(availableUserReports), Some(availableThirdPartyReports))
   }
 
   def getAvailableReportsCount(eoriValue: String): Future[Long] =

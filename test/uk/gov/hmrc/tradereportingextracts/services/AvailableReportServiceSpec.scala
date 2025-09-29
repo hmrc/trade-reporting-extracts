@@ -67,7 +67,7 @@ class AvailableReportServiceSpec extends AnyWordSpec with Matchers with ScalaFut
 
       whenReady(service.getAvailableReports(eori)(using hc)) { result =>
         result.availableUserReports       shouldBe Some(Seq.empty)
-        result.availableThirdPartyReports shouldBe None
+        result.availableThirdPartyReports shouldBe Some(Seq.empty)
       }
     }
 
@@ -95,9 +95,9 @@ class AvailableReportServiceSpec extends AnyWordSpec with Matchers with ScalaFut
         reportRequestId = reportRequestId,
         correlationId = "ABCD-DEFG",
         reportName = "Jan Report",
-        requesterEORI = "GB0019",
+        requesterEORI = "GB123456789000",
         eoriRole = EoriRole.TRADER,
-        reportEORIs = Array("EORI1", "EORI2").toIndexedSeq,
+        reportEORIs = Array("GB123456789000", "EORI2").toIndexedSeq,
         userEmail = Some(SensitiveString("test@example.com")),
         recipientEmails = Array("email1@example.com", "email2@example.com").toIndexedSeq,
         reportTypeName = ReportTypeName.IMPORTS_ITEM_REPORT,
