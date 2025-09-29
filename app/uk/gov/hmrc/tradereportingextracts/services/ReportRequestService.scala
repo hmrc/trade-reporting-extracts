@@ -53,30 +53,24 @@ class ReportRequestService @Inject() (
     reportRequestRepository.findByRequesterEORI(requesterEORI)
 
   def getReportRequestsForUser(eori: String)(using ec: ExecutionContext): Future[GetReportRequestsResponse] =
-    reportRequestRepository.findByRequesterEORI(eori).flatMap { reportRequests =>
-      val (userRequests, thirdPartyRequests) =
-        reportRequests.partition(r => r.requesterEORI == eori && r.reportEORIs.contains(eori))
-
-      val userReports = userRequests.map(toUserReport)
-
-      val thirdPartyReportsFutures: Seq[Future[ThirdPartyReport]] = thirdPartyRequests.map { req =>
-        customsDataStoreConnector
-          .getCompanyInformation(req.requesterEORI)
-          .map { companyInfo =>
-            toThirdPartyReport(req, companyInfo.name)
+    for {
+      eoriHistory                       <- customsDataStoreConnector.getEoriHistory(eori).map(_.eoriHistory.map(_.eori))
+      reportRequests                    <- reportRequestRepository.findByRequesterEORI(eori)
+      (userRequests, thirdPartyRequests) = reportRequests.partition(rr => eoriHistory.contains(rr.requesterEORI))
+      userReports                        = userRequests.map(toUserReport)
+      thirdPartyReports                 <-
+        Future.sequence(
+          thirdPartyRequests.map { req =>
+            customsDataStoreConnector
+              .getCompanyInformation(req.requesterEORI)
+              .map(companyInfo => toThirdPartyReport(req, companyInfo.name))
+              .recover { case _ => toThirdPartyReport(req, s"Unknown company (${req.requesterEORI})") }
           }
-          .recover { case _ =>
-            toThirdPartyReport(req, s"Unknown company (${req.requesterEORI})")
-          }
-      }
-
-      Future.sequence(thirdPartyReportsFutures).map { thirdPartyReports =>
-        GetReportRequestsResponse(
-          userReports = if (userReports.nonEmpty) Some(userReports) else None,
-          thirdPartyReports = if (thirdPartyReports.nonEmpty) Some(thirdPartyReports) else None
         )
-      }
-    }
+    } yield GetReportRequestsResponse(
+      userReports = if (userReports.nonEmpty) Some(userReports) else None,
+      thirdPartyReports = if (thirdPartyReports.nonEmpty) Some(thirdPartyReports) else None
+    )
 
   private def toUserReport(req: ReportRequest): UserReport =
     UserReport(

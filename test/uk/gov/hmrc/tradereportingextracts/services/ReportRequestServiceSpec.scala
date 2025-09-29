@@ -41,9 +41,9 @@ class ReportRequestServiceSpec
     with ScalaFutures
     with WireMockHelper {
 
-  val service                       = new ReportRequestService(null, null) // nulls are fine here since we’re only testing private logic
-  implicit val ec: ExecutionContext = scala.concurrent.ExecutionContext.Implicits.global
-  val mockReportRequestRepository   = mock[ReportRequestRepository]
+  val service                                              = new ReportRequestService(null, null) // nulls are fine here since we’re only testing private logic
+  implicit val ec: ExecutionContext                        = scala.concurrent.ExecutionContext.Implicits.global
+  val mockReportRequestRepository: ReportRequestRepository = mock[ReportRequestRepository]
 
   override def beforeEach(): Unit = {
     super.beforeEach()
@@ -306,6 +306,8 @@ class ReportRequestServiceSpec
     val thirdPartyReportRequest = userReportRequest.copy(requesterEORI = thirdPartyEori)
 
     "return user reports and third party reports correctly" in {
+      when(mockCustomsDataStoreConnector.getEoriHistory(eori))
+        .thenReturn(Future.successful(EoriHistoryResponse(Seq(EoriHistory(eori, Some("2023-01-01"), None)))))
       when(mockReportRequestRepository.findByRequesterEORI(eori))
         .thenReturn(Future.successful(Seq(userReportRequest, thirdPartyReportRequest)))
       when(mockCustomsDataStoreConnector.getCompanyInformation(thirdPartyEori))

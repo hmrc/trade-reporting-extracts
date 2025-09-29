@@ -96,7 +96,7 @@ class ReportRequestRepository @Inject() (appConfig: AppConfig, mongoComponent: M
   def findByRequesterEORI(requesterEORI: String)(using ec: ExecutionContext): Future[Seq[ReportRequest]] =
     Mdc.preservingMdc {
       collection
-        .find(Filters.or(Filters.equal("requesterEORI", requesterEORI), Filters.in("reportEORIs", requesterEORI)))
+        .find(Filters.equal("requesterEORI", requesterEORI))
         .toFuture()
     }
 
