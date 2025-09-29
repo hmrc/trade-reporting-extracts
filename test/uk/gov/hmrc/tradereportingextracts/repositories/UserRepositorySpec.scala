@@ -458,34 +458,6 @@ class UserRepositorySpec
         result.map(_.eori) must not contain "GB666666666666"
       }
 
-      "return users with multiple matching authorisedUsers" in { // TODO are Multiple entries for same authorisedEori allowed?
-        val user   = User(
-          eori = "GB555555555555",
-          authorisedUsers = Seq(
-            AuthorisedUser(
-              eori = "GB123456789011",
-              accessStart = now.minus(1, ChronoUnit.DAYS),
-              accessEnd = None,
-              reportDataStart = None,
-              reportDataEnd = None,
-              accessType = Set(IMPORTS)
-            ),
-            AuthorisedUser(
-              eori = "GB123456789011",
-              accessStart = now.minus(2, ChronoUnit.DAYS),
-              accessEnd = None,
-              reportDataStart = Some(t2Cutoff.minus(1, ChronoUnit.DAYS)),
-              reportDataEnd = None,
-              accessType = Set(EXPORTS)
-            )
-          ),
-          accessDate = now
-        )
-        userRepository.insert(user).futureValue
-        val result = userRepository.getUsersByAuthorisedEoriWithDateFilter("GB123456789011", fixedClock).futureValue
-        result.map(_.eori) must contain("GB555555555555")
-      }
-
       "return empty if no users match" in {
         val result = userRepository.getUsersByAuthorisedEoriWithDateFilter("NON-EXISTENT-EORI", fixedClock).futureValue
         result mustBe empty

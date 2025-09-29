@@ -166,6 +166,38 @@ class UserServiceSpec
       }
     }
 
+    "getUsersByAuthorisedEoriWithDateFilter" - {
+
+      "must return authorised EORIs when repository returns them" in {
+        val authorisedEori   = "GB111111111111"
+        val users: Seq[User] = Seq(
+          User(
+            eori = "GB123456789000",
+            additionalEmails = Seq.empty,
+            authorisedUsers = Seq.empty,
+            accessDate = Instant.now()
+          )
+        )
+
+        when(mockRepository.getUsersByAuthorisedEoriWithDateFilter(authorisedEori)).thenReturn(Future.successful(users))
+
+        val result = service.getUsersByAuthorisedEoriWithDateFilter(authorisedEori)
+
+        result.futureValue mustEqual users
+      }
+
+      "must fail when repository returns failed Future" in {
+        val expectedException = new Exception("User not found")
+        when(mockRepository.getUsersByAuthorisedEoriWithDateFilter(eori)).thenReturn(Future.failed(expectedException))
+
+        val result = service.getUsersByAuthorisedEoriWithDateFilter(eori)
+
+        whenReady(result.failed) { ex =>
+          ex mustEqual expectedException
+        }
+      }
+    }
+
     "getNotificationEmail" - {
       val eori              = "EORI1234"
       val notificationEmail = NotificationEmail("test@email.com")
