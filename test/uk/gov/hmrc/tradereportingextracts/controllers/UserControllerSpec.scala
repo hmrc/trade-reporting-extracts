@@ -398,6 +398,31 @@ class UserControllerSpec extends SpecBase {
     }
   }
 
+  "UserController.getUsersByAuthorisedEoriWithDateFilter" should {
+
+    "return 200 OK with list of users" in new Setup {
+      val authorisedEori                 = "GB111111111111"
+      val users: Seq[User]               = Seq(
+        User(
+          eori = "GB123456789000",
+          additionalEmails = Seq.empty,
+          authorisedUsers = Seq.empty,
+          accessDate = Instant.now()
+        )
+      )
+      when(mockUserService.getUsersByAuthorisedEoriWithDateFilter(authorisedEori))
+        .thenReturn(Future.successful(users))
+      when(mockStubBehaviour.stubAuth(Some(readPermission), EmptyRetrieval))
+        .thenReturn(Future.successful(EmptyRetrieval))
+      val request: FakeRequest[JsObject] =
+        FakeRequest(GET, routes.UserController.getUsersByAuthorisedEoriWithDateFilter.url)
+          .withHeaders("Content-Type" -> "application/json", AUTHORIZATION -> "my-token")
+          .withBody(Json.obj("thirdPartyEori" -> authorisedEori))
+      val result: Future[Result]         = controller.getUsersByAuthorisedEoriWithDateFilter.apply(request)
+      contentAsJson(result) shouldBe Json.toJson(users)
+    }
+  }
+
   "UserController.thirdPartyAccessSelfRemoval" should {
 
     "return an OK when authorised user deleted and third party reports removed" in new Setup {

@@ -31,7 +31,11 @@ import uk.gov.hmrc.tradereportingextracts.models.etmp.EoriUpdate
 import uk.gov.hmrc.tradereportingextracts.models.{AuthorisedUser, User}
 import uk.gov.hmrc.tradereportingextracts.services.UserService
 
-import java.time.Instant
+import java.time.{Clock, Instant, LocalDate, ZoneOffset}
+import uk.gov.hmrc.tradereportingextracts.models.{AuthorisedUser, User}
+import uk.gov.hmrc.tradereportingextracts.models.AccessType.{EXPORTS, IMPORTS}
+
+import java.time.temporal.ChronoUnit
 import scala.concurrent.ExecutionContext
 import scala.concurrent.ExecutionContext.Implicits.global
 
@@ -44,7 +48,8 @@ class UserRepositorySpec
       IntegrationPatience,
       BeforeAndAfterAll:
 
-  val appConfig: AppConfig           = app.injector.instanceOf[AppConfig]
+  val appConfig: AppConfig = app.injector.instanceOf[AppConfig]
+
   val userRepository: UserRepository = UserRepository(appConfig, mongoComponent)
   val user: User                     = User(
     eori = "EORI1234",
@@ -336,6 +341,166 @@ class UserRepositorySpec
         whenReady(service.deleteAuthorisedUser(eori, thirdEori).failed) { ex =>
           ex.getMessage must include("failure")
         }
+      }
+    }
+
+    "getUsersByAuthorisedEoriWithDateFilter" should {
+      val fixedInstant: Instant = LocalDate.of(2025, 9, 26).atStartOfDay(ZoneOffset.UTC).toInstant
+      val fixedClock: Clock     = Clock.fixed(fixedInstant, ZoneOffset.UTC)
+
+      val now      = fixedInstant // 2025-09-26T00:00:00Z
+      val t2Cutoff = LocalDate.of(2025, 9, 23).atStartOfDay(ZoneOffset.UTC).toInstant
+
+      def insertTestUsers(): Unit = {
+        val user1 = User(
+          eori = "GB123456124444",
+          authorisedUsers = Seq(
+            AuthorisedUser(
+              eori = "GB123456789011",
+              accessStart = now.minus(1, ChronoUnit.DAYS), // 1 day before now
+              accessEnd = Some(now.plus(92, ChronoUnit.DAYS)), // 92 days after now
+              reportDataStart = Some(now.minus(274, ChronoUnit.DAYS)), // before t2Cutoff
+              reportDataEnd = None,
+              accessType = Set(IMPORTS, EXPORTS)
+            )
+          ),
+          accessDate = now
+        )
+
+        val user2 = User(
+          eori = "GB123456789011",
+          authorisedUsers = Seq(),
+          accessDate = now
+        )
+
+        val user3 = User(
+          eori = "GB999999999999",
+          authorisedUsers = Seq(
+            AuthorisedUser(
+              eori = "GB123456789011",
+              accessStart = now.minus(1, ChronoUnit.DAYS), // 1 day before now
+              accessEnd = None, // open-ended
+              reportDataStart = None, // missing
+              reportDataEnd = None,
+              accessType = Set(IMPORTS)
+            )
+          ),
+          accessDate = now
+        )
+
+        val user4 = User(
+          eori = "GB888888888888",
+          authorisedUsers = Seq(
+            AuthorisedUser(
+              eori = "GB123456789011",
+              accessStart = now.minus(1, ChronoUnit.DAYS), // 1 day before now
+              accessEnd = Some(now.minus(0, ChronoUnit.DAYS)), // already ended
+              reportDataStart = Some(now.minus(1, ChronoUnit.DAYS)), // after t2Cutoff
+              reportDataEnd = None,
+              accessType = Set(IMPORTS)
+            )
+          ),
+          accessDate = now
+        )
+
+        val user5 = User(
+          eori = "GB777777777777",
+          authorisedUsers = Seq(
+            AuthorisedUser(
+              eori = "GB000000000000",
+              accessStart = now.minus(1, ChronoUnit.DAYS),
+              accessEnd = None,
+              reportDataStart = Some(t2Cutoff.minus(1, ChronoUnit.DAYS)), // before t2Cutoff
+              reportDataEnd = None,
+              accessType = Set(IMPORTS)
+            )
+          ),
+          accessDate = now
+        )
+
+        // Insert all test users
+        Seq(user1, user2, user3, user4, user5).foreach(u => userRepository.insert(u).futureValue)
+      }
+
+      "return users with authorisedEori and valid date filters" in {
+        insertTestUsers()
+        val result = userRepository.getUsersByAuthorisedEoriWithDateFilter("GB123456789011", fixedClock).futureValue
+        val eoris  = result.map(_.eori)
+        eoris must contain allOf ("GB123456124444", "GB999999999999")
+        eoris must not contain "GB888888888888"
+        eoris must not contain "GB123456789011"
+        eoris must not contain "GB777777777777"
+      }
+
+      "not return users if authorisedEori does not match" in {
+        insertTestUsers()
+        val result = userRepository.getUsersByAuthorisedEoriWithDateFilter("GB000000000000", fixedClock).futureValue
+        result.map(_.eori) must contain only "GB777777777777"
+      }
+
+      "not return users if reportDataStart is after cutoff" in {
+        val user   = User(
+          eori = "GB666666666666",
+          authorisedUsers = Seq(
+            AuthorisedUser(
+              eori = "GB123456789011",
+              accessStart = now.minus(1, ChronoUnit.DAYS),
+              accessEnd = None,
+              reportDataStart = Some(now), // after t2Cutoff
+              reportDataEnd = None,
+              accessType = Set(IMPORTS)
+            )
+          ),
+          accessDate = now
+        )
+        userRepository.insert(user).futureValue
+        val result = userRepository.getUsersByAuthorisedEoriWithDateFilter("GB123456789011", fixedClock).futureValue
+        result.map(_.eori) must not contain "GB666666666666"
+      }
+
+      "return empty if no users match" in {
+        val result = userRepository.getUsersByAuthorisedEoriWithDateFilter("NON-EXISTENT-EORI", fixedClock).futureValue
+        result mustBe empty
+      }
+
+      "not return users if accessStart is after now" in {
+        val user   = User(
+          eori = "GB222222222222",
+          authorisedUsers = Seq(
+            AuthorisedUser(
+              eori = "GB123456789011",
+              accessStart = now.plus(1, ChronoUnit.DAYS), // future start
+              accessEnd = None,
+              reportDataStart = Some(t2Cutoff.minus(1, ChronoUnit.DAYS)),
+              reportDataEnd = None,
+              accessType = Set(IMPORTS)
+            )
+          ),
+          accessDate = now
+        )
+        userRepository.insert(user).futureValue
+        val result = userRepository.getUsersByAuthorisedEoriWithDateFilter("GB123456789011", fixedClock).futureValue
+        result.map(_.eori) must not contain "GB222222222222"
+      }
+
+      "not return users if accessEnd is before now" in {
+        val user   = User(
+          eori = "GB333333333333",
+          authorisedUsers = Seq(
+            AuthorisedUser(
+              eori = "GB123456789011",
+              accessStart = now.minus(10, ChronoUnit.DAYS),
+              accessEnd = Some(now.minus(1, ChronoUnit.DAYS)), // already ended
+              reportDataStart = Some(t2Cutoff.minus(1, ChronoUnit.DAYS)),
+              reportDataEnd = None,
+              accessType = Set(IMPORTS)
+            )
+          ),
+          accessDate = now
+        )
+        userRepository.insert(user).futureValue
+        val result = userRepository.getUsersByAuthorisedEoriWithDateFilter("GB123456789011", fixedClock).futureValue
+        result.map(_.eori) must not contain "GB333333333333"
       }
     }
   }
