@@ -53,30 +53,18 @@ class ReportRequestService @Inject() (
     reportRequestRepository.findByRequesterEORI(requesterEORI)
 
   def getReportRequestsForUser(eori: String)(using ec: ExecutionContext): Future[GetReportRequestsResponse] =
-    reportRequestRepository.findByRequesterEORI(eori).flatMap { reportRequests =>
-      val (userRequests, thirdPartyRequests) =
-        reportRequests.partition(r => r.requesterEORI == eori && r.reportEORIs.contains(eori))
-
-      val userReports = userRequests.map(toUserReport)
-
-      val thirdPartyReportsFutures: Seq[Future[ThirdPartyReport]] = thirdPartyRequests.map { req =>
-        customsDataStoreConnector
-          .getCompanyInformation(req.requesterEORI)
-          .map { companyInfo =>
-            toThirdPartyReport(req, companyInfo.name)
-          }
-          .recover { case _ =>
-            toThirdPartyReport(req, s"Unknown company (${req.requesterEORI})")
-          }
-      }
-
-      Future.sequence(thirdPartyReportsFutures).map { thirdPartyReports =>
-        GetReportRequestsResponse(
-          userReports = if (userReports.nonEmpty) Some(userReports) else None,
-          thirdPartyReports = if (thirdPartyReports.nonEmpty) Some(thirdPartyReports) else None
-        )
-      }
-    }
+    for {
+      eoriHistory                       <- customsDataStoreConnector.getEoriHistory(eori).map(_.eoriHistory.map(_.eori))
+      eoriHistoryWithCurrentEori         = if (eoriHistory.contains(eori)) eoriHistory else eoriHistory :+ eori
+      reportRequests                    <- reportRequestRepository.findByRequesterEoriHistory(eoriHistoryWithCurrentEori)
+      (userRequests, thirdPartyRequests) =
+        reportRequests.partition(rr => rr.reportEORIs.exists(eoriHistoryWithCurrentEori.contains))
+      userReports                        = userRequests.map(toUserReport)
+      thirdPartyReports                  = thirdPartyRequests.map(toThirdPartyReport(_, "Unknown company"))
+    } yield GetReportRequestsResponse(
+      userReports = if (userReports.nonEmpty) Some(userReports) else None,
+      thirdPartyReports = if (thirdPartyReports.nonEmpty) Some(thirdPartyReports) else None
+    )
 
   private def toUserReport(req: ReportRequest): UserReport =
     UserReport(
@@ -103,6 +91,9 @@ class ReportRequestService @Inject() (
 
   def getAvailableReports(eori: String)(using ec: ExecutionContext): Future[Seq[ReportRequest]] =
     reportRequestRepository.getAvailableReports(eori)
+
+  def getAvailableReportsByHistory(eoriHistory: Seq[String])(using ec: ExecutionContext): Future[Seq[ReportRequest]] =
+    reportRequestRepository.getAvailableReportsByHistory(eoriHistory)
 
   def countAvailableReports(eori: String)(using ec: ExecutionContext): Future[Long] =
     reportRequestRepository.countAvailableReports(eori)

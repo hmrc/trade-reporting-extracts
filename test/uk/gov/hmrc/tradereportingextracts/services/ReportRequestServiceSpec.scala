@@ -41,9 +41,9 @@ class ReportRequestServiceSpec
     with ScalaFutures
     with WireMockHelper {
 
-  val service                       = new ReportRequestService(null, null) // nulls are fine here since we’re only testing private logic
-  implicit val ec: ExecutionContext = scala.concurrent.ExecutionContext.Implicits.global
-  val mockReportRequestRepository   = mock[ReportRequestRepository]
+  val service                                              = new ReportRequestService(null, null) // nulls are fine here since we’re only testing private logic
+  implicit val ec: ExecutionContext                        = scala.concurrent.ExecutionContext.Implicits.global
+  val mockReportRequestRepository: ReportRequestRepository = mock[ReportRequestRepository]
 
   override def beforeEach(): Unit = {
     super.beforeEach()
@@ -303,13 +303,15 @@ class ReportRequestServiceSpec
       None,
       Instant.now()
     )
-    val thirdPartyReportRequest = userReportRequest.copy(requesterEORI = thirdPartyEori)
+    val thirdPartyReportRequest = userReportRequest.copy(reportEORIs = Seq(thirdPartyEori))
 
     "return user reports and third party reports correctly" in {
-      when(mockReportRequestRepository.findByRequesterEORI(eori))
+      when(mockCustomsDataStoreConnector.getEoriHistory(eori))
+        .thenReturn(Future.successful(EoriHistoryResponse(Seq(EoriHistory(eori, Some("2023-01-01"), None)))))
+      when(mockReportRequestRepository.findByRequesterEoriHistory(Seq(eori)))
         .thenReturn(Future.successful(Seq(userReportRequest, thirdPartyReportRequest)))
       when(mockCustomsDataStoreConnector.getCompanyInformation(thirdPartyEori))
-        .thenReturn(Future.successful(CompanyInformation("Company LTD")))
+        .thenReturn(Future.successful(CompanyInformation("Unknown company")))
 
       val result = service.getReportRequestsForUser(eori).futureValue
 
@@ -333,7 +335,7 @@ class ReportRequestServiceSpec
             reportName = "Monthly Report",
             requestedDate = Instant.parse("2024-07-01T10:00:00Z"),
             reportType = ReportTypeName.EXPORTS_ITEM_REPORT,
-            companyName = "Company LTD",
+            companyName = "Unknown company",
             reportStatus = ReportStatus.IN_PROGRESS,
             reportStartDate = Instant.parse("2024-06-01T00:00:00Z"),
             reportEndDate = Instant.parse("2024-06-30T23:59:59Z")
@@ -343,7 +345,7 @@ class ReportRequestServiceSpec
     }
 
     "return None for both when no reports" in {
-      when(mockReportRequestRepository.findByRequesterEORI(eori))
+      when(mockReportRequestRepository.findByRequesterEoriHistory(Seq(eori)))
         .thenReturn(Future.successful(Seq.empty))
 
       val result = service.getReportRequestsForUser(eori).futureValue

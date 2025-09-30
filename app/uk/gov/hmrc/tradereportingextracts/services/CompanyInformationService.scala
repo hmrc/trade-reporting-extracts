@@ -21,11 +21,9 @@ import uk.gov.hmrc.tradereportingextracts.connectors.CustomsDataStoreConnector
 import uk.gov.hmrc.tradereportingextracts.models.CompanyInformation
 
 import javax.inject.Inject
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.Future
 
-class CompanyInformationService @Inject() (
-  connector: CustomsDataStoreConnector
-)(implicit ec: ExecutionContext) {
+class CompanyInformationService @Inject() (connector: CustomsDataStoreConnector) {
 
   implicit val hc: HeaderCarrier = HeaderCarrier()
 

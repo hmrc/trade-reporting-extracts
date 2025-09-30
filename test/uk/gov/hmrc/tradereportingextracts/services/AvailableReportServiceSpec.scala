@@ -27,7 +27,7 @@ import play.api.mvc.Results.{BadRequest, NotFound}
 import uk.gov.hmrc.crypto.Sensitive.SensitiveString
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.tradereportingextracts.config.AppConfig
-import uk.gov.hmrc.tradereportingextracts.connectors.SDESConnector
+import uk.gov.hmrc.tradereportingextracts.connectors.{CustomsDataStoreConnector, SDESConnector}
 import uk.gov.hmrc.tradereportingextracts.models.*
 import uk.gov.hmrc.tradereportingextracts.models.audit.AuditDownloadRequest
 import uk.gov.hmrc.tradereportingextracts.models.eis.EisReportStatusRequest
@@ -44,32 +44,42 @@ class AvailableReportServiceSpec extends AnyWordSpec with Matchers with ScalaFut
       val mockReportRequestService: ReportRequestService = mock[ReportRequestService]
       val mockAppConfig: AppConfig                       = mock[AppConfig]
       val mockSDESConnector                              = mock[SDESConnector]
+      val mockCustomsDataStoreConnector                  = mock[CustomsDataStoreConnector]
       val mockAuditService                               = mock[AuditService]
       val eori                                           = "GB123456789000"
       when(mockSDESConnector.fetchAvailableReportFileUrl(any())(any()))
         .thenReturn(Future.successful(Seq.empty))
-      when(mockReportRequestService.getAvailableReports(any())(using any()))
+      when(mockCustomsDataStoreConnector.getEoriHistory(any()))
+        .thenReturn(Future.successful(EoriHistoryResponse(Seq(EoriHistory(eori, Some("2023-01-01"), None)))))
+      when(mockReportRequestService.getAvailableReportsByHistory(any())(using any()))
         .thenReturn(Future.successful(Seq.empty))
 
       val service =
-        new AvailableReportService(mockReportRequestService, mockSDESConnector, mockAuditService, mockAppConfig)(using
+        new AvailableReportService(
+          mockReportRequestService,
+          mockSDESConnector,
+          mockCustomsDataStoreConnector,
+          mockAuditService,
+          mockAppConfig
+        )(using
           ExecutionContext.global
         )
 
       whenReady(service.getAvailableReports(eori)(using hc)) { result =>
         result.availableUserReports       shouldBe Some(Seq.empty)
-        result.availableThirdPartyReports shouldBe None
+        result.availableThirdPartyReports shouldBe Some(Seq.empty)
       }
     }
 
     "return availableUserReports with actions when report requests and SDES responses exist" in {
-      val mockReportRequestService = mock[ReportRequestService]
-      val mockSDESConnector        = mock[SDESConnector]
-      val eori                     = "GB123456789000"
-      val reportRequestId          = "req-1"
-      val mockAppConfig: AppConfig = mock[AppConfig]
-      val mockAuditService         = mock[AuditService]
-      val fileNotification         = FileNotification(
+      val mockReportRequestService      = mock[ReportRequestService]
+      val mockSDESConnector             = mock[SDESConnector]
+      val mockCustomsDataStoreConnector = mock[CustomsDataStoreConnector]
+      val eori                          = "GB123456789000"
+      val reportRequestId               = "req-1"
+      val mockAppConfig: AppConfig      = mock[AppConfig]
+      val mockAuditService              = mock[AuditService]
+      val fileNotification              = FileNotification(
         "file.csv",
         123L,
         30,
@@ -81,13 +91,13 @@ class AvailableReportServiceSpec extends AnyWordSpec with Matchers with ScalaFut
         "true",
         ""
       )
-      val reportRequest            = ReportRequest(
+      val reportRequest                 = ReportRequest(
         reportRequestId = reportRequestId,
         correlationId = "ABCD-DEFG",
         reportName = "Jan Report",
-        requesterEORI = "GB0019",
+        requesterEORI = "GB123456789000",
         eoriRole = EoriRole.TRADER,
-        reportEORIs = Array("EORI1", "EORI2").toIndexedSeq,
+        reportEORIs = Array("GB123456789000", "EORI2").toIndexedSeq,
         userEmail = Some(SensitiveString("test@example.com")),
         recipientEmails = Array("email1@example.com", "email2@example.com").toIndexedSeq,
         reportTypeName = ReportTypeName.IMPORTS_ITEM_REPORT,
@@ -106,7 +116,7 @@ class AvailableReportServiceSpec extends AnyWordSpec with Matchers with ScalaFut
         fileNotifications = Some(Seq(fileNotification)),
         updateDate = Instant.parse("2023-01-03T10:00:00Z")
       )
-      val sdesResponse             = Seq(
+      val sdesResponse                  = Seq(
         FileAvailableResponse(
           filename = "file.csv",
           downloadURL = "http://example.com/file.csv",
@@ -117,11 +127,19 @@ class AvailableReportServiceSpec extends AnyWordSpec with Matchers with ScalaFut
 
       when(mockSDESConnector.fetchAvailableReportFileUrl(any())(any()))
         .thenReturn(Future.successful(sdesResponse))
-      when(mockReportRequestService.getAvailableReports(any())(using any()))
+      when(mockCustomsDataStoreConnector.getEoriHistory(any()))
+        .thenReturn(Future.successful(EoriHistoryResponse(Seq(EoriHistory(eori, Some("2023-01-01"), None)))))
+      when(mockReportRequestService.getAvailableReportsByHistory(any())(using any()))
         .thenReturn(Future.successful(Seq(reportRequest)))
 
       val service =
-        new AvailableReportService(mockReportRequestService, mockSDESConnector, mockAuditService, mockAppConfig)
+        new AvailableReportService(
+          mockReportRequestService,
+          mockSDESConnector,
+          mockCustomsDataStoreConnector,
+          mockAuditService,
+          mockAppConfig
+        )
 
       whenReady(service.getAvailableReports(eori)) { result =>
         result.availableUserReports should not be empty
@@ -133,16 +151,23 @@ class AvailableReportServiceSpec extends AnyWordSpec with Matchers with ScalaFut
 
   "getAvailableReportsCount" should {
     "return the count from reportRequestService" in {
-      val mockReportRequestService = mock[ReportRequestService]
-      val mockSDESConnector        = mock[SDESConnector]
-      val eori                     = "GB123456789000"
-      val mockAppConfig: AppConfig = mock[AppConfig]
-      val mockAuditService         = mock[AuditService]
+      val mockReportRequestService      = mock[ReportRequestService]
+      val mockSDESConnector             = mock[SDESConnector]
+      val mockCustomsDataStoreConnector = mock[CustomsDataStoreConnector]
+      val eori                          = "GB123456789000"
+      val mockAppConfig: AppConfig      = mock[AppConfig]
+      val mockAuditService              = mock[AuditService]
       when(mockReportRequestService.countAvailableReports(any())(using any()))
         .thenReturn(Future.successful(5L))
 
       val service =
-        new AvailableReportService(mockReportRequestService, mockSDESConnector, mockAuditService, mockAppConfig)
+        new AvailableReportService(
+          mockReportRequestService,
+          mockSDESConnector,
+          mockCustomsDataStoreConnector,
+          mockAuditService,
+          mockAppConfig
+        )
 
       whenReady(service.getAvailableReportsCount(eori)) { count =>
         count shouldBe 5L
@@ -150,16 +175,23 @@ class AvailableReportServiceSpec extends AnyWordSpec with Matchers with ScalaFut
     }
 
     "return 0 if reportRequestService.countAvailableReports fails" in {
-      val mockReportRequestService = mock[ReportRequestService]
-      val mockSDESConnector        = mock[SDESConnector]
-      val eori                     = "GB123456789000"
-      val mockAppConfig: AppConfig = mock[AppConfig]
-      val mockAuditService         = mock[AuditService]
+      val mockReportRequestService      = mock[ReportRequestService]
+      val mockSDESConnector             = mock[SDESConnector]
+      val mockCustomsDataStoreConnector = mock[CustomsDataStoreConnector]
+      val eori                          = "GB123456789000"
+      val mockAppConfig: AppConfig      = mock[AppConfig]
+      val mockAuditService              = mock[AuditService]
       when(mockReportRequestService.countAvailableReports(any())(using any()))
         .thenReturn(Future.failed(new RuntimeException("error - this is a error generated for testing!!!")))
 
       val service =
-        new AvailableReportService(mockReportRequestService, mockSDESConnector, mockAuditService, mockAppConfig)
+        new AvailableReportService(
+          mockReportRequestService,
+          mockSDESConnector,
+          mockCustomsDataStoreConnector,
+          mockAuditService,
+          mockAppConfig
+        )
 
       whenReady(service.getAvailableReportsCount(eori)) { count =>
         count shouldBe 0L
@@ -169,12 +201,19 @@ class AvailableReportServiceSpec extends AnyWordSpec with Matchers with ScalaFut
 
   "findByReportRequestId" should {
     "return a report when found" in {
-      val mockReportRequestService = mock[ReportRequestService]
-      val mockSDESConnector        = mock[SDESConnector]
-      val mockAppConfig            = mock[AppConfig]
-      val mockAuditService         = mock[AuditService]
-      val service                  =
-        new AvailableReportService(mockReportRequestService, mockSDESConnector, mockAuditService, mockAppConfig)
+      val mockReportRequestService      = mock[ReportRequestService]
+      val mockSDESConnector             = mock[SDESConnector]
+      val mockCustomsDataStoreConnector = mock[CustomsDataStoreConnector]
+      val mockAppConfig                 = mock[AppConfig]
+      val mockAuditService              = mock[AuditService]
+      val service                       =
+        new AvailableReportService(
+          mockReportRequestService,
+          mockSDESConnector,
+          mockCustomsDataStoreConnector,
+          mockAuditService,
+          mockAppConfig
+        )
 
       val reportId         = "report-123"
       val fileNotification = FileNotification(
@@ -222,12 +261,19 @@ class AvailableReportServiceSpec extends AnyWordSpec with Matchers with ScalaFut
     }
 
     "return None when a report is not found" in {
-      val mockReportRequestService = mock[ReportRequestService]
-      val mockSDESConnector        = mock[SDESConnector]
-      val mockAppConfig            = mock[AppConfig]
-      val mockAuditService         = mock[AuditService]
-      val service                  =
-        new AvailableReportService(mockReportRequestService, mockSDESConnector, mockAuditService, mockAppConfig)
+      val mockReportRequestService      = mock[ReportRequestService]
+      val mockSDESConnector             = mock[SDESConnector]
+      val mockCustomsDataStoreConnector = mock[CustomsDataStoreConnector]
+      val mockAppConfig                 = mock[AppConfig]
+      val mockAuditService              = mock[AuditService]
+      val service                       =
+        new AvailableReportService(
+          mockReportRequestService,
+          mockSDESConnector,
+          mockCustomsDataStoreConnector,
+          mockAuditService,
+          mockAppConfig
+        )
 
       val reportId = "report-404"
       when(mockReportRequestService.get(eqTo(reportId))(any())).thenReturn(Future.successful(None))
@@ -290,12 +336,19 @@ class AvailableReportServiceSpec extends AnyWordSpec with Matchers with ScalaFut
     )
 
     "successfully process a valid request and send an audit event" in {
-      val mockReportRequestService = mock[ReportRequestService]
-      val mockSDESConnector        = mock[SDESConnector]
-      val mockAppConfig            = mock[AppConfig]
-      val mockAuditService         = mock[AuditService]
-      val service                  =
-        new AvailableReportService(mockReportRequestService, mockSDESConnector, mockAuditService, mockAppConfig)
+      val mockReportRequestService      = mock[ReportRequestService]
+      val mockSDESConnector             = mock[SDESConnector]
+      val mockCustomsDataStoreConnector = mock[CustomsDataStoreConnector]
+      val mockAppConfig                 = mock[AppConfig]
+      val mockAuditService              = mock[AuditService]
+      val service                       =
+        new AvailableReportService(
+          mockReportRequestService,
+          mockSDESConnector,
+          mockCustomsDataStoreConnector,
+          mockAuditService,
+          mockAppConfig
+        )
 
       when(mockReportRequestService.get(eqTo(reportId))(any()))
         .thenReturn(Future.successful(Some(reportRequest)))
@@ -305,12 +358,19 @@ class AvailableReportServiceSpec extends AnyWordSpec with Matchers with ScalaFut
     }
 
     "return NotFound when the report request is not found" in {
-      val mockReportRequestService = mock[ReportRequestService]
-      val mockSDESConnector        = mock[SDESConnector]
-      val mockAppConfig            = mock[AppConfig]
-      val mockAuditService         = mock[AuditService]
-      val service                  =
-        new AvailableReportService(mockReportRequestService, mockSDESConnector, mockAuditService, mockAppConfig)
+      val mockReportRequestService      = mock[ReportRequestService]
+      val mockSDESConnector             = mock[SDESConnector]
+      val mockCustomsDataStoreConnector = mock[CustomsDataStoreConnector]
+      val mockAppConfig                 = mock[AppConfig]
+      val mockAuditService              = mock[AuditService]
+      val service                       =
+        new AvailableReportService(
+          mockReportRequestService,
+          mockSDESConnector,
+          mockCustomsDataStoreConnector,
+          mockAuditService,
+          mockAppConfig
+        )
 
       when(mockReportRequestService.get(eqTo(reportId))(any())).thenReturn(Future.successful(None))
 
@@ -319,12 +379,19 @@ class AvailableReportServiceSpec extends AnyWordSpec with Matchers with ScalaFut
     }
 
     "return BadRequest when the file is not found in the report notifications" in {
-      val mockReportRequestService = mock[ReportRequestService]
-      val mockSDESConnector        = mock[SDESConnector]
-      val mockAppConfig            = mock[AppConfig]
-      val mockAuditService         = mock[AuditService]
-      val service                  =
-        new AvailableReportService(mockReportRequestService, mockSDESConnector, mockAuditService, mockAppConfig)
+      val mockReportRequestService      = mock[ReportRequestService]
+      val mockSDESConnector             = mock[SDESConnector]
+      val mockCustomsDataStoreConnector = mock[CustomsDataStoreConnector]
+      val mockAppConfig                 = mock[AppConfig]
+      val mockAuditService              = mock[AuditService]
+      val service                       =
+        new AvailableReportService(
+          mockReportRequestService,
+          mockSDESConnector,
+          mockCustomsDataStoreConnector,
+          mockAuditService,
+          mockAppConfig
+        )
 
       val reportWithDifferentFile =
         reportRequest.copy(fileNotifications = Some(Seq(fileNotification.copy(fileName = "other.csv"))))
@@ -336,12 +403,19 @@ class AvailableReportServiceSpec extends AnyWordSpec with Matchers with ScalaFut
     }
 
     "return BadRequest for an empty request body" in {
-      val mockReportRequestService = mock[ReportRequestService]
-      val mockSDESConnector        = mock[SDESConnector]
-      val mockAppConfig            = mock[AppConfig]
-      val mockAuditService         = mock[AuditService]
-      val service                  =
-        new AvailableReportService(mockReportRequestService, mockSDESConnector, mockAuditService, mockAppConfig)
+      val mockReportRequestService      = mock[ReportRequestService]
+      val mockSDESConnector             = mock[SDESConnector]
+      val mockCustomsDataStoreConnector = mock[CustomsDataStoreConnector]
+      val mockAppConfig                 = mock[AppConfig]
+      val mockAuditService              = mock[AuditService]
+      val service                       =
+        new AvailableReportService(
+          mockReportRequestService,
+          mockSDESConnector,
+          mockCustomsDataStoreConnector,
+          mockAuditService,
+          mockAppConfig
+        )
 
       implicit val hc: HeaderCarrier = HeaderCarrier()
       val result                     = service.processReportDownloadAudit(None).futureValue

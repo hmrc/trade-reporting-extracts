@@ -96,7 +96,14 @@ class ReportRequestRepository @Inject() (appConfig: AppConfig, mongoComponent: M
   def findByRequesterEORI(requesterEORI: String)(using ec: ExecutionContext): Future[Seq[ReportRequest]] =
     Mdc.preservingMdc {
       collection
-        .find(Filters.or(Filters.equal("requesterEORI", requesterEORI), Filters.in("reportEORIs", requesterEORI)))
+        .find(Filters.equal("requesterEORI", requesterEORI))
+        .toFuture()
+    }
+
+  def findByRequesterEoriHistory(eoriHistory: Seq[String])(using ec: ExecutionContext): Future[Seq[ReportRequest]] =
+    Mdc.preservingMdc {
+      collection
+        .find(Filters.in("requesterEORI", eoriHistory*))
         .toFuture()
     }
 
@@ -106,6 +113,14 @@ class ReportRequestRepository @Inject() (appConfig: AppConfig, mongoComponent: M
       .toFuture()
       .map(_.filter(_.isReportStatusComplete()))
   }
+
+  def getAvailableReportsByHistory(eoriHistory: Seq[String])(using ec: ExecutionContext): Future[Seq[ReportRequest]] =
+    Mdc.preservingMdc {
+      collection
+        .find(Filters.in("requesterEORI", eoriHistory*))
+        .toFuture()
+        .map(_.filter(_.isReportStatusComplete()))
+    }
 
   def countAvailableReports(eori: String)(using ec: ExecutionContext): Future[Long] = Mdc.preservingMdc {
     collection

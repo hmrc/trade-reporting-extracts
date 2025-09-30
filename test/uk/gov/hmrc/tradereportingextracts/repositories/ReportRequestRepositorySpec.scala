@@ -98,6 +98,25 @@ class ReportRequestRepositorySpec
     }
   }
 
+  "findByRequesterEORI" should {
+    "must be able to retrieve a report successfully using a requester EORI" in {
+      val insertResult  = reportRequestRepository.insert(reportRequest).futureValue
+      val fetchedRecord = reportRequestRepository.findByRequesterEORI(reportRequest.requesterEORI).futureValue
+      insertResult mustEqual true
+      fetchedRecord contains reportRequest
+    }
+  }
+
+  "findByRequesterEoriHistory" should {
+    "must be able to retrieve a report successfully using a requester EORI history" in {
+      val insertResult  = reportRequestRepository.insert(reportRequest).futureValue
+      val fetchedRecord =
+        reportRequestRepository.findByRequesterEoriHistory(Seq("EORI-UNKNOWN", reportRequest.requesterEORI)).futureValue
+      insertResult mustEqual true
+      fetchedRecord contains reportRequest
+    }
+  }
+
   "findByReportId"   should {
     "must be able to retrieve a report successfully using a reportId" in {
       val insertResult  = reportRequestRepository.insert(reportRequest).futureValue
