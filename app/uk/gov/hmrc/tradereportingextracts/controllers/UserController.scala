@@ -21,6 +21,7 @@ import play.api.mvc.{Action, ControllerComponents}
 import uk.gov.hmrc.internalauth.client.*
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 import uk.gov.hmrc.tradereportingextracts.models.AuthorisedUser
+import uk.gov.hmrc.tradereportingextracts.models.thirdParty.EoriBusinessInfo
 import uk.gov.hmrc.tradereportingextracts.repositories.ReportRequestRepository
 import uk.gov.hmrc.tradereportingextracts.services.UserService
 import uk.gov.hmrc.tradereportingextracts.utils.PermissionsUtil.{readPermission, writePermission}
@@ -129,7 +130,12 @@ class UserController @Inject() (
         case JsSuccess(thirdPartyEori, _) =>
           userService
             .getUsersByAuthorisedEori(thirdPartyEori)
-            .map(users => Ok(Json.toJson(users)))
+            .map { userDetails =>
+              val eoriBusinessInfos =
+                userDetails
+                  .map(userDetail => EoriBusinessInfo(userDetail.eori, Some(userDetail.companyInformation.name)))
+              Ok(Json.toJson(eoriBusinessInfos))
+            }
             .recover { case e: Exception =>
               InternalServerError(e.getMessage)
             }

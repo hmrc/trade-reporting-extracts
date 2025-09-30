@@ -26,6 +26,7 @@ import play.api.test.{FakeRequest, Helpers}
 import uk.gov.hmrc.internalauth.client.*
 import uk.gov.hmrc.internalauth.client.Retrieval.EmptyRetrieval
 import uk.gov.hmrc.internalauth.client.test.{BackendAuthComponentsStub, StubBehaviour}
+import uk.gov.hmrc.tradereportingextracts.models.thirdParty.EoriBusinessInfo
 import uk.gov.hmrc.tradereportingextracts.models.{AccessType, AddressInformation, AuthorisedUser, CompanyInformation, NotificationEmail, ThirdPartyDetails, User, UserDetails}
 import uk.gov.hmrc.tradereportingextracts.repositories.ReportRequestRepository
 import uk.gov.hmrc.tradereportingextracts.services.UserService
@@ -378,23 +379,30 @@ class UserControllerSpec extends SpecBase {
 
     "return 200 OK with list of users" in new Setup {
       val authorisedEori                 = "GB111111111111"
-      val users: Seq[User]               = Seq(
-        User(
+      val userDetails: Seq[UserDetails]  = Seq(
+        UserDetails(
           eori = "GB123456789000",
           additionalEmails = Seq.empty,
           authorisedUsers = Seq.empty,
-          accessDate = Instant.now()
+          companyInformation = CompanyInformation(name = "ABC Ltd"),
+          notificationEmail = NotificationEmail()
+        )
+      )
+      val eoriBusinessInfos: Seq[EoriBusinessInfo] = Seq(
+        EoriBusinessInfo(
+          eori = "GB123456789000",
+          businessInfo = Some("ABC Ltd")
         )
       )
       when(mockUserService.getUsersByAuthorisedEori(authorisedEori))
-        .thenReturn(Future.successful(users))
+        .thenReturn(Future.successful(userDetails))
       when(mockStubBehaviour.stubAuth(Some(readPermission), EmptyRetrieval))
         .thenReturn(Future.successful(EmptyRetrieval))
       val request: FakeRequest[JsObject] = FakeRequest(GET, routes.UserController.getUsersByAuthorisedEori.url)
         .withHeaders("Content-Type" -> "application/json", AUTHORIZATION -> "my-token")
         .withBody(Json.obj("thirdPartyEori" -> authorisedEori))
       val result: Future[Result]         = controller.getUsersByAuthorisedEori.apply(request)
-      contentAsJson(result) shouldBe Json.toJson(users)
+      contentAsJson(result) shouldBe Json.toJson(eoriBusinessInfos)
     }
   }
 
