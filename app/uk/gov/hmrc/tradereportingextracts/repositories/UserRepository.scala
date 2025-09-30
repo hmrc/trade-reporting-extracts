@@ -196,7 +196,7 @@ class UserRepository @Inject() (appConfig: AppConfig, mongoComponent: MongoCompo
           Filters.exists("accessEnd", false)
         ),
         Filters.or(
-          Filters.lt("reportDataStart", cutoffDate),
+          Filters.lte("reportDataStart", cutoffDate),
           Filters.exists("reportDataStart", false)
         )
       )

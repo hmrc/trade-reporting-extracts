@@ -359,7 +359,7 @@ class UserRepositorySpec
               eori = "GB123456789011",
               accessStart = now.minus(1, ChronoUnit.DAYS), // 1 day before now
               accessEnd = Some(now.plus(92, ChronoUnit.DAYS)), // 92 days after now
-              reportDataStart = Some(now.minus(274, ChronoUnit.DAYS)), // before t2Cutoff
+              reportDataStart = Some(now.minus(3, ChronoUnit.DAYS)), // before t2Cutoff
               reportDataEnd = None,
               accessType = Set(IMPORTS, EXPORTS)
             )
@@ -393,7 +393,7 @@ class UserRepositorySpec
           authorisedUsers = Seq(
             AuthorisedUser(
               eori = "GB123456789011",
-              accessStart = now.minus(1, ChronoUnit.DAYS), // 1 day before now
+              accessStart = now.minus(1, ChronoUnit.DAYS),
               accessEnd = Some(now.minus(0, ChronoUnit.DAYS)), // already ended
               reportDataStart = Some(now.minus(1, ChronoUnit.DAYS)), // after t2Cutoff
               reportDataEnd = None,
@@ -446,7 +446,7 @@ class UserRepositorySpec
               eori = "GB123456789011",
               accessStart = now.minus(1, ChronoUnit.DAYS),
               accessEnd = None,
-              reportDataStart = Some(now), // after t2Cutoff
+              reportDataStart = Some(now.minus(2, ChronoUnit.DAYS)), // after t2Cutoff
               reportDataEnd = None,
               accessType = Set(IMPORTS)
             )
