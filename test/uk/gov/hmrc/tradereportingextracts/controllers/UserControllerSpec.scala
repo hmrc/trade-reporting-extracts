@@ -384,7 +384,7 @@ class UserControllerSpec extends SpecBase {
           eori = "GB123456789000",
           additionalEmails = Seq.empty,
           authorisedUsers = Seq.empty,
-          companyInformation = CompanyInformation(name = "ABC Ltd"),
+          companyInformation = CompanyInformation(name = "ABC Ltd", consent = "1", address = AddressInformation()),
           notificationEmail = NotificationEmail()
         )
       )
