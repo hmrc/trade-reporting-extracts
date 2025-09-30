@@ -378,8 +378,8 @@ class UserControllerSpec extends SpecBase {
   "UserController.getUsersByAuthorisedEori" should {
 
     "return 200 OK with list of users" in new Setup {
-      val authorisedEori                 = "GB111111111111"
-      val userDetails: Seq[UserDetails]  = Seq(
+      val authorisedEori                           = "GB111111111111"
+      val userDetails: Seq[UserDetails]            = Seq(
         UserDetails(
           eori = "GB123456789000",
           additionalEmails = Seq.empty,
@@ -398,10 +398,10 @@ class UserControllerSpec extends SpecBase {
         .thenReturn(Future.successful(userDetails))
       when(mockStubBehaviour.stubAuth(Some(readPermission), EmptyRetrieval))
         .thenReturn(Future.successful(EmptyRetrieval))
-      val request: FakeRequest[JsObject] = FakeRequest(GET, routes.UserController.getUsersByAuthorisedEori.url)
+      val request: FakeRequest[JsObject]           = FakeRequest(GET, routes.UserController.getUsersByAuthorisedEori.url)
         .withHeaders("Content-Type" -> "application/json", AUTHORIZATION -> "my-token")
         .withBody(Json.obj("thirdPartyEori" -> authorisedEori))
-      val result: Future[Result]         = controller.getUsersByAuthorisedEori.apply(request)
+      val result: Future[Result]                   = controller.getUsersByAuthorisedEori.apply(request)
       contentAsJson(result) shouldBe Json.toJson(eoriBusinessInfos)
     }
   }
