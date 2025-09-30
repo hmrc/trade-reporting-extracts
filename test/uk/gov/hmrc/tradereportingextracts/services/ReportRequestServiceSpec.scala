@@ -307,7 +307,7 @@ class ReportRequestServiceSpec
 
     "return user reports and third party reports correctly" in {
       when(mockCustomsDataStoreConnector.getEoriHistory(eori))
-        .thenReturn(Future.successful(EoriHistoryResponse(Seq(EoriHistory(eori, Some("2023-01-01"), None)))))
+        .thenReturn(Future.successful(EoriHistoryResponse(Seq.empty)))
       when(mockReportRequestRepository.findByRequesterEoriHistory(Seq(eori)))
         .thenReturn(Future.successful(Seq(userReportRequest, thirdPartyReportRequest)))
       when(mockCustomsDataStoreConnector.getCompanyInformation(thirdPartyEori))
@@ -336,6 +336,45 @@ class ReportRequestServiceSpec
             requestedDate = Instant.parse("2024-07-01T10:00:00Z"),
             reportType = ReportTypeName.EXPORTS_ITEM_REPORT,
             companyName = "Unknown company",
+            reportStatus = ReportStatus.IN_PROGRESS,
+            reportStartDate = Instant.parse("2024-06-01T00:00:00Z"),
+            reportEndDate = Instant.parse("2024-06-30T23:59:59Z")
+          )
+        )
+      )
+    }
+
+    "return user reports and third party reports correctly with no Company name" in {
+      when(mockCustomsDataStoreConnector.getEoriHistory(eori))
+        .thenReturn(Future.successful(EoriHistoryResponse(Seq.empty)))
+      when(mockReportRequestRepository.findByRequesterEoriHistory(Seq(eori)))
+        .thenReturn(Future.successful(Seq(userReportRequest, thirdPartyReportRequest)))
+      when(mockCustomsDataStoreConnector.getCompanyInformation(thirdPartyEori))
+        .thenReturn(Future.successful(CompanyInformation()))
+
+      val result = service.getReportRequestsForUser(eori).futureValue
+
+      result.userReports mustBe Some(
+        Seq(
+          UserReport(
+            referenceNumber = "REQ123",
+            reportName = "Monthly Report",
+            requestedDate = Instant.parse("2024-07-01T10:00:00Z"),
+            reportType = ReportTypeName.EXPORTS_ITEM_REPORT,
+            reportStatus = ReportStatus.IN_PROGRESS,
+            reportStartDate = Instant.parse("2024-06-01T00:00:00Z"),
+            reportEndDate = Instant.parse("2024-06-30T23:59:59Z")
+          )
+        )
+      )
+      result.thirdPartyReports mustBe Some(
+        Seq(
+          ThirdPartyReport(
+            referenceNumber = "REQ123",
+            reportName = "Monthly Report",
+            requestedDate = Instant.parse("2024-07-01T10:00:00Z"),
+            reportType = ReportTypeName.EXPORTS_ITEM_REPORT,
+            companyName = "",
             reportStatus = ReportStatus.IN_PROGRESS,
             reportStartDate = Instant.parse("2024-06-01T00:00:00Z"),
             reportEndDate = Instant.parse("2024-06-30T23:59:59Z")
