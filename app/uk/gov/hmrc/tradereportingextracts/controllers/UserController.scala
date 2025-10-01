@@ -153,7 +153,6 @@ class UserController @Inject() (
           userService
             .getUsersByAuthorisedEoriWithDateFilter(thirdPartyEori)
             .map(users =>
-              println(Json.toJson(users))
               Ok(Json.toJson(users))
             )
             .recover { case e: Exception =>
