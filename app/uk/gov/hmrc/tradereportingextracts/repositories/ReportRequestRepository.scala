@@ -105,9 +105,9 @@ class ReportRequestRepository @Inject() (appConfig: AppConfig, mongoComponent: M
       collection
         .find(
           Filters.and(
-              Filters.in("requesterEORI", eoriHistory*),
-              Filters.exists("fileNotifications", false) // only fetch pending reports
-            )
+            Filters.in("requesterEORI", eoriHistory*),
+            Filters.exists("fileNotifications", false) // only fetch pending reports
+          )
         )
         .toFuture()
     }
