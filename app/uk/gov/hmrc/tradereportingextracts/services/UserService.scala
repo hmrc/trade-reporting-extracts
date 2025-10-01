@@ -111,8 +111,21 @@ class UserService @Inject() (
       }
     )
 
-  def getUsersByAuthorisedEori(thirdPartyEori: String): Future[Seq[User]] =
-    userRepository.getUsersByAuthorisedEori(thirdPartyEori)
+  def getUsersByAuthorisedEori(thirdPartyEori: String): Future[Seq[UserDetails]] =
+    for {
+      users       <- userRepository.getUsersByAuthorisedEori(thirdPartyEori)
+      userDetails <- Future.traverse(users) { user =>
+                       customsDataStoreConnector.getCompanyInformation(user.eori).map { companyInformation =>
+                         UserDetails(
+                           eori = user.eori,
+                           additionalEmails = user.additionalEmails,
+                           authorisedUsers = user.authorisedUsers,
+                           companyInformation = companyInformation,
+                           notificationEmail = NotificationEmail()
+                         )
+                       }
+                     }
+    } yield userDetails
 
   def getUsersByAuthorisedEoriWithDateFilter(thirdPartyEori: String): Future[Seq[User]] =
     userRepository.getUsersByAuthorisedEoriWithDateFilter(thirdPartyEori)

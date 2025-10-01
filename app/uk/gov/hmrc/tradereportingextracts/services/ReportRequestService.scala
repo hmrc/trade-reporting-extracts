@@ -57,10 +57,15 @@ class ReportRequestService @Inject() (
       eoriHistory                       <- customsDataStoreConnector.getEoriHistory(eori).map(_.eoriHistory.map(_.eori))
       eoriHistoryWithCurrentEori         = if (eoriHistory.contains(eori)) eoriHistory else eoriHistory :+ eori
       reportRequests                    <- reportRequestRepository.findByRequesterEoriHistory(eoriHistoryWithCurrentEori)
+      /*
+      The first group (userRequests) contains requests where at least one reportEORI matches the user's EORI history.
+      The second group (thirdPartyRequests) contains the rest.
+       */
       (userRequests, thirdPartyRequests) =
         reportRequests.partition(rr => rr.reportEORIs.exists(eoriHistoryWithCurrentEori.contains))
       userReports                        = userRequests.map(toUserReport)
-      thirdPartyReports                  = thirdPartyRequests.map(toThirdPartyReport(_, "Unknown company"))
+      thirdPartyReportsFuture            = toThirdPartyReports(thirdPartyRequests)
+      thirdPartyReports                 <- thirdPartyReportsFuture.map(_.toSeq)
     } yield GetReportRequestsResponse(
       userReports = if (userReports.nonEmpty) Some(userReports) else None,
       thirdPartyReports = if (thirdPartyReports.nonEmpty) Some(thirdPartyReports) else None
@@ -76,6 +81,15 @@ class ReportRequestService @Inject() (
       reportStartDate = req.reportStart,
       reportEndDate = req.reportEnd
     )
+
+  private def toThirdPartyReports(
+    thirdPartyRequests: Seq[ReportRequest]
+  )(implicit ec: ExecutionContext): Future[Seq[ThirdPartyReport]] =
+    Future.traverse(thirdPartyRequests) { req =>
+      customsDataStoreConnector
+        .getCompanyInformation(req.reportEORIs.head)
+        .map(companyInfo => toThirdPartyReport(req, companyInfo.name))
+    }
 
   private def toThirdPartyReport(req: ReportRequest, companyName: String): ThirdPartyReport =
     ThirdPartyReport(
