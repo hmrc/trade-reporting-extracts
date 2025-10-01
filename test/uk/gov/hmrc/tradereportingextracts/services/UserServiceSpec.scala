@@ -230,7 +230,7 @@ class UserServiceSpec
           NotificationEmail("test@test.com", LocalDateTime.now())
         when(mockCustomsDataStoreConnector.getCompanyInformation(eori))
           .thenReturn(Future.successful(companyInformation))
-        when(mockRepository.getOrCreateUser(eori)).thenReturn(Future.successful(user))
+        when(mockRepository.getOrCreateUser(eori)).thenReturn(Future.successful(user, false))
         when(mockCustomsDataStoreConnector.getNotificationEmail(eori)).thenReturn(Future.successful(notificationEmail))
         val result             = service.getUserAndEmailDetails(eori)
         result.futureValue mustEqual UserDetails(
@@ -252,7 +252,7 @@ class UserServiceSpec
         val notificationEmail  = NotificationEmail()
         when(mockCustomsDataStoreConnector.getCompanyInformation(eori))
           .thenReturn(Future.successful(companyInformation))
-        when(mockRepository.getOrCreateUser(eori)).thenReturn(Future.successful(user))
+        when(mockRepository.getOrCreateUser(eori)).thenReturn(Future.successful(user, false))
         when(mockCustomsDataStoreConnector.getNotificationEmail(eori)).thenReturn(Future.successful(notificationEmail))
         val result             = service.getUserAndEmailDetails(eori)
         result.futureValue mustEqual UserDetails(
@@ -371,7 +371,6 @@ class UserServiceSpec
 
     "transformToThirdPartyDetails" - {
 
-      val eori           = "123"
       val thirdPartyEori = "456"
 
       val authorisedUser = AuthorisedUser(

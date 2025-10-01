@@ -26,16 +26,13 @@ import org.scalatestplus.mockito.MockitoSugar
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import uk.gov.hmrc.mongo.test.CleanMongoCollectionSupport
 import uk.gov.hmrc.tradereportingextracts.config.AppConfig
-import uk.gov.hmrc.tradereportingextracts.models.AccessType.IMPORTS
+import uk.gov.hmrc.tradereportingextracts.models.AccessType.{EXPORTS, IMPORTS}
 import uk.gov.hmrc.tradereportingextracts.models.etmp.EoriUpdate
 import uk.gov.hmrc.tradereportingextracts.models.{AuthorisedUser, User}
 import uk.gov.hmrc.tradereportingextracts.services.UserService
 
-import java.time.{Clock, Instant, LocalDate, ZoneOffset}
-import uk.gov.hmrc.tradereportingextracts.models.{AuthorisedUser, User}
-import uk.gov.hmrc.tradereportingextracts.models.AccessType.{EXPORTS, IMPORTS}
-
 import java.time.temporal.ChronoUnit
+import java.time.{Clock, Instant, LocalDate, ZoneOffset}
 import scala.concurrent.ExecutionContext
 import scala.concurrent.ExecutionContext.Implicits.global
 
@@ -178,16 +175,18 @@ class UserRepositorySpec
 
     "getOrCreateUser" should {
       "must create a new user if it does not exist" in {
-        val eori   = "NEW-EORI"
-        val result = userRepository.getOrCreateUser(eori).futureValue
+        val eori              = "NEW-EORI"
+        val (result, isExist) = userRepository.getOrCreateUser(eori).futureValue
         result.eori mustEqual eori
+        isExist mustEqual false
       }
 
       "must return existing user with updatd accessDate if it exists" in {
-        val insertResult = userRepository.insert(user).futureValue
-        val result       = userRepository.getOrCreateUser(user.eori).futureValue
+        val insertResult      = userRepository.insert(user).futureValue
+        val (result, isExist) = userRepository.getOrCreateUser(user.eori).futureValue
         insertResult mustEqual true
         result.accessDate.compareTo(Instant.now().minusSeconds(1)) >= 0
+        isExist mustEqual true
       }
     }
 
@@ -234,7 +233,7 @@ class UserRepositorySpec
 
         val eori           = "EORI1234"
         val thirdPartyEori = "AUTH-EORI-1"
-        val insertResult   = userRepository.insert(user).futureValue
+        userRepository.insert(user).futureValue
         val result         = userRepository.getAuthorisedUser(eori, thirdPartyEori).futureValue
         result mustBe Some(
           AuthorisedUser(
