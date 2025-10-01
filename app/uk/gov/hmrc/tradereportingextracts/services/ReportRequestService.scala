@@ -17,7 +17,9 @@
 package uk.gov.hmrc.tradereportingextracts.services
 
 import play.api.mvc.Headers
-import uk.gov.hmrc.tradereportingextracts.connectors.CustomsDataStoreConnector
+import play.api.Logging
+import uk.gov.hmrc.http.HeaderCarrier
+import uk.gov.hmrc.tradereportingextracts.connectors.{CustomsDataStoreConnector, EmailConnector}
 import uk.gov.hmrc.tradereportingextracts.models.*
 import uk.gov.hmrc.tradereportingextracts.models.eis.EisReportStatusHeaders.XCorrelationID
 import uk.gov.hmrc.tradereportingextracts.models.eis.EisReportStatusRequest
@@ -31,8 +33,11 @@ import scala.concurrent.{ExecutionContext, Future}
 @Singleton
 class ReportRequestService @Inject() (
   reportRequestRepository: ReportRequestRepository,
-  customsDataStoreConnector: CustomsDataStoreConnector
-):
+  customsDataStoreConnector: CustomsDataStoreConnector,
+  emailConnector: EmailConnector
+) extends Logging:
+
+  implicit val hc: HeaderCarrier = HeaderCarrier()
 
   def create(reportRequest: ReportRequest)(implicit ec: ExecutionContext): Future[Boolean] =
     reportRequestRepository.insert(reportRequest)
@@ -112,19 +117,50 @@ class ReportRequestService @Inject() (
   def countAvailableReports(eori: String)(using ec: ExecutionContext): Future[Long] =
     reportRequestRepository.countAvailableReports(eori)
 
-  def processReportStatus(headers: Headers, eisReportStatusRequest: EisReportStatusRequest)(using
-    ec: ExecutionContext
-  ): Unit = {
+  def processReportStatus(
+    headers: Headers,
+    eisReportStatusRequest: EisReportStatusRequest
+  )(using ec: ExecutionContext): Future[Unit] = {
     val correlationId = headers.get(XCorrelationID.toString).getOrElse("unknown-correlation-id")
-    val reportRequest = reportRequestRepository.findByCorrelationId(correlationId)
-    reportRequest.map {
+    reportRequestRepository.findByCorrelationId(correlationId).flatMap {
       case Some(req) =>
+        val maskedId             = req.reportRequestId.replaceFirst("^.{5}", "XXXXX")
         val updatedNotifications = req.notifications :+ eisReportStatusRequest
         val updatedReportRequest = req.copy(notifications = updatedNotifications)
-        reportRequestRepository.update(updatedReportRequest)
+        (
+          req.notifications.exists(_.statusType == EisReportStatusRequest.StatusType.ERROR),
+          eisReportStatusRequest.statusType
+        ) match {
+          case (false, StatusType.ERROR) =>
+            for {
+              _ <- reportRequestRepository.update(updatedReportRequest)
+              _  = req.userEmail match {
+                     case Some(userEmail) =>
+                       emailConnector.sendEmailRequest(
+                         templateId = "tre_report_failed",
+                         email = userEmail.decryptedValue,
+                         params = Map("reportRequestId" -> maskedId)
+                       )
+                     case None            =>
+                       logger.info(s"No userEmail found for reportRequestId: $maskedId")
+                       Future.successful(())
+                   }
+              _  = Future.sequence(
+                     req.recipientEmails.map { email =>
+                       emailConnector.sendEmailRequest(
+                         templateId = "tre_report_failed_non_verified",
+                         email = email,
+                         params = Map("reportRequestId" -> maskedId)
+                       )
+                     }
+                   )
+            } yield ()
+          case _                         =>
+            reportRequestRepository.update(updatedReportRequest).map(_ => ())
+        }
       case None      =>
+        Future.successful(())
     }
-
   }
 
   def determineReportStatus(reportRequest: ReportRequest): ReportStatus =
