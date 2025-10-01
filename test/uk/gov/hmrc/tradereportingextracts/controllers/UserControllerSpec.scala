@@ -409,17 +409,26 @@ class UserControllerSpec extends SpecBase {
   "UserController.getUsersByAuthorisedEoriWithDateFilter" should {
 
     "return 200 OK with list of users" in new Setup {
-      val authorisedEori                 = "GB111111111111"
-      val users: Seq[User]               = Seq(
-        User(
+      val authorisedEori                = "GB111111111111"
+      val userDetails: Seq[UserDetails] = Seq(
+        UserDetails(
           eori = "GB123456789000",
           additionalEmails = Seq.empty,
           authorisedUsers = Seq.empty,
-          accessDate = Instant.now()
+          companyInformation = CompanyInformation(name = "ABC Ltd", consent = "1", address = AddressInformation()),
+          notificationEmail = NotificationEmail()
         )
       )
+
+      val eoriBusinessInfos: Seq[EoriBusinessInfo] = Seq(
+        EoriBusinessInfo(
+          eori = "GB123456789000",
+          businessInfo = Some("ABC Ltd")
+        )
+      )
+
       when(mockUserService.getUsersByAuthorisedEoriWithDateFilter(authorisedEori))
-        .thenReturn(Future.successful(users))
+        .thenReturn(Future.successful(userDetails))
       when(mockStubBehaviour.stubAuth(Some(readPermission), EmptyRetrieval))
         .thenReturn(Future.successful(EmptyRetrieval))
       val request: FakeRequest[JsObject] =
@@ -427,7 +436,7 @@ class UserControllerSpec extends SpecBase {
           .withHeaders("Content-Type" -> "application/json", AUTHORIZATION -> "my-token")
           .withBody(Json.obj("thirdPartyEori" -> authorisedEori))
       val result: Future[Result]         = controller.getUsersByAuthorisedEoriWithDateFilter.apply(request)
-      contentAsJson(result) shouldBe Json.toJson(users)
+      contentAsJson(result) shouldBe Json.toJson(eoriBusinessInfos)
     }
   }
 

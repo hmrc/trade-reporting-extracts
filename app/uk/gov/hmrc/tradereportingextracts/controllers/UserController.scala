@@ -152,7 +152,15 @@ class UserController @Inject() (
         case JsSuccess(thirdPartyEori, _) =>
           userService
             .getUsersByAuthorisedEoriWithDateFilter(thirdPartyEori)
-            .map(users => Ok(Json.toJson(users)))
+            .map { userDetails =>
+              val eoriBusinessInfos = userDetails.map(userDetail =>
+                val businessInfo =
+                  if userDetail.companyInformation.consent.equals("1") then Some(userDetail.companyInformation.name)
+                  else None
+                EoriBusinessInfo(userDetail.eori, businessInfo)
+              )
+              Ok(Json.toJson(eoriBusinessInfos))
+            }
             .recover { case e: Exception =>
               InternalServerError(e.getMessage)
             }

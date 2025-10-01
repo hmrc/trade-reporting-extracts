@@ -22,7 +22,7 @@ import uk.gov.hmrc.tradereportingextracts.models.thirdParty.ThirdPartyAddedConfi
 import uk.gov.hmrc.tradereportingextracts.models.*
 import uk.gov.hmrc.tradereportingextracts.repositories.UserRepository
 
-import java.time.{LocalDate, ZoneOffset}
+import java.time.{Clock, LocalDate, ZoneOffset}
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -127,5 +127,18 @@ class UserService @Inject() (
                      }
     } yield userDetails
 
-  def getUsersByAuthorisedEoriWithDateFilter(thirdPartyEori: String): Future[Seq[User]] =
-    userRepository.getUsersByAuthorisedEoriWithDateFilter(thirdPartyEori)
+  def getUsersByAuthorisedEoriWithDateFilter(thirdPartyEori: String): Future[Seq[UserDetails]] =
+    for {
+      users       <- userRepository.getUsersByAuthorisedEoriWithDateFilter(thirdPartyEori)
+      userDetails <- Future.traverse(users) { user =>
+                       customsDataStoreConnector.getCompanyInformation(user.eori).map { companyInformation =>
+                         UserDetails(
+                           eori = user.eori,
+                           additionalEmails = user.additionalEmails,
+                           authorisedUsers = user.authorisedUsers,
+                           companyInformation = companyInformation,
+                           notificationEmail = NotificationEmail()
+                         )
+                       }
+                     }
+    } yield userDetails
