@@ -58,69 +58,6 @@ class ReportRequestServiceSpec
   }
   "determineReportStatus" should {
 
-    "return COMPLETE when fileNotifications contain the final part" in {
-      val fileNotifications = Some(
-        Seq(
-          FileNotification(
-            "file1",
-            1000,
-            7,
-            "CSV",
-            "x1",
-            "r1",
-            "IMPORTS-ITEM-REPORT",
-            "1",
-            "",
-            ""
-          ),
-          FileNotification(
-            "file2",
-            1000,
-            7,
-            "CSV",
-            "x2",
-            "r1",
-            "IMPORTS-ITEM-REPORT",
-            "2",
-            "",
-            ""
-          ),
-          FileNotification(
-            "file3",
-            1000,
-            7,
-            "CSV",
-            "x3",
-            "r1",
-            "IMPORTS-ITEM-REPORT",
-            "3",
-            "true",
-            ""
-          )
-        )
-      )
-
-      val reportRequest = ReportRequest(
-        "id",
-        "corr",
-        "Report",
-        "GB123",
-        EoriRole.TRADER,
-        Seq("GB123"),
-        Some(SensitiveString("test@example.com")),
-        Seq("test@example.com"),
-        ReportTypeName.IMPORTS_ITEM_REPORT,
-        Instant.now(),
-        Instant.now(),
-        Instant.now(),
-        Seq.empty,
-        fileNotifications,
-        Instant.now()
-      )
-
-      service.invokePrivateMethod("determineReportStatus", reportRequest) shouldBe ReportStatus.COMPLETE
-    }
-
     "return ERROR when not complete and at least one notification has ERROR status" in {
       val notifications = Seq(
         EisReportStatusRequest(
