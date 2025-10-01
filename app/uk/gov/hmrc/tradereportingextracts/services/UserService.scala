@@ -20,15 +20,16 @@ import uk.gov.hmrc.tradereportingextracts.connectors.CustomsDataStoreConnector
 import uk.gov.hmrc.tradereportingextracts.models.etmp.EoriUpdate
 import uk.gov.hmrc.tradereportingextracts.models.thirdParty.ThirdPartyAddedConfirmation
 import uk.gov.hmrc.tradereportingextracts.models.*
-import uk.gov.hmrc.tradereportingextracts.repositories.UserRepository
+import uk.gov.hmrc.tradereportingextracts.repositories.{ReportRequestRepository, UserRepository}
 
-import java.time.{LocalDate, ZoneOffset}
+import java.time.{Instant, LocalDate, ZoneOffset}
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
 class UserService @Inject() (
   userRepository: UserRepository,
+  reportRequestRepository: ReportRequestRepository,
   customsDataStoreConnector: CustomsDataStoreConnector
 )(using ec: ExecutionContext):
 
@@ -54,13 +55,40 @@ class UserService @Inject() (
     for {
       (user, isExist)    <- userRepository.getOrCreateUser(eori)
       companyInformation <- customsDataStoreConnector.getCompanyInformation(eori)
-    } yield UserDetails(
-      eori = user.eori,
-      additionalEmails = user.additionalEmails,
-      authorisedUsers = user.authorisedUsers,
-      companyInformation = companyInformation,
-      notificationEmail = NotificationEmail()
-    )
+    } yield
+      if isExist then cleanExpiredAccesses(user)
+      UserDetails(
+        eori = user.eori,
+        additionalEmails = user.additionalEmails,
+        authorisedUsers = user.authorisedUsers,
+        companyInformation = companyInformation,
+        notificationEmail = NotificationEmail()
+      )
+
+  private def cleanExpiredAccesses(user: User): Unit =
+    // clean expired authorised users of given user and reports raised by them
+    val now = Instant.now()
+    user.authorisedUsers
+      .filter { authorisedUser =>
+        authorisedUser.accessEnd.forall(_.isBefore(now))
+      }
+      .foreach { authorisedUser =>
+        reportRequestRepository.deleteReportsForThirdPartyRemoval(user.eori, authorisedUser.eori)
+        userRepository.deleteAuthorisedUser(user.eori, authorisedUser.eori)
+      }
+    // clean a given user from other users where his/her access has expired and reports raised by him/her
+    userRepository.getUsersByAuthorisedEori(user.eori).foreach { traders =>
+      traders.foreach { trader =>
+        trader.authorisedUsers
+          .filter { authorisedUser =>
+            authorisedUser.eori == user.eori && authorisedUser.accessEnd.forall(_.isBefore(now))
+          }
+          .foreach { authorisedUser =>
+            reportRequestRepository.deleteReportsForThirdPartyRemoval(trader.eori, authorisedUser.eori)
+            userRepository.deleteAuthorisedUser(trader.eori, authorisedUser.eori)
+          }
+      }
+    }
 
   def getAuthorisedEoris(eori: String): Future[Seq[String]] =
     userRepository.getAuthorisedEoris(eori)

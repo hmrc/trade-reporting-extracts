@@ -29,7 +29,7 @@ import uk.gov.hmrc.tradereportingextracts.models.AccessType.IMPORTS
 import uk.gov.hmrc.tradereportingextracts.models.etmp.EoriUpdate
 import uk.gov.hmrc.tradereportingextracts.models.thirdParty.ThirdPartyAddedConfirmation
 import uk.gov.hmrc.tradereportingextracts.models.*
-import uk.gov.hmrc.tradereportingextracts.repositories.UserRepository
+import uk.gov.hmrc.tradereportingextracts.repositories.{ReportRequestRepository, UserRepository}
 
 import java.time.{Instant, LocalDate, LocalDateTime}
 import scala.concurrent.{ExecutionContext, Future}
@@ -48,8 +48,8 @@ class UserServiceSpec
 
     val mockRepository                = mock[UserRepository]
     val mockCustomsDataStoreConnector = mock[CustomsDataStoreConnector]
-
-    val service = new UserService(mockRepository, mockCustomsDataStoreConnector)
+    val mockReportRequestRepository   = mock[ReportRequestRepository]
+    val service                       = new UserService(mockRepository, mockReportRequestRepository, mockCustomsDataStoreConnector)
 
     val eori            = "EORI1234"
     val authorisedEoris = Seq("AUTH-EORI-1", "AUTH-EORI-2")

@@ -290,11 +290,12 @@ class UserRepositorySpec
 
     "deleteAuthorisedUser" should {
       "should return true when repository deletion succeeds" in {
-        val repo      = mock[UserRepository]
-        val cds       = mock[uk.gov.hmrc.tradereportingextracts.connectors.CustomsDataStoreConnector]
-        val service   = new UserService(repo, cds)
-        val eori      = "GB987654321098"
-        val thirdEori = "GB123456123456"
+        val repo                    = mock[UserRepository]
+        val cds                     = mock[uk.gov.hmrc.tradereportingextracts.connectors.CustomsDataStoreConnector]
+        val reportRequestRepository = mock[ReportRequestRepository]
+        val service                 = new UserService(repo, reportRequestRepository, cds)
+        val eori                    = "GB987654321098"
+        val thirdEori               = "GB123456123456"
 
         org.mockito.Mockito
           .when(repo.deleteAuthorisedUser(eori, thirdEori))
@@ -307,11 +308,12 @@ class UserRepositorySpec
       }
 
       "should return false when repository indicates not found" in {
-        val repo      = mock[UserRepository]
-        val cds       = mock[uk.gov.hmrc.tradereportingextracts.connectors.CustomsDataStoreConnector]
-        val service   = new UserService(repo, cds)
-        val eori      = "GB987654321098"
-        val thirdEori = "GB000000000000"
+        val repo                    = mock[UserRepository]
+        val cds                     = mock[uk.gov.hmrc.tradereportingextracts.connectors.CustomsDataStoreConnector]
+        val reportRequestRepository = mock[ReportRequestRepository]
+        val service                 = new UserService(repo, reportRequestRepository, cds)
+        val eori                    = "GB987654321098"
+        val thirdEori               = "GB000000000000"
 
         org.mockito.Mockito
           .when(repo.deleteAuthorisedUser(eori, thirdEori))
@@ -324,11 +326,12 @@ class UserRepositorySpec
       }
 
       "should fail the future when repository fails" in {
-        val repo      = mock[UserRepository]
-        val cds       = mock[uk.gov.hmrc.tradereportingextracts.connectors.CustomsDataStoreConnector]
-        val service   = new UserService(repo, cds)
-        val eori      = "GB987654321098"
-        val thirdEori = "GB123456123456"
+        val repo                    = mock[UserRepository]
+        val cds                     = mock[uk.gov.hmrc.tradereportingextracts.connectors.CustomsDataStoreConnector]
+        val reportRequestRepository = mock[ReportRequestRepository]
+        val service                 = new UserService(repo, reportRequestRepository, cds)
+        val eori                    = "GB987654321098"
+        val thirdEori               = "GB123456123456"
 
         when(
           repo.deleteAuthorisedUser(
