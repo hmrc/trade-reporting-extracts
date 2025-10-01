@@ -152,9 +152,7 @@ class UserController @Inject() (
         case JsSuccess(thirdPartyEori, _) =>
           userService
             .getUsersByAuthorisedEoriWithDateFilter(thirdPartyEori)
-            .map(users =>
-              Ok(Json.toJson(users))
-            )
+            .map(users => Ok(Json.toJson(users)))
             .recover { case e: Exception =>
               InternalServerError(e.getMessage)
             }
