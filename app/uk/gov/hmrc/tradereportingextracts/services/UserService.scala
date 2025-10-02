@@ -56,7 +56,7 @@ class UserService @Inject() (
       (user, isExist)    <- userRepository.getOrCreateUser(eori)
       companyInformation <- customsDataStoreConnector.getCompanyInformation(eori)
     } yield
-      if isExist then cleanExpiredAccesses(user)
+      if isExist then cleanExpiredAccesses(user).foreach(_ => ())
       UserDetails(
         eori = user.eori,
         additionalEmails = user.additionalEmails,
