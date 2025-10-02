@@ -66,14 +66,14 @@ class UserRepository @Inject() (appConfig: AppConfig, mongoComponent: MongoCompo
       .headOption()
   }
 
-  def getOrCreateUser(eori: String): Future[User] = Mdc.preservingMdc {
+  def getOrCreateUser(eori: String): Future[(User, Boolean)] = Mdc.preservingMdc {
     findByEori(eori).flatMap {
       case Some(existingUser) =>
         val updatedUser = existingUser.copy(accessDate = java.time.Instant.now())
-        update(updatedUser).map(_ => updatedUser)
+        update(updatedUser).map(_ => (updatedUser, true))
       case None               =>
         val newUser = User(eori)
-        insert(newUser).map(_ => newUser)
+        insert(newUser).map(_ => (newUser, false))
     }
   }
 
