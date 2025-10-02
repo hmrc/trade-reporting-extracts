@@ -66,33 +66,33 @@ class UserService @Inject() (
       )
 
   def cleanExpiredAccesses(user: User): Future[Unit] = {
-    val now           = Instant.now()
-    val expired       = user.authorisedUsers.filter(_.accessEnd.forall(_.isBefore(now)))
-    val deletes       = Future.sequence(
-      expired.map { authorisedUser =>
-        for {
-          _ <- reportRequestRepository.deleteReportsForThirdPartyRemoval(user.eori, authorisedUser.eori)
-          _ <- userRepository.deleteAuthorisedUser(user.eori, authorisedUser.eori)
-        } yield ()
-      }
-    )
-    val traderDeletes = userRepository.getUsersByAuthorisedEori(user.eori).flatMap { traders =>
-      Future.sequence(
-        traders.flatMap { trader =>
-          trader.authorisedUsers
-            .filter(au => au.eori == user.eori && au.accessEnd.forall(_.isBefore(now)))
-            .map { authorisedUser =>
-              for {
-                _ <- reportRequestRepository.deleteReportsForThirdPartyRemoval(trader.eori, authorisedUser.eori)
-                _ <- userRepository.deleteAuthorisedUser(trader.eori, authorisedUser.eori)
-              } yield ()
-            }
-        }
-      )
+    val now = Instant.now()
+
+    def deleteForAuthorisedUser(trader: User, authorisedUser: AuthorisedUser): Future[Unit] = {
+      val deleteReportsFut = reportRequestRepository.deleteReportsForThirdPartyRemoval(trader.eori, authorisedUser.eori)
+      val deleteUserFut    = userRepository.deleteAuthorisedUser(trader.eori, authorisedUser.eori)
+      for {
+        _ <- deleteReportsFut
+        _ <- deleteUserFut
+      } yield ()
     }
+
+    val expired                          = user.authorisedUsers.filter(_.accessEnd.forall(_.isBefore(now)))
+    val deleteFutures: Seq[Future[Unit]] = expired.map(au => deleteForAuthorisedUser(user, au))
+    val deletesFut: Future[Unit]         = Future.sequence(deleteFutures).map(_ => ())
+
+    val traderDeletesFut = userRepository.getUsersByAuthorisedEori(user.eori).flatMap { traders =>
+      val deleteTraderFutures = for {
+        trader <- traders
+        au     <- trader.authorisedUsers
+        if au.eori == user.eori && au.accessEnd.forall(_.isBefore(now))
+      } yield deleteForAuthorisedUser(trader, au)
+      Future.sequence(deleteTraderFutures).map(_ => ())
+    }
+
     for {
-      _ <- deletes
-      _ <- traderDeletes
+      _ <- deletesFut
+      _ <- traderDeletesFut
     } yield ()
   }
 
