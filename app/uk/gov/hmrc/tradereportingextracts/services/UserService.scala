@@ -65,30 +65,36 @@ class UserService @Inject() (
         notificationEmail = NotificationEmail()
       )
 
-  private def cleanExpiredAccesses(user: User): Unit =
-    // clean expired authorised users of given user and reports raised by them
-    val now = Instant.now()
-    user.authorisedUsers
-      .filter { authorisedUser =>
-        authorisedUser.accessEnd.forall(_.isBefore(now))
+  def cleanExpiredAccesses(user: User): Future[Unit] = {
+    val now           = Instant.now()
+    val expired       = user.authorisedUsers.filter(_.accessEnd.forall(_.isBefore(now)))
+    val deletes       = Future.sequence(
+      expired.map { authorisedUser =>
+        for {
+          _ <- reportRequestRepository.deleteReportsForThirdPartyRemoval(user.eori, authorisedUser.eori)
+          _ <- userRepository.deleteAuthorisedUser(user.eori, authorisedUser.eori)
+        } yield ()
       }
-      .foreach { authorisedUser =>
-        reportRequestRepository.deleteReportsForThirdPartyRemoval(user.eori, authorisedUser.eori)
-        userRepository.deleteAuthorisedUser(user.eori, authorisedUser.eori)
-      }
-    // clean a given user from other users where his/her access has expired and reports raised by him/her
-    userRepository.getUsersByAuthorisedEori(user.eori).foreach { traders =>
-      traders.foreach { trader =>
-        trader.authorisedUsers
-          .filter { authorisedUser =>
-            authorisedUser.eori == user.eori && authorisedUser.accessEnd.forall(_.isBefore(now))
-          }
-          .foreach { authorisedUser =>
-            reportRequestRepository.deleteReportsForThirdPartyRemoval(trader.eori, authorisedUser.eori)
-            userRepository.deleteAuthorisedUser(trader.eori, authorisedUser.eori)
-          }
-      }
+    )
+    val traderDeletes = userRepository.getUsersByAuthorisedEori(user.eori).flatMap { traders =>
+      Future.sequence(
+        traders.flatMap { trader =>
+          trader.authorisedUsers
+            .filter(au => au.eori == user.eori && au.accessEnd.forall(_.isBefore(now)))
+            .map { authorisedUser =>
+              for {
+                _ <- reportRequestRepository.deleteReportsForThirdPartyRemoval(trader.eori, authorisedUser.eori)
+                _ <- userRepository.deleteAuthorisedUser(trader.eori, authorisedUser.eori)
+              } yield ()
+            }
+        }
+      )
     }
+    for {
+      _ <- deletes
+      _ <- traderDeletes
+    } yield ()
+  }
 
   def getAuthorisedEoris(eori: String): Future[Seq[String]] =
     userRepository.getAuthorisedEoris(eori)
