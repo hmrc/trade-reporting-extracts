@@ -34,7 +34,7 @@ case class ReportRequest(
   eoriRole: EoriRole,
   reportEORIs: Seq[String],
   userEmail: Option[SensitiveString],
-  recipientEmails: Seq[String],
+  recipientEmails: Seq[SensitiveString],
   reportTypeName: ReportTypeName,
   reportStart: Instant,
   reportEnd: Instant,

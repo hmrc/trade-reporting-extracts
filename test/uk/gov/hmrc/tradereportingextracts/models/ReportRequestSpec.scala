@@ -33,7 +33,7 @@ class ReportRequestSpec extends AnyWordSpec with Matchers {
     eoriRole = EoriRole.TRADER,
     reportEORIs = Array("EORI1", "EORI2").toIndexedSeq,
     userEmail = Some(SensitiveString("test@example.com")),
-    recipientEmails = Array("email1@example.com", "email2@example.com").toIndexedSeq,
+    recipientEmails = Seq(SensitiveString("email1@example.com"), SensitiveString("email2@example.com")),
     reportTypeName = ReportTypeName.IMPORTS_ITEM_REPORT,
     reportStart = Instant.parse("2023-01-01T00:00:00Z"),
     reportEnd = Instant.parse("2023-12-31T23:59:59Z"),
