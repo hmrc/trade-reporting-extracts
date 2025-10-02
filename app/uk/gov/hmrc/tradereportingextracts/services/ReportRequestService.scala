@@ -164,14 +164,13 @@ class ReportRequestService @Inject() (
   }
 
   def determineReportStatus(reportRequest: ReportRequest): ReportStatus =
-    (reportRequest.isReportStatusComplete(), reportRequest.notifications) match
-      case (true, _)                                                                    => ReportStatus.COMPLETE
-      case (_, notifications)
+    reportRequest.notifications match
+      case notifications
           if notifications
             .exists(n => n.statusType == StatusType.ERROR && n.statusCode == StatusCode.FILENOREC.toString) =>
         ReportStatus.NO_DATA_AVAILABLE
-      case (_, notifications) if notifications.exists(_.statusType == StatusType.ERROR) => ReportStatus.ERROR
-      case _                                                                            => ReportStatus.IN_PROGRESS
+      case notifications if notifications.exists(_.statusType == StatusType.ERROR) => ReportStatus.ERROR
+      case _                                                                       => ReportStatus.IN_PROGRESS
 
   def countReportSubmissionsForEoriOnDate(eori: String, limit: Int, date: LocalDate = LocalDate.now())(implicit
     ec: ExecutionContext

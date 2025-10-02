@@ -105,6 +105,7 @@ class ReportRequestRepository @Inject() (appConfig: AppConfig, mongoComponent: M
       collection
         .find(Filters.in("requesterEORI", eoriHistory*))
         .toFuture()
+        .map(_.filter(!_.isReportStatusComplete()))
     }
 
   def getAvailableReports(eori: String)(using ec: ExecutionContext): Future[Seq[ReportRequest]] = Mdc.preservingMdc {
