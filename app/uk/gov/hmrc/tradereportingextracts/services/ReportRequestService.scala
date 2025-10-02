@@ -163,15 +163,14 @@ class ReportRequestService @Inject() (
     }
   }
 
-  def determineReportStatus(reportRequest: ReportRequest): ReportStatus = {
-    val notifications = reportRequest.notifications
-    if (notifications.exists(n => n.statusType == StatusType.ERROR && n.statusCode == StatusCode.FILENOREC.toString))
-      ReportStatus.NO_DATA_AVAILABLE
-    else if (notifications.exists(_.statusType == StatusType.ERROR))
-      ReportStatus.ERROR
-    else
-      ReportStatus.IN_PROGRESS
-  }
+  def determineReportStatus(reportRequest: ReportRequest): ReportStatus =
+    reportRequest.notifications match
+      case notifications
+          if notifications
+            .exists(n => n.statusType == StatusType.ERROR && n.statusCode == StatusCode.FILENOREC.toString) =>
+        ReportStatus.NO_DATA_AVAILABLE
+      case notifications if notifications.exists(_.statusType == StatusType.ERROR) => ReportStatus.ERROR
+      case _                                                                       => ReportStatus.IN_PROGRESS
 
   def countReportSubmissionsForEoriOnDate(eori: String, limit: Int, date: LocalDate = LocalDate.now())(implicit
     ec: ExecutionContext

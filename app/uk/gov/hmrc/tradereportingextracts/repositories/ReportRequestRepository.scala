@@ -103,13 +103,9 @@ class ReportRequestRepository @Inject() (appConfig: AppConfig, mongoComponent: M
   def findByRequesterEoriHistory(eoriHistory: Seq[String])(using ec: ExecutionContext): Future[Seq[ReportRequest]] =
     Mdc.preservingMdc {
       collection
-        .find(
-          Filters.and(
-            Filters.in("requesterEORI", eoriHistory*),
-            Filters.exists("fileNotifications", false) // only fetch pending reports
-          )
-        )
+        .find(Filters.in("requesterEORI", eoriHistory*))
         .toFuture()
+        .map(_.filter(!_.isReportStatusComplete()))
     }
 
   def getAvailableReports(eori: String)(using ec: ExecutionContext): Future[Seq[ReportRequest]] = Mdc.preservingMdc {
