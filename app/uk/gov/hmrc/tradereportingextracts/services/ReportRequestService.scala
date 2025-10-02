@@ -149,7 +149,7 @@ class ReportRequestService @Inject() (
                      req.recipientEmails.map { email =>
                        emailConnector.sendEmailRequest(
                          templateId = "tre_report_failed_non_verified",
-                         email = email,
+                         email = email.decryptedValue,
                          params = Map("reportRequestId" -> maskedId)
                        )
                      }

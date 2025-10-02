@@ -60,9 +60,9 @@ class ReportRequestTransformationServiceSpec extends AsyncFreeSpec with Matchers
           result.reportName mustBe "TestReport"
           result.requesterEORI mustBe "GB123456789000"
           result.eoriRole mustBe EoriRole.DECLARANT
-          result.reportEORIs                  must contain allOf ("GB123456789001", "GB123456789000")
-          result.userEmail.get.decryptedValue must be("user@email.com")
-          result.recipientEmails              must contain("test@example.com")
+          result.reportEORIs                                must contain allOf ("GB123456789001", "GB123456789000")
+          result.userEmail.get.decryptedValue               must be("user@email.com")
+          result.recipientEmails.map(e => e.decryptedValue) must contain("test@example.com")
           result.recipientEmails.size mustBe reportRequestTemplate.additionalEmail.get.size
           result.reportTypeName mustBe ReportTypeName.IMPORTS_HEADER_REPORT
           result.reportStart mustBe LocalDate.parse("2025-04-01").atStartOfDay(ZoneOffset.UTC).toInstant
@@ -148,7 +148,7 @@ class ReportRequestTransformationServiceSpec extends AsyncFreeSpec with Matchers
           eoriRole = EoriRole.DECLARANT,
           reportEORIs = Seq("EORI1"),
           userEmail = Some(SensitiveString("user1@test.com")),
-          recipientEmails = Seq("user1@test.com"),
+          recipientEmails = Seq(SensitiveString("user1@test.com")),
           reportTypeName = ReportTypeName.IMPORTS_HEADER_REPORT,
           reportStart = Instant.now,
           reportEnd = Instant.now,
@@ -165,7 +165,7 @@ class ReportRequestTransformationServiceSpec extends AsyncFreeSpec with Matchers
           eoriRole = EoriRole.TRADER,
           reportEORIs = Seq("EORI2"),
           userEmail = Some(SensitiveString("user2@test.com")),
-          recipientEmails = Seq("user2@test.com"),
+          recipientEmails = Seq(SensitiveString("user2@test.com")),
           reportTypeName = ReportTypeName.IMPORTS_ITEM_REPORT,
           reportStart = Instant.now,
           reportEnd = Instant.now,
@@ -182,7 +182,7 @@ class ReportRequestTransformationServiceSpec extends AsyncFreeSpec with Matchers
           eoriRole = EoriRole.TRADER_DECLARANT,
           reportEORIs = Seq("EORI3"),
           userEmail = Some(SensitiveString("user3@test.com")),
-          recipientEmails = Seq("user3@test.com"),
+          recipientEmails = Seq(SensitiveString("user3@test.com")),
           reportTypeName = ReportTypeName.IMPORTS_TAXLINE_REPORT,
           reportStart = Instant.now,
           reportEnd = Instant.now,
@@ -211,7 +211,7 @@ class ReportRequestTransformationServiceSpec extends AsyncFreeSpec with Matchers
           eoriRole = EoriRole.TRADER,
           reportEORIs = Seq("EORI1"),
           userEmail = Some(SensitiveString("user1@test.com")),
-          recipientEmails = Seq("user1@test.com"),
+          recipientEmails = Seq(SensitiveString("user1@test.com")),
           reportTypeName = ReportTypeName.EXPORTS_ITEM_REPORT,
           reportStart = Instant.now,
           reportEnd = Instant.now,
