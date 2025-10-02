@@ -77,7 +77,7 @@ class FileNotificationServiceSpec
     eoriRole = null,
     reportEORIs = Seq("GB123456789012"),
     userEmail = Some(SensitiveString("test@example.com")),
-    recipientEmails = Seq("test@example.com"),
+    recipientEmails = Seq(SensitiveString("test@example.com")),
     reportTypeName = ReportTypeName.IMPORTS_HEADER_REPORT,
     reportStart = null,
     reportEnd = null,
@@ -169,7 +169,8 @@ class FileNotificationServiceSpec
     "send tre_report_available only to userEmail if present" in {
       val reportWithUserEmail = reportRequest.copy(
         userEmail = Some(SensitiveString("user@verified.com")),
-        recipientEmails = Seq("recipient1@nonverified.com", "recipient2@nonverified.com")
+        recipientEmails =
+          Seq(SensitiveString("recipient1@nonverified.com"), SensitiveString("recipient2@nonverified.com"))
       )
       when(mockReportRequestService.get(eqTo("RE123456"))(any()))
         .thenReturn(Future.successful(Some(reportWithUserEmail)))
@@ -202,7 +203,8 @@ class FileNotificationServiceSpec
     "send tre_report_available_non_verified to all recipientEmails" in {
       val reportWithRecipients = reportRequest.copy(
         userEmail = Some(SensitiveString("user@verified.com")),
-        recipientEmails = Seq("recipient1@nonverified.com", "recipient2@nonverified.com")
+        recipientEmails =
+          Seq(SensitiveString("recipient1@nonverified.com"), SensitiveString("recipient2@nonverified.com"))
       )
       when(mockReportRequestService.get(eqTo("RE123456"))(any()))
         .thenReturn(Future.successful(Some(reportWithRecipients)))
@@ -230,7 +232,7 @@ class FileNotificationServiceSpec
     "when userEmail is missing do not send request with tre_report_available" in {
       val reportNoUserEmail = reportRequest.copy(
         userEmail = None,
-        recipientEmails = Seq("recipient@nonverified.com")
+        recipientEmails = Seq(SensitiveString("recipient@nonverified.com"))
       )
       when(mockReportRequestService.get(eqTo("RE123456"))(any()))
         .thenReturn(Future.successful(Some(reportNoUserEmail)))
@@ -258,7 +260,7 @@ class FileNotificationServiceSpec
     "mask the first 5 digits of reportRequestId in params when sending email" in {
       val maskedReportRequest = reportRequest.copy(
         reportRequestId = "12345-6789",
-        recipientEmails = Seq("masked@example.com")
+        recipientEmails = Seq(SensitiveString("masked@example.com"))
       )
       when(mockReportRequestService.get(eqTo("12345-6789"))(any()))
         .thenReturn(Future.successful(Some(maskedReportRequest)))

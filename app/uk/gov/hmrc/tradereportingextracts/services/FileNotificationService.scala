@@ -70,7 +70,7 @@ class FileNotificationService @Inject() (reportRequestService: ReportRequestServ
                        updatedReportRequest.recipientEmails.map { email =>
                          emailConnector.sendEmailRequest(
                            templateId = "tre_report_available_non_verified",
-                           email = email,
+                           email = email.decryptedValue,
                            params = Map("reportRequestId" -> maskedId)
                          )
                        }
