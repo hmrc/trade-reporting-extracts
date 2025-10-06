@@ -30,6 +30,7 @@ import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.internalauth.client.*
 import uk.gov.hmrc.internalauth.client.Retrieval.EmptyRetrieval
 import uk.gov.hmrc.internalauth.client.test.{BackendAuthComponentsStub, StubBehaviour}
+import uk.gov.hmrc.tradereportingextracts.config.AppConfig
 import uk.gov.hmrc.tradereportingextracts.models.AvailableReportResponse
 import uk.gov.hmrc.tradereportingextracts.services.AvailableReportService
 import uk.gov.hmrc.tradereportingextracts.utils.ApplicationConstants.eori
@@ -41,12 +42,12 @@ class AvailableReportControllerSpec extends PlaySpec with MockitoSugar {
   implicit val ec: ExecutionContext                        = ExecutionContext.Implicits.global
   implicit val hc: HeaderCarrier                           = HeaderCarrier()
   val mockService: AvailableReportService                  = mock[AvailableReportService]
-  val environment: Environment                             = Environment.simple()
+  val appConfig: AppConfig                                 = mock[AppConfig]
   private val mockStubBehaviour                            = mock[StubBehaviour]
   private val backendAuthComponents: BackendAuthComponents =
     BackendAuthComponentsStub(mockStubBehaviour)(Helpers.stubControllerComponents())
   val controller                                           =
-    new AvailableReportController(Helpers.stubControllerComponents(), backendAuthComponents, mockService, environment)(
+    new AvailableReportController(Helpers.stubControllerComponents(), backendAuthComponents, mockService, appConfig)(
       using ec
     )
   val permission                                           = Predicate.Permission(
