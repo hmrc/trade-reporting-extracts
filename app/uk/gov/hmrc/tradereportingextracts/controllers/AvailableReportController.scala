@@ -16,15 +16,14 @@
 
 package uk.gov.hmrc.tradereportingextracts.controllers
 
-import play.api.{Environment, Mode}
 import play.api.libs.json.Json
 import play.api.mvc.{Action, AnyContent, ControllerComponents, Result}
+import play.api.{Environment, Mode}
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.internalauth.client.*
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
-import uk.gov.hmrc.tradereportingextracts.models.{AvailableReportAction, AvailableReportResponse, FileType}
 import uk.gov.hmrc.tradereportingextracts.models.audit.AuditDownloadRequest
-import uk.gov.hmrc.tradereportingextracts.models.sdes.FileAvailableMetadataItem
+import uk.gov.hmrc.tradereportingextracts.models.{AvailableReportAction, AvailableReportResponse, FileType}
 import uk.gov.hmrc.tradereportingextracts.services.AvailableReportService
 import uk.gov.hmrc.tradereportingextracts.utils.ApplicationConstants.eori
 import uk.gov.hmrc.tradereportingextracts.utils.PermissionsUtil.readPermission
