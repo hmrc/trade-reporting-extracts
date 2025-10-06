@@ -16,12 +16,14 @@
 
 package uk.gov.hmrc.tradereportingextracts.controllers
 
+import play.api.Mode.Prod
 import play.api.libs.json.Json
 import play.api.mvc.{Action, AnyContent, ControllerComponents, Result}
 import play.api.{Environment, Mode}
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.internalauth.client.*
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
+import uk.gov.hmrc.tradereportingextracts.config.AppConfig
 import uk.gov.hmrc.tradereportingextracts.models.audit.AuditDownloadRequest
 import uk.gov.hmrc.tradereportingextracts.models.{AvailableReportAction, AvailableReportResponse, FileType}
 import uk.gov.hmrc.tradereportingextracts.services.AvailableReportService
@@ -35,7 +37,7 @@ class AvailableReportController @Inject() (
   cc: ControllerComponents,
   auth: BackendAuthComponents,
   availableReportService: AvailableReportService,
-  environment: Environment
+  appConfig: AppConfig
 )(using
   executionContext: ExecutionContext
 ) extends BackendController(cc) {
@@ -45,7 +47,7 @@ class AvailableReportController @Inject() (
     request.body.asJson.flatMap(json => (json \ eori).asOpt[String]) match {
       case Some(eoriValue) =>
         availableReportService.getAvailableReports(eoriValue).map { reports =>
-          val reportsWithLinks = if environment.mode != Mode.Prod then addDownLoadLinks(reports) else reports
+          val reportsWithLinks = if appConfig.mockFileDownload then addDownLoadLinks(reports) else reports
           Ok(Json.toJson(reportsWithLinks))
         }
       case _               =>
