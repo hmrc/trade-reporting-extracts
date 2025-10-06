@@ -16,19 +16,21 @@
 
 package uk.gov.hmrc.tradereportingextracts.controllers
 
-import org.scalatestplus.play.*
-import org.scalatestplus.mockito.MockitoSugar
-import org.mockito.Mockito.*
 import org.mockito.ArgumentMatchers.*
-import play.api.test.Helpers.*
-import play.api.test.{FakeRequest, Helpers}
+import org.mockito.Mockito.*
+import org.scalatestplus.mockito.MockitoSugar
+import org.scalatestplus.play.*
+import play.api.Environment
 import play.api.libs.json.Json
 import play.api.mvc.Result
 import play.api.mvc.Results.BadRequest
+import play.api.test.Helpers.*
+import play.api.test.{FakeRequest, Helpers}
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.internalauth.client.*
 import uk.gov.hmrc.internalauth.client.Retrieval.EmptyRetrieval
 import uk.gov.hmrc.internalauth.client.test.{BackendAuthComponentsStub, StubBehaviour}
+import uk.gov.hmrc.tradereportingextracts.config.AppConfig
 import uk.gov.hmrc.tradereportingextracts.models.AvailableReportResponse
 import uk.gov.hmrc.tradereportingextracts.services.AvailableReportService
 import uk.gov.hmrc.tradereportingextracts.utils.ApplicationConstants.eori
@@ -39,12 +41,15 @@ class AvailableReportControllerSpec extends PlaySpec with MockitoSugar {
 
   implicit val ec: ExecutionContext                        = ExecutionContext.Implicits.global
   implicit val hc: HeaderCarrier                           = HeaderCarrier()
-  val mockService                                          = mock[AvailableReportService]
+  val mockService: AvailableReportService                  = mock[AvailableReportService]
+  val appConfig: AppConfig                                 = mock[AppConfig]
   private val mockStubBehaviour                            = mock[StubBehaviour]
   private val backendAuthComponents: BackendAuthComponents =
     BackendAuthComponentsStub(mockStubBehaviour)(Helpers.stubControllerComponents())
   val controller                                           =
-    new AvailableReportController(Helpers.stubControllerComponents(), backendAuthComponents, mockService)(using ec)
+    new AvailableReportController(Helpers.stubControllerComponents(), backendAuthComponents, mockService, appConfig)(
+      using ec
+    )
   val permission                                           = Predicate.Permission(
     Resource(ResourceType("trade-reporting-extracts"), ResourceLocation("trade-reporting-extracts/*")),
     IAAction("READ")
