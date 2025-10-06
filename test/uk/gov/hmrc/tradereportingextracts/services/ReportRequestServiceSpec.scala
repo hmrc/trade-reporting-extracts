@@ -392,12 +392,16 @@ class ReportRequestServiceSpec
     val thirdPartyReportRequest = userReportRequest.copy(reportEORIs = Seq(thirdPartyEori))
 
     "return user reports and third party reports correctly" in {
+      val mockCustomsDataStoreConnector = mock[CustomsDataStoreConnector]
+
+      val service = new ReportRequestService(mockReportRequestRepository, mockCustomsDataStoreConnector, null)
+
       when(mockCustomsDataStoreConnector.getEoriHistory(eori))
         .thenReturn(Future.successful(EoriHistoryResponse(Seq.empty)))
-      when(mockReportRequestRepository.findByRequesterEoriHistory(Seq(eori)))
+      when(mockReportRequestRepository.findByRequesterEoriHistory(any())(using any()))
         .thenReturn(Future.successful(Seq(userReportRequest, thirdPartyReportRequest)))
-      when(mockCustomsDataStoreConnector.getCompanyInformation(thirdPartyEori))
-        .thenReturn(Future.successful(CompanyInformation("Unknown company")))
+      when(mockCustomsDataStoreConnector.getCompanyInformation(any()))
+        .thenReturn(Future.successful(CompanyInformation("Test Company")))
 
       val result = service.getReportRequestsForUser(eori).futureValue
 
@@ -421,7 +425,7 @@ class ReportRequestServiceSpec
             reportName = "Monthly Report",
             requestedDate = Instant.parse("2024-07-01T10:00:00Z"),
             reportType = ReportTypeName.EXPORTS_ITEM_REPORT,
-            companyName = "Unknown company",
+            companyName = "Test Company",
             reportStatus = ReportStatus.IN_PROGRESS,
             reportStartDate = Instant.parse("2024-06-01T00:00:00Z"),
             reportEndDate = Instant.parse("2024-06-30T23:59:59Z")
@@ -435,7 +439,7 @@ class ReportRequestServiceSpec
         .thenReturn(Future.successful(EoriHistoryResponse(Seq.empty)))
       when(mockReportRequestRepository.findByRequesterEoriHistory(Seq(eori)))
         .thenReturn(Future.successful(Seq(userReportRequest, thirdPartyReportRequest)))
-      when(mockCustomsDataStoreConnector.getCompanyInformation(thirdPartyEori))
+      when(mockCustomsDataStoreConnector.getCompanyInformation(any()))
         .thenReturn(Future.successful(CompanyInformation()))
 
       val result = service.getReportRequestsForUser(eori).futureValue
@@ -470,7 +474,7 @@ class ReportRequestServiceSpec
     }
 
     "return None for both when no reports" in {
-      when(mockReportRequestRepository.findByRequesterEoriHistory(Seq(eori)))
+      when(mockReportRequestRepository.findByRequesterEoriHistory(any())(using any()))
         .thenReturn(Future.successful(Seq.empty))
 
       val result = service.getReportRequestsForUser(eori).futureValue
