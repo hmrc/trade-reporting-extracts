@@ -61,7 +61,7 @@ class ReportRequestService @Inject() (
     for {
       eoriHistory                       <- customsDataStoreConnector.getEoriHistory(eori).map(_.eoriHistory.map(_.eori))
       eoriHistoryWithCurrentEori         = if (eoriHistory.contains(eori)) eoriHistory else eoriHistory :+ eori
-      reportRequests                    <- reportRequestRepository.findByRequesterEoriHistory(eoriHistoryWithCurrentEori)
+      reportRequests                    <- reportRequestRepository.getRequestedReportsByHistory(eoriHistoryWithCurrentEori)
       /*
       The first group (userRequests) contains requests where at least one reportEORI matches the user's EORI history.
       The second group (thirdPartyRequests) contains the rest.
