@@ -20,6 +20,7 @@ import org.scalatestplus.play.*
 import org.scalatestplus.mockito.MockitoSugar
 import org.mockito.Mockito.*
 import org.mockito.ArgumentMatchers.*
+import play.api.{Environment, Mode}
 import play.api.test.Helpers.*
 import play.api.test.{FakeRequest, Helpers}
 import play.api.libs.json.Json
@@ -40,11 +41,14 @@ class AvailableReportControllerSpec extends PlaySpec with MockitoSugar {
   implicit val ec: ExecutionContext                        = ExecutionContext.Implicits.global
   implicit val hc: HeaderCarrier                           = HeaderCarrier()
   val mockService                                          = mock[AvailableReportService]
+  val environment                                          = Environment.simple()
   private val mockStubBehaviour                            = mock[StubBehaviour]
   private val backendAuthComponents: BackendAuthComponents =
     BackendAuthComponentsStub(mockStubBehaviour)(Helpers.stubControllerComponents())
   val controller                                           =
-    new AvailableReportController(Helpers.stubControllerComponents(), backendAuthComponents, mockService)(using ec)
+    new AvailableReportController(Helpers.stubControllerComponents(), backendAuthComponents, mockService, environment)(
+      using ec
+    )
   val permission                                           = Predicate.Permission(
     Resource(ResourceType("trade-reporting-extracts"), ResourceLocation("trade-reporting-extracts/*")),
     IAAction("READ")
