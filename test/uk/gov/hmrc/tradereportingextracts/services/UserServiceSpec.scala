@@ -31,7 +31,7 @@ import uk.gov.hmrc.tradereportingextracts.models.thirdParty.ThirdPartyAddedConfi
 import uk.gov.hmrc.tradereportingextracts.models.*
 import uk.gov.hmrc.tradereportingextracts.repositories.UserRepository
 
-import java.time.{Instant, LocalDate, LocalDateTime}
+import java.time.{Clock, Instant, LocalDate, LocalDateTime, ZoneOffset}
 import scala.concurrent.{ExecutionContext, Future}
 
 class UserServiceSpec
@@ -48,6 +48,8 @@ class UserServiceSpec
 
     val mockRepository                = mock[UserRepository]
     val mockCustomsDataStoreConnector = mock[CustomsDataStoreConnector]
+    val fixedInstant: Instant         = LocalDate.of(2025, 1, 1).atStartOfDay(ZoneOffset.UTC).toInstant
+    val fixedClock: Clock             = Clock.fixed(fixedInstant, ZoneOffset.UTC)
 
     val service = new UserService(mockRepository, mockCustomsDataStoreConnector)
 
@@ -169,7 +171,10 @@ class UserServiceSpec
     "getUsersByAuthorisedEoriWithDateFilter" - {
 
       "must return authorised EORIs when repository returns them" in {
-        val authorisedEori   = "GB111111111111"
+        val authorisedEori     = "GB111111111111"
+        val notificationEmail  = NotificationEmail(timestamp = LocalDateTime.now(fixedClock))
+        val companyInformation = CompanyInformation(name = "TestCompany")
+
         val users: Seq[User] = Seq(
           User(
             eori = "GB123456789000",
@@ -179,11 +184,25 @@ class UserServiceSpec
           )
         )
 
+        val userDetails: Seq[UserDetails] = Seq(
+          UserDetails(
+            eori = "GB123456789000",
+            additionalEmails = Seq.empty,
+            authorisedUsers = Seq.empty,
+            companyInformation = companyInformation,
+            notificationEmail = notificationEmail
+          )
+        )
+
         when(mockRepository.getUsersByAuthorisedEoriWithDateFilter(authorisedEori)).thenReturn(Future.successful(users))
+
+        when(mockCustomsDataStoreConnector.getCompanyInformation("GB123456789000"))
+          .thenReturn(Future.successful(companyInformation))
 
         val result = service.getUsersByAuthorisedEoriWithDateFilter(authorisedEori)
 
-        result.futureValue mustEqual users
+        result.futureValue.map(_.eori).head mustEqual "GB123456789000"
+        result.futureValue.map(_.companyInformation).head mustEqual companyInformation
       }
 
       "must fail when repository returns failed Future" in {
