@@ -67,7 +67,7 @@ class ReportRequestTransformationService @Inject() (
         eoriRole = getRole(userAnswers.eoriRole),
         reportEORIs = historicalEoris :+ userAnswers.whichEori.getOrElse(""),
         userEmail = Some(SensitiveString(userEmail)),
-        recipientEmails = userAnswers.additionalEmail.getOrElse(Seq()).toSeq,
+        recipientEmails = userAnswers.additionalEmail.getOrElse(Seq()).toSeq.map(email => SensitiveString(email)),
         reportTypeName = getReportType(userAnswers.reportType.head),
         reportStart = LocalDate.parse(userAnswers.reportStartDate).atStartOfDay(ZoneOffset.UTC).toInstant,
         reportEnd = LocalDate.parse(userAnswers.reportEndDate).atStartOfDay(ZoneOffset.UTC).toInstant,

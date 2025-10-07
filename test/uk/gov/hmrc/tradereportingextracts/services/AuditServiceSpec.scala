@@ -51,7 +51,7 @@ class AuditServiceSpec extends SpecBase {
         createDate = Instant.now(),
         updateDate = Instant.now(),
         eoriRole = EoriRole.TRADER,
-        recipientEmails = Seq("user@example.com"),
+        recipientEmails = Seq(SensitiveString("user@example.com")),
         userEmail = Some(SensitiveString("user@example.com")),
         notifications = Seq(
           EisReportStatusRequest(
