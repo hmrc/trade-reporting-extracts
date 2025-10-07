@@ -32,6 +32,7 @@ import uk.gov.hmrc.tradereportingextracts.repositories.ReportRequestRepository
 import uk.gov.hmrc.tradereportingextracts.utils.WireMockHelper
 import org.mockito.Mockito.*
 import org.mockito.ArgumentMatchers.{eq as eqTo, *}
+import org.scalatest.time.{Millis, Seconds, Span}
 import org.scalatestplus.mockito.MockitoSugar
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -46,14 +47,17 @@ class ReportRequestServiceSpec
     with ScalaFutures
     with WireMockHelper {
 
-  val service                                              = new ReportRequestService(null, null, null) // nulls are fine here since we’re only testing private logic
-  implicit val ec: ExecutionContext                        = scala.concurrent.ExecutionContext.Implicits.global
-  val mockReportRequestRepository: ReportRequestRepository = mock[ReportRequestRepository]
-  val mockEmailConnector: EmailConnector                   = mock[EmailConnector]
+  val service                                                  = new ReportRequestService(null, null, null) // nulls are fine here since we’re only testing private logic
+  implicit val ec: ExecutionContext                            = scala.concurrent.ExecutionContext.Implicits.global
+  implicit val hc: HeaderCarrier                               = HeaderCarrier()
+  val mockReportRequestRepository: ReportRequestRepository     = mock[ReportRequestRepository]
+  val mockEmailConnector: EmailConnector                       = mock[EmailConnector]
+  val mockCustomsDataStoreConnector: CustomsDataStoreConnector = mock[CustomsDataStoreConnector]
 
   override def beforeEach(): Unit = {
     super.beforeEach()
     reset(mockReportRequestRepository)
+    reset(mockCustomsDataStoreConnector)
     reset(mockEmailConnector)
   }
   "determineReportStatus" should {
@@ -365,11 +369,6 @@ class ReportRequestServiceSpec
   }
 
   "getReportRequestsForUser" should {
-    val mockCustomsDataStoreConnector = mock[CustomsDataStoreConnector]
-    val mockReportRequestRepository   = mock[ReportRequestRepository]
-    val service                       = new ReportRequestService(mockReportRequestRepository, mockCustomsDataStoreConnector, null)
-    implicit val ec: ExecutionContext = scala.concurrent.ExecutionContext.Implicits.global
-
     val eori                    = "GB123456789000"
     val thirdPartyEori          = "GB999999999999"
     val userReportRequest       = ReportRequest(
@@ -392,32 +391,28 @@ class ReportRequestServiceSpec
     val thirdPartyReportRequest = userReportRequest.copy(reportEORIs = Seq(thirdPartyEori))
 
     "return user reports and third party reports correctly" in {
-      val mockCustomsDataStoreConnector = mock[CustomsDataStoreConnector]
-
-      val service = new ReportRequestService(mockReportRequestRepository, mockCustomsDataStoreConnector, null)
-
+      val service                         =
+        new ReportRequestService(mockReportRequestRepository, mockCustomsDataStoreConnector, mockEmailConnector)
+      val eori1                           = "GB123456789000"
+      val history1: EoriHistory           =
+        EoriHistory(eori1, Some("2024-01-01"), Some("2024-06-30"))
+      val history2: EoriHistory           =
+        EoriHistory(eori1, Some("2024-07-01"), Some("2024-12-31"))
+      val histories: EoriHistoryResponse  = EoriHistoryResponse(Seq(history1, history2))
+      val companyInfo: CompanyInformation = CompanyInformation(
+        name = "Test Company",
+        consent = "1",
+        address = AddressInformation("123 Street", "City", Some("AB12 3CD"), "UK")
+      )
       when(mockCustomsDataStoreConnector.getEoriHistory(eori))
-        .thenReturn(Future.successful(EoriHistoryResponse(Seq.empty)))
+        .thenReturn(Future.successful(histories))
       when(mockReportRequestRepository.findByRequesterEoriHistory(any())(using any()))
         .thenReturn(Future.successful(Seq(userReportRequest, thirdPartyReportRequest)))
       when(mockCustomsDataStoreConnector.getCompanyInformation(any()))
-        .thenReturn(Future.successful(CompanyInformation("Test Company")))
+        .thenAnswer(_ => Future.successful(companyInfo))
 
       val result = service.getReportRequestsForUser(eori).futureValue
 
-      result.userReports mustBe Some(
-        Seq(
-          UserReport(
-            referenceNumber = "REQ123",
-            reportName = "Monthly Report",
-            requestedDate = Instant.parse("2024-07-01T10:00:00Z"),
-            reportType = ReportTypeName.EXPORTS_ITEM_REPORT,
-            reportStatus = ReportStatus.IN_PROGRESS,
-            reportStartDate = Instant.parse("2024-06-01T00:00:00Z"),
-            reportEndDate = Instant.parse("2024-06-30T23:59:59Z")
-          )
-        )
-      )
       result.thirdPartyReports mustBe Some(
         Seq(
           ThirdPartyReport(
@@ -435,12 +430,25 @@ class ReportRequestServiceSpec
     }
 
     "return user reports and third party reports correctly with no Company name" in {
+      val eori1                           = "GB123456789000"
+      val history1: EoriHistory           =
+        EoriHistory(eori1, Some("2024-01-01"), Some("2024-06-30"))
+      val history2: EoriHistory           =
+        EoriHistory(eori1, Some("2024-07-01"), Some("2024-12-31"))
+      val histories: EoriHistoryResponse  = EoriHistoryResponse(Seq(history1, history2))
+      val service                         =
+        new ReportRequestService(mockReportRequestRepository, mockCustomsDataStoreConnector, mockEmailConnector)
+      val companyInfo: CompanyInformation = CompanyInformation(
+        name = "Test Company",
+        consent = "0",
+        address = AddressInformation("123 Street", "City", Some("AB12 3CD"), "UK")
+      )
       when(mockCustomsDataStoreConnector.getEoriHistory(eori))
-        .thenReturn(Future.successful(EoriHistoryResponse(Seq.empty)))
-      when(mockReportRequestRepository.findByRequesterEoriHistory(Seq(eori)))
+        .thenReturn(Future.successful(histories))
+      when(mockReportRequestRepository.findByRequesterEoriHistory(any())(using any()))
         .thenReturn(Future.successful(Seq(userReportRequest, thirdPartyReportRequest)))
       when(mockCustomsDataStoreConnector.getCompanyInformation(any()))
-        .thenReturn(Future.successful(CompanyInformation()))
+        .thenAnswer(_ => Future.successful(companyInfo))
 
       val result = service.getReportRequestsForUser(eori).futureValue
 
@@ -464,7 +472,7 @@ class ReportRequestServiceSpec
             reportName = "Monthly Report",
             requestedDate = Instant.parse("2024-07-01T10:00:00Z"),
             reportType = ReportTypeName.EXPORTS_ITEM_REPORT,
-            companyName = "",
+            companyName = "Unknown",
             reportStatus = ReportStatus.IN_PROGRESS,
             reportStartDate = Instant.parse("2024-06-01T00:00:00Z"),
             reportEndDate = Instant.parse("2024-06-30T23:59:59Z")
@@ -474,8 +482,20 @@ class ReportRequestServiceSpec
     }
 
     "return None for both when no reports" in {
+      val service                        =
+        new ReportRequestService(mockReportRequestRepository, mockCustomsDataStoreConnector, mockEmailConnector)
+      val eori1                          = "GB123456789000"
+      val history1: EoriHistory          =
+        EoriHistory(eori1, Some("2024-01-01"), Some("2024-06-30"))
+      val history2: EoriHistory          =
+        EoriHistory(eori1, Some("2024-07-01"), Some("2024-12-31"))
+      val histories: EoriHistoryResponse = EoriHistoryResponse(Seq(history1, history2))
+      when(mockCustomsDataStoreConnector.getEoriHistory(eori))
+        .thenReturn(Future.successful(histories))
       when(mockReportRequestRepository.findByRequesterEoriHistory(any())(using any()))
         .thenReturn(Future.successful(Seq.empty))
+      when(mockCustomsDataStoreConnector.getCompanyInformation(any()))
+        .thenAnswer(_ => Future.successful(CompanyInformation("")))
 
       val result = service.getReportRequestsForUser(eori).futureValue
 

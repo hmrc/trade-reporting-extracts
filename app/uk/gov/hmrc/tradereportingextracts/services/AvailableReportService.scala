@@ -110,13 +110,14 @@ class AvailableReportService @Inject() (
 
     def toAvailableThirdPartyReportResponse(
       req: ReportRequest,
-      companyName: String
+      companyName: String,
+      consent: String
     ): AvailableThirdPartyReportResponse =
       AvailableThirdPartyReportResponse(
         referenceNumber = req.reportRequestId,
         reportName = req.reportName,
         reportType = req.reportTypeName,
-        companyName = companyName,
+        companyName = if (consent == "1") companyName else "Unknown",
         expiryDate = req.updateDate.plus(appConfig.reportRequestTTLDays, DAYS),
         action = actionsFor(req)
       )
@@ -125,7 +126,7 @@ class AvailableReportService @Inject() (
       .traverse(thirdPartyRequests) { req =>
         customsDataStoreConnector
           .getCompanyInformation(req.reportEORIs.head)
-          .map(companyInfo => toAvailableThirdPartyReportResponse(req, companyInfo.name))
+          .map(companyInfo => toAvailableThirdPartyReportResponse(req, companyInfo.name, companyInfo.consent))
       }
       .map { availableThirdPartyReports =>
         AvailableReportResponse(Some(availableUserReports), Some(availableThirdPartyReports))
