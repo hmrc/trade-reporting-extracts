@@ -14,17 +14,6 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.tradereportingextracts.models.thirdParty
+package uk.gov.hmrc.tradereportingextracts.models
 
-import play.api.libs.json.{Json, OFormat}
-import uk.gov.hmrc.tradereportingextracts.models.UserActiveStatus
-
-case class EoriBusinessInfo(
-  eori: String,
-  businessInfo: Option[String],
-  status: Option[UserActiveStatus]
-)
-
-object EoriBusinessInfo {
-  implicit val format: OFormat[EoriBusinessInfo] = Json.format[EoriBusinessInfo]
-}
+case class UserWithStatus(user: User, status: UserActiveStatus)

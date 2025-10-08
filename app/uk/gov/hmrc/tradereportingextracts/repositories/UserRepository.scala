@@ -25,7 +25,7 @@ import uk.gov.hmrc.play.http.logging.Mdc
 import uk.gov.hmrc.tradereportingextracts.config.AppConfig
 import uk.gov.hmrc.tradereportingextracts.models.etmp.EoriUpdate
 import uk.gov.hmrc.tradereportingextracts.models.thirdParty.ThirdPartyAddedConfirmation
-import uk.gov.hmrc.tradereportingextracts.models.{AuthorisedUser, User}
+import uk.gov.hmrc.tradereportingextracts.models.{AuthorisedUser, User, UserActiveStatus, UserWithStatus}
 
 import java.time.{Clock, Instant, LocalDate, ZoneOffset}
 import java.util.Date
@@ -173,10 +173,27 @@ class UserRepository @Inject() (appConfig: AppConfig, mongoComponent: MongoCompo
     }
   }
 
-  def getUsersByAuthorisedEori(authorisedEori: String): Future[Seq[User]] = Mdc.preservingMdc {
+  def getUsersByAuthorisedEori(
+    authorisedEori: String,
+    clock: Clock = Clock.systemUTC()
+  ): Future[Seq[UserWithStatus]] = Mdc.preservingMdc {
     collection
       .find(Filters.elemMatch("authorisedUsers", Filters.equal("eori", authorisedEori)))
       .toFuture()
+      .map(_.map { user =>
+        val authorisedUserOpt = user.authorisedUsers.find(_.eori == authorisedEori)
+        val status            = authorisedUserOpt match {
+          case Some(authUser) =>
+            UserActiveStatus.fromInstants(
+              authUser.accessStart,
+              authUser.accessEnd,
+              authUser.reportDataStart,
+              clock
+            )
+          case None           => UserActiveStatus.Expired
+        }
+        UserWithStatus(user, status)
+      })
   }
 
   def getUsersByAuthorisedEoriWithDateFilter(
