@@ -377,124 +377,98 @@ class UserControllerSpec extends SpecBase {
 
   "UserController.getUsersByAuthorisedEori" should {
 
-    "return 200 OK with list of users" in new Setup {
-      val authorisedEori                           = "GB111111111111"
-      val userDetails: Seq[UserDetails]            = Seq(
-        UserDetails(
-          eori = "GB123456789000",
-          additionalEmails = Seq.empty,
-          authorisedUsers = Seq.empty,
-          companyInformation = CompanyInformation(name = "ABC Ltd", consent = "1", address = AddressInformation()),
-          notificationEmail = NotificationEmail()
-        )
-      )
-      val eoriBusinessInfos: Seq[EoriBusinessInfo] = Seq(
+    "return 200 OK with list of users including status" in new Setup {
+      val authorisedEori    = "GB111111111111"
+      val eoriBusinessInfos = Seq(
         EoriBusinessInfo(
           eori = "GB123456789000",
-          businessInfo = Some("ABC Ltd")
+          businessInfo = Some("ABC Ltd"),
+          status = Some(UserActiveStatus.Active)
         )
       )
+
       when(mockUserService.getUsersByAuthorisedEori(authorisedEori))
-        .thenReturn(Future.successful(userDetails))
+        .thenReturn(Future.successful(eoriBusinessInfos))
       when(mockStubBehaviour.stubAuth(Some(readPermission), EmptyRetrieval))
         .thenReturn(Future.successful(EmptyRetrieval))
-      val request: FakeRequest[JsObject]           = FakeRequest(GET, routes.UserController.getUsersByAuthorisedEori.url)
+
+      val request = FakeRequest(GET, routes.UserController.getUsersByAuthorisedEori.url)
         .withHeaders("Content-Type" -> "application/json", AUTHORIZATION -> "my-token")
         .withBody(Json.obj("thirdPartyEori" -> authorisedEori))
-      val result: Future[Result]                   = controller.getUsersByAuthorisedEori.apply(request)
+
+      val result = controller.getUsersByAuthorisedEori.apply(request)
       contentAsJson(result) shouldBe Json.toJson(eoriBusinessInfos)
     }
 
     "return 200 OK with list of users and no company information if no consent" in new Setup {
-      val authorisedEori                           = "GB111111111111"
-      val userDetails: Seq[UserDetails]            = Seq(
-        UserDetails(
-          eori = "GB123456789000",
-          additionalEmails = Seq.empty,
-          authorisedUsers = Seq.empty,
-          companyInformation = CompanyInformation(name = "ABC Ltd", consent = "0", address = AddressInformation()),
-          notificationEmail = NotificationEmail()
-        )
-      )
-      val eoriBusinessInfos: Seq[EoriBusinessInfo] = Seq(
+      val authorisedEori    = "GB111111111111"
+      val eoriBusinessInfos = Seq(
         EoriBusinessInfo(
           eori = "GB123456789000",
-          businessInfo = None
+          businessInfo = None,
+          status = Some(UserActiveStatus.Active)
         )
       )
+
       when(mockUserService.getUsersByAuthorisedEori(authorisedEori))
-        .thenReturn(Future.successful(userDetails))
+        .thenReturn(Future.successful(eoriBusinessInfos))
       when(mockStubBehaviour.stubAuth(Some(readPermission), EmptyRetrieval))
         .thenReturn(Future.successful(EmptyRetrieval))
-      val request: FakeRequest[JsObject]           = FakeRequest(GET, routes.UserController.getUsersByAuthorisedEori.url)
+
+      val request = FakeRequest(GET, routes.UserController.getUsersByAuthorisedEori.url)
         .withHeaders("Content-Type" -> "application/json", AUTHORIZATION -> "my-token")
         .withBody(Json.obj("thirdPartyEori" -> authorisedEori))
-      val result: Future[Result]                   = controller.getUsersByAuthorisedEori.apply(request)
+
+      val result = controller.getUsersByAuthorisedEori.apply(request)
       contentAsJson(result) shouldBe Json.toJson(eoriBusinessInfos)
     }
   }
 
   "UserController.getUsersByAuthorisedEoriWithDateFilter" should {
 
-    "return 200 OK with list of users" in new Setup {
-      val authorisedEori                = "GB111111111111"
-      val userDetails: Seq[UserDetails] = Seq(
-        UserDetails(
-          eori = "GB123456789000",
-          additionalEmails = Seq.empty,
-          authorisedUsers = Seq.empty,
-          companyInformation = CompanyInformation(name = "ABC Ltd", consent = "1", address = AddressInformation()),
-          notificationEmail = NotificationEmail()
-        )
-      )
-
-      val eoriBusinessInfos: Seq[EoriBusinessInfo] = Seq(
+    "return 200 OK with list of users without status" in new Setup {
+      val authorisedEori    = "GB111111111111"
+      val eoriBusinessInfos = Seq(
         EoriBusinessInfo(
           eori = "GB123456789000",
-          businessInfo = Some("ABC Ltd")
+          businessInfo = Some("ABC Ltd"),
+          status = None
         )
       )
 
       when(mockUserService.getUsersByAuthorisedEoriWithDateFilter(authorisedEori))
-        .thenReturn(Future.successful(userDetails))
+        .thenReturn(Future.successful(eoriBusinessInfos))
       when(mockStubBehaviour.stubAuth(Some(readPermission), EmptyRetrieval))
         .thenReturn(Future.successful(EmptyRetrieval))
-      val request: FakeRequest[JsObject] =
-        FakeRequest(GET, routes.UserController.getUsersByAuthorisedEoriWithDateFilter.url)
-          .withHeaders("Content-Type" -> "application/json", AUTHORIZATION -> "my-token")
-          .withBody(Json.obj("thirdPartyEori" -> authorisedEori))
-      val result: Future[Result]         = controller.getUsersByAuthorisedEoriWithDateFilter.apply(request)
+
+      val request = FakeRequest(GET, routes.UserController.getUsersByAuthorisedEoriWithDateFilter.url)
+        .withHeaders("Content-Type" -> "application/json", AUTHORIZATION -> "my-token")
+        .withBody(Json.obj("thirdPartyEori" -> authorisedEori))
+
+      val result = controller.getUsersByAuthorisedEoriWithDateFilter.apply(request)
       contentAsJson(result) shouldBe Json.toJson(eoriBusinessInfos)
     }
 
     "return 200 OK with list of users and no company information if no consent" in new Setup {
-      val authorisedEori                = "GB111111111111"
-      val userDetails: Seq[UserDetails] = Seq(
-        UserDetails(
-          eori = "GB123456789000",
-          additionalEmails = Seq.empty,
-          authorisedUsers = Seq.empty,
-          companyInformation = CompanyInformation(name = "ABC Ltd", consent = "0", address = AddressInformation()),
-          notificationEmail = NotificationEmail()
-        )
-      )
-
-      val eoriBusinessInfos: Seq[EoriBusinessInfo] = Seq(
+      val authorisedEori    = "GB111111111111"
+      val eoriBusinessInfos = Seq(
         EoriBusinessInfo(
           eori = "GB123456789000",
-          businessInfo = None
+          businessInfo = None,
+          status = None
         )
       )
 
       when(mockUserService.getUsersByAuthorisedEoriWithDateFilter(authorisedEori))
-        .thenReturn(Future.successful(userDetails))
+        .thenReturn(Future.successful(eoriBusinessInfos))
       when(mockStubBehaviour.stubAuth(Some(readPermission), EmptyRetrieval))
         .thenReturn(Future.successful(EmptyRetrieval))
-      val request: FakeRequest[JsObject] =
-        FakeRequest(GET, routes.UserController.getUsersByAuthorisedEoriWithDateFilter.url)
-          .withHeaders("Content-Type" -> "application/json", AUTHORIZATION -> "my-token")
-          .withBody(Json.obj("thirdPartyEori" -> authorisedEori))
-      val result: Future[Result]         = controller.getUsersByAuthorisedEoriWithDateFilter.apply(request)
+
+      val request = FakeRequest(GET, routes.UserController.getUsersByAuthorisedEoriWithDateFilter.url)
+        .withHeaders("Content-Type" -> "application/json", AUTHORIZATION -> "my-token")
+        .withBody(Json.obj("thirdPartyEori" -> authorisedEori))
+
+      val result = controller.getUsersByAuthorisedEoriWithDateFilter.apply(request)
       contentAsJson(result) shouldBe Json.toJson(eoriBusinessInfos)
     }
   }
