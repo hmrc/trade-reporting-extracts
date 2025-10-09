@@ -21,6 +21,7 @@ import org.mockito.Mockito.{verify, when}
 import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}
 import org.scalatest.freespec.AnyFreeSpec
 import org.scalatest.matchers.must.Matchers
+import org.scalatest.matchers.should.Matchers.shouldBe
 import org.scalatest.{OptionValues, TryValues}
 import org.scalatestplus.mockito.MockitoSugar
 import org.scalatestplus.mockito.MockitoSugar.mock
@@ -30,6 +31,7 @@ import uk.gov.hmrc.tradereportingextracts.models.etmp.EoriUpdate
 import uk.gov.hmrc.tradereportingextracts.models.thirdParty.ThirdPartyAddedConfirmation
 import uk.gov.hmrc.tradereportingextracts.models.*
 import uk.gov.hmrc.tradereportingextracts.repositories.UserRepository
+import uk.gov.hmrc.tradereportingextracts.models.thirdParty.EoriBusinessInfo
 
 import java.time.{Clock, Instant, LocalDate, LocalDateTime, ZoneOffset}
 import scala.concurrent.{ExecutionContext, Future}
@@ -168,71 +170,86 @@ class UserServiceSpec
       }
     }
 
-    "getUsersByAuthorisedEoriWithDateFilter" - {
+    "getUsersByAuthorisedEori" - {
 
-      "must return authorised EORIs when repository returns them" in {
-        val authorisedEori     = "GB111111111111"
-        val notificationEmail  = NotificationEmail(timestamp = LocalDateTime.now(fixedClock))
-        val companyInformation = CompanyInformation(name = "TestCompany")
-
-        val users: Seq[User] = Seq(
-          User(
-            eori = "GB123456789000",
-            additionalEmails = Seq.empty,
-            authorisedUsers = Seq.empty,
-            accessDate = Instant.now()
+      "return EoriBusinessInfo with status and business info when consent is 1" in {
+        val authorisedEori = "GB111111111111"
+        val companyInfo    = CompanyInformation(name = "Test Ltd", consent = "1")
+        val user           = User(
+          eori = "GB123456789000",
+          authorisedUsers = Seq(
+            AuthorisedUser(
+              eori = authorisedEori,
+              accessStart = Instant.now(),
+              accessEnd = None,
+              reportDataStart = None,
+              reportDataEnd = None,
+              accessType = Set(IMPORTS),
+              referenceName = None
+            )
           )
         )
 
-        val userDetails: Seq[UserDetails] = Seq(
-          UserDetails(
+        val userWithStatus = UserWithStatus(user, UserActiveStatus.Active)
+
+        when(mockRepository.getUsersByAuthorisedEori(authorisedEori)).thenReturn(Future.successful(Seq(userWithStatus)))
+        when(mockCustomsDataStoreConnector.getCompanyInformation(user.eori)).thenReturn(Future.successful(companyInfo))
+
+        val result = service.getUsersByAuthorisedEori(authorisedEori)
+
+        result.futureValue shouldBe Seq(
+          EoriBusinessInfo(
             eori = "GB123456789000",
-            additionalEmails = Seq.empty,
-            authorisedUsers = Seq.empty,
-            companyInformation = companyInformation,
-            notificationEmail = notificationEmail
+            businessInfo = Some("Test Ltd"),
+            status = Some(UserActiveStatus.Active)
+          )
+        )
+      }
+
+      "return EoriBusinessInfo with no business info when consent is not 1" in {
+        val authorisedEori = "GB111111111111"
+        val companyInfo    = CompanyInformation(name = "Test Ltd", consent = "0")
+        val user           = User(
+          eori = "GB123456789000",
+          authorisedUsers = Seq(
+            AuthorisedUser(
+              eori = authorisedEori,
+              accessStart = Instant.now(),
+              accessEnd = None,
+              reportDataStart = None,
+              reportDataEnd = None,
+              accessType = Set(IMPORTS),
+              referenceName = None
+            )
           )
         )
 
-        when(mockRepository.getUsersByAuthorisedEoriWithDateFilter(authorisedEori)).thenReturn(Future.successful(users))
+        val userWithStatus = UserWithStatus(user, UserActiveStatus.Active)
 
-        when(mockCustomsDataStoreConnector.getCompanyInformation("GB123456789000"))
-          .thenReturn(Future.successful(companyInformation))
+        when(mockRepository.getUsersByAuthorisedEori(authorisedEori)).thenReturn(Future.successful(Seq(userWithStatus)))
+        when(mockCustomsDataStoreConnector.getCompanyInformation(user.eori)).thenReturn(Future.successful(companyInfo))
 
-        val result = service.getUsersByAuthorisedEoriWithDateFilter(authorisedEori)
+        val result = service.getUsersByAuthorisedEori(authorisedEori)
 
-        result.futureValue.map(_.eori).head mustEqual "GB123456789000"
-        result.futureValue.map(_.companyInformation).head mustEqual companyInformation
+        result.futureValue shouldBe Seq(
+          EoriBusinessInfo(
+            eori = "GB123456789000",
+            businessInfo = None,
+            status = Some(UserActiveStatus.Active)
+          )
+        )
       }
 
-      "must fail when repository returns failed Future" in {
-        val expectedException = new Exception("User not found")
-        when(mockRepository.getUsersByAuthorisedEoriWithDateFilter(eori)).thenReturn(Future.failed(expectedException))
+      "fail when repository throws exception" in {
+        val authorisedEori    = "GB111111111111"
+        val expectedException = new Exception("Repository failure")
 
-        val result = service.getUsersByAuthorisedEoriWithDateFilter(eori)
+        when(mockRepository.getUsersByAuthorisedEori(authorisedEori)).thenReturn(Future.failed(expectedException))
+
+        val result = service.getUsersByAuthorisedEori(authorisedEori)
 
         whenReady(result.failed) { ex =>
-          ex mustEqual expectedException
-        }
-      }
-    }
-
-    "getNotificationEmail" - {
-      val eori              = "EORI1234"
-      val notificationEmail = NotificationEmail("test@email.com")
-
-      "must return notification email when connector returns it" in {
-        when(mockCustomsDataStoreConnector.getNotificationEmail(eori)).thenReturn(Future.successful(notificationEmail))
-        val result = service.getNotificationEmail(eori)
-        result.futureValue mustEqual notificationEmail
-      }
-
-      "must fail when connector returns failed Future" in {
-        val expectedException = new Exception("Email not found")
-        when(mockCustomsDataStoreConnector.getNotificationEmail(eori)).thenReturn(Future.failed(expectedException))
-        val result            = service.getNotificationEmail(eori)
-        whenReady(result.failed) { ex =>
-          ex mustEqual expectedException
+          ex shouldBe expectedException
         }
       }
     }
