@@ -16,10 +16,8 @@
 
 package uk.gov.hmrc.tradereportingextracts.controllers
 
-import play.api.Mode.Prod
 import play.api.libs.json.Json
 import play.api.mvc.{Action, AnyContent, ControllerComponents, Result}
-import play.api.{Environment, Mode}
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.internalauth.client.*
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
