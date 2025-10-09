@@ -49,7 +49,7 @@ class AvailableReportService @Inject() (
       eoriHistory               <- customsDataStoreConnector.getEoriHistory(eoriValue).map(_.eoriHistory.map(_.eori))
       eoriHistoryWithCurrentEori = if (eoriHistory.contains(eoriValue)) eoriHistory else eoriHistory :+ eoriValue
       reportRequests            <- reportRequestService.getAvailableReportsByHistory(eoriHistoryWithCurrentEori)
-      eoris                      = reportRequests.map(_.requesterEORI)
+      eoris                      = reportRequests.map(_.requesterEORI).distinct
       sdesResponse              <- if (reportRequests.isEmpty) Future.successful(Seq.empty[FileAvailableResponse])
                                    else Future.traverse(eoris)(sdesConnector.fetchAvailableReportFileUrl).map(_.flatten)
       response                  <- if (reportRequests.isEmpty)
