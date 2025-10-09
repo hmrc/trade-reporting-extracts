@@ -62,22 +62,6 @@ class AvailableReportService @Inject() (
                                    else toAvailableReportResponses(eoriHistoryWithCurrentEori, reportRequests, sdesResponse)
     } yield response
 
-  private def toAvailableReportActions(
-    sdesResponse: Seq[FileAvailableResponse]
-  ): Seq[AvailableReportAction] =
-    sdesResponse.map { sdesFile =>
-      AvailableReportAction(
-        fileURL = sdesFile.downloadURL,
-        size = sdesFile.fileSize,
-        fileType = sdesFile.metadata
-          .collectFirst { case FileAvailableMetadataItem.FileTypeMetadataItem(value) =>
-            FileType.valueOf(value)
-          }
-          .getOrElse(FileType.CSV),
-        fileName = sdesFile.filename
-      )
-    }
-
   private def toAvailableReportResponses(
     eoriHistory: Seq[String],
     reportRequests: Seq[ReportRequest],
@@ -90,13 +74,24 @@ class AvailableReportService @Inject() (
     val (userRequests, thirdPartyRequests) =
       reportRequests.partition(req => req.reportEORIs.exists(eoriHistory.contains))
 
-    def actionsFor(req: ReportRequest) =
-      toAvailableReportActions(
-        sdesResponse.filter(_.metadata.exists {
+    def actionsFor(req: ReportRequest): Seq[AvailableReportAction] =
+      sdesResponse
+        .filter(_.metadata.exists {
           case FileAvailableMetadataItem.MDTPReportRequestIDMetadataItem(value) => value == req.reportRequestId
           case _                                                                => false
         })
-      )
+        .map { sdesFile =>
+          AvailableReportAction(
+            fileURL = sdesFile.downloadURL,
+            size = sdesFile.fileSize,
+            fileType = sdesFile.metadata
+              .collectFirst { case FileAvailableMetadataItem.FileTypeMetadataItem(value) =>
+                FileType.valueOf(value)
+              }
+              .getOrElse(FileType.CSV),
+            fileName = sdesFile.filename
+          )
+        }
 
     val availableUserReports = userRequests.map { req =>
       AvailableUserReportResponse(
