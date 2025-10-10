@@ -93,16 +93,16 @@ class ReportRequestService @Inject() (
     Future.traverse(thirdPartyRequests) { req =>
       customsDataStoreConnector
         .getCompanyInformation(req.reportEORIs.head)
-        .map(companyInfo => toThirdPartyReport(req, companyInfo.name))
+        .map(companyInfo => toThirdPartyReport(req, companyInfo.name, companyInfo.consent))
     }
 
-  private def toThirdPartyReport(req: ReportRequest, companyName: String): ThirdPartyReport =
+  private def toThirdPartyReport(req: ReportRequest, companyName: String, consent: String): ThirdPartyReport =
     ThirdPartyReport(
       referenceNumber = req.reportRequestId,
       reportName = req.reportName,
       requestedDate = req.createDate,
       reportType = req.reportTypeName,
-      companyName = companyName,
+      companyName = if (consent == "1") companyName else "Unknown",
       reportStatus = determineReportStatus(req),
       reportStartDate = req.reportStart,
       reportEndDate = req.reportEnd

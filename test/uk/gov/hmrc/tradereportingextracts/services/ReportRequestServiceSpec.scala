@@ -358,7 +358,7 @@ class ReportRequestServiceSpec
             reportName = "Monthly Report",
             requestedDate = Instant.parse("2024-07-01T10:00:00Z"),
             reportType = ReportTypeName.EXPORTS_ITEM_REPORT,
-            companyName = "Unknown company",
+            companyName = "Unknown",
             reportStatus = ReportStatus.IN_PROGRESS,
             reportStartDate = Instant.parse("2024-06-01T00:00:00Z"),
             reportEndDate = Instant.parse("2024-06-30T23:59:59Z")
@@ -397,7 +397,7 @@ class ReportRequestServiceSpec
             reportName = "Monthly Report",
             requestedDate = Instant.parse("2024-07-01T10:00:00Z"),
             reportType = ReportTypeName.EXPORTS_ITEM_REPORT,
-            companyName = "",
+            companyName = "Unknown",
             reportStatus = ReportStatus.IN_PROGRESS,
             reportStartDate = Instant.parse("2024-06-01T00:00:00Z"),
             reportEndDate = Instant.parse("2024-06-30T23:59:59Z")
