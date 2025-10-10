@@ -130,19 +130,13 @@ class UserController @Inject() (
         case JsSuccess(thirdPartyEori, _) =>
           userService
             .getUsersByAuthorisedEori(thirdPartyEori)
-            .map { userDetails =>
-              val eoriBusinessInfos = userDetails.map(userDetail =>
-                val businessInfo =
-                  if userDetail.companyInformation.consent.equals("1") then Some(userDetail.companyInformation.name)
-                  else None
-                EoriBusinessInfo(userDetail.eori, businessInfo)
-              )
-              Ok(Json.toJson(eoriBusinessInfos))
-            }
+            .map(eoriInfos => Ok(Json.toJson(eoriInfos)))
             .recover { case e: Exception =>
               InternalServerError(e.getMessage)
             }
-        case JsError(_)                   => Future.successful(BadRequest("Missing or invalid 'thirdPartyEori' field"))
+
+        case JsError(_) =>
+          Future.successful(BadRequest("Missing or invalid 'thirdPartyEori' field"))
       }
     }
 
@@ -152,19 +146,13 @@ class UserController @Inject() (
         case JsSuccess(thirdPartyEori, _) =>
           userService
             .getUsersByAuthorisedEoriWithDateFilter(thirdPartyEori)
-            .map { userDetails =>
-              val eoriBusinessInfos = userDetails.map(userDetail =>
-                val businessInfo =
-                  if userDetail.companyInformation.consent.equals("1") then Some(userDetail.companyInformation.name)
-                  else None
-                EoriBusinessInfo(userDetail.eori, businessInfo)
-              )
-              Ok(Json.toJson(eoriBusinessInfos))
-            }
+            .map(eoriInfos => Ok(Json.toJson(eoriInfos)))
             .recover { case e: Exception =>
               InternalServerError(e.getMessage)
             }
-        case JsError(_)                   => Future.successful(BadRequest("Missing or invalid 'thirdPartyEori' field"))
+
+        case JsError(_) =>
+          Future.successful(BadRequest("Missing or invalid 'thirdPartyEori' field"))
       }
     }
 

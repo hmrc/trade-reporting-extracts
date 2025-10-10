@@ -19,7 +19,7 @@ package uk.gov.hmrc.tradereportingextracts.services
 import uk.gov.hmrc.tradereportingextracts.connectors.CustomsDataStoreConnector
 import uk.gov.hmrc.tradereportingextracts.models.*
 import uk.gov.hmrc.tradereportingextracts.models.etmp.EoriUpdate
-import uk.gov.hmrc.tradereportingextracts.models.thirdParty.ThirdPartyAddedConfirmation
+import uk.gov.hmrc.tradereportingextracts.models.thirdParty.{EoriBusinessInfo, ThirdPartyAddedConfirmation}
 import uk.gov.hmrc.tradereportingextracts.repositories.UserRepository
 
 import java.time.{LocalDate, ZoneOffset}
@@ -111,34 +111,40 @@ class UserService @Inject() (
       }
     )
 
-  def getUsersByAuthorisedEori(thirdPartyEori: String): Future[Seq[UserDetails]] =
+  def getUsersByAuthorisedEori(thirdPartyEori: String): Future[Seq[EoriBusinessInfo]] =
     for {
-      users       <- userRepository.getUsersByAuthorisedEori(thirdPartyEori)
-      userDetails <- Future.traverse(users) { user =>
-                       customsDataStoreConnector.getCompanyInformation(user.eori).map { companyInformation =>
-                         UserDetails(
-                           eori = user.eori,
-                           additionalEmails = user.additionalEmails,
-                           authorisedUsers = user.authorisedUsers,
-                           companyInformation = companyInformation,
-                           notificationEmail = NotificationEmail()
-                         )
-                       }
-                     }
-    } yield userDetails
+      usersWithStatus <- userRepository.getUsersByAuthorisedEori(thirdPartyEori)
+      eoriInfos       <- Future.traverse(usersWithStatus) { case UserWithStatus(user, status) =>
+                           customsDataStoreConnector.getCompanyInformation(user.eori).map { companyInfo =>
+                             val businessInfo =
+                               if (companyInfo.consent == "1") Some(companyInfo.name)
+                               else None
 
-  def getUsersByAuthorisedEoriWithDateFilter(thirdPartyEori: String): Future[Seq[UserDetails]] =
+                             EoriBusinessInfo(
+                               eori = user.eori,
+                               businessInfo = businessInfo,
+                               status = Some(status)
+                             )
+                           }
+                         }
+    } yield eoriInfos
+
+  def getUsersByAuthorisedEoriWithDateFilter(thirdPartyEori: String): Future[Seq[EoriBusinessInfo]] =
     for {
-      users       <- userRepository.getUsersByAuthorisedEoriWithDateFilter(thirdPartyEori)
-      userDetails <- Future.traverse(users) { user =>
-                       customsDataStoreConnector.getCompanyInformation(user.eori).map { companyInformation =>
-                         UserDetails(
+      users     <- userRepository.getUsersByAuthorisedEoriWithDateFilter(thirdPartyEori)
+      eoriInfos <- Future.sequence(
+                     users.map { user =>
+                       customsDataStoreConnector.getCompanyInformation(user.eori).map { companyInfo =>
+                         val businessInfo =
+                           if (companyInfo.consent == "1") Some(companyInfo.name)
+                           else None
+
+                         EoriBusinessInfo(
                            eori = user.eori,
-                           additionalEmails = user.additionalEmails,
-                           authorisedUsers = user.authorisedUsers,
-                           companyInformation = companyInformation,
-                           notificationEmail = NotificationEmail()
+                           businessInfo = businessInfo,
+                           status = None
                          )
                        }
                      }
-    } yield userDetails
+                   )
+    } yield eoriInfos
