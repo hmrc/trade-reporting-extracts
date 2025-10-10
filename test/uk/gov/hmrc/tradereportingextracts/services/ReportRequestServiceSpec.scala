@@ -57,69 +57,6 @@ class ReportRequestServiceSpec
   }
   "determineReportStatus" should {
 
-    "return COMPLETE when fileNotifications contain the final part" in {
-      val fileNotifications = Some(
-        Seq(
-          FileNotification(
-            "file1",
-            1000,
-            7,
-            "CSV",
-            "x1",
-            "r1",
-            "IMPORTS-ITEM-REPORT",
-            "1",
-            "",
-            ""
-          ),
-          FileNotification(
-            "file2",
-            1000,
-            7,
-            "CSV",
-            "x2",
-            "r1",
-            "IMPORTS-ITEM-REPORT",
-            "2",
-            "",
-            ""
-          ),
-          FileNotification(
-            "file3",
-            1000,
-            7,
-            "CSV",
-            "x3",
-            "r1",
-            "IMPORTS-ITEM-REPORT",
-            "3",
-            "true",
-            ""
-          )
-        )
-      )
-
-      val reportRequest = ReportRequest(
-        "id",
-        "corr",
-        "Report",
-        "GB123",
-        EoriRole.TRADER,
-        Seq("GB123"),
-        Some(SensitiveString("test@example.com")),
-        Seq("test@example.com"),
-        ReportTypeName.IMPORTS_ITEM_REPORT,
-        Instant.now(),
-        Instant.now(),
-        Instant.now(),
-        Seq.empty,
-        fileNotifications,
-        Instant.now()
-      )
-
-      service.invokePrivateMethod("determineReportStatus", reportRequest) shouldBe ReportStatus.COMPLETE
-    }
-
     "return ERROR when not complete and at least one notification has ERROR status" in {
       val notifications = Seq(
         EisReportStatusRequest(
@@ -391,7 +328,7 @@ class ReportRequestServiceSpec
     "return user reports and third party reports correctly" in {
       when(mockCustomsDataStoreConnector.getEoriHistory(eori))
         .thenReturn(Future.successful(EoriHistoryResponse(Seq.empty)))
-      when(mockReportRequestRepository.findByRequesterEoriHistory(Seq(eori)))
+      when(mockReportRequestRepository.getRequestedReportsByHistory(Seq(eori)))
         .thenReturn(Future.successful(Seq(userReportRequest, thirdPartyReportRequest)))
       when(mockCustomsDataStoreConnector.getCompanyInformation(thirdPartyEori))
         .thenReturn(Future.successful(CompanyInformation("Unknown company")))
@@ -418,7 +355,7 @@ class ReportRequestServiceSpec
             reportName = "Monthly Report",
             requestedDate = Instant.parse("2024-07-01T10:00:00Z"),
             reportType = ReportTypeName.EXPORTS_ITEM_REPORT,
-            companyName = "Unknown company",
+            companyName = "Unknown",
             reportStatus = ReportStatus.IN_PROGRESS,
             reportStartDate = Instant.parse("2024-06-01T00:00:00Z"),
             reportEndDate = Instant.parse("2024-06-30T23:59:59Z")
@@ -430,7 +367,7 @@ class ReportRequestServiceSpec
     "return user reports and third party reports correctly with no Company name" in {
       when(mockCustomsDataStoreConnector.getEoriHistory(eori))
         .thenReturn(Future.successful(EoriHistoryResponse(Seq.empty)))
-      when(mockReportRequestRepository.findByRequesterEoriHistory(Seq(eori)))
+      when(mockReportRequestRepository.getRequestedReportsByHistory(Seq(eori)))
         .thenReturn(Future.successful(Seq(userReportRequest, thirdPartyReportRequest)))
       when(mockCustomsDataStoreConnector.getCompanyInformation(thirdPartyEori))
         .thenReturn(Future.successful(CompanyInformation()))
@@ -457,7 +394,7 @@ class ReportRequestServiceSpec
             reportName = "Monthly Report",
             requestedDate = Instant.parse("2024-07-01T10:00:00Z"),
             reportType = ReportTypeName.EXPORTS_ITEM_REPORT,
-            companyName = "",
+            companyName = "Unknown",
             reportStatus = ReportStatus.IN_PROGRESS,
             reportStartDate = Instant.parse("2024-06-01T00:00:00Z"),
             reportEndDate = Instant.parse("2024-06-30T23:59:59Z")
@@ -467,7 +404,7 @@ class ReportRequestServiceSpec
     }
 
     "return None for both when no reports" in {
-      when(mockReportRequestRepository.findByRequesterEoriHistory(Seq(eori)))
+      when(mockReportRequestRepository.getRequestedReportsByHistory(Seq(eori)))
         .thenReturn(Future.successful(Seq.empty))
 
       val result = service.getReportRequestsForUser(eori).futureValue

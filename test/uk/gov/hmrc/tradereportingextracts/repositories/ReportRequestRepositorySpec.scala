@@ -458,3 +458,15 @@ class ReportRequestRepositorySpec
 
     }
   }
+
+  "getRequestedReportsByHistory" should {
+    "must be able to retrieve a report successfully using a requester EORI history" in {
+      val insertResult  = reportRequestRepository.insert(reportRequest).futureValue
+      val fetchedRecord =
+        reportRequestRepository
+          .getRequestedReportsByHistory(Seq("EORI-UNKNOWN", reportRequest.requesterEORI))
+          .futureValue
+      insertResult mustEqual true
+      fetchedRecord contains reportRequest
+    }
+  }

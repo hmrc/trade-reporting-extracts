@@ -49,7 +49,7 @@ class AvailableReportService @Inject() (
       eoriHistory               <- customsDataStoreConnector.getEoriHistory(eoriValue).map(_.eoriHistory.map(_.eori))
       eoriHistoryWithCurrentEori = if (eoriHistory.contains(eoriValue)) eoriHistory else eoriHistory :+ eoriValue
       reportRequests            <- reportRequestService.getAvailableReportsByHistory(eoriHistoryWithCurrentEori)
-      eoris                      = reportRequests.map(_.requesterEORI)
+      eoris                      = reportRequests.map(_.requesterEORI).distinct
       sdesResponse              <- if (reportRequests.isEmpty) Future.successful(Seq.empty[FileAvailableResponse])
                                    else Future.traverse(eoris)(sdesConnector.fetchAvailableReportFileUrl).map(_.flatten)
       response                  <- if (reportRequests.isEmpty)
@@ -61,22 +61,6 @@ class AvailableReportService @Inject() (
                                      )
                                    else toAvailableReportResponses(eoriHistoryWithCurrentEori, reportRequests, sdesResponse)
     } yield response
-
-  private def toAvailableReportActions(
-    sdesResponse: Seq[FileAvailableResponse]
-  ): Seq[AvailableReportAction] =
-    sdesResponse.map { sdesFile =>
-      AvailableReportAction(
-        fileURL = sdesFile.downloadURL,
-        size = sdesFile.fileSize,
-        fileType = sdesFile.metadata
-          .collectFirst { case FileAvailableMetadataItem.FileTypeMetadataItem(value) =>
-            FileType.valueOf(value)
-          }
-          .getOrElse(FileType.CSV),
-        fileName = sdesFile.filename
-      )
-    }
 
   private def toAvailableReportResponses(
     eoriHistory: Seq[String],
@@ -90,13 +74,24 @@ class AvailableReportService @Inject() (
     val (userRequests, thirdPartyRequests) =
       reportRequests.partition(req => req.reportEORIs.exists(eoriHistory.contains))
 
-    def actionsFor(req: ReportRequest) =
-      toAvailableReportActions(
-        sdesResponse.filter(_.metadata.exists {
+    def actionsFor(req: ReportRequest): Seq[AvailableReportAction] =
+      sdesResponse
+        .filter(_.metadata.exists {
           case FileAvailableMetadataItem.MDTPReportRequestIDMetadataItem(value) => value == req.reportRequestId
           case _                                                                => false
         })
-      )
+        .map { sdesFile =>
+          AvailableReportAction(
+            fileURL = sdesFile.downloadURL,
+            size = sdesFile.fileSize,
+            fileType = sdesFile.metadata
+              .collectFirst { case FileAvailableMetadataItem.FileTypeMetadataItem(value) =>
+                FileType.valueOf(value)
+              }
+              .getOrElse(FileType.CSV),
+            fileName = sdesFile.filename
+          )
+        }
 
     val availableUserReports = userRequests.map { req =>
       AvailableUserReportResponse(
@@ -110,13 +105,14 @@ class AvailableReportService @Inject() (
 
     def toAvailableThirdPartyReportResponse(
       req: ReportRequest,
-      companyName: String
+      companyName: String,
+      consent: String
     ): AvailableThirdPartyReportResponse =
       AvailableThirdPartyReportResponse(
         referenceNumber = req.reportRequestId,
         reportName = req.reportName,
         reportType = req.reportTypeName,
-        companyName = companyName,
+        companyName = if (consent == "1") companyName else "Unknown",
         expiryDate = req.updateDate.plus(appConfig.reportRequestTTLDays, DAYS),
         action = actionsFor(req)
       )
@@ -125,7 +121,7 @@ class AvailableReportService @Inject() (
       .traverse(thirdPartyRequests) { req =>
         customsDataStoreConnector
           .getCompanyInformation(req.reportEORIs.head)
-          .map(companyInfo => toAvailableThirdPartyReportResponse(req, companyInfo.name))
+          .map(companyInfo => toAvailableThirdPartyReportResponse(req, companyInfo.name, companyInfo.consent))
       }
       .map { availableThirdPartyReports =>
         AvailableReportResponse(Some(availableUserReports), Some(availableThirdPartyReports))

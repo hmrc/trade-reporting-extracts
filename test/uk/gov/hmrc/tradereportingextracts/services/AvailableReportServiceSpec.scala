@@ -147,6 +147,90 @@ class AvailableReportServiceSpec extends AnyWordSpec with Matchers with ScalaFut
         userReport.referenceNumber shouldBe reportRequestId
       }
     }
+
+    "return availableUserReports when report requests and SDES responses in multiples exist" in {
+      val mockReportRequestService      = mock[ReportRequestService]
+      val mockSDESConnector             = mock[SDESConnector]
+      val mockCustomsDataStoreConnector = mock[CustomsDataStoreConnector]
+      val eori                          = "GB123456789000"
+      val reportRequestId               = "req-1"
+      val mockAppConfig: AppConfig      = mock[AppConfig]
+      val mockAuditService              = mock[AuditService]
+      val fileNotification              = FileNotification(
+        "file.csv",
+        123L,
+        30,
+        "CSV",
+        "Core-ID",
+        "req-id-456",
+        "IMPORTS-ITEM-REPORT",
+        "1",
+        "true",
+        ""
+      )
+      val reportRequest                 = ReportRequest(
+        reportRequestId = reportRequestId,
+        correlationId = "ABCD-DEFG",
+        reportName = "Jan Report",
+        requesterEORI = "GB123456789000",
+        eoriRole = EoriRole.TRADER,
+        reportEORIs = Array("GB123456789000", "EORI2").toIndexedSeq,
+        userEmail = Some(SensitiveString("test@example.com")),
+        recipientEmails = Array("email1@example.com", "email2@example.com").toIndexedSeq,
+        reportTypeName = ReportTypeName.IMPORTS_ITEM_REPORT,
+        reportStart = Instant.parse("2023-01-01T00:00:00Z"),
+        reportEnd = Instant.parse("2023-12-31T23:59:59Z"),
+        createDate = Instant.parse("2023-01-01T10:00:00Z"),
+        notifications = Seq(
+          EisReportStatusRequest(
+            applicationComponent = EisReportStatusRequest.ApplicationComponent.CDAP,
+            statusType = EisReportStatusRequest.StatusType.INFORMATION,
+            statusCode = StatusCode.FILESENT.toString,
+            statusMessage = "Message1",
+            statusTimestamp = Instant.parse("2023-01-01T10:00:00Z").toString
+          )
+        ),
+        fileNotifications = Some(Seq(fileNotification)),
+        updateDate = Instant.parse("2023-01-03T10:00:00Z")
+      )
+      val sdesResponse                  = Seq(
+        FileAvailableResponse(
+          filename = "file.csv",
+          downloadURL = "http://example.com/file.csv",
+          fileSize = 123L,
+          metadata = Seq(FileAvailableMetadataItem.MDTPReportRequestIDMetadataItem(reportRequestId))
+        ),
+        FileAvailableResponse(
+          filename = "file.csv",
+          downloadURL = "http://example.com/file.csv",
+          fileSize = 123L,
+          metadata = Seq(FileAvailableMetadataItem.MDTPReportRequestIDMetadataItem("9999"))
+        )
+      )
+
+      when(mockSDESConnector.fetchAvailableReportFileUrl(any())(any()))
+        .thenReturn(Future.successful(sdesResponse))
+      when(mockCustomsDataStoreConnector.getEoriHistory(any()))
+        .thenReturn(Future.successful(EoriHistoryResponse(Seq(EoriHistory(eori, Some("2023-01-01"), None)))))
+      when(mockReportRequestService.getAvailableReportsByHistory(any())(using any()))
+        .thenReturn(Future.successful(Seq(reportRequest)))
+
+      val service =
+        new AvailableReportService(
+          mockReportRequestService,
+          mockSDESConnector,
+          mockCustomsDataStoreConnector,
+          mockAuditService,
+          mockAppConfig
+        )
+
+      whenReady(service.getAvailableReports(eori)) { result =>
+        result.availableUserReports should not be empty
+        val userReport = result.availableUserReports.get.head
+        userReport.referenceNumber shouldBe reportRequestId
+        userReport.action.size     shouldBe 1
+      }
+    }
   }
 
   "getAvailableReportsCount" should {

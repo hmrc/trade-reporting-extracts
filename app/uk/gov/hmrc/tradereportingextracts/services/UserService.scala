@@ -17,8 +17,10 @@
 package uk.gov.hmrc.tradereportingextracts.services
 
 import uk.gov.hmrc.tradereportingextracts.connectors.CustomsDataStoreConnector
+import uk.gov.hmrc.tradereportingextracts.models.*
 import uk.gov.hmrc.tradereportingextracts.models.etmp.EoriUpdate
 import uk.gov.hmrc.tradereportingextracts.models.thirdParty.ThirdPartyAddedConfirmation
+import uk.gov.hmrc.tradereportingextracts.repositories.UserRepository
 import uk.gov.hmrc.tradereportingextracts.models.*
 import uk.gov.hmrc.tradereportingextracts.repositories.{ReportRequestRepository, UserRepository}
 
@@ -161,5 +163,18 @@ class UserService @Inject() (
                      }
     } yield userDetails
 
-  def getUsersByAuthorisedEoriWithDateFilter(thirdPartyEori: String): Future[Seq[User]] =
-    userRepository.getUsersByAuthorisedEoriWithDateFilter(thirdPartyEori)
+  def getUsersByAuthorisedEoriWithDateFilter(thirdPartyEori: String): Future[Seq[UserDetails]] =
+    for {
+      users       <- userRepository.getUsersByAuthorisedEoriWithDateFilter(thirdPartyEori)
+      userDetails <- Future.traverse(users) { user =>
+                       customsDataStoreConnector.getCompanyInformation(user.eori).map { companyInformation =>
+                         UserDetails(
+                           eori = user.eori,
+                           additionalEmails = user.additionalEmails,
+                           authorisedUsers = user.authorisedUsers,
+                           companyInformation = companyInformation,
+                           notificationEmail = NotificationEmail()
+                         )
+                       }
+                     }
+    } yield userDetails

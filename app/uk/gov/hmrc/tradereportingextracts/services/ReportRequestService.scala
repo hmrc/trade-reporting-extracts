@@ -61,7 +61,7 @@ class ReportRequestService @Inject() (
     for {
       eoriHistory                       <- customsDataStoreConnector.getEoriHistory(eori).map(_.eoriHistory.map(_.eori))
       eoriHistoryWithCurrentEori         = if (eoriHistory.contains(eori)) eoriHistory else eoriHistory :+ eori
-      reportRequests                    <- reportRequestRepository.findByRequesterEoriHistory(eoriHistoryWithCurrentEori)
+      reportRequests                    <- reportRequestRepository.getRequestedReportsByHistory(eoriHistoryWithCurrentEori)
       /*
       The first group (userRequests) contains requests where at least one reportEORI matches the user's EORI history.
       The second group (thirdPartyRequests) contains the rest.
@@ -93,16 +93,16 @@ class ReportRequestService @Inject() (
     Future.traverse(thirdPartyRequests) { req =>
       customsDataStoreConnector
         .getCompanyInformation(req.reportEORIs.head)
-        .map(companyInfo => toThirdPartyReport(req, companyInfo.name))
+        .map(companyInfo => toThirdPartyReport(req, companyInfo.name, companyInfo.consent))
     }
 
-  private def toThirdPartyReport(req: ReportRequest, companyName: String): ThirdPartyReport =
+  private def toThirdPartyReport(req: ReportRequest, companyName: String, consent: String): ThirdPartyReport =
     ThirdPartyReport(
       referenceNumber = req.reportRequestId,
       reportName = req.reportName,
       requestedDate = req.createDate,
       reportType = req.reportTypeName,
-      companyName = companyName,
+      companyName = if (consent == "1") companyName else "Unknown",
       reportStatus = determineReportStatus(req),
       reportStartDate = req.reportStart,
       reportEndDate = req.reportEnd
@@ -164,14 +164,13 @@ class ReportRequestService @Inject() (
   }
 
   def determineReportStatus(reportRequest: ReportRequest): ReportStatus =
-    (reportRequest.isReportStatusComplete(), reportRequest.notifications) match
-      case (true, _)                                                                    => ReportStatus.COMPLETE
-      case (_, notifications)
+    reportRequest.notifications match
+      case notifications
           if notifications
             .exists(n => n.statusType == StatusType.ERROR && n.statusCode == StatusCode.FILENOREC.toString) =>
         ReportStatus.NO_DATA_AVAILABLE
-      case (_, notifications) if notifications.exists(_.statusType == StatusType.ERROR) => ReportStatus.ERROR
-      case _                                                                            => ReportStatus.IN_PROGRESS
+      case notifications if notifications.exists(_.statusType == StatusType.ERROR) => ReportStatus.ERROR
+      case _                                                                       => ReportStatus.IN_PROGRESS
 
   def countReportSubmissionsForEoriOnDate(eori: String, limit: Int, date: LocalDate = LocalDate.now())(implicit
     ec: ExecutionContext
