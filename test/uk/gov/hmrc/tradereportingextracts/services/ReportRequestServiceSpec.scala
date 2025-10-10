@@ -40,7 +40,7 @@ import uk.gov.hmrc.tradereportingextracts.models.StatusCode.FAILED
 import java.time.{Instant, LocalDate}
 
 class ReportRequestServiceSpec
-  extends AnyWordSpec
+    extends AnyWordSpec
     with Matchers
     with MockitoSugar
     with ScalaFutures
