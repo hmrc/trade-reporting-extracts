@@ -31,7 +31,7 @@ import uk.gov.hmrc.tradereportingextracts.models.etmp.EoriUpdate
 import uk.gov.hmrc.tradereportingextracts.models.thirdParty.ThirdPartyAddedConfirmation
 import uk.gov.hmrc.tradereportingextracts.repositories.{ReportRequestRepository, UserRepository}
 
-import java.time.{Clock, Instant, LocalDate, LocalDateTime, ZoneOffset}
+import java.time.{Instant, LocalDate, LocalDateTime}
 import scala.concurrent.{ExecutionContext, Future}
 
 class UserServiceSpec
@@ -48,10 +48,6 @@ class UserServiceSpec
 
     val mockRepository                = mock[UserRepository]
     val mockCustomsDataStoreConnector = mock[CustomsDataStoreConnector]
-    val fixedInstant: Instant         = LocalDate.of(2025, 1, 1).atStartOfDay(ZoneOffset.UTC).toInstant
-    val fixedClock: Clock             = Clock.fixed(fixedInstant, ZoneOffset.UTC)
-
-    val service = new UserService(mockRepository, mockCustomsDataStoreConnector)
     val mockReportRequestRepository   = mock[ReportRequestRepository]
     val service                       = new UserService(mockRepository, mockReportRequestRepository, mockCustomsDataStoreConnector)
 
@@ -174,7 +170,6 @@ class UserServiceSpec
 
       "must return authorised EORIs when repository returns them" in {
         val authorisedEori     = "GB111111111111"
-        val notificationEmail  = NotificationEmail(timestamp = LocalDateTime.now(fixedClock))
         val companyInformation = CompanyInformation(name = "TestCompany")
 
         val users: Seq[User] = Seq(
@@ -183,16 +178,6 @@ class UserServiceSpec
             additionalEmails = Seq.empty,
             authorisedUsers = Seq.empty,
             accessDate = Instant.now()
-          )
-        )
-
-        val userDetails: Seq[UserDetails] = Seq(
-          UserDetails(
-            eori = "GB123456789000",
-            additionalEmails = Seq.empty,
-            authorisedUsers = Seq.empty,
-            companyInformation = companyInformation,
-            notificationEmail = notificationEmail
           )
         )
 
