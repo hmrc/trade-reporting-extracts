@@ -298,13 +298,29 @@ class UserRepositorySpec
           accessDate = Instant.parse("2023-01-01T00:00:00Z")
         )
 
+        val user3 = User(
+          eori = "EORI3",
+          authorisedUsers = Seq(
+            AuthorisedUser(
+              eori = authorisedEori,
+              accessStart = accessStart,
+              accessEnd = Some(accessEnd),
+              reportDataStart = Some(reportDataStart),
+              reportDataEnd = Some(accessEnd),
+              accessType = Set(IMPORTS)
+            )
+          ),
+          accessDate = Instant.parse("2023-01-01T00:00:00Z")
+        )
+
         userRepository.insert(user1).futureValue
         userRepository.insert(user2).futureValue
+        userRepository.insert(user3).futureValue
 
         val result = userRepository.getUsersByAuthorisedEori(authorisedEori).futureValue
 
-        result.map(_.user.eori) must contain only "EORI1"
-        result.map(_.status)    must contain only UserActiveStatus.Active
+        result.map(_.user.eori) mustBe List("EORI1", "EORI3")
+        result.map(_.status) must contain only UserActiveStatus.Active
       }
 
       "return empty if authorised user is not found" in {
@@ -453,7 +469,6 @@ class UserRepositorySpec
           accessDate = now
         )
 
-        // Insert all test users
         Seq(user1, user2, user3, user4, user5).foreach(u => userRepository.insert(u).futureValue)
       }
 

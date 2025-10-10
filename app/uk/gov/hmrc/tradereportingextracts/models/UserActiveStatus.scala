@@ -25,11 +25,9 @@ sealed abstract class UserActiveStatus(val displayName: String, val cssClass: St
 object UserActiveStatus {
   case object Active extends UserActiveStatus("Active", "govuk-tag--green")
   case object Upcoming extends UserActiveStatus("Upcoming", "govuk-tag--blue")
-  case object Expired extends UserActiveStatus("Expired", "govuk-tag--red")
 
   def fromInstants(
     accessStart: Instant,
-    accessEnd: Option[Instant],
     reportDataStart: Option[Instant],
     clock: Clock = Clock.systemUTC()
   ): UserActiveStatus = {
@@ -37,11 +35,9 @@ object UserActiveStatus {
     val cutoffDate = LocalDate.now(clock).minusDays(3).atStartOfDay().toInstant(ZoneOffset.UTC)
 
     val isAccessStarted     = !accessStart.isAfter(now)
-    val isAccessOngoing     = accessEnd.forall(_.isAfter(now))
     val isReportDataStarted = reportDataStart.forall(!_.isAfter(cutoffDate))
 
-    if (isAccessStarted && isAccessOngoing && isReportDataStarted) Active
-    else if (accessEnd.exists(_.isBefore(now))) Expired
+    if (isAccessStarted && isReportDataStarted) Active
     else Upcoming
   }
 
@@ -49,7 +45,6 @@ object UserActiveStatus {
     override def reads(json: JsValue): JsResult[UserActiveStatus] = json match {
       case JsString("Active")   => JsSuccess(Active)
       case JsString("Upcoming") => JsSuccess(Upcoming)
-      case JsString("Expired")  => JsSuccess(Expired)
       case _                    => JsError("Unknown UserActiveStatus")
     }
 

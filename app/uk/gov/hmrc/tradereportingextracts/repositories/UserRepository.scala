@@ -181,17 +181,18 @@ class UserRepository @Inject() (appConfig: AppConfig, mongoComponent: MongoCompo
       .find(Filters.elemMatch("authorisedUsers", Filters.equal("eori", authorisedEori)))
       .toFuture()
       .map(_.map { user =>
-        val authorisedUserOpt = user.authorisedUsers.find(_.eori == authorisedEori)
-        val status            = authorisedUserOpt match {
-          case Some(authUser) =>
-            UserActiveStatus.fromInstants(
-              authUser.accessStart,
-              authUser.accessEnd,
-              authUser.reportDataStart,
-              clock
-            )
-          case None           => UserActiveStatus.Expired
-        }
+        val status = user.authorisedUsers
+          .collectFirst {
+            case authUser if authUser.eori == authorisedEori =>
+              UserActiveStatus.fromInstants(
+                authUser.accessStart,
+                authUser.reportDataStart,
+                clock
+              )
+          }
+          .getOrElse {
+            throw new IllegalStateException(s"Expected authorisedUser for EORI $authorisedEori")
+          }
         UserWithStatus(user, status)
       })
   }
