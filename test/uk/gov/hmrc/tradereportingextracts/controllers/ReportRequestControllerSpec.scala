@@ -29,7 +29,7 @@ import uk.gov.hmrc.play.audit.http.connector.AuditConnector
 import uk.gov.hmrc.tradereportingextracts.config.AppConfig
 import uk.gov.hmrc.tradereportingextracts.connectors.CustomsDataStoreConnector
 import uk.gov.hmrc.tradereportingextracts.models.audit.ReportRequestSubmittedEvent
-import uk.gov.hmrc.tradereportingextracts.models.{EoriHistory, EoriHistoryResponse, NotificationEmail, ReportConfirmation, ReportRequest}
+import uk.gov.hmrc.tradereportingextracts.models.{EoriHistory, EoriHistoryResponse, NotificationEmail, ReportRequest}
 import uk.gov.hmrc.tradereportingextracts.services.{EisService, ReportRequestService, RequestReferenceService}
 import uk.gov.hmrc.tradereportingextracts.utils.{SpecBase, WireMockHelper}
 

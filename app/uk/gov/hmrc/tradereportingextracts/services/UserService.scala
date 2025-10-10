@@ -20,15 +20,16 @@ import uk.gov.hmrc.tradereportingextracts.connectors.CustomsDataStoreConnector
 import uk.gov.hmrc.tradereportingextracts.models.*
 import uk.gov.hmrc.tradereportingextracts.models.etmp.EoriUpdate
 import uk.gov.hmrc.tradereportingextracts.models.thirdParty.ThirdPartyAddedConfirmation
-import uk.gov.hmrc.tradereportingextracts.repositories.UserRepository
+import uk.gov.hmrc.tradereportingextracts.repositories.{ReportRequestRepository, UserRepository}
 
-import java.time.{LocalDate, ZoneOffset}
+import java.time.{Instant, LocalDate, ZoneOffset}
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
 class UserService @Inject() (
   userRepository: UserRepository,
+  reportRequestRepository: ReportRequestRepository,
   customsDataStoreConnector: CustomsDataStoreConnector
 )(using ec: ExecutionContext):
 
@@ -52,15 +53,48 @@ class UserService @Inject() (
 
   def getOrCreateUser(eori: String): Future[UserDetails] =
     for {
-      user               <- userRepository.getOrCreateUser(eori)
+      (user, isExist)    <- userRepository.getOrCreateUser(eori)
       companyInformation <- customsDataStoreConnector.getCompanyInformation(eori)
-    } yield UserDetails(
-      eori = user.eori,
-      additionalEmails = user.additionalEmails,
-      authorisedUsers = user.authorisedUsers,
-      companyInformation = companyInformation,
-      notificationEmail = NotificationEmail()
-    )
+    } yield
+      if isExist then cleanExpiredAccesses(user).foreach(_ => ())
+      UserDetails(
+        eori = user.eori,
+        additionalEmails = user.additionalEmails,
+        authorisedUsers = user.authorisedUsers,
+        companyInformation = companyInformation,
+        notificationEmail = NotificationEmail()
+      )
+
+  def cleanExpiredAccesses(user: User): Future[Unit] = {
+    val now = Instant.now()
+
+    def deleteForAuthorisedUser(trader: User, authorisedUser: AuthorisedUser): Future[Unit] = {
+      val deleteReportsFut = reportRequestRepository.deleteReportsForThirdPartyRemoval(trader.eori, authorisedUser.eori)
+      val deleteUserFut    = userRepository.deleteAuthorisedUser(trader.eori, authorisedUser.eori)
+      for {
+        _ <- deleteReportsFut
+        _ <- deleteUserFut
+      } yield ()
+    }
+
+    val expired                          = user.authorisedUsers.filter(_.accessEnd.forall(_.isBefore(now)))
+    val deleteFutures: Seq[Future[Unit]] = expired.map(au => deleteForAuthorisedUser(user, au))
+    val deletesFut: Future[Unit]         = Future.sequence(deleteFutures).map(_ => ())
+
+    val traderDeletesFut = userRepository.getUsersByAuthorisedEori(user.eori).flatMap { traders =>
+      val deleteTraderFutures = for {
+        trader <- traders
+        au     <- trader.authorisedUsers
+        if au.eori == user.eori && au.accessEnd.forall(_.isBefore(now))
+      } yield deleteForAuthorisedUser(trader, au)
+      Future.sequence(deleteTraderFutures).map(_ => ())
+    }
+
+    for {
+      _ <- deletesFut
+      _ <- traderDeletesFut
+    } yield ()
+  }
 
   def getAuthorisedEoris(eori: String): Future[Seq[String]] =
     userRepository.getAuthorisedEoris(eori)
@@ -70,7 +104,7 @@ class UserService @Inject() (
 
   def getUserAndEmailDetails(eori: String): Future[UserDetails] =
     for {
-      user               <- userRepository.getOrCreateUser(eori)
+      (user, isExist)    <- userRepository.getOrCreateUser(eori)
       companyInformation <- customsDataStoreConnector.getCompanyInformation(eori)
       notificationEmail  <- customsDataStoreConnector.getNotificationEmail(eori)
     } yield UserDetails(

@@ -23,7 +23,6 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 import play.api.mvc.Headers
 import uk.gov.hmrc.crypto.Sensitive.SensitiveString
-import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.tradereportingextracts.connectors.{CustomsDataStoreConnector, EmailConnector}
 import uk.gov.hmrc.tradereportingextracts.models.*
 import uk.gov.hmrc.tradereportingextracts.models.eis.EisReportStatusRequest
@@ -180,8 +179,6 @@ class ReportRequestServiceSpec
   "processReportStatus" should {
     val service = new ReportRequestService(mockReportRequestRepository, null, mockEmailConnector)
     val headers = new Headers(Seq("X-Correlation-ID" -> "correlationId"))
-
-    implicit val hc: HeaderCarrier = HeaderCarrier()
 
     val reportRequest = ReportRequest(
       "RE123456",

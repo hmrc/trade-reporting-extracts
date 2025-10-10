@@ -27,7 +27,7 @@ import uk.gov.hmrc.internalauth.client.*
 import uk.gov.hmrc.internalauth.client.Retrieval.EmptyRetrieval
 import uk.gov.hmrc.internalauth.client.test.{BackendAuthComponentsStub, StubBehaviour}
 import uk.gov.hmrc.tradereportingextracts.models.thirdParty.EoriBusinessInfo
-import uk.gov.hmrc.tradereportingextracts.models.{AccessType, AddressInformation, AuthorisedUser, CompanyInformation, NotificationEmail, ThirdPartyDetails, User, UserDetails}
+import uk.gov.hmrc.tradereportingextracts.models.*
 import uk.gov.hmrc.tradereportingextracts.repositories.ReportRequestRepository
 import uk.gov.hmrc.tradereportingextracts.services.UserService
 import uk.gov.hmrc.tradereportingextracts.utils.SpecBase

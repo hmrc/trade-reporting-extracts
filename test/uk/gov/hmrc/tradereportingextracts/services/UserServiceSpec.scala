@@ -25,13 +25,13 @@ import org.scalatest.{OptionValues, TryValues}
 import org.scalatestplus.mockito.MockitoSugar
 import org.scalatestplus.mockito.MockitoSugar.mock
 import uk.gov.hmrc.tradereportingextracts.connectors.CustomsDataStoreConnector
+import uk.gov.hmrc.tradereportingextracts.models.*
 import uk.gov.hmrc.tradereportingextracts.models.AccessType.IMPORTS
 import uk.gov.hmrc.tradereportingextracts.models.etmp.EoriUpdate
 import uk.gov.hmrc.tradereportingextracts.models.thirdParty.ThirdPartyAddedConfirmation
-import uk.gov.hmrc.tradereportingextracts.models.*
-import uk.gov.hmrc.tradereportingextracts.repositories.UserRepository
+import uk.gov.hmrc.tradereportingextracts.repositories.{ReportRequestRepository, UserRepository}
 
-import java.time.{Clock, Instant, LocalDate, LocalDateTime, ZoneOffset}
+import java.time.{Instant, LocalDate, LocalDateTime}
 import scala.concurrent.{ExecutionContext, Future}
 
 class UserServiceSpec
@@ -48,10 +48,8 @@ class UserServiceSpec
 
     val mockRepository                = mock[UserRepository]
     val mockCustomsDataStoreConnector = mock[CustomsDataStoreConnector]
-    val fixedInstant: Instant         = LocalDate.of(2025, 1, 1).atStartOfDay(ZoneOffset.UTC).toInstant
-    val fixedClock: Clock             = Clock.fixed(fixedInstant, ZoneOffset.UTC)
-
-    val service = new UserService(mockRepository, mockCustomsDataStoreConnector)
+    val mockReportRequestRepository   = mock[ReportRequestRepository]
+    val service                       = new UserService(mockRepository, mockReportRequestRepository, mockCustomsDataStoreConnector)
 
     val eori            = "EORI1234"
     val authorisedEoris = Seq("AUTH-EORI-1", "AUTH-EORI-2")
@@ -172,7 +170,6 @@ class UserServiceSpec
 
       "must return authorised EORIs when repository returns them" in {
         val authorisedEori     = "GB111111111111"
-        val notificationEmail  = NotificationEmail(timestamp = LocalDateTime.now(fixedClock))
         val companyInformation = CompanyInformation(name = "TestCompany")
 
         val users: Seq[User] = Seq(
@@ -181,16 +178,6 @@ class UserServiceSpec
             additionalEmails = Seq.empty,
             authorisedUsers = Seq.empty,
             accessDate = Instant.now()
-          )
-        )
-
-        val userDetails: Seq[UserDetails] = Seq(
-          UserDetails(
-            eori = "GB123456789000",
-            additionalEmails = Seq.empty,
-            authorisedUsers = Seq.empty,
-            companyInformation = companyInformation,
-            notificationEmail = notificationEmail
           )
         )
 
@@ -249,7 +236,7 @@ class UserServiceSpec
           NotificationEmail("test@test.com", LocalDateTime.now())
         when(mockCustomsDataStoreConnector.getCompanyInformation(eori))
           .thenReturn(Future.successful(companyInformation))
-        when(mockRepository.getOrCreateUser(eori)).thenReturn(Future.successful(user))
+        when(mockRepository.getOrCreateUser(eori)).thenReturn(Future.successful(user, false))
         when(mockCustomsDataStoreConnector.getNotificationEmail(eori)).thenReturn(Future.successful(notificationEmail))
         val result             = service.getUserAndEmailDetails(eori)
         result.futureValue mustEqual UserDetails(
@@ -271,7 +258,7 @@ class UserServiceSpec
         val notificationEmail  = NotificationEmail()
         when(mockCustomsDataStoreConnector.getCompanyInformation(eori))
           .thenReturn(Future.successful(companyInformation))
-        when(mockRepository.getOrCreateUser(eori)).thenReturn(Future.successful(user))
+        when(mockRepository.getOrCreateUser(eori)).thenReturn(Future.successful(user, false))
         when(mockCustomsDataStoreConnector.getNotificationEmail(eori)).thenReturn(Future.successful(notificationEmail))
         val result             = service.getUserAndEmailDetails(eori)
         result.futureValue mustEqual UserDetails(
@@ -390,7 +377,6 @@ class UserServiceSpec
 
     "transformToThirdPartyDetails" - {
 
-      val eori           = "123"
       val thirdPartyEori = "456"
 
       val authorisedUser = AuthorisedUser(
@@ -457,6 +443,67 @@ class UserServiceSpec
           ex mustBe an[Exception]
           ex.getMessage must include("Delete failed")
         }
+      }
+    }
+
+    "cleanExpiredAccesses" - {
+      "should delete expired authorised users and their reports" in {
+        val now         = Instant.now()
+        val expiredUser = AuthorisedUser(
+          eori = "AUTH-EORI-EXPIRED",
+          accessStart = now.minusSeconds(3600),
+          accessEnd = Some(now.minusSeconds(10)),
+          reportDataStart = None,
+          reportDataEnd = None,
+          accessType = Set.empty
+        )
+        val activeUser  = AuthorisedUser(
+          eori = "AUTH-EORI-ACTIVE",
+          accessStart = now.minusSeconds(3600),
+          accessEnd = Some(now.plusSeconds(3600)),
+          reportDataStart = None,
+          reportDataEnd = None,
+          accessType = Set.empty
+        )
+        val user        = User("EORI-TEST", Seq(), Seq(expiredUser, activeUser))
+
+        when(mockRepository.getUsersByAuthorisedEori(user.eori)).thenReturn(Future.successful(Seq.empty))
+        when(mockReportRequestRepository.deleteReportsForThirdPartyRemoval(user.eori, expiredUser.eori))
+          .thenReturn(Future.successful(true))
+        when(mockRepository.deleteAuthorisedUser(user.eori, expiredUser.eori)).thenReturn(Future.successful(true))
+
+        service.cleanExpiredAccesses(user).futureValue
+
+        verify(mockReportRequestRepository).deleteReportsForThirdPartyRemoval(user.eori, expiredUser.eori)
+        verify(mockRepository).deleteAuthorisedUser(user.eori, expiredUser.eori)
+        // Should not delete active user
+        verify(mockReportRequestRepository, org.mockito.Mockito.never())
+          .deleteReportsForThirdPartyRemoval(user.eori, activeUser.eori)
+        verify(mockRepository, org.mockito.Mockito.never()).deleteAuthorisedUser(user.eori, activeUser.eori)
+      }
+
+      "should delete expired authorised users from other traders and their reports" in {
+        val now            = Instant.now()
+        val authorisedUser = AuthorisedUser(
+          eori = "AUTH-EORI-EXPIRED",
+          accessStart = now.minusSeconds(3600),
+          accessEnd = Some(now.minusSeconds(10)),
+          reportDataStart = None,
+          reportDataEnd = None,
+          accessType = Set.empty
+        )
+        val trader         = User("EORI-TRADER", Seq(), Seq(authorisedUser))
+        val user           = User("AUTH-EORI-EXPIRED", Seq(), Seq())
+
+        when(mockRepository.getUsersByAuthorisedEori(user.eori)).thenReturn(Future.successful(Seq(trader)))
+        when(mockReportRequestRepository.deleteReportsForThirdPartyRemoval(trader.eori, authorisedUser.eori))
+          .thenReturn(Future.successful(true))
+        when(mockRepository.deleteAuthorisedUser(trader.eori, authorisedUser.eori)).thenReturn(Future.successful(true))
+
+        service.cleanExpiredAccesses(user).futureValue
+
+        verify(mockReportRequestRepository).deleteReportsForThirdPartyRemoval(trader.eori, authorisedUser.eori)
+        verify(mockRepository).deleteAuthorisedUser(trader.eori, authorisedUser.eori)
       }
     }
   }

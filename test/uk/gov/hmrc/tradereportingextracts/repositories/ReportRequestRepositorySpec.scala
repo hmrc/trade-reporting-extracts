@@ -16,7 +16,6 @@
 
 package uk.gov.hmrc.tradereportingextracts.repositories
 
-import org.mongodb.scala.ObservableFuture
 import org.scalactic.Equality
 import org.scalatest.concurrent.IntegrationPatience
 import org.scalatest.matchers.must.Matchers.{must, mustBe, mustEqual}
@@ -28,8 +27,8 @@ import uk.gov.hmrc.crypto.Sensitive.SensitiveString
 import uk.gov.hmrc.crypto.{Decrypter, Encrypter}
 import uk.gov.hmrc.mongo.test.CleanMongoCollectionSupport
 import uk.gov.hmrc.tradereportingextracts.config.{AppConfig, CryptoProvider}
-import uk.gov.hmrc.tradereportingextracts.models.eis.EisReportStatusRequest
 import uk.gov.hmrc.tradereportingextracts.models.*
+import uk.gov.hmrc.tradereportingextracts.models.eis.EisReportStatusRequest
 
 import java.time.{Instant, LocalDate, ZoneOffset}
 import scala.concurrent.ExecutionContext.Implicits.global
