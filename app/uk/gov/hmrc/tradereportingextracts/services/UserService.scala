@@ -85,7 +85,7 @@ class UserService @Inject() (
       val deleteTraderFutures = for {
         trader <- traders
         au     <- trader.authorisedUsers
-        if au.eori == user.eori && au.accessEnd.forall(_.isBefore(now))
+        if au.eori == user.eori && au.accessEnd.exists(_.isBefore(now))
       } yield deleteForAuthorisedUser(trader, au)
       Future.sequence(deleteTraderFutures).map(_ => ())
     }
