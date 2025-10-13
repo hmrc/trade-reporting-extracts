@@ -448,8 +448,8 @@ class UserServiceSpec
 
     "cleanExpiredAccesses" - {
       "should delete expired authorised users and their reports" in {
-        val now         = Instant.now()
-        val expiredUser = AuthorisedUser(
+        val now                = Instant.now()
+        val expiredUser        = AuthorisedUser(
           eori = "AUTH-EORI-EXPIRED",
           accessStart = now.minusSeconds(3600),
           accessEnd = Some(now.minusSeconds(10)),
@@ -457,7 +457,15 @@ class UserServiceSpec
           reportDataEnd = None,
           accessType = Set.empty
         )
-        val activeUser  = AuthorisedUser(
+        val userWithoutEndDate = AuthorisedUser(
+          eori = "AUTH-EORI-ONGOING",
+          accessStart = now.minusSeconds(3600),
+          accessEnd = None,
+          reportDataStart = None,
+          reportDataEnd = None,
+          accessType = Set.empty
+        )
+        val activeUser         = AuthorisedUser(
           eori = "AUTH-EORI-ACTIVE",
           accessStart = now.minusSeconds(3600),
           accessEnd = Some(now.plusSeconds(3600)),
@@ -465,21 +473,28 @@ class UserServiceSpec
           reportDataEnd = None,
           accessType = Set.empty
         )
-        val user        = User("EORI-TEST", Seq(), Seq(expiredUser, activeUser))
+        val user               = User("EORI-TEST", Seq(), Seq(expiredUser, activeUser))
 
         when(mockRepository.getUsersByAuthorisedEori(user.eori)).thenReturn(Future.successful(Seq.empty))
         when(mockReportRequestRepository.deleteReportsForThirdPartyRemoval(user.eori, expiredUser.eori))
           .thenReturn(Future.successful(true))
         when(mockRepository.deleteAuthorisedUser(user.eori, expiredUser.eori)).thenReturn(Future.successful(true))
+        when(mockReportRequestRepository.deleteReportsForThirdPartyRemoval(user.eori, userWithoutEndDate.eori))
+          .thenReturn(Future.successful(true))
+        when(mockRepository.deleteAuthorisedUser(user.eori, userWithoutEndDate.eori))
+          .thenReturn(Future.successful(true))
 
         service.cleanExpiredAccesses(user).futureValue
 
         verify(mockReportRequestRepository).deleteReportsForThirdPartyRemoval(user.eori, expiredUser.eori)
         verify(mockRepository).deleteAuthorisedUser(user.eori, expiredUser.eori)
-        // Should not delete active user
+        // Should not delete active user and user without an end date
         verify(mockReportRequestRepository, org.mockito.Mockito.never())
           .deleteReportsForThirdPartyRemoval(user.eori, activeUser.eori)
         verify(mockRepository, org.mockito.Mockito.never()).deleteAuthorisedUser(user.eori, activeUser.eori)
+        verify(mockReportRequestRepository, org.mockito.Mockito.never())
+          .deleteReportsForThirdPartyRemoval(user.eori, userWithoutEndDate.eori)
+        verify(mockRepository, org.mockito.Mockito.never()).deleteAuthorisedUser(user.eori, userWithoutEndDate.eori)
       }
 
       "should delete expired authorised users from other traders and their reports" in {
