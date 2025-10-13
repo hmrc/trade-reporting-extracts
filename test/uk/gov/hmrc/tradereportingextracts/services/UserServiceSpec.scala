@@ -473,16 +473,12 @@ class UserServiceSpec
           reportDataEnd = None,
           accessType = Set.empty
         )
-        val user               = User("EORI-TEST", Seq(), Seq(expiredUser, activeUser))
+        val user               = User("EORI-TEST", Seq(), Seq(expiredUser, activeUser, userWithoutEndDate))
 
         when(mockRepository.getUsersByAuthorisedEori(user.eori)).thenReturn(Future.successful(Seq.empty))
         when(mockReportRequestRepository.deleteReportsForThirdPartyRemoval(user.eori, expiredUser.eori))
           .thenReturn(Future.successful(true))
         when(mockRepository.deleteAuthorisedUser(user.eori, expiredUser.eori)).thenReturn(Future.successful(true))
-        when(mockReportRequestRepository.deleteReportsForThirdPartyRemoval(user.eori, userWithoutEndDate.eori))
-          .thenReturn(Future.successful(true))
-        when(mockRepository.deleteAuthorisedUser(user.eori, userWithoutEndDate.eori))
-          .thenReturn(Future.successful(true))
 
         service.cleanExpiredAccesses(user).futureValue
 
@@ -525,10 +521,6 @@ class UserServiceSpec
         when(mockReportRequestRepository.deleteReportsForThirdPartyRemoval(trader.eori, authorisedUser.eori))
           .thenReturn(Future.successful(true))
         when(mockRepository.deleteAuthorisedUser(trader.eori, authorisedUser.eori)).thenReturn(Future.successful(true))
-        when(mockReportRequestRepository.deleteReportsForThirdPartyRemoval(trader.eori, userWithoutEndDate.eori))
-          .thenReturn(Future.successful(true))
-        when(mockRepository.deleteAuthorisedUser(trader.eori, userWithoutEndDate.eori))
-          .thenReturn(Future.successful(true))
 
         service.cleanExpiredAccesses(user).futureValue
 
