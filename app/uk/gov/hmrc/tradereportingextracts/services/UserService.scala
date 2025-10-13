@@ -77,7 +77,7 @@ class UserService @Inject() (
       } yield ()
     }
 
-    val expired                          = user.authorisedUsers.filter(_.accessEnd.forall(_.isBefore(now)))
+    val expired                          = user.authorisedUsers.filter(au => au.accessEnd.exists(_.isBefore(now)))
     val deleteFutures: Seq[Future[Unit]] = expired.map(au => deleteForAuthorisedUser(user, au))
     val deletesFut: Future[Unit]         = Future.sequence(deleteFutures).map(_ => ())
 
