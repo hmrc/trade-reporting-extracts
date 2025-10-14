@@ -124,12 +124,12 @@ class UserController @Inject() (
       }
     }
 
-  def getUsersByAuthorisedEori: Action[JsValue] =
+  def getUsersByAuthorisedEoriWithStatus: Action[JsValue] =
     auth.authorizedAction(readPermission).async(parse.json) { implicit request =>
       (request.body \ "thirdPartyEori").validate[String] match {
         case JsSuccess(thirdPartyEori, _) =>
           userService
-            .getUsersByAuthorisedEori(thirdPartyEori)
+            .getUsersByAuthorisedEoriWithStatus(thirdPartyEori)
             .map(eoriInfos => Ok(Json.toJson(eoriInfos)))
             .recover { case e: Exception =>
               InternalServerError(e.getMessage)

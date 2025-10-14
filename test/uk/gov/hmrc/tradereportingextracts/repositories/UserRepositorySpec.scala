@@ -29,14 +29,10 @@ import uk.gov.hmrc.tradereportingextracts.config.AppConfig
 import uk.gov.hmrc.tradereportingextracts.models.AccessType.{EXPORTS, IMPORTS}
 import uk.gov.hmrc.tradereportingextracts.models.etmp.EoriUpdate
 import uk.gov.hmrc.tradereportingextracts.models.{AuthorisedUser, User, UserActiveStatus}
-
-import java.time.temporal.ChronoUnit
-import java.time.{Clock, Instant, LocalDate, ZoneOffset}
-import uk.gov.hmrc.tradereportingextracts.models.{AuthorisedUser, User}
-import uk.gov.hmrc.tradereportingextracts.models.AccessType.{EXPORTS, IMPORTS}
 import uk.gov.hmrc.tradereportingextracts.services.UserService
 
 import java.time.temporal.ChronoUnit
+import java.time.{Clock, Instant, LocalDate, ZoneOffset}
 import scala.concurrent.ExecutionContext
 import scala.concurrent.ExecutionContext.Implicits.global
 
@@ -263,6 +259,39 @@ class UserRepositorySpec
     }
 
     "getUsersByAuthorisedEori" should {
+      "return users who have authorised a specific EORI" in {
+
+        val user1 = User(
+          eori = "EORI1",
+          authorisedUsers = Seq(
+            AuthorisedUser(
+              eori = "AUTH-EORI-1",
+              accessStart = Instant.parse("2023-01-01T00:00:00Z"),
+              accessEnd = Some(Instant.parse("2023-12-31T23:59:59Z")),
+              reportDataStart = Some(Instant.parse("2023-01-01T10:00:00Z")),
+              reportDataEnd = Some(Instant.parse("2023-12-31T23:59:59Z")),
+              accessType = Set(IMPORTS)
+            ),
+            AuthorisedUser(
+              eori = "AUTH-EORI-2",
+              accessStart = Instant.parse("2023-01-01T00:00:00Z"),
+              accessEnd = Some(Instant.parse("2023-12-31T23:59:59Z")),
+              reportDataStart = Some(Instant.parse("2023-01-01T10:00:00Z")),
+              reportDataEnd = Some(Instant.parse("2023-12-31T23:59:59Z")),
+              accessType = Set(IMPORTS)
+            )
+          ),
+          accessDate = Instant.parse("2023-01-01T00:00:00Z")
+        )
+
+        userRepository.insert(user).futureValue
+        userRepository.insert(user1).futureValue
+        val result = userRepository.getUsersByAuthorisedEori("AUTH-EORI-1").futureValue
+        result.map(_.eori) must contain theSameElementsAs Seq("EORI1234", "EORI1")
+      }
+    }
+
+    "getUsersByAuthorisedEoriWithStatus" should {
       val cutoffDate = today.minusDays(3)
       "return users who have authorised a specific EORI with correct status" in {
         val accessStart     = today.minusDays(1).toInstant(ZoneOffset.UTC)
@@ -320,7 +349,7 @@ class UserRepositorySpec
         userRepository.insert(user2).futureValue
         userRepository.insert(user3).futureValue
 
-        val result = userRepository.getUsersByAuthorisedEori(authorisedEori).futureValue
+        val result = userRepository.getUsersByAuthorisedEoriWithStatus(authorisedEori).futureValue
 
         result.map(_.user.eori) mustBe List("EORI1", "EORI3")
         result.map(_.status) must contain only UserActiveStatus.Active
@@ -337,7 +366,7 @@ class UserRepositorySpec
 
         userRepository.insert(user).futureValue
 
-        val result = userRepository.getUsersByAuthorisedEori(authorisedEori).futureValue
+        val result = userRepository.getUsersByAuthorisedEoriWithStatus(authorisedEori).futureValue
 
         result mustBe empty
       }

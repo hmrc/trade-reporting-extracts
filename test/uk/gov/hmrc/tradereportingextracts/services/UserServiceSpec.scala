@@ -29,11 +29,8 @@ import uk.gov.hmrc.tradereportingextracts.connectors.CustomsDataStoreConnector
 import uk.gov.hmrc.tradereportingextracts.models.*
 import uk.gov.hmrc.tradereportingextracts.models.AccessType.IMPORTS
 import uk.gov.hmrc.tradereportingextracts.models.etmp.EoriUpdate
-import uk.gov.hmrc.tradereportingextracts.models.thirdParty.ThirdPartyAddedConfirmation
+import uk.gov.hmrc.tradereportingextracts.models.thirdParty.{EoriBusinessInfo, ThirdPartyAddedConfirmation}
 import uk.gov.hmrc.tradereportingextracts.repositories.{ReportRequestRepository, UserRepository}
-import uk.gov.hmrc.tradereportingextracts.models.*
-import uk.gov.hmrc.tradereportingextracts.repositories.UserRepository
-import uk.gov.hmrc.tradereportingextracts.models.thirdParty.EoriBusinessInfo
 
 import java.time.{Instant, LocalDate, LocalDateTime}
 import scala.concurrent.{ExecutionContext, Future}
@@ -170,7 +167,7 @@ class UserServiceSpec
       }
     }
 
-    "getUsersByAuthorisedEori" - {
+    "getUsersByAuthorisedEoriWithStatus" - {
 
       "return EoriBusinessInfo with status and business info when consent is 1" in {
         val authorisedEori = "GB111111111111"
@@ -192,10 +189,11 @@ class UserServiceSpec
 
         val userWithStatus = UserWithStatus(user, UserActiveStatus.Active)
 
-        when(mockRepository.getUsersByAuthorisedEori(authorisedEori)).thenReturn(Future.successful(Seq(userWithStatus)))
+        when(mockRepository.getUsersByAuthorisedEoriWithStatus(authorisedEori))
+          .thenReturn(Future.successful(Seq(userWithStatus)))
         when(mockCustomsDataStoreConnector.getCompanyInformation(user.eori)).thenReturn(Future.successful(companyInfo))
 
-        val result = service.getUsersByAuthorisedEori(authorisedEori)
+        val result = service.getUsersByAuthorisedEoriWithStatus(authorisedEori)
 
         result.futureValue shouldBe Seq(
           EoriBusinessInfo(
@@ -226,10 +224,11 @@ class UserServiceSpec
 
         val userWithStatus = UserWithStatus(user, UserActiveStatus.Active)
 
-        when(mockRepository.getUsersByAuthorisedEori(authorisedEori)).thenReturn(Future.successful(Seq(userWithStatus)))
+        when(mockRepository.getUsersByAuthorisedEoriWithStatus(authorisedEori))
+          .thenReturn(Future.successful(Seq(userWithStatus)))
         when(mockCustomsDataStoreConnector.getCompanyInformation(user.eori)).thenReturn(Future.successful(companyInfo))
 
-        val result = service.getUsersByAuthorisedEori(authorisedEori)
+        val result = service.getUsersByAuthorisedEoriWithStatus(authorisedEori)
 
         result.futureValue shouldBe Seq(
           EoriBusinessInfo(
@@ -244,9 +243,10 @@ class UserServiceSpec
         val authorisedEori    = "GB111111111111"
         val expectedException = new Exception("Repository failure")
 
-        when(mockRepository.getUsersByAuthorisedEori(authorisedEori)).thenReturn(Future.failed(expectedException))
+        when(mockRepository.getUsersByAuthorisedEoriWithStatus(authorisedEori))
+          .thenReturn(Future.failed(expectedException))
 
-        val result = service.getUsersByAuthorisedEori(authorisedEori)
+        val result = service.getUsersByAuthorisedEoriWithStatus(authorisedEori)
 
         whenReady(result.failed) { ex =>
           ex shouldBe expectedException

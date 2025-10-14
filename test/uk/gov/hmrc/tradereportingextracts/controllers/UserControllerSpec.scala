@@ -375,7 +375,7 @@ class UserControllerSpec extends SpecBase {
 
   }
 
-  "UserController.getUsersByAuthorisedEori" should {
+  "UserController.getUsersByAuthorisedEoriWithStatus" should {
 
     "return 200 OK with list of users including status" in new Setup {
       val authorisedEori    = "GB111111111111"
@@ -387,16 +387,16 @@ class UserControllerSpec extends SpecBase {
         )
       )
 
-      when(mockUserService.getUsersByAuthorisedEori(authorisedEori))
+      when(mockUserService.getUsersByAuthorisedEoriWithStatus(authorisedEori))
         .thenReturn(Future.successful(eoriBusinessInfos))
       when(mockStubBehaviour.stubAuth(Some(readPermission), EmptyRetrieval))
         .thenReturn(Future.successful(EmptyRetrieval))
 
-      val request = FakeRequest(GET, routes.UserController.getUsersByAuthorisedEori.url)
+      val request = FakeRequest(GET, routes.UserController.getUsersByAuthorisedEoriWithStatus.url)
         .withHeaders("Content-Type" -> "application/json", AUTHORIZATION -> "my-token")
         .withBody(Json.obj("thirdPartyEori" -> authorisedEori))
 
-      val result = controller.getUsersByAuthorisedEori.apply(request)
+      val result = controller.getUsersByAuthorisedEoriWithStatus.apply(request)
       contentAsJson(result) shouldBe Json.toJson(eoriBusinessInfos)
     }
 
@@ -410,16 +410,16 @@ class UserControllerSpec extends SpecBase {
         )
       )
 
-      when(mockUserService.getUsersByAuthorisedEori(authorisedEori))
+      when(mockUserService.getUsersByAuthorisedEoriWithStatus(authorisedEori))
         .thenReturn(Future.successful(eoriBusinessInfos))
       when(mockStubBehaviour.stubAuth(Some(readPermission), EmptyRetrieval))
         .thenReturn(Future.successful(EmptyRetrieval))
 
-      val request = FakeRequest(GET, routes.UserController.getUsersByAuthorisedEori.url)
+      val request = FakeRequest(GET, routes.UserController.getUsersByAuthorisedEoriWithStatus.url)
         .withHeaders("Content-Type" -> "application/json", AUTHORIZATION -> "my-token")
         .withBody(Json.obj("thirdPartyEori" -> authorisedEori))
 
-      val result = controller.getUsersByAuthorisedEori.apply(request)
+      val result = controller.getUsersByAuthorisedEoriWithStatus.apply(request)
       contentAsJson(result) shouldBe Json.toJson(eoriBusinessInfos)
     }
   }

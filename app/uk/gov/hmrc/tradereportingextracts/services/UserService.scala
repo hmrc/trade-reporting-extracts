@@ -147,9 +147,9 @@ class UserService @Inject() (
       }
     )
 
-  def getUsersByAuthorisedEori(thirdPartyEori: String): Future[Seq[EoriBusinessInfo]] =
+  def getUsersByAuthorisedEoriWithStatus(thirdPartyEori: String): Future[Seq[EoriBusinessInfo]] =
     for {
-      usersWithStatus <- userRepository.getUsersByAuthorisedEori(thirdPartyEori)
+      usersWithStatus <- userRepository.getUsersByAuthorisedEoriWithStatus(thirdPartyEori)
       eoriInfos       <- Future.traverse(usersWithStatus) { case UserWithStatus(user, status) =>
                            customsDataStoreConnector.getCompanyInformation(user.eori).map { companyInfo =>
                              val businessInfo =

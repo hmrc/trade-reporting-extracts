@@ -197,6 +197,36 @@ class UserRepository @Inject() (appConfig: AppConfig, mongoComponent: MongoCompo
       })
   }
 
+  def getUsersByAuthorisedEori(authorisedEori: String): Future[Seq[User]] = Mdc.preservingMdc {
+    collection
+      .find(Filters.elemMatch("authorisedUsers", Filters.equal("eori", authorisedEori)))
+      .toFuture()
+  }
+
+  def getUsersByAuthorisedEoriWithStatus(
+    authorisedEori: String,
+    clock: Clock = Clock.systemUTC()
+  ): Future[Seq[UserWithStatus]] = Mdc.preservingMdc {
+    collection
+      .find(Filters.elemMatch("authorisedUsers", Filters.equal("eori", authorisedEori)))
+      .toFuture()
+      .map(_.map { user =>
+        val status = user.authorisedUsers
+          .collectFirst {
+            case authUser if authUser.eori == authorisedEori =>
+              UserActiveStatus.fromInstants(
+                authUser.accessStart,
+                authUser.reportDataStart,
+                clock
+              )
+          }
+          .getOrElse {
+            throw new IllegalStateException(s"Expected authorisedUser for EORI $authorisedEori")
+          }
+        UserWithStatus(user, status)
+      })
+  }
+
   def getUsersByAuthorisedEoriWithDateFilter(
     authorisedEori: String,
     clock: Clock = Clock.systemUTC()
