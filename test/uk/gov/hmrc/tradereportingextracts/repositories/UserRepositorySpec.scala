@@ -28,7 +28,7 @@ import uk.gov.hmrc.mongo.test.CleanMongoCollectionSupport
 import uk.gov.hmrc.tradereportingextracts.config.AppConfig
 import uk.gov.hmrc.tradereportingextracts.models.AccessType.{EXPORTS, IMPORTS}
 import uk.gov.hmrc.tradereportingextracts.models.etmp.EoriUpdate
-import uk.gov.hmrc.tradereportingextracts.models.{AuthorisedUser, User}
+import uk.gov.hmrc.tradereportingextracts.models.{AuthorisedUser, User, UserActiveStatus}
 import uk.gov.hmrc.tradereportingextracts.services.UserService
 
 import java.time.temporal.ChronoUnit
@@ -47,7 +47,10 @@ class UserRepositorySpec
 
   val appConfig: AppConfig = app.injector.instanceOf[AppConfig]
 
-  val userRepository: UserRepository = UserRepository(appConfig, mongoComponent)
+  val clock = Clock.fixed(Instant.parse("2025-10-09T00:00:00Z"), ZoneOffset.UTC)
+  val today = LocalDate.now(clock).atStartOfDay()
+
+  val userRepository: UserRepository = UserRepository(appConfig, mongoComponent, clock)
   val user: User                     = User(
     eori = "EORI1234",
     additionalEmails = Seq("asd@gmail.com", "dfsf@gmail.com"),
@@ -288,6 +291,87 @@ class UserRepositorySpec
       }
     }
 
+    "getUsersByAuthorisedEoriWithStatus" should {
+      val cutoffDate = today.minusDays(3)
+      "return users who have authorised a specific EORI with correct status" in {
+        val accessStart     = today.minusDays(1).toInstant(ZoneOffset.UTC)
+        val accessEnd       = today.plusDays(5).toInstant(ZoneOffset.UTC)
+        val reportDataStart = cutoffDate.toInstant(ZoneOffset.UTC)
+
+        val authorisedEori = "AUTH-EORI-1"
+
+        val user1 = User(
+          eori = "EORI1",
+          authorisedUsers = Seq(
+            AuthorisedUser(
+              eori = authorisedEori,
+              accessStart = accessStart,
+              accessEnd = Some(accessEnd),
+              reportDataStart = Some(reportDataStart),
+              reportDataEnd = Some(accessEnd),
+              accessType = Set(IMPORTS)
+            )
+          ),
+          accessDate = Instant.parse("2023-01-01T00:00:00Z")
+        )
+
+        val user2 = User(
+          eori = "EORI2",
+          authorisedUsers = Seq(
+            AuthorisedUser(
+              eori = "AUTH-EORI-2",
+              accessStart = Instant.parse("2023-01-01T00:00:00Z"),
+              accessEnd = Some(Instant.parse("2023-12-31T23:59:59Z")),
+              reportDataStart = Some(Instant.parse("2023-01-01T10:00:00Z")),
+              reportDataEnd = Some(Instant.parse("2023-12-31T23:59:59Z")),
+              accessType = Set(IMPORTS)
+            )
+          ),
+          accessDate = Instant.parse("2023-01-01T00:00:00Z")
+        )
+
+        val user3 = User(
+          eori = "EORI3",
+          authorisedUsers = Seq(
+            AuthorisedUser(
+              eori = authorisedEori,
+              accessStart = accessStart,
+              accessEnd = Some(accessEnd),
+              reportDataStart = Some(reportDataStart),
+              reportDataEnd = Some(accessEnd),
+              accessType = Set(IMPORTS)
+            )
+          ),
+          accessDate = Instant.parse("2023-01-01T00:00:00Z")
+        )
+
+        userRepository.insert(user1).futureValue
+        userRepository.insert(user2).futureValue
+        userRepository.insert(user3).futureValue
+
+        val result = userRepository.getUsersByAuthorisedEoriWithStatus(authorisedEori).futureValue
+
+        result.map(_.user.eori) mustBe List("EORI1", "EORI3")
+        result.map(_.status) must contain only UserActiveStatus.Active
+      }
+
+      "return empty if authorised user is not found" in {
+        val authorisedEori = "AUTH-EORI-3"
+
+        val user = User(
+          eori = "EORI3",
+          authorisedUsers = Seq.empty,
+          accessDate = Instant.parse("2023-01-01T00:00:00Z")
+        )
+
+        userRepository.insert(user).futureValue
+
+        val result = userRepository.getUsersByAuthorisedEoriWithStatus(authorisedEori).futureValue
+
+        result mustBe empty
+      }
+    }
+
     "deleteAuthorisedUser" should {
       "should return true when repository deletion succeeds" in {
         val repo                    = mock[UserRepository]
@@ -420,7 +504,6 @@ class UserRepositorySpec
           accessDate = now
         )
 
-        // Insert all test users
         Seq(user1, user2, user3, user4, user5).foreach(u => userRepository.insert(u).futureValue)
       }
 

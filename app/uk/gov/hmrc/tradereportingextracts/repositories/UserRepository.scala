@@ -25,7 +25,7 @@ import uk.gov.hmrc.play.http.logging.Mdc
 import uk.gov.hmrc.tradereportingextracts.config.AppConfig
 import uk.gov.hmrc.tradereportingextracts.models.etmp.EoriUpdate
 import uk.gov.hmrc.tradereportingextracts.models.thirdParty.ThirdPartyAddedConfirmation
-import uk.gov.hmrc.tradereportingextracts.models.{AuthorisedUser, User}
+import uk.gov.hmrc.tradereportingextracts.models.{AuthorisedUser, User, UserActiveStatus, UserWithStatus}
 
 import java.time.{Clock, Instant, LocalDate, ZoneOffset}
 import java.util.Date
@@ -34,8 +34,8 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.jdk.CollectionConverters.SeqHasAsJava
 
 @Singleton
-class UserRepository @Inject() (appConfig: AppConfig, mongoComponent: MongoComponent)(using
-  ec: ExecutionContext
+class UserRepository @Inject() (appConfig: AppConfig, mongoComponent: MongoComponent, clock: Clock = Clock.systemUTC())(
+  using ec: ExecutionContext
 ) extends PlayMongoRepository[User](
       collectionName = "tre-user",
       mongoComponent = mongoComponent,
@@ -177,6 +177,30 @@ class UserRepository @Inject() (appConfig: AppConfig, mongoComponent: MongoCompo
     collection
       .find(Filters.elemMatch("authorisedUsers", Filters.equal("eori", authorisedEori)))
       .toFuture()
+  }
+
+  def getUsersByAuthorisedEoriWithStatus(
+    authorisedEori: String,
+    clock: Clock = Clock.systemUTC()
+  ): Future[Seq[UserWithStatus]] = Mdc.preservingMdc {
+    collection
+      .find(Filters.elemMatch("authorisedUsers", Filters.equal("eori", authorisedEori)))
+      .toFuture()
+      .map(_.map { user =>
+        val status = user.authorisedUsers
+          .collectFirst {
+            case authUser if authUser.eori == authorisedEori =>
+              UserActiveStatus.fromInstants(
+                authUser.accessStart,
+                authUser.reportDataStart,
+                clock
+              )
+          }
+          .getOrElse {
+            throw new IllegalStateException(s"Expected authorisedUser for EORI $authorisedEori")
+          }
+        UserWithStatus(user, status)
+      })
   }
 
   def getUsersByAuthorisedEoriWithDateFilter(

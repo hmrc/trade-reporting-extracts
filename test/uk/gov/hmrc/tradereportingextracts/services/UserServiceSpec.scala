@@ -21,6 +21,7 @@ import org.mockito.Mockito.{verify, when}
 import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}
 import org.scalatest.freespec.AnyFreeSpec
 import org.scalatest.matchers.must.Matchers
+import org.scalatest.matchers.should.Matchers.shouldBe
 import org.scalatest.{OptionValues, TryValues}
 import org.scalatestplus.mockito.MockitoSugar
 import org.scalatestplus.mockito.MockitoSugar.mock
@@ -28,7 +29,7 @@ import uk.gov.hmrc.tradereportingextracts.connectors.CustomsDataStoreConnector
 import uk.gov.hmrc.tradereportingextracts.models.*
 import uk.gov.hmrc.tradereportingextracts.models.AccessType.IMPORTS
 import uk.gov.hmrc.tradereportingextracts.models.etmp.EoriUpdate
-import uk.gov.hmrc.tradereportingextracts.models.thirdParty.ThirdPartyAddedConfirmation
+import uk.gov.hmrc.tradereportingextracts.models.thirdParty.{EoriBusinessInfo, ThirdPartyAddedConfirmation}
 import uk.gov.hmrc.tradereportingextracts.repositories.{ReportRequestRepository, UserRepository}
 
 import java.time.{Instant, LocalDate, LocalDateTime}
@@ -166,40 +167,172 @@ class UserServiceSpec
       }
     }
 
-    "getUsersByAuthorisedEoriWithDateFilter" - {
+    "getUsersByAuthorisedEoriWithStatus" - {
 
-      "must return authorised EORIs when repository returns them" in {
-        val authorisedEori     = "GB111111111111"
-        val companyInformation = CompanyInformation(name = "TestCompany")
-
-        val users: Seq[User] = Seq(
-          User(
-            eori = "GB123456789000",
-            additionalEmails = Seq.empty,
-            authorisedUsers = Seq.empty,
-            accessDate = Instant.now()
+      "return EoriBusinessInfo with status and business info when consent is 1" in {
+        val authorisedEori = "GB111111111111"
+        val companyInfo    = CompanyInformation(name = "Test Ltd", consent = "1")
+        val user           = User(
+          eori = "GB123456789000",
+          authorisedUsers = Seq(
+            AuthorisedUser(
+              eori = authorisedEori,
+              accessStart = Instant.now(),
+              accessEnd = None,
+              reportDataStart = None,
+              reportDataEnd = None,
+              accessType = Set(IMPORTS),
+              referenceName = None
+            )
           )
         )
 
-        when(mockRepository.getUsersByAuthorisedEoriWithDateFilter(authorisedEori)).thenReturn(Future.successful(users))
+        val userWithStatus = UserWithStatus(user, UserActiveStatus.Active)
 
-        when(mockCustomsDataStoreConnector.getCompanyInformation("GB123456789000"))
-          .thenReturn(Future.successful(companyInformation))
+        when(mockRepository.getUsersByAuthorisedEoriWithStatus(authorisedEori))
+          .thenReturn(Future.successful(Seq(userWithStatus)))
+        when(mockCustomsDataStoreConnector.getCompanyInformation(user.eori)).thenReturn(Future.successful(companyInfo))
+
+        val result = service.getUsersByAuthorisedEoriWithStatus(authorisedEori)
+
+        result.futureValue shouldBe Seq(
+          EoriBusinessInfo(
+            eori = "GB123456789000",
+            businessInfo = Some("Test Ltd"),
+            status = Some(UserActiveStatus.Active)
+          )
+        )
+      }
+
+      "return EoriBusinessInfo with no business info when consent is not 1" in {
+        val authorisedEori = "GB111111111111"
+        val companyInfo    = CompanyInformation(name = "Test Ltd", consent = "0")
+        val user           = User(
+          eori = "GB123456789000",
+          authorisedUsers = Seq(
+            AuthorisedUser(
+              eori = authorisedEori,
+              accessStart = Instant.now(),
+              accessEnd = None,
+              reportDataStart = None,
+              reportDataEnd = None,
+              accessType = Set(IMPORTS),
+              referenceName = None
+            )
+          )
+        )
+
+        val userWithStatus = UserWithStatus(user, UserActiveStatus.Active)
+
+        when(mockRepository.getUsersByAuthorisedEoriWithStatus(authorisedEori))
+          .thenReturn(Future.successful(Seq(userWithStatus)))
+        when(mockCustomsDataStoreConnector.getCompanyInformation(user.eori)).thenReturn(Future.successful(companyInfo))
+
+        val result = service.getUsersByAuthorisedEoriWithStatus(authorisedEori)
+
+        result.futureValue shouldBe Seq(
+          EoriBusinessInfo(
+            eori = "GB123456789000",
+            businessInfo = None,
+            status = Some(UserActiveStatus.Active)
+          )
+        )
+      }
+
+      "fail when repository throws exception" in {
+        val authorisedEori    = "GB111111111111"
+        val expectedException = new Exception("Repository failure")
+
+        when(mockRepository.getUsersByAuthorisedEoriWithStatus(authorisedEori))
+          .thenReturn(Future.failed(expectedException))
+
+        val result = service.getUsersByAuthorisedEoriWithStatus(authorisedEori)
+
+        whenReady(result.failed) { ex =>
+          ex shouldBe expectedException
+        }
+      }
+    }
+
+    "getUsersByAuthorisedEoriWithDateFilter" - {
+
+      "return EoriBusinessInfo with status and business info when consent is 1" in {
+        val authorisedEori = "GB111111111111"
+        val companyInfo    = CompanyInformation(name = "Test Ltd", consent = "1")
+        val user           = User(
+          eori = "GB123456789000",
+          authorisedUsers = Seq(
+            AuthorisedUser(
+              eori = authorisedEori,
+              accessStart = Instant.now(),
+              accessEnd = None,
+              reportDataStart = None,
+              reportDataEnd = None,
+              accessType = Set(IMPORTS),
+              referenceName = None
+            )
+          )
+        )
+
+        when(mockRepository.getUsersByAuthorisedEoriWithDateFilter(authorisedEori))
+          .thenReturn(Future.successful(Seq(user)))
+        when(mockCustomsDataStoreConnector.getCompanyInformation(user.eori)).thenReturn(Future.successful(companyInfo))
 
         val result = service.getUsersByAuthorisedEoriWithDateFilter(authorisedEori)
 
-        result.futureValue.map(_.eori).head mustEqual "GB123456789000"
-        result.futureValue.map(_.companyInformation).head mustEqual companyInformation
+        result.futureValue shouldBe Seq(
+          EoriBusinessInfo(
+            eori = "GB123456789000",
+            businessInfo = Some("Test Ltd"),
+            status = None
+          )
+        )
       }
 
-      "must fail when repository returns failed Future" in {
-        val expectedException = new Exception("User not found")
-        when(mockRepository.getUsersByAuthorisedEoriWithDateFilter(eori)).thenReturn(Future.failed(expectedException))
+      "return EoriBusinessInfo with no business info when consent is not 1" in {
+        val authorisedEori = "GB111111111111"
+        val companyInfo    = CompanyInformation(name = "Test Ltd", consent = "0")
+        val user           = User(
+          eori = "GB123456789000",
+          authorisedUsers = Seq(
+            AuthorisedUser(
+              eori = authorisedEori,
+              accessStart = Instant.now(),
+              accessEnd = None,
+              reportDataStart = None,
+              reportDataEnd = None,
+              accessType = Set(IMPORTS),
+              referenceName = None
+            )
+          )
+        )
 
-        val result = service.getUsersByAuthorisedEoriWithDateFilter(eori)
+        when(mockRepository.getUsersByAuthorisedEoriWithDateFilter(authorisedEori))
+          .thenReturn(Future.successful(Seq(user)))
+        when(mockCustomsDataStoreConnector.getCompanyInformation(user.eori)).thenReturn(Future.successful(companyInfo))
+
+        val result = service.getUsersByAuthorisedEoriWithDateFilter(authorisedEori)
+
+        result.futureValue shouldBe Seq(
+          EoriBusinessInfo(
+            eori = "GB123456789000",
+            businessInfo = None,
+            status = None
+          )
+        )
+      }
+
+      "fail when repository throws exception" in {
+        val authorisedEori    = "GB111111111111"
+        val expectedException = new Exception("Repository failure")
+
+        when(mockRepository.getUsersByAuthorisedEoriWithDateFilter(authorisedEori))
+          .thenReturn(Future.failed(expectedException))
+
+        val result = service.getUsersByAuthorisedEoriWithDateFilter(authorisedEori)
 
         whenReady(result.failed) { ex =>
-          ex mustEqual expectedException
+          ex shouldBe expectedException
         }
       }
     }

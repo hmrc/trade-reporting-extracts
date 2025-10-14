@@ -31,7 +31,7 @@ POST        /trade-reporting-extracts/add-third-party-request              uk.go
 
 GET         /trade-reporting-extracts/third-party-details                  uk.gov.hmrc.tradereportingextracts.controllers.UserController.getThirdPartyDetails
 
-GET         /trade-reporting-extracts/get-users-by-authorised-eori         uk.gov.hmrc.tradereportingextracts.controllers.UserController.getUsersByAuthorisedEori
+GET         /trade-reporting-extracts/get-users-by-authorised-eori         uk.gov.hmrc.tradereportingextracts.controllers.UserController.getUsersByAuthorisedEoriWithStatus
 
 GET         /trade-reporting-extracts/get-users-by-authorised-eori-date-filtered         uk.gov.hmrc.tradereportingextracts.controllers.UserController.getUsersByAuthorisedEoriWithDateFilter
 
