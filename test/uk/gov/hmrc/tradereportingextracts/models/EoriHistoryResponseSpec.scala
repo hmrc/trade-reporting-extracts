@@ -11,7 +11,7 @@ class EoriHistoryResponseSpec extends AnyFreeSpec with Matchers {
     "filterByDateRange must correctly filter EoriHistory entries by date range" in {
       val eoriHistories = Seq(EoriHistory("GB250520228000", Some("2009-05-16"), Some("2025-10-07")))
 
-      //left outside
+      // left outside
       EoriHistoryResponse(eoriHistories).filterByDateRange(
         LocalDate.parse("2000-04-16"),
         LocalDate.parse("2009-04-16")
@@ -35,7 +35,7 @@ class EoriHistoryResponseSpec extends AnyFreeSpec with Matchers {
         LocalDate.parse("2025-10-08")
       ) mustBe eoriHistories
 
-      // right out side
+      // right outside
       EoriHistoryResponse(eoriHistories).filterByDateRange(
         LocalDate.parse("2025-10-08"),
         LocalDate.parse("2025-11-16")
