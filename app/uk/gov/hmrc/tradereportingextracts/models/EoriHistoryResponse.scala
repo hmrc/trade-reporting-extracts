@@ -25,8 +25,7 @@ case class EoriHistoryResponse(var eoriHistory: Seq[EoriHistory]) {
     eoriHistory.filter { history =>
       val validFrom  = history.validFromLocalDate
       val validUntil = history.validUntilLocalDate
-      (validFrom.compareTo(from) >= 0 && validFrom.compareTo(until) <= 0) ||
-      (validUntil.compareTo(from) >= 0 && validUntil.compareTo(until) <= 0)
+      validFrom.compareTo(until) <= 0 && (validUntil == null || validUntil.compareTo(from) >= 0)
     }
 }
 
