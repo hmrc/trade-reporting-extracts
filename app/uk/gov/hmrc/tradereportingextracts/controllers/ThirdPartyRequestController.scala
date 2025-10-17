@@ -21,6 +21,7 @@ import play.api.mvc.{Action, ControllerComponents}
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.internalauth.client.BackendAuthComponents
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
+import uk.gov.hmrc.tradereportingextracts.connectors.{CustomsDataStoreConnector, EmailConnector}
 import uk.gov.hmrc.tradereportingextracts.models.{AccessType, AuthorisedUser}
 import uk.gov.hmrc.tradereportingextracts.models.thirdParty.ThirdPartyRequest
 import uk.gov.hmrc.tradereportingextracts.repositories.ReportRequestRepository
@@ -34,7 +35,9 @@ class ThirdPartyRequestController @Inject() (
   cc: ControllerComponents,
   userService: UserService,
   reportRequestRepository: ReportRequestRepository,
-  auth: BackendAuthComponents
+  auth: BackendAuthComponents,
+  customsDataStoreConnector: CustomsDataStoreConnector,
+  emailConnector: EmailConnector
 )(implicit
   executionContext: ExecutionContext
 ) extends BackendController(cc) {
@@ -56,9 +59,8 @@ class ThirdPartyRequestController @Inject() (
           )
           (for {
             thirdPartyAddedConfirmed <- userService.addAuthorisedUser(value.userEORI, authorisedUser)
-            // TODO TRE-709 - Email functionality to be implemented in third party confirmation
-            // userEmail      <- customsDataStoreConnector.getNotificationEmail(value.userEORI).map(_.address)
-            // _              <- sendThirdPartyRegisteredEmail(userEmail)
+            thirdPartyEmail          <- customsDataStoreConnector.getNotificationEmail(value.thirdPartyEORI).map(_.address)
+            _                        <- emailConnector.sendEmailRequest("tre_third_party_added_tp", thirdPartyEmail, Map())
           } yield Ok(Json.toJson(thirdPartyAddedConfirmed)))
             .recover { case ex =>
               BadRequest(Json.obj("error" -> ex.getMessage))
