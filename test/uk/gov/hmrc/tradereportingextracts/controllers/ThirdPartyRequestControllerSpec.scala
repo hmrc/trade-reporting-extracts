@@ -16,6 +16,7 @@
 
 package uk.gov.hmrc.tradereportingextracts.controllers
 
+import org.apache.pekko.Done
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito.*
 import org.scalatest.concurrent.ScalaFutures
@@ -29,11 +30,14 @@ import play.api.test.{FakeRequest, Helpers}
 import uk.gov.hmrc.internalauth.client.Retrieval.EmptyRetrieval
 import uk.gov.hmrc.internalauth.client.{BackendAuthComponents, IAAction, Predicate, Resource, ResourceLocation, ResourceType}
 import uk.gov.hmrc.internalauth.client.test.{BackendAuthComponentsStub, StubBehaviour}
+import uk.gov.hmrc.tradereportingextracts.connectors.{CustomsDataStoreConnector, EmailConnector}
 import uk.gov.hmrc.tradereportingextracts.models.*
 import uk.gov.hmrc.tradereportingextracts.models.thirdParty.ThirdPartyAddedConfirmation
 import uk.gov.hmrc.tradereportingextracts.repositories.ReportRequestRepository
 import uk.gov.hmrc.tradereportingextracts.services.UserService
+import org.mockito.ArgumentMatchers.{eq as eqTo, *}
 
+import java.time.LocalDateTime
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
@@ -43,10 +47,19 @@ class ThirdPartyRequestControllerSpec extends AnyFreeSpec with Matchers with Moc
   private val userService: UserService                     = mock[UserService]
   private val mockStubBehaviour                            = mock[StubBehaviour]
   private val mockReportRequestRepository                  = mock[ReportRequestRepository]
+  private val mockCustomsDataStoreConnector                = mock[CustomsDataStoreConnector]
+  private val mockEmailConnector                           = mock[EmailConnector]
   private val backendAuthComponents: BackendAuthComponents =
     BackendAuthComponentsStub(mockStubBehaviour)(cc)
   private val controller                                   =
-    new ThirdPartyRequestController(cc, userService, mockReportRequestRepository, backendAuthComponents)
+    new ThirdPartyRequestController(
+      cc,
+      userService,
+      mockReportRequestRepository,
+      backendAuthComponents,
+      mockCustomsDataStoreConnector,
+      mockEmailConnector
+    )
   private val permission: Predicate.Permission             = Predicate.Permission(
     Resource(ResourceType("trade-reporting-extracts"), ResourceLocation("trade-reporting-extracts/*")),
     IAAction("READ")
@@ -75,11 +88,22 @@ class ThirdPartyRequestControllerSpec extends AnyFreeSpec with Matchers with Moc
         .thenReturn(Future.successful(EmptyRetrieval))
       when(userService.addAuthorisedUser(any(), any()))
         .thenReturn(Future.successful(confirmation))
+      when(mockCustomsDataStoreConnector.getNotificationEmail(any()))
+        .thenReturn(Future.successful(NotificationEmail("test@email.com", LocalDateTime.now())))
+      when(mockEmailConnector.sendEmailRequest(any(), any(), any())(any()))
+        .thenReturn(Future.successful(Done))
 
       val result =
         controller.addThirdPartyRequest()(FakeRequest().withHeaders(AUTHORIZATION -> "my-token").withBody(requestBody))
       status(result) mustBe OK
       contentAsJson(result) mustBe Json.toJson(confirmation)
+
+      verify(mockCustomsDataStoreConnector).getNotificationEmail(eqTo("GB123456123456"))
+      verify(mockEmailConnector).sendEmailRequest(
+        eqTo("tre_third_party_added_tp"),
+        eqTo("test@email.com"),
+        eqTo(Map())
+      )(any())
     }
 
     "should return 400 BadRequest for invalid JSON" in {
