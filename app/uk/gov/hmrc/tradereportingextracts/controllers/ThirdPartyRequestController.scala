@@ -29,6 +29,7 @@ import uk.gov.hmrc.tradereportingextracts.services.UserService
 import uk.gov.hmrc.tradereportingextracts.utils.PermissionsUtil.readPermission
 
 import javax.inject.Inject
+import scala.collection.immutable.Map
 import scala.concurrent.{ExecutionContext, Future}
 
 class ThirdPartyRequestController @Inject() (
@@ -97,13 +98,20 @@ class ThirdPartyRequestController @Inject() (
           case (JsSuccess(eori, _), JsSuccess(thirdPartyEori, _)) =>
             userService
               .deleteAuthorisedUser(eori, thirdPartyEori)
-              .map {
-                case true  => // TODO - Update template when TRE-709 is done
-                  // userEmail      <- customsDataStoreConnector.getNotificationEmail(value.userEORI).map(_.address)
-                  // _              <- sendThirdPartyRegisteredEmail(userEmail)
-                  deleteReportThirdParty(eori, thirdPartyEori)
-                  NoContent
-                case false => NotFound("No authorised user found for third party EORI")
+              .flatMap {
+                case true =>
+                  for {
+                    thirdPartyEmail <- customsDataStoreConnector.getNotificationEmail(thirdPartyEori).map(_.address)
+                    businessName    <- customsDataStoreConnector.getCompanyInformation(thirdPartyEori).map { companyInfo =>
+                                         if (companyInfo.consent == "1") Map("businessName" -> companyInfo.name)
+                                         else Map()
+                                       }
+                    _               <-
+                      emailConnector.sendEmailRequest("tre_third_party_access_removed", thirdPartyEmail, businessName)
+                    _               <- deleteReportThirdParty(eori, thirdPartyEori)
+                  } yield NoContent
+
+                case false => Future.successful(NotFound("No authorised user found for third party EORI"))
               }
               .recover { case ex: Exception =>
                 InternalServerError(Json.obj("error" -> ex.getMessage))

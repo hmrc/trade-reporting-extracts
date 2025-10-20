@@ -40,6 +40,7 @@ import org.mockito.ArgumentMatchers.{eq as eqTo, *}
 import java.time.LocalDateTime
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
+import org.mockito.ArgumentMatchers.{eq as eqTo, *}
 
 class ThirdPartyRequestControllerSpec extends AnyFreeSpec with Matchers with MockitoSugar with ScalaFutures {
 
@@ -118,6 +119,7 @@ class ThirdPartyRequestControllerSpec extends AnyFreeSpec with Matchers with Moc
   "deleteThirdPartyDetails" - {
 
     "should return 204 NoContent when authorised user is removed" in {
+      reset(mockCustomsDataStoreConnector, mockEmailConnector)
       val requestBody = Json.parse("""
                                      |{
                                      |  "eori":"GB987654321098",
@@ -129,10 +131,61 @@ class ThirdPartyRequestControllerSpec extends AnyFreeSpec with Matchers with Moc
         .thenReturn(Future.successful(true))
       when(mockReportRequestRepository.deleteReportsForThirdPartyRemoval(any(), any())(any()))
         .thenReturn(Future.successful(true))
+
+      when(mockCustomsDataStoreConnector.getNotificationEmail(any()))
+        .thenReturn(Future.successful(NotificationEmail("test@email.com", LocalDateTime.now())))
+      when(mockCustomsDataStoreConnector.getCompanyInformation(any()))
+        .thenReturn(Future.successful(CompanyInformation(name = "Test Business", consent = "1")))
+
+      when(mockEmailConnector.sendEmailRequest(any(), any(), any())(any()))
+        .thenReturn(Future.successful(Done))
+
       val result = controller.deleteThirdPartyDetails()(
         FakeRequest().withHeaders(AUTHORIZATION -> "my-token").withBody(requestBody)
       )
       status(result) mustBe NO_CONTENT
+
+      verify(mockCustomsDataStoreConnector).getNotificationEmail(eqTo("GB123456123456"))
+      verify(mockEmailConnector).sendEmailRequest(
+        eqTo("tre_third_party_access_removed"),
+        eqTo("test@email.com"),
+        eqTo(Map("businessName" -> "Test Business"))
+      )(any())
+    }
+
+    "should return 204 NoContent when authorised user is removed but no company info if no consent given" in {
+      reset(mockCustomsDataStoreConnector, mockEmailConnector)
+      val requestBody = Json.parse("""
+          |{
+          |  "eori":"GB987654321098",
+          |  "thirdPartyEori":"GB123456123456"
+          |}
+        """.stripMargin)
+
+      when(userService.deleteAuthorisedUser(any(), any()))
+        .thenReturn(Future.successful(true))
+      when(mockReportRequestRepository.deleteReportsForThirdPartyRemoval(any(), any())(any()))
+        .thenReturn(Future.successful(true))
+
+      when(mockCustomsDataStoreConnector.getNotificationEmail(any()))
+        .thenReturn(Future.successful(NotificationEmail("test@email.com", LocalDateTime.now())))
+      when(mockCustomsDataStoreConnector.getCompanyInformation(any()))
+        .thenReturn(Future.successful(CompanyInformation(name = "Test Business", consent = "0")))
+
+      when(mockEmailConnector.sendEmailRequest(any(), any(), any())(any()))
+        .thenReturn(Future.successful(Done))
+
+      val result = controller.deleteThirdPartyDetails()(
+        FakeRequest().withHeaders(AUTHORIZATION -> "my-token").withBody(requestBody)
+      )
+      status(result) mustBe NO_CONTENT
+
+      verify(mockCustomsDataStoreConnector).getNotificationEmail(eqTo("GB123456123456"))
+      verify(mockEmailConnector).sendEmailRequest(
+        eqTo("tre_third_party_access_removed"),
+        eqTo("test@email.com"),
+        eqTo(Map())
+      )(any())
     }
 
     "should return 404 NotFound when authorised user is not found" in {
