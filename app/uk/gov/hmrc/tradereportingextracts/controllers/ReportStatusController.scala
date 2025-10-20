@@ -49,7 +49,7 @@ class ReportStatusController @Inject() (
 
     (missingHeaders, isAuthorized, request.body.asJson) match {
       case (headers, _, _) if headers.nonEmpty =>
-        logger.warn(
+        logger.error(
           s"reportstatusnotification missing required headers for CorrelationID: ${request.headers.get(XCorrelationID.toString).getOrElse("")}"
         )
         Future.successful(
@@ -59,7 +59,7 @@ class ReportStatusController @Inject() (
           )
         )
       case (_, false, _)                       =>
-        logger.warn(
+        logger.error(
           s"reportstatusnotification unauthorised request for CorrelationID: ${request.headers.get(XCorrelationID.toString).getOrElse("")}"
         )
         Future.successful(
@@ -69,7 +69,7 @@ class ReportStatusController @Inject() (
           )
         )
       case (_, _, None)                        =>
-        logger.warn(
+        logger.error(
           s"reportstatusnotification missing request body for CorrelationID: ${request.headers.get(XCorrelationID.toString).getOrElse("")}"
         )
         Future.successful(
@@ -89,7 +89,7 @@ class ReportStatusController @Inject() (
               )
             )
           case JsError(errors) =>
-            logger.warn(
+            logger.error(
               s"reportstatusnotification invalid request body for CorrelationID: ${request.headers.get(XCorrelationID.toString).getOrElse("")}"
             )
             Future.successful(
