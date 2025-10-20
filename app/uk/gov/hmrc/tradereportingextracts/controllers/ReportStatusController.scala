@@ -16,6 +16,7 @@
 
 package uk.gov.hmrc.tradereportingextracts.controllers
 
+import play.api.Logging
 import play.api.libs.json.*
 import play.api.mvc.*
 import uk.gov.hmrc.tradereportingextracts.config.AppConfig
@@ -33,7 +34,8 @@ class ReportStatusController @Inject() (
   cc: ControllerComponents,
   appConfig: AppConfig
 )(using ec: ExecutionContext)
-    extends AbstractController(cc) {
+    extends AbstractController(cc)
+    with Logging {
 
   def notifyReportStatus(): Action[AnyContent] = Action.async { request =>
     def missingHeaders: Seq[String] =
@@ -47,6 +49,9 @@ class ReportStatusController @Inject() (
 
     (missingHeaders, isAuthorized, request.body.asJson) match {
       case (headers, _, _) if headers.nonEmpty =>
+        logger.warn(
+          s"reportstatusnotification missing required headers for CorrelationID: ${request.headers.get(XCorrelationID.toString).getOrElse("")}"
+        )
         Future.successful(
           BadRequest.withHeaders(
             Date.toString           -> getCurrentHttpDate,
@@ -54,6 +59,9 @@ class ReportStatusController @Inject() (
           )
         )
       case (_, false, _)                       =>
+        logger.warn(
+          s"reportstatusnotification unauthorised request for CorrelationID: ${request.headers.get(XCorrelationID.toString).getOrElse("")}"
+        )
         Future.successful(
           Forbidden.withHeaders(
             Date.toString           -> getCurrentHttpDate,
@@ -61,6 +69,9 @@ class ReportStatusController @Inject() (
           )
         )
       case (_, _, None)                        =>
+        logger.warn(
+          s"reportstatusnotification missing request body for CorrelationID: ${request.headers.get(XCorrelationID.toString).getOrElse("")}"
+        )
         Future.successful(
           BadRequest.withHeaders(
             Date.toString           -> getCurrentHttpDate,
@@ -78,6 +89,9 @@ class ReportStatusController @Inject() (
               )
             )
           case JsError(errors) =>
+            logger.warn(
+              s"reportstatusnotification invalid request body for CorrelationID: ${request.headers.get(XCorrelationID.toString).getOrElse("")}"
+            )
             Future.successful(
               BadRequest.withHeaders(
                 Date.toString           -> getCurrentHttpDate,
