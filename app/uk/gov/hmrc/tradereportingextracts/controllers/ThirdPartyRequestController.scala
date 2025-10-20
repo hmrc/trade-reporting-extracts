@@ -71,17 +71,6 @@ class ThirdPartyRequestController @Inject() (
       }
     }
 
-//  private def sendThirdPartyRegisteredEmail(userEmail: String) = {
-//    userEmail match {
-//      case userEmail =>
-//        emailConnector.sendEmailRequest(
-//          templateId = "tre_report_available", // TODO - Update template when TRE-709 is Done
-//          email = userEmail,
-//          params = Map("reportRequestId" -> "maskedId")
-//        )
-//    }
-//  }
-
   private def getAccessType(accessTypes: Set[String]): Set[AccessType] =
     accessTypes.flatMap {
       case s if s.equalsIgnoreCase("IMPORT") => Some(AccessType.IMPORTS)
