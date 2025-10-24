@@ -42,7 +42,8 @@ class ThirdPartyRequestController @Inject() (
   emailConnector: EmailConnector
 )(implicit
   executionContext: ExecutionContext
-) extends BackendController(cc) with Logging {
+) extends BackendController(cc)
+    with Logging {
 
   implicit val hc: HeaderCarrier = HeaderCarrier()
 
@@ -62,12 +63,12 @@ class ThirdPartyRequestController @Inject() (
           (for {
             thirdPartyAddedConfirmed <- userService.addAuthorisedUser(value.userEORI, authorisedUser)
             thirdPartyEmail          <- customsDataStoreConnector.getNotificationEmail(value.thirdPartyEORI).map(_.address)
-            _ = thirdPartyEmail match {
-              case thirdPartyEmail if thirdPartyEmail == "" =>
-                logger.info(s"No notification email found for third party EORI")
-              case _                       =>
-                emailConnector.sendEmailRequest("tre_third_party_added_tp", thirdPartyEmail, Map())
-            }
+            _                         = thirdPartyEmail match {
+                                          case thirdPartyEmail if thirdPartyEmail == "" =>
+                                            logger.info(s"No notification email found for third party EORI")
+                                          case _                                        =>
+                                            emailConnector.sendEmailRequest("tre_third_party_added_tp", thirdPartyEmail, Map())
+                                        }
           } yield Ok(Json.toJson(thirdPartyAddedConfirmed)))
             .recover { case ex =>
               BadRequest(Json.obj("error" -> ex.getMessage))

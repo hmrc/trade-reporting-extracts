@@ -108,8 +108,7 @@ class ThirdPartyRequestControllerSpec extends AnyFreeSpec with Matchers with Moc
 
     "should return 200 OK with confirmation for valid request and not send email when email not returned from CDS for third party" in {
       reset(mockCustomsDataStoreConnector, mockEmailConnector)
-      val requestBody = Json.parse(
-        """
+      val requestBody = Json.parse("""
           |{
           |  "userEORI":"GB987654321098",
           |  "thirdPartyEORI":"GB123456123456",
@@ -141,11 +140,7 @@ class ThirdPartyRequestControllerSpec extends AnyFreeSpec with Matchers with Moc
 
       verify(mockCustomsDataStoreConnector).getNotificationEmail(eqTo("GB123456123456"))
       verify(mockEmailConnector, times(0))
-        .sendEmailRequest(
-          eqTo("tre_third_party_added_tp"),
-          eqTo("test@email.com"),
-          eqTo(Map()))
-        (any())
+        .sendEmailRequest(eqTo("tre_third_party_added_tp"), eqTo("test@email.com"), eqTo(Map()))(any())
     }
 
     "should return 400 BadRequest for invalid JSON" in {
