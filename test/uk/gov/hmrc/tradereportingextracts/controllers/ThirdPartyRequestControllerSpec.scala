@@ -35,7 +35,6 @@ import uk.gov.hmrc.tradereportingextracts.models.*
 import uk.gov.hmrc.tradereportingextracts.models.thirdParty.ThirdPartyAddedConfirmation
 import uk.gov.hmrc.tradereportingextracts.repositories.ReportRequestRepository
 import uk.gov.hmrc.tradereportingextracts.services.UserService
-import org.mockito.ArgumentMatchers.{eq as eqTo, *}
 
 import java.time.LocalDateTime
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -68,7 +67,7 @@ class ThirdPartyRequestControllerSpec extends AnyFreeSpec with Matchers with Moc
 
   "addThirdPartyRequest" - {
 
-    "should return 200 OK with confirmation for valid request" in {
+    "should return 200 OK with confirmation for valid request and send email when email returned from CDS for third party" in {
       val requestBody = Json.parse("""
                                      |{
                                      |  "userEORI":"GB987654321098",
@@ -105,6 +104,48 @@ class ThirdPartyRequestControllerSpec extends AnyFreeSpec with Matchers with Moc
         eqTo("test@email.com"),
         eqTo(Map())
       )(any())
+    }
+
+    "should return 200 OK with confirmation for valid request and not send email when email not returned from CDS for third party" in {
+      reset(mockCustomsDataStoreConnector, mockEmailConnector)
+      val requestBody = Json.parse(
+        """
+          |{
+          |  "userEORI":"GB987654321098",
+          |  "thirdPartyEORI":"GB123456123456",
+          |  "accessStart":"2025-09-09T00:00:00Z",
+          |  "accessEnd":"2025-09-09T10:59:38.334682780Z",
+          |  "reportDateStart":"2025-09-10T00:00:00Z",
+          |  "reportDateEnd":"2025-09-09T10:59:38.334716742Z",
+          |  "accessType":["IMPORT","EXPORT"],
+          |  "referenceName":"TestReport"
+          |}
+        """.stripMargin)
+
+      val confirmation = ThirdPartyAddedConfirmation(
+        thirdPartyEori = "GB123456123456"
+      )
+      when(mockStubBehaviour.stubAuth(Some(permission), EmptyRetrieval))
+        .thenReturn(Future.successful(EmptyRetrieval))
+      when(userService.addAuthorisedUser(any(), any()))
+        .thenReturn(Future.successful(confirmation))
+      when(mockCustomsDataStoreConnector.getNotificationEmail(any()))
+        .thenReturn(Future.successful(NotificationEmail("", LocalDateTime.now())))
+      when(mockEmailConnector.sendEmailRequest(any(), any(), any())(any()))
+        .thenReturn(Future.successful(Done))
+
+      val result =
+        controller.addThirdPartyRequest()(FakeRequest().withHeaders(AUTHORIZATION -> "my-token").withBody(requestBody))
+      status(result) mustBe OK
+      contentAsJson(result) mustBe Json.toJson(confirmation)
+
+      verify(mockCustomsDataStoreConnector).getNotificationEmail(eqTo("GB123456123456"))
+      verify(mockEmailConnector, times(0))
+        .sendEmailRequest(
+          eqTo("tre_third_party_added_tp"),
+          eqTo("test@email.com"),
+          eqTo(Map()))
+        (any())
     }
 
     "should return 400 BadRequest for invalid JSON" in {

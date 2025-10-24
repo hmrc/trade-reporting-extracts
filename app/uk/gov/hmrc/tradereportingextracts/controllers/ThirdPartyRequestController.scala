@@ -16,13 +16,14 @@
 
 package uk.gov.hmrc.tradereportingextracts.controllers
 
+import play.api.Logging
 import play.api.libs.json.{JsError, JsSuccess, JsValue, Json}
 import play.api.mvc.{Action, ControllerComponents}
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.internalauth.client.BackendAuthComponents
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 import uk.gov.hmrc.tradereportingextracts.connectors.{CustomsDataStoreConnector, EmailConnector}
-import uk.gov.hmrc.tradereportingextracts.models.{AccessType, AuthorisedUser}
+import uk.gov.hmrc.tradereportingextracts.models.{AccessType, AuthorisedUser, NotificationEmail}
 import uk.gov.hmrc.tradereportingextracts.models.thirdParty.ThirdPartyRequest
 import uk.gov.hmrc.tradereportingextracts.repositories.ReportRequestRepository
 import uk.gov.hmrc.tradereportingextracts.services.UserService
@@ -41,7 +42,7 @@ class ThirdPartyRequestController @Inject() (
   emailConnector: EmailConnector
 )(implicit
   executionContext: ExecutionContext
-) extends BackendController(cc) {
+) extends BackendController(cc) with Logging {
 
   implicit val hc: HeaderCarrier = HeaderCarrier()
 
@@ -61,7 +62,12 @@ class ThirdPartyRequestController @Inject() (
           (for {
             thirdPartyAddedConfirmed <- userService.addAuthorisedUser(value.userEORI, authorisedUser)
             thirdPartyEmail          <- customsDataStoreConnector.getNotificationEmail(value.thirdPartyEORI).map(_.address)
-            _                        <- emailConnector.sendEmailRequest("tre_third_party_added_tp", thirdPartyEmail, Map())
+            _ = thirdPartyEmail match {
+              case thirdPartyEmail if thirdPartyEmail == "" =>
+                logger.info(s"No notification email found for third party EORI")
+              case _                       =>
+                emailConnector.sendEmailRequest("tre_third_party_added_tp", thirdPartyEmail, Map())
+            }
           } yield Ok(Json.toJson(thirdPartyAddedConfirmed)))
             .recover { case ex =>
               BadRequest(Json.obj("error" -> ex.getMessage))
