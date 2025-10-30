@@ -1,3 +1,0 @@
-# Add all the application routes to the app.routes file
-->         /trade-reporting-extracts              app.Routes
-->         /                          health.Routes
