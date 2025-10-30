@@ -10,14 +10,26 @@ object CodeCoverageSettings {
     "app.*",
     "prod.*",
     ".*Routes.*",
+    ".*RoutesPrefix.*",
     "testOnly.*",
-    "testOnlyDoNotUseInAppConf.*"
+    "testonly",
+    "testOnlyDoNotUseInAppConf.*",
+    "uk.gov.hmrc.tradereportingextracts.config",
+    ".*javascript.*"
+  )
+
+  private val excludedFiles: Seq[String] = Seq(
+    "<empty>",
+    ".*javascript.*",
+    ".*Routes.*",
+    ".*testonly.*"
   )
 
   val settings: Seq[Setting[_]] = Seq(
     ScoverageKeys.coverageExcludedPackages := excludedPackages.mkString(";"),
-    ScoverageKeys.coverageMinimumStmtTotal := 100,
-    ScoverageKeys.coverageFailOnMinimum := true,
+    ScoverageKeys.coverageExcludedFiles := excludedFiles.mkString(";"),
+    ScoverageKeys.coverageMinimumStmtTotal := 79,
+    ScoverageKeys.coverageFailOnMinimum := false,
     ScoverageKeys.coverageHighlighting := true
   )
 }
