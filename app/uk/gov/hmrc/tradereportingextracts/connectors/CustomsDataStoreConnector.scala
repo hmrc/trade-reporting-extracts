@@ -17,12 +17,12 @@
 package uk.gov.hmrc.tradereportingextracts.connectors
 
 import play.api.Logging
-import play.api.http.Status.OK
+import play.api.http.Status.{NOT_FOUND, OK}
 import play.api.libs.json.Json
 import play.api.libs.ws.writeableOf_JsValue
 import uk.gov.hmrc.http.HttpReads.Implicits.*
 import uk.gov.hmrc.http.client.HttpClientV2
-import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse, StringContextOps}
+import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse, StringContextOps, UpstreamErrorResponse}
 import uk.gov.hmrc.tradereportingextracts.config.AppConfig
 import uk.gov.hmrc.tradereportingextracts.models.{CompanyInformation, EoriHistory, EoriHistoryResponse, NotificationEmail}
 
@@ -73,9 +73,17 @@ class CustomsDataStoreConnector @Inject() (appConfig: AppConfig, httpClient: Htt
       .flatMap { response =>
         response.status match {
           case OK => Future.successful(response.json.as[NotificationEmail])
-          case _  =>
-            logger.error(s"Unexpected response from : ${appConfig.verifiedEmailUrl}")
+          case NOT_FOUND  =>
+            logger.info(s"Email not found")
             Future.successful(NotificationEmail())
+          case _ => 
+            logger.error(s"Unexpected response from : ${appConfig.verifiedEmailUrl}")
+            Future.failed(
+              UpstreamErrorResponse(
+                s"Unexpected response from getNotifacationEmail : ${response.status}",
+                response.status
+              )
+            )
         }
       }
 }

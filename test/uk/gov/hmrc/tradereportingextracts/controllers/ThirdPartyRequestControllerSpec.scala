@@ -189,6 +189,43 @@ class ThirdPartyRequestControllerSpec extends AnyFreeSpec with Matchers with Moc
       )(any())
     }
 
+    "should not send email when no notification email found for third party" in {
+
+      reset(mockCustomsDataStoreConnector, mockEmailConnector)
+      val requestBody = Json.parse(
+        """
+          |{
+          |  "eori":"GB987654321098",
+          |  "thirdPartyEori":"GB123456123456"
+          |}
+        """.stripMargin)
+
+      when(userService.deleteAuthorisedUser(any(), any()))
+        .thenReturn(Future.successful(true))
+      when(mockReportRequestRepository.deleteReportsForThirdPartyRemoval(any(), any())(any()))
+        .thenReturn(Future.successful(true))
+
+      when(mockCustomsDataStoreConnector.getNotificationEmail(any()))
+        .thenReturn(Future.successful(NotificationEmail("", LocalDateTime.now())))
+      when(mockCustomsDataStoreConnector.getCompanyInformation(any()))
+        .thenReturn(Future.successful(CompanyInformation(name = "Test Business", consent = "1")))
+
+
+      val result = controller.deleteThirdPartyDetails()(
+        FakeRequest().withHeaders(AUTHORIZATION -> "my-token").withBody(requestBody)
+      )
+      status(result) mustBe NO_CONTENT
+
+      verify(mockCustomsDataStoreConnector).getNotificationEmail(eqTo("GB123456123456"))
+      verify(mockEmailConnector, times(0)).sendEmailRequest(
+        eqTo("tre_third_party_access_removed"),
+        eqTo("test@email.com"),
+        eqTo(Map("businessName" -> "Test Business"))
+      )(any())
+
+    }
+
+
     "should return 204 NoContent when authorised user is removed but no company info if no consent given" in {
       reset(mockCustomsDataStoreConnector, mockEmailConnector)
       val requestBody = Json.parse("""

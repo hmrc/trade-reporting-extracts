@@ -102,8 +102,12 @@ class ThirdPartyRequestController @Inject() (
                                          if (companyInfo.consent == "1") Map("businessName" -> companyInfo.name)
                                          else Map()
                                        }
-                    _               <-
-                      emailConnector.sendEmailRequest("tre_third_party_access_removed", thirdPartyEmail, businessName)
+                      _                         = thirdPartyEmail match {
+                        case thirdPartyEmail if thirdPartyEmail == "" =>
+                          logger.info(s"No notification email found for third party EORI")
+                        case _                                        =>
+                          emailConnector.sendEmailRequest("tre_third_party_access_removed", thirdPartyEmail, businessName)
+                      }
                     _               <- deleteReportThirdParty(eori, thirdPartyEori)
                   } yield NoContent
 
