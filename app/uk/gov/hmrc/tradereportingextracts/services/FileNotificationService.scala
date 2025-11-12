@@ -22,7 +22,7 @@ import play.api.http.Status.{BAD_REQUEST, CREATED, NOT_FOUND}
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.tradereportingextracts.connectors.EmailConnector
 import uk.gov.hmrc.tradereportingextracts.models.sdes.{FileNotificationMetadata, FileNotificationResponse}
-import uk.gov.hmrc.tradereportingextracts.models.{ReportTypeName, FileNotification as TreFileNotification}
+import uk.gov.hmrc.tradereportingextracts.models.{FileNotification as TreFileNotification, ReportTypeName}
 
 import java.time.Instant
 import javax.inject.{Inject, Singleton}
