@@ -44,7 +44,7 @@ case class ReportRequest(
   updateDate: Instant
 ) {
 
-  def isReportStatusComplete(): Boolean =
+  def isReportStatusComplete: Boolean =
     fileNotifications.exists { notifications =>
       val notificationsCount = notifications.size
       val lastNotification   = notifications.find(_.reportLastFile == "true")
