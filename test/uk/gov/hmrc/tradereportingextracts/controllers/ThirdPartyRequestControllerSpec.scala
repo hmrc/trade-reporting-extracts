@@ -192,8 +192,7 @@ class ThirdPartyRequestControllerSpec extends AnyFreeSpec with Matchers with Moc
     "should not send email when no notification email found for third party" in {
 
       reset(mockCustomsDataStoreConnector, mockEmailConnector)
-      val requestBody = Json.parse(
-        """
+      val requestBody = Json.parse("""
           |{
           |  "eori":"GB987654321098",
           |  "thirdPartyEori":"GB123456123456"
@@ -210,7 +209,6 @@ class ThirdPartyRequestControllerSpec extends AnyFreeSpec with Matchers with Moc
       when(mockCustomsDataStoreConnector.getCompanyInformation(any()))
         .thenReturn(Future.successful(CompanyInformation(name = "Test Business", consent = "1")))
 
-
       val result = controller.deleteThirdPartyDetails()(
         FakeRequest().withHeaders(AUTHORIZATION -> "my-token").withBody(requestBody)
       )
@@ -224,7 +222,6 @@ class ThirdPartyRequestControllerSpec extends AnyFreeSpec with Matchers with Moc
       )(any())
 
     }
-
 
     "should return 204 NoContent when authorised user is removed but no company info if no consent given" in {
       reset(mockCustomsDataStoreConnector, mockEmailConnector)

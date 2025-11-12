@@ -72,11 +72,11 @@ class CustomsDataStoreConnector @Inject() (appConfig: AppConfig, httpClient: Htt
       .execute[HttpResponse]
       .flatMap { response =>
         response.status match {
-          case OK => Future.successful(response.json.as[NotificationEmail])
-          case NOT_FOUND  =>
+          case OK        => Future.successful(response.json.as[NotificationEmail])
+          case NOT_FOUND =>
             logger.info(s"Email not found")
             Future.successful(NotificationEmail())
-          case _ => 
+          case _         =>
             logger.error(s"Unexpected response from : ${appConfig.verifiedEmailUrl}")
             Future.failed(
               UpstreamErrorResponse(
