@@ -173,7 +173,8 @@ class AvailableReportService @Inject() (
         fileSizeBytes = notification.fileSize,
         reportSubjectEori = report.requesterEORI,
         reportTypeName = report.reportTypeName.toString,
-        requesterEori = report.requesterEORI
+        requesterEori = report.requesterEORI,
+        xCorrelationId = report.correlationId
       )
     )
 }

@@ -82,7 +82,8 @@ class AuditServiceSpec extends SpecBase {
           verify(mockAuditConnector).sendExplicitAudit(anyString(), captor.capture())(any(), any(), any())
 
           val event = captor.getValue
-          event.reports.head.requestId shouldBe "RR123"
+          event.reports.head.requestId      shouldBe "RR123"
+          event.reports.head.xCorrelationId shouldBe "CORR123"
         }
       }
     }

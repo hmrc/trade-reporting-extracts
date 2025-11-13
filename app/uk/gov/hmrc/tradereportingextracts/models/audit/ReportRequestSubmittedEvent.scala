@@ -37,6 +37,7 @@ final case class ReportRequestSubmittedEvent(
 
 final case class ReportDetail(
   requestId: String,
+  xCorrelationId: String,
   reportTypeName: String,
   outcomeIsSuccessful: Boolean
 )
