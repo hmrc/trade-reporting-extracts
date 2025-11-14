@@ -21,6 +21,7 @@ import play.api.Logging
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.tradereportingextracts.connectors.{CustomsDataStoreConnector, EmailConnector}
 import uk.gov.hmrc.tradereportingextracts.models.*
+import uk.gov.hmrc.tradereportingextracts.models.audit.ReportGenerationFailureEvent
 import uk.gov.hmrc.tradereportingextracts.models.eis.EisReportStatusHeaders.XCorrelationID
 import uk.gov.hmrc.tradereportingextracts.models.eis.EisReportStatusRequest
 import uk.gov.hmrc.tradereportingextracts.models.eis.EisReportStatusRequest.StatusType
@@ -34,7 +35,8 @@ import scala.concurrent.{ExecutionContext, Future}
 class ReportRequestService @Inject() (
   reportRequestRepository: ReportRequestRepository,
   customsDataStoreConnector: CustomsDataStoreConnector,
-  emailConnector: EmailConnector
+  emailConnector: EmailConnector,
+  auditService: AuditService
 ) extends Logging:
 
   implicit val hc: HeaderCarrier = HeaderCarrier()
@@ -134,6 +136,12 @@ class ReportRequestService @Inject() (
           case (false, StatusType.ERROR) =>
             for {
               _ <- reportRequestRepository.update(updatedReportRequest)
+              _  = auditService.audit(
+                     ReportGenerationFailureEvent(
+                       xCorrelationId = updatedReportRequest.correlationId,
+                       statusNotificationCode = eisReportStatusRequest.statusCode
+                     )
+                   )
               _  = req.userEmail match {
                      case Some(userEmail) =>
                        emailConnector.sendEmailRequest(
