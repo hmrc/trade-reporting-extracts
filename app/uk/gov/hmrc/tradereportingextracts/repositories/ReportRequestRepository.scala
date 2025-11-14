@@ -21,7 +21,7 @@ import org.mongodb.scala.model.{Filters, IndexModel, IndexOptions, Indexes}
 import uk.gov.hmrc.crypto.{Decrypter, Encrypter}
 import uk.gov.hmrc.mongo.MongoComponent
 import uk.gov.hmrc.mongo.play.json.PlayMongoRepository
-import uk.gov.hmrc.play.http.logging.Mdc
+import uk.gov.hmrc.mdc.Mdc
 import uk.gov.hmrc.tradereportingextracts.config.AppConfig
 import uk.gov.hmrc.tradereportingextracts.models.ReportRequest
 
@@ -112,14 +112,14 @@ class ReportRequestRepository @Inject() (appConfig: AppConfig, mongoComponent: M
       collection
         .find(Filters.in("requesterEORI", eoriHistory*))
         .toFuture()
-        .map(_.filter(!_.isReportStatusComplete()))
+        .map(_.filter(!_.isReportStatusComplete))
     }
 
   def getAvailableReports(eori: String)(using ec: ExecutionContext): Future[Seq[ReportRequest]] = Mdc.preservingMdc {
     collection
       .find(Filters.equal("requesterEORI", eori))
       .toFuture()
-      .map(_.filter(_.isReportStatusComplete()))
+      .map(_.filter(_.isReportStatusComplete))
   }
 
   def getAvailableReportsByHistory(eoriHistory: Seq[String])(using ec: ExecutionContext): Future[Seq[ReportRequest]] =
@@ -127,7 +127,7 @@ class ReportRequestRepository @Inject() (appConfig: AppConfig, mongoComponent: M
       collection
         .find(Filters.in("requesterEORI", eoriHistory*))
         .toFuture()
-        .map(_.filter(_.isReportStatusComplete()))
+        .map(_.filter(_.isReportStatusComplete))
     }
 
   def countAvailableReports(eori: String)(using ec: ExecutionContext): Future[Long] = Mdc.preservingMdc {
@@ -135,7 +135,7 @@ class ReportRequestRepository @Inject() (appConfig: AppConfig, mongoComponent: M
       .find(Filters.equal("requesterEORI", eori))
       .toFuture()
       .map { reportRequests =>
-        reportRequests.count(_.isReportStatusComplete())
+        reportRequests.count(_.isReportStatusComplete)
       }
   }
 

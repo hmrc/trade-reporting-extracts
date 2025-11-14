@@ -21,7 +21,6 @@ import play.api.http.Status
 import play.api.http.Status.{BAD_REQUEST, CREATED, NOT_FOUND}
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.tradereportingextracts.connectors.EmailConnector
-import uk.gov.hmrc.tradereportingextracts.models.ReportStatus.COMPLETE
 import uk.gov.hmrc.tradereportingextracts.models.sdes.{FileNotificationMetadata, FileNotificationResponse}
 import uk.gov.hmrc.tradereportingextracts.models.{FileNotification as TreFileNotification, ReportTypeName}
 
@@ -52,7 +51,7 @@ class FileNotificationService @Inject() (reportRequestService: ReportRequestServ
             val updatedReportRequest     = reportRequest
               .copy(fileNotifications = updatedFileNotifications, updateDate = Instant.now())
             val maskedId                 = updatedReportRequest.reportRequestId.replaceFirst("^.{5}", "XXXXX")
-            if (reportRequestService.determineReportStatus(updatedReportRequest) == COMPLETE) {
+            if (updatedReportRequest.isReportStatusComplete) {
               for {
                 _ <- reportRequestService.update(updatedReportRequest)
                 _ <- updatedReportRequest.userEmail match {

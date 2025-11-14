@@ -27,7 +27,6 @@ import play.api.http.Status.{BAD_REQUEST, CREATED, NOT_FOUND}
 import uk.gov.hmrc.crypto.Sensitive.SensitiveString
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.tradereportingextracts.connectors.EmailConnector
-import uk.gov.hmrc.tradereportingextracts.models.ReportStatus.COMPLETE
 import uk.gov.hmrc.tradereportingextracts.models.sdes.{FileNotificationMetadata, FileNotificationResponse}
 import uk.gov.hmrc.tradereportingextracts.models.{FileNotification as TreFileNotification, ReportRequest, ReportTypeName}
 import uk.gov.hmrc.tradereportingextracts.utils.WireMockHelper
@@ -65,7 +64,23 @@ class FileNotificationServiceSpec
       FileNotificationMetadata.MDTPReportXCorrelationIDMetadataItem("asfd-asdf-asdf"),
       FileNotificationMetadata.MDTPReportRequestIDMetadataItem("RE123456"),
       FileNotificationMetadata.MDTPReportTypeNameMetadataItem("IMPORTS_HEADER_REPORT"),
-      FileNotificationMetadata.ReportFilesPartsMetadataItem("1of2")
+      FileNotificationMetadata.ReportFilesPartsMetadataItem("1")
+    )
+  )
+
+  val completeFileNotification: FileNotificationResponse = FileNotificationResponse(
+    eori = "GB123456789012",
+    fileName = "testFileName",
+    fileSize = 12345,
+    metadata = List(
+      FileNotificationMetadata.RetentionDaysMetadataItem("30"),
+      FileNotificationMetadata.FileTypeMetadataItem("CSV"),
+      FileNotificationMetadata.EORIMetadataItem("GB123456789012"),
+      FileNotificationMetadata.MDTPReportXCorrelationIDMetadataItem("asfd-asdf-asdf"),
+      FileNotificationMetadata.MDTPReportRequestIDMetadataItem("RE123456"),
+      FileNotificationMetadata.MDTPReportTypeNameMetadataItem("IMPORTS_HEADER_REPORT"),
+      FileNotificationMetadata.ReportFilesPartsMetadataItem("1"),
+      FileNotificationMetadata.ReportLastFileMetadataItem("true")
     )
   )
 
@@ -176,11 +191,10 @@ class FileNotificationServiceSpec
         .thenReturn(Future.successful(Some(reportWithUserEmail)))
       when(mockReportRequestService.update(any())(any()))
         .thenReturn(Future.successful(true))
-      when(mockReportRequestService.determineReportStatus(any())).thenReturn(COMPLETE)
       when(mockEmailConnector.sendEmailRequest(any(), any(), any())(any()))
         .thenReturn(Future.successful(()))
 
-      val result = service.processFileNotification(fileNotification)
+      val result = service.processFileNotification(completeFileNotification)
       whenReady(result) { _ =>
         verify(mockEmailConnector).sendEmailRequest(
           eqTo("tre_report_available"),
@@ -210,11 +224,10 @@ class FileNotificationServiceSpec
         .thenReturn(Future.successful(Some(reportWithRecipients)))
       when(mockReportRequestService.update(any())(any()))
         .thenReturn(Future.successful(true))
-      when(mockReportRequestService.determineReportStatus(any())).thenReturn(COMPLETE)
       when(mockEmailConnector.sendEmailRequest(any(), any(), any())(any()))
         .thenReturn(Future.successful(()))
 
-      val result = service.processFileNotification(fileNotification)
+      val result = service.processFileNotification(completeFileNotification)
       whenReady(result) { _ =>
         verify(mockEmailConnector).sendEmailRequest(
           eqTo("tre_report_available_non_verified"),
@@ -238,11 +251,10 @@ class FileNotificationServiceSpec
         .thenReturn(Future.successful(Some(reportNoUserEmail)))
       when(mockReportRequestService.update(any())(any()))
         .thenReturn(Future.successful(true))
-      when(mockReportRequestService.determineReportStatus(any())).thenReturn(COMPLETE)
       when(mockEmailConnector.sendEmailRequest(any(), any(), any())(any()))
         .thenReturn(Future.successful(()))
 
-      val result = service.processFileNotification(fileNotification)
+      val result = service.processFileNotification(completeFileNotification)
       whenReady(result) { _ =>
         verify(mockEmailConnector, never).sendEmailRequest(
           eqTo("tre_report_available"),
@@ -266,13 +278,12 @@ class FileNotificationServiceSpec
         .thenReturn(Future.successful(Some(maskedReportRequest)))
       when(mockReportRequestService.update(any())(any()))
         .thenReturn(Future.successful(true))
-      when(mockReportRequestService.determineReportStatus(any())).thenReturn(COMPLETE)
       when(mockEmailConnector.sendEmailRequest(any(), any(), any())(any()))
         .thenReturn(Future.successful(()))
 
       val result = service.processFileNotification(
         fileNotification.copy(
-          metadata = fileNotification.metadata.map {
+          metadata = completeFileNotification.metadata.map {
             case FileNotificationMetadata.MDTPReportRequestIDMetadataItem(_) =>
               FileNotificationMetadata.MDTPReportRequestIDMetadataItem("12345-6789")
             case m                                                           => m
