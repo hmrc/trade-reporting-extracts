@@ -47,11 +47,13 @@ class FileNotificationServiceSpec
     super.beforeEach()
     reset(mockReportRequestService)
     reset(mockEmailConnector)
+    reset(mockAuditService)
   }
 
   val mockReportRequestService: ReportRequestService = mock[ReportRequestService]
   val mockEmailConnector: EmailConnector             = mock[EmailConnector]
-  val service                                        = new FileNotificationService(mockReportRequestService, mockEmailConnector)
+  val mockAuditService: AuditService                 = mock[AuditService]
+  val service                                        = new FileNotificationService(mockReportRequestService, mockEmailConnector, mockAuditService)
 
   val fileNotification: FileNotificationResponse = FileNotificationResponse(
     eori = "GB123456789012",
@@ -194,6 +196,10 @@ class FileNotificationServiceSpec
       when(mockEmailConnector.sendEmailRequest(any(), any(), any())(any()))
         .thenReturn(Future.successful(()))
 
+      doNothing()
+        .when(mockAuditService)
+        .audit(any())(using any(), any())
+
       val result = service.processFileNotification(completeFileNotification)
       whenReady(result) { _ =>
         verify(mockEmailConnector).sendEmailRequest(
@@ -211,6 +217,9 @@ class FileNotificationServiceSpec
           eqTo("recipient2@nonverified.com"),
           any()
         )(any())
+        verify(mockAuditService, times(1))
+          .audit(any())(using any(), any())
+
       }
     }
 
@@ -227,6 +236,10 @@ class FileNotificationServiceSpec
       when(mockEmailConnector.sendEmailRequest(any(), any(), any())(any()))
         .thenReturn(Future.successful(()))
 
+      doNothing()
+        .when(mockAuditService)
+        .audit(any())(using any(), any())
+
       val result = service.processFileNotification(completeFileNotification)
       whenReady(result) { _ =>
         verify(mockEmailConnector).sendEmailRequest(
@@ -239,6 +252,10 @@ class FileNotificationServiceSpec
           eqTo("recipient2@nonverified.com"),
           eqTo(Map("reportRequestId" -> "XXXXX456"))
         )(any())
+
+        verify(mockAuditService, times(1))
+          .audit(any())(using any(), any())
+
       }
     }
 
@@ -254,6 +271,10 @@ class FileNotificationServiceSpec
       when(mockEmailConnector.sendEmailRequest(any(), any(), any())(any()))
         .thenReturn(Future.successful(()))
 
+      doNothing()
+        .when(mockAuditService)
+        .audit(any())(using any(), any())
+
       val result = service.processFileNotification(completeFileNotification)
       whenReady(result) { _ =>
         verify(mockEmailConnector, never).sendEmailRequest(
@@ -266,6 +287,10 @@ class FileNotificationServiceSpec
           eqTo("recipient@nonverified.com"),
           any()
         )(any())
+
+        verify(mockAuditService, times(1))
+          .audit(any())(using any(), any())
+
       }
     }
 
@@ -280,6 +305,10 @@ class FileNotificationServiceSpec
         .thenReturn(Future.successful(true))
       when(mockEmailConnector.sendEmailRequest(any(), any(), any())(any()))
         .thenReturn(Future.successful(()))
+
+      doNothing()
+        .when(mockAuditService)
+        .audit(any())(using any(), any())
 
       val result = service.processFileNotification(
         fileNotification.copy(
@@ -299,6 +328,10 @@ class FileNotificationServiceSpec
         )(any())
         val params       = paramsCaptor.getValue
         params("reportRequestId") shouldBe "XXXXX-6789"
+
+        verify(mockAuditService, times(1))
+          .audit(any())(using any(), any())
+
       }
     }
   }
