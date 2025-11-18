@@ -31,7 +31,7 @@ class ReportAvailableEventSpec extends AnyFreeSpec with Matchers {
       )
 
       Json.toJson(event) mustBe Json.obj(
-        "xCorrelationId"         -> "corr-123"
+        "xCorrelationId" -> "corr-123"
       )
     }
 
