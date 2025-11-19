@@ -43,6 +43,7 @@ class AuditService @Inject() (
           val notif = request.notifications.headOption
           ReportDetail(
             requestId = request.reportRequestId,
+            xCorrelationId = request.correlationId,
             reportTypeName = request.reportTypeName.toString,
             outcomeIsSuccessful = notif.exists(_.statusCode == StatusCode.INITIATED.toString)
           )

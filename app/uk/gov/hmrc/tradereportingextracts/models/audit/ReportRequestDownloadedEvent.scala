@@ -27,7 +27,8 @@ final case class ReportRequestDownloadedEvent(
   fileSizeBytes: Long,
   reportSubjectEori: String,
   reportTypeName: String,
-  requesterEori: String
+  requesterEori: String,
+  xCorrelationId: String
 ) extends AuditEvent {
   override val auditType: String = "ReportRequestDownloaded"
 }
@@ -41,7 +42,8 @@ object ReportRequestDownloadedEvent {
       (__ \ "fileSizeBytes").write[Long] and
       (__ \ "reportSubjectEori").write[String] and
       (__ \ "reportTypeName").write[String] and
-      (__ \ "requesterEori").write[String]
+      (__ \ "requesterEori").write[String] and
+      (__ \ "xCorrelationId").write[String]
   )(report =>
     (
       report.requestId,
@@ -51,7 +53,8 @@ object ReportRequestDownloadedEvent {
       report.fileSizeBytes,
       report.reportSubjectEori,
       report.reportTypeName,
-      report.requesterEori
+      report.requesterEori,
+      report.xCorrelationId
     )
   )
 }

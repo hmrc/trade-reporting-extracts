@@ -29,7 +29,12 @@ class ReportRequestSubmittedEventSpec extends AnyFreeSpec with Matchers {
     val now = Instant.parse("2025-07-30T12:00:00Z")
 
     val reportDetail =
-      ReportDetail(requestId = "REQ123", reportTypeName = "IMPORTS_ITEM_REPORT", outcomeIsSuccessful = true)
+      ReportDetail(
+        requestId = "REQ123",
+        xCorrelationId = "CORR123",
+        reportTypeName = "IMPORTS_ITEM_REPORT",
+        outcomeIsSuccessful = true
+      )
 
     val event = ReportRequestSubmittedEvent(
       submissionStatus = "Complete",
@@ -49,6 +54,7 @@ class ReportRequestSubmittedEventSpec extends AnyFreeSpec with Matchers {
       (json \ "submissionStatus").as[String] mustBe "Complete"
       (json \ "numberOfReports").as[Int] mustBe 1
       (json \ "reports")(0).\("requestId").as[String] mustBe "REQ123"
+      (json \ "reports")(0).\("xCorrelationId").as[String] mustBe "CORR123"
     }
 
     "must deserialize from JSON correctly" in {

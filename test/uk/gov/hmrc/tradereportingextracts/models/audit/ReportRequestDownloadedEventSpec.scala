@@ -33,7 +33,8 @@ class ReportRequestDownloadedEventSpec extends AnyFreeSpec with Matchers {
         fileSizeBytes = 1234L,
         reportSubjectEori = "GB123456789000",
         reportTypeName = "IMPORTS_ITEM_REPORT",
-        requesterEori = "GB987654321000"
+        requesterEori = "GB987654321000",
+        xCorrelationId = "CORR123"
       )
 
       val expectedJson = Json.parse("""
@@ -45,7 +46,8 @@ class ReportRequestDownloadedEventSpec extends AnyFreeSpec with Matchers {
             |  "fileSizeBytes": 1234,
             |  "reportSubjectEori": "GB123456789000",
             |  "reportTypeName": "IMPORTS_ITEM_REPORT",
-            |  "requesterEori": "GB987654321000"
+            |  "requesterEori": "GB987654321000",
+            |  "xCorrelationId": "CORR123"
             |}
             """.stripMargin)
 
@@ -61,7 +63,8 @@ class ReportRequestDownloadedEventSpec extends AnyFreeSpec with Matchers {
         fileSizeBytes = 100L,
         reportSubjectEori = "eori1",
         reportTypeName = "type",
-        requesterEori = "eori2"
+        requesterEori = "eori2",
+        xCorrelationId = "CORR123"
       )
       audit.auditType shouldBe "ReportRequestDownloaded"
     }
