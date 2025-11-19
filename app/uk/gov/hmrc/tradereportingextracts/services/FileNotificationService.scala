@@ -21,6 +21,7 @@ import play.api.http.Status
 import play.api.http.Status.{BAD_REQUEST, CREATED, NOT_FOUND}
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.tradereportingextracts.connectors.EmailConnector
+import uk.gov.hmrc.tradereportingextracts.models.audit.ReportAvailableEvent
 import uk.gov.hmrc.tradereportingextracts.models.sdes.{FileNotificationMetadata, FileNotificationResponse}
 import uk.gov.hmrc.tradereportingextracts.models.{FileNotification as TreFileNotification, ReportTypeName}
 
@@ -29,8 +30,12 @@ import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-class FileNotificationService @Inject() (reportRequestService: ReportRequestService, emailConnector: EmailConnector)(
-  implicit ec: ExecutionContext
+class FileNotificationService @Inject() (
+  reportRequestService: ReportRequestService,
+  emailConnector: EmailConnector,
+  auditService: AuditService
+)(implicit
+  ec: ExecutionContext
 ) extends Logging {
 
   def processFileNotification(fileNotification: FileNotificationResponse): Future[(Int, String)] = {
@@ -74,6 +79,7 @@ class FileNotificationService @Inject() (reportRequestService: ReportRequestServ
                          )
                        }
                      )
+                _  = auditService.audit(ReportAvailableEvent(xCorrelationId = updatedReportRequest.correlationId))
               } yield (CREATED, "Created")
             } else {
               reportRequestService.update(updatedReportRequest).map(_ => (CREATED, "Created"))
