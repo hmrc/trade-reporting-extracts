@@ -32,9 +32,11 @@ import uk.gov.hmrc.tradereportingextracts.utils.WireMockHelper
 import org.mockito.Mockito.*
 import org.mockito.ArgumentMatchers.{eq as eqTo, *}
 import org.scalatestplus.mockito.MockitoSugar
+import uk.gov.hmrc.http.HeaderCarrier
 
 import scala.concurrent.{ExecutionContext, Future}
 import uk.gov.hmrc.tradereportingextracts.models.StatusCode.FAILED
+import uk.gov.hmrc.tradereportingextracts.models.audit.{AuditEvent, ReportGenerationFailureEvent}
 
 import java.time.{Instant, LocalDate}
 
@@ -45,15 +47,19 @@ class ReportRequestServiceSpec
     with ScalaFutures
     with WireMockHelper {
 
-  val service                                              = new ReportRequestService(null, null, null) // nulls are fine here since we’re only testing private logic
+  val service                                              =
+    new ReportRequestService(null, null, null, null) // nulls are fine here since we’re only testing private logic
+  implicit val hc: HeaderCarrier                           = HeaderCarrier()
   implicit val ec: ExecutionContext                        = scala.concurrent.ExecutionContext.Implicits.global
   val mockReportRequestRepository: ReportRequestRepository = mock[ReportRequestRepository]
   val mockEmailConnector: EmailConnector                   = mock[EmailConnector]
+  val mockAuditService: AuditService                       = mock[AuditService]
 
   override def beforeEach(): Unit = {
     super.beforeEach()
     reset(mockReportRequestRepository)
     reset(mockEmailConnector)
+    reset(mockAuditService)
   }
   "determineReportStatus" should {
 
@@ -177,7 +183,7 @@ class ReportRequestServiceSpec
   }
 
   "processReportStatus" should {
-    val service = new ReportRequestService(mockReportRequestRepository, null, mockEmailConnector)
+    val service = new ReportRequestService(mockReportRequestRepository, null, mockEmailConnector, mockAuditService)
     val headers = new Headers(Seq("X-Correlation-ID" -> "correlationId"))
 
     val reportRequest = ReportRequest(
@@ -212,10 +218,15 @@ class ReportRequestServiceSpec
         .thenReturn(Future.successful(Some(reportRequest)))
       when(mockReportRequestRepository.update(any())(any())).thenReturn(Future.successful(true))
       when(mockEmailConnector.sendEmailRequest(any(), any(), any())(any())).thenReturn(Future.successful(()))
+      doNothing()
+        .when(mockAuditService)
+        .audit(any())(using any(), any())
 
       service.processReportStatus(headers, statusReq).futureValue
 
       verify(mockReportRequestRepository).update(any())(any())
+      verify(mockAuditService, times(1))
+        .audit(any())(using any(), any())
       verify(mockEmailConnector).sendEmailRequest(
         eqTo("tre_report_failed"),
         eqTo("user@email.com"),
@@ -256,7 +267,7 @@ class ReportRequestServiceSpec
   "countReportSubmissionsForEoriOnDate" should {
     val mockCustomsDataStoreConnector = mock[CustomsDataStoreConnector]
 
-    val service = new ReportRequestService(mockReportRequestRepository, mockCustomsDataStoreConnector, null)
+    val service = new ReportRequestService(mockReportRequestRepository, mockCustomsDataStoreConnector, null, null)
 
     val eori  = "EORI123456"
     val limit = 5
@@ -301,7 +312,7 @@ class ReportRequestServiceSpec
   "getReportRequestsForUser" should {
     val mockCustomsDataStoreConnector = mock[CustomsDataStoreConnector]
     val mockReportRequestRepository   = mock[ReportRequestRepository]
-    val service                       = new ReportRequestService(mockReportRequestRepository, mockCustomsDataStoreConnector, null)
+    val service                       = new ReportRequestService(mockReportRequestRepository, mockCustomsDataStoreConnector, null, null)
     implicit val ec: ExecutionContext = scala.concurrent.ExecutionContext.Implicits.global
 
     val eori                    = "GB123456789000"
