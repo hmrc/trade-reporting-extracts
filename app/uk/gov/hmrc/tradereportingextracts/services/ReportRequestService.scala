@@ -134,14 +134,14 @@ class ReportRequestService @Inject() (
           eisReportStatusRequest.statusType
         ) match {
           case (false, StatusType.ERROR) =>
+            auditService.audit(
+              ReportGenerationFailureEvent(
+                xCorrelationId = updatedReportRequest.correlationId,
+                statusNotificationCode = eisReportStatusRequest.statusCode
+              )
+            )
             for {
               _ <- reportRequestRepository.update(updatedReportRequest)
-              _  = auditService.audit(
-                     ReportGenerationFailureEvent(
-                       xCorrelationId = updatedReportRequest.correlationId,
-                       statusNotificationCode = eisReportStatusRequest.statusCode
-                     )
-                   )
               _  = req.userEmail match {
                      case Some(userEmail) =>
                        emailConnector.sendEmailRequest(
