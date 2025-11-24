@@ -57,6 +57,7 @@ class FileNotificationService @Inject() (
               .copy(fileNotifications = updatedFileNotifications, updateDate = Instant.now())
             val maskedId                 = updatedReportRequest.reportRequestId.replaceFirst("^.{5}", "XXXXX")
             if (updatedReportRequest.isReportStatusComplete) {
+              auditService.audit(ReportAvailableEvent(xCorrelationId = updatedReportRequest.correlationId))
               for {
                 _ <- reportRequestService.update(updatedReportRequest)
                 _ <- updatedReportRequest.userEmail match {
@@ -79,7 +80,6 @@ class FileNotificationService @Inject() (
                          )
                        }
                      )
-                _  = auditService.audit(ReportAvailableEvent(xCorrelationId = updatedReportRequest.correlationId))
               } yield (CREATED, "Created")
             } else {
               reportRequestService.update(updatedReportRequest).map(_ => (CREATED, "Created"))
