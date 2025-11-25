@@ -145,7 +145,7 @@ class ReportRequestService @Inject() (
               _  = req.userEmail match {
                      case Some(userEmail) =>
                        emailConnector.sendEmailRequest(
-                         templateId = "tre_report_failed",
+                         templateId = EmailTemplate.ReportFailed.id,
                          email = userEmail.decryptedValue,
                          params = Map("reportRequestId" -> maskedId)
                        )
@@ -156,7 +156,7 @@ class ReportRequestService @Inject() (
               _  = Future.sequence(
                      req.recipientEmails.map { email =>
                        emailConnector.sendEmailRequest(
-                         templateId = "tre_report_failed_non_verified",
+                         templateId = EmailTemplate.ReportAvailableNonVerified.id,
                          email = email.decryptedValue,
                          params = Map("reportRequestId" -> maskedId)
                        )

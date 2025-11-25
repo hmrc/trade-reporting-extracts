@@ -23,11 +23,11 @@ import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.internalauth.client.BackendAuthComponents
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 import uk.gov.hmrc.tradereportingextracts.connectors.{CustomsDataStoreConnector, EmailConnector}
-import uk.gov.hmrc.tradereportingextracts.models.{AccessType, AuthorisedUser, NotificationEmail}
+import uk.gov.hmrc.tradereportingextracts.models.{AccessType, AuthorisedUser, EmailTemplate, NotificationEmail}
 import uk.gov.hmrc.tradereportingextracts.models.thirdParty.ThirdPartyRequest
 import uk.gov.hmrc.tradereportingextracts.repositories.ReportRequestRepository
 import uk.gov.hmrc.tradereportingextracts.services.UserService
-import uk.gov.hmrc.tradereportingextracts.utils.PermissionsUtil.readPermission
+import uk.gov.hmrc.tradereportingextracts.utils.PermissionsUtil.{readPermission, writePermission}
 
 import javax.inject.Inject
 import scala.collection.immutable.Map
@@ -48,7 +48,7 @@ class ThirdPartyRequestController @Inject() (
   implicit val hc: HeaderCarrier = HeaderCarrier()
 
   def addThirdPartyRequest(): Action[JsValue] =
-    auth.authorizedAction(readPermission).async(parse.json) { implicit request =>
+    auth.authorizedAction(writePermission).async(parse.json) { implicit request =>
       request.body.validate[ThirdPartyRequest] match {
         case JsSuccess(value, _) =>
           val authorisedUser = AuthorisedUser(
@@ -67,7 +67,7 @@ class ThirdPartyRequestController @Inject() (
                                           case thirdPartyEmail if thirdPartyEmail == "" =>
                                             logger.info(s"No notification email found for third party EORI")
                                           case _                                        =>
-                                            emailConnector.sendEmailRequest("tre_third_party_added_tp", thirdPartyEmail, Map())
+                                            emailConnector.sendEmailRequest(EmailTemplate.ThirdPartyAddedTp.id, thirdPartyEmail, Map())
                                         }
           } yield Ok(Json.toJson(thirdPartyAddedConfirmed)))
             .recover { case ex =>
@@ -86,7 +86,7 @@ class ThirdPartyRequestController @Inject() (
     }
 
   def deleteThirdPartyDetails(): Action[JsValue] =
-    auth.authorizedAction(readPermission).async(parse.json) { implicit request =>
+    auth.authorizedAction(writePermission).async(parse.json) { implicit request =>
       try {
         val eoriResult           = (request.body \ "eori").validate[String]
         val thirdPartyEoriResult = (request.body \ "thirdPartyEori").validate[String]
@@ -107,7 +107,7 @@ class ThirdPartyRequestController @Inject() (
                                            logger.info(s"No notification email found for third party EORI")
                                          case _                                        =>
                                            emailConnector
-                                             .sendEmailRequest("tre_third_party_access_removed", thirdPartyEmail, businessName)
+                                             .sendEmailRequest(EmailTemplate.ThirdPartyAccessRemoved.id, thirdPartyEmail, businessName)
                                        }
                     _               <- deleteReportThirdParty(eori, thirdPartyEori)
                   } yield NoContent

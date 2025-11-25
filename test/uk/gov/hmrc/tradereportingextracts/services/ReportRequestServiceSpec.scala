@@ -228,12 +228,12 @@ class ReportRequestServiceSpec
       verify(mockAuditService, times(1))
         .audit(any())(using any(), any())
       verify(mockEmailConnector).sendEmailRequest(
-        eqTo("tre_report_failed"),
+        eqTo(EmailTemplate.ReportFailed.id),
         eqTo("user@email.com"),
         eqTo(Map("reportRequestId" -> "XXXXX456"))
       )(any())
       verify(mockEmailConnector).sendEmailRequest(
-        eqTo("tre_report_failed_non_verified"),
+        eqTo(EmailTemplate.ReportAvailableNonVerified.id),
         eqTo("additionalUser@email.com"),
         eqTo(Map("reportRequestId" -> "XXXXX456"))
       )(any())

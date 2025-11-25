@@ -23,7 +23,7 @@ import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.tradereportingextracts.connectors.EmailConnector
 import uk.gov.hmrc.tradereportingextracts.models.audit.ReportAvailableEvent
 import uk.gov.hmrc.tradereportingextracts.models.sdes.{FileNotificationMetadata, FileNotificationResponse}
-import uk.gov.hmrc.tradereportingextracts.models.{FileNotification as TreFileNotification, ReportTypeName}
+import uk.gov.hmrc.tradereportingextracts.models.{EmailTemplate, FileNotification as TreFileNotification, ReportTypeName}
 
 import java.time.Instant
 import javax.inject.{Inject, Singleton}
@@ -63,7 +63,7 @@ class FileNotificationService @Inject() (
                 _ <- updatedReportRequest.userEmail match {
                        case Some(userEmail) =>
                          emailConnector.sendEmailRequest(
-                           templateId = "tre_report_available",
+                           templateId = EmailTemplate.ReportAvailable.id,
                            email = userEmail.decryptedValue,
                            params = Map("reportRequestId" -> maskedId)
                          )
@@ -74,7 +74,7 @@ class FileNotificationService @Inject() (
                 _ <- Future.sequence(
                        updatedReportRequest.recipientEmails.map { email =>
                          emailConnector.sendEmailRequest(
-                           templateId = "tre_report_available_non_verified",
+                           templateId = EmailTemplate.ReportAvailableNonVerified.id,
                            email = email.decryptedValue,
                            params = Map("reportRequestId" -> maskedId)
                          )

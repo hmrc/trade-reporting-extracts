@@ -40,6 +40,7 @@ import java.time.LocalDateTime
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import org.mockito.ArgumentMatchers.{eq as eqTo, *}
+import uk.gov.hmrc.tradereportingextracts.models.EmailTemplate.ThirdPartyAddedTp
 
 class ThirdPartyRequestControllerSpec extends AnyFreeSpec with Matchers with MockitoSugar with ScalaFutures {
 
@@ -62,7 +63,7 @@ class ThirdPartyRequestControllerSpec extends AnyFreeSpec with Matchers with Moc
     )
   private val permission: Predicate.Permission             = Predicate.Permission(
     Resource(ResourceType("trade-reporting-extracts"), ResourceLocation("trade-reporting-extracts/*")),
-    IAAction("READ")
+    IAAction("WRITE")
   )
 
   "addThirdPartyRequest" - {
@@ -100,7 +101,7 @@ class ThirdPartyRequestControllerSpec extends AnyFreeSpec with Matchers with Moc
 
       verify(mockCustomsDataStoreConnector).getNotificationEmail(eqTo("GB123456123456"))
       verify(mockEmailConnector).sendEmailRequest(
-        eqTo("tre_third_party_added_tp"),
+        eqTo(EmailTemplate.ThirdPartyAddedTp.id),
         eqTo("test@email.com"),
         eqTo(Map())
       )(any())
@@ -140,7 +141,7 @@ class ThirdPartyRequestControllerSpec extends AnyFreeSpec with Matchers with Moc
 
       verify(mockCustomsDataStoreConnector).getNotificationEmail(eqTo("GB123456123456"))
       verify(mockEmailConnector, times(0))
-        .sendEmailRequest(eqTo("tre_third_party_added_tp"), eqTo("test@email.com"), eqTo(Map()))(any())
+        .sendEmailRequest(eqTo(EmailTemplate.ThirdPartyAddedTp.id), eqTo("test@email.com"), eqTo(Map()))(any())
     }
 
     "should return 400 BadRequest for invalid JSON" in {
@@ -183,7 +184,7 @@ class ThirdPartyRequestControllerSpec extends AnyFreeSpec with Matchers with Moc
 
       verify(mockCustomsDataStoreConnector).getNotificationEmail(eqTo("GB123456123456"))
       verify(mockEmailConnector).sendEmailRequest(
-        eqTo("tre_third_party_access_removed"),
+        eqTo(EmailTemplate.ThirdPartyAccessRemoved.id),
         eqTo("test@email.com"),
         eqTo(Map("businessName" -> "Test Business"))
       )(any())
@@ -216,7 +217,7 @@ class ThirdPartyRequestControllerSpec extends AnyFreeSpec with Matchers with Moc
 
       verify(mockCustomsDataStoreConnector).getNotificationEmail(eqTo("GB123456123456"))
       verify(mockEmailConnector, times(0)).sendEmailRequest(
-        eqTo("tre_third_party_access_removed"),
+        eqTo(EmailTemplate.ThirdPartyAccessRemoved.id),
         eqTo("test@email.com"),
         eqTo(Map("businessName" -> "Test Business"))
       )(any())
@@ -252,7 +253,7 @@ class ThirdPartyRequestControllerSpec extends AnyFreeSpec with Matchers with Moc
 
       verify(mockCustomsDataStoreConnector).getNotificationEmail(eqTo("GB123456123456"))
       verify(mockEmailConnector).sendEmailRequest(
-        eqTo("tre_third_party_access_removed"),
+        eqTo(EmailTemplate.ThirdPartyAccessRemoved.id),
         eqTo("test@email.com"),
         eqTo(Map())
       )(any())

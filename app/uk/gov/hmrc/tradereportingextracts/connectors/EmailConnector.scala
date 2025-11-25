@@ -18,16 +18,18 @@ package uk.gov.hmrc.tradereportingextracts.connectors
 
 import org.apache.pekko.Done
 import play.api.Logging
-import play.api.libs.json.*
 import play.api.http.Status.ACCEPTED
-import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse, StringContextOps, UpstreamErrorResponse}
-import uk.gov.hmrc.http.client.HttpClientV2
-import uk.gov.hmrc.tradereportingextracts.config.AppConfig
+import play.api.libs.json.*
 import play.api.libs.ws.JsonBodyWritables.writeableOf_JsValue
+import uk.gov.hmrc.http.HttpReads.Implicits.*
+import uk.gov.hmrc.http.client.HttpClientV2
+import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse, StringContextOps, UpstreamErrorResponse}
+import uk.gov.hmrc.tradereportingextracts.config.AppConfig
+import uk.gov.hmrc.tradereportingextracts.models.{EmailRequest, EmailTemplate}
+import uk.gov.hmrc.tradereportingextracts.connectors.ConnectorFailureLogger.*
+
 import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
-import uk.gov.hmrc.http.HttpReads.Implicits.*
-import uk.gov.hmrc.tradereportingextracts.models.EmailRequest
 
 class EmailConnector @Inject() (
   appConfig: AppConfig,
@@ -41,13 +43,13 @@ class EmailConnector @Inject() (
     params: Map[String, String]
   )(implicit hc: HeaderCarrier): Future[Done] = {
 
-    val emailUrl           = url"${appConfig.email}/hmrc/email"
+    val emailUrl           = url"${appConfig.email}"
     val body: EmailRequest = EmailRequest(
       to = Seq(email),
       templateId = templateId,
       parameters = params
     )
-    logger.warn(s"Sending email at : $emailUrl")
+    logger.info(s"Sending email for template : $templateId")
     httpClient
       .post(emailUrl)
       .withBody(Json.toJson(body))
@@ -65,5 +67,6 @@ class EmailConnector @Inject() (
             )
         }
       }
+      .logFailureReason(connectorName = "EmailConnector on sendEmailRequest")
   }
 }

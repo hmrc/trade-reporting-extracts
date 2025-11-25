@@ -23,6 +23,7 @@ import uk.gov.hmrc.tradereportingextracts.config.AppConfig
 import uk.gov.hmrc.tradereportingextracts.models.eis.*
 import uk.gov.hmrc.tradereportingextracts.models.eis.EisReportStatusHeaders.*
 import uk.gov.hmrc.tradereportingextracts.services.ReportRequestService
+import uk.gov.hmrc.tradereportingextracts.utils.HeaderUtils
 import uk.gov.hmrc.tradereportingextracts.utils.HttpDateFormatter.getCurrentHttpDate
 
 import javax.inject.{Inject, Singleton}
@@ -39,13 +40,10 @@ class ReportStatusController @Inject() (
 
   def notifyReportStatus(): Action[AnyContent] = Action.async { request =>
     def missingHeaders: Seq[String] =
-      EisReportStatusHeaders.allHeaders.filterNot(header => request.headers.get(header).isDefined)
+      HeaderUtils.missingHeaders(request, EisReportStatusHeaders.allHeaders)
 
     def isAuthorized: Boolean =
-      request.headers.get(Authorization.toString).exists { authHeader =>
-        authHeader.startsWith("Bearer ") &&
-        authHeader.substring("Bearer ".length) == appConfig.eisAPI6AuthToken
-      }
+      HeaderUtils.isAuthorized(request, appConfig.eisAPI6AuthToken, Authorization.toString)
 
     (missingHeaders, isAuthorized, request.body.asJson) match {
       case (headers, _, _) if headers.nonEmpty =>
