@@ -25,7 +25,7 @@ class SdesConfig @Inject() (servicesConfig: ServicesConfig, config: Configuratio
 
   val baseUrl: String = servicesConfig.baseUrl("sdes")
   val context: String = config.get[String]("microservice.services.sdes.context")
-  val url: String = baseUrl + context
-  
+  val url: String     = baseUrl + context
+
   val treXClientId: String =
     config.get[String]("microservice.services.sdes.x-client-id")

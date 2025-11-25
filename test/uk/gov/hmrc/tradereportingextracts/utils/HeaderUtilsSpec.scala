@@ -27,7 +27,7 @@ class HeaderUtilsSpec extends SpecBase {
 
     "authorize when header contains default Bearer prefix and expected token" in {
       val token = "token123"
-      val req = FakeRequest().withHeaders(
+      val req   = FakeRequest().withHeaders(
         "Authorization" -> s"Bearer $token"
       )
 
@@ -36,7 +36,7 @@ class HeaderUtilsSpec extends SpecBase {
 
     "not authorize when authorization header is missing" in {
       val token = "token123"
-      val req = FakeRequest()
+      val req   = FakeRequest()
 
       HeaderUtils.isAuthorized(req, expectedToken = token, authHeaderName = "Authorization") shouldBe false
     }
@@ -50,13 +50,18 @@ class HeaderUtilsSpec extends SpecBase {
     }
 
     "authorize with a custom bearer prefix" in {
-      val token = "customToken"
+      val token  = "customToken"
       val prefix = "Token "
-      val req = FakeRequest().withHeaders(
+      val req    = FakeRequest().withHeaders(
         "X-Custom-Auth" -> s"$prefix$token"
       )
 
-      HeaderUtils.isAuthorized(req, expectedToken = token, authHeaderName = "X-Custom-Auth", bearerPrefix = prefix) shouldBe true
+      HeaderUtils.isAuthorized(
+        req,
+        expectedToken = token,
+        authHeaderName = "X-Custom-Auth",
+        bearerPrefix = prefix
+      ) shouldBe true
     }
 
     "not authorize when prefix matches but token missing after prefix" in {
@@ -64,7 +69,7 @@ class HeaderUtilsSpec extends SpecBase {
         "Authorization" -> "Bearer "
       )
 
-      HeaderUtils.isAuthorized(req, expectedToken = "", authHeaderName = "Authorization") shouldBe true
+      HeaderUtils.isAuthorized(req, expectedToken = "", authHeaderName = "Authorization")          shouldBe true
       HeaderUtils.isAuthorized(req, expectedToken = "non-empty", authHeaderName = "Authorization") shouldBe false
     }
   }

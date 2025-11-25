@@ -25,7 +25,7 @@ class CustomsDataStoreConfig @Inject() (servicesConfig: ServicesConfig, config: 
 
   val baseUrl: String = servicesConfig.baseUrl("customs-data-store")
   val context: String = config.get[String]("microservice.services.customs-data-store.context")
-  val url: String = baseUrl + context
+  val url: String     = baseUrl + context
 
   val verifiedEmailPath: String =
     config.get[String]("microservice.services.customs-data-store.verified-email")
@@ -36,6 +36,6 @@ class CustomsDataStoreConfig @Inject() (servicesConfig: ServicesConfig, config: 
   val eoriHistoryPath: String =
     config.get[String]("microservice.services.customs-data-store.eori-history")
 
-  val verifiedEmailUrl: String = url + verifiedEmailPath
+  val verifiedEmailUrl: String      = url + verifiedEmailPath
   val companyInformationUrl: String = url + companyInformationPath
-  val eoriHistoryUrl: String = url + eoriHistoryPath
+  val eoriHistoryUrl: String        = url + eoriHistoryPath

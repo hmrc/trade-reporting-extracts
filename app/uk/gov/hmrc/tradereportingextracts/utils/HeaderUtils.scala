@@ -25,13 +25,13 @@ object HeaderUtils {
     required.filterNot(h => request.headers.get(h).isDefined)
 
   def isAuthorized(
-                    request: RequestHeader,
-                    expectedToken: String,
-                    authHeaderName: String,
-                    bearerPrefix: String = DefaultBearerPrefix
-                  ): Boolean =
+    request: RequestHeader,
+    expectedToken: String,
+    authHeaderName: String,
+    bearerPrefix: String = DefaultBearerPrefix
+  ): Boolean =
     request.headers.get(authHeaderName).exists { authHeader =>
       authHeader.startsWith(bearerPrefix) &&
-        authHeader.substring(bearerPrefix.length) == expectedToken
+      authHeader.substring(bearerPrefix.length) == expectedToken
     }
 }
