@@ -25,6 +25,7 @@ import uk.gov.hmrc.http.client.HttpClientV2
 import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse, StringContextOps, UpstreamErrorResponse}
 import uk.gov.hmrc.tradereportingextracts.config.AppConfig
 import uk.gov.hmrc.tradereportingextracts.models.{CompanyInformation, EoriHistory, EoriHistoryResponse, NotificationEmail}
+import uk.gov.hmrc.tradereportingextracts.connectors.ConnectorFailureLogger.*
 
 import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
@@ -35,7 +36,7 @@ class CustomsDataStoreConnector @Inject() (appConfig: AppConfig, httpClient: Htt
   implicit val hc: HeaderCarrier = HeaderCarrier()
 
   def getCompanyInformation(eori: String): Future[CompanyInformation] =
-    logger.warn(s"Requesting company information at : ${appConfig.companyInformationUrl}")
+    logger.info(s"Requesting company information at : ${appConfig.companyInformationUrl}")
     httpClient
       .post(url"${appConfig.companyInformationUrl}")
       .withBody(Json.obj("eori" -> eori))
@@ -50,7 +51,7 @@ class CustomsDataStoreConnector @Inject() (appConfig: AppConfig, httpClient: Htt
       }
 
   def getEoriHistory(eori: String): Future[EoriHistoryResponse] =
-    logger.warn(s"Requesting EORI history at : ${appConfig.eoriHistoryUrl}")
+    logger.info(s"Requesting EORI history at : ${appConfig.eoriHistoryUrl}")
     httpClient
       .post(url"${appConfig.eoriHistoryUrl}")
       .withBody(Json.obj("eori" -> eori))
@@ -65,7 +66,7 @@ class CustomsDataStoreConnector @Inject() (appConfig: AppConfig, httpClient: Htt
       }
 
   def getNotificationEmail(eori: String): Future[NotificationEmail] =
-    logger.warn(s"Requesting notification email at : ${appConfig.verifiedEmailUrl}")
+    logger.info(s"Requesting notification email at : ${appConfig.verifiedEmailUrl}")
     httpClient
       .post(url"${appConfig.verifiedEmailUrl}")
       .withBody(Json.obj("eori" -> eori))
@@ -77,7 +78,6 @@ class CustomsDataStoreConnector @Inject() (appConfig: AppConfig, httpClient: Htt
             logger.info(s"Email not found")
             Future.successful(NotificationEmail())
           case _         =>
-            logger.error(s"Unexpected response from : ${appConfig.verifiedEmailUrl}")
             Future.failed(
               UpstreamErrorResponse(
                 s"Unexpected response from getNotifacationEmail : ${response.status}",
@@ -86,4 +86,5 @@ class CustomsDataStoreConnector @Inject() (appConfig: AppConfig, httpClient: Htt
             )
         }
       }
+      .logFailureReason(connectorName = "CustomDataStoreConnector on getNotificationEmail")
 }

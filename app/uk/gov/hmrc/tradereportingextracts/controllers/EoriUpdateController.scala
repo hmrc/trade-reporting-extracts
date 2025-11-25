@@ -23,6 +23,7 @@ import uk.gov.hmrc.tradereportingextracts.models.etmp.*
 import uk.gov.hmrc.tradereportingextracts.models.etmp.EoriUpdateHeaders.*
 import uk.gov.hmrc.tradereportingextracts.services.UserService
 import uk.gov.hmrc.tradereportingextracts.utils.HttpDateFormatter.getCurrentHttpDate
+import uk.gov.hmrc.tradereportingextracts.utils.HeaderUtils
 
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.Future
@@ -36,13 +37,10 @@ class EoriUpdateController @Inject() (
 
   def eoriUpdate(): Action[AnyContent] = Action.async { request =>
     def missingHeaders: Seq[String] =
-      EoriUpdateHeaders.allHeaders.filterNot(header => request.headers.get(header).isDefined)
+      HeaderUtils.missingHeaders(request, EoriUpdateHeaders.allHeaders)
 
     def isAuthorized: Boolean =
-      request.headers.get(authorization.toString).exists { authHeader =>
-        authHeader.startsWith("Bearer ") &&
-        authHeader.substring("Bearer ".length) == appConfig.etmpAuthToken
-      }
+      HeaderUtils.isAuthorized(request, appConfig.eoriUpdateAuthToken, authorization.toString)
 
     (missingHeaders, isAuthorized, request.body.asJson) match {
       case (headers, _, _) if headers.nonEmpty =>

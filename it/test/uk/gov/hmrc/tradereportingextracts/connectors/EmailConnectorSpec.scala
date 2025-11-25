@@ -21,8 +21,8 @@ import uk.gov.hmrc.tradereportingextracts.utils.WireMockHelper
 import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}
 import org.scalatest.freespec.AnyFreeSpec
 import play.api.inject.guice.GuiceApplicationBuilder
-import play.api.{Application}
-import uk.gov.hmrc.http.{HeaderCarrier, UpstreamErrorResponse}
+import play.api.Application
+import uk.gov.hmrc.http.{HeaderCarrier, StringContextOps, UpstreamErrorResponse}
 import uk.gov.hmrc.tradereportingextracts.config.AppConfig
 import org.scalatestplus.play.*
 import play.api.test.Helpers.*
@@ -58,14 +58,14 @@ class EmailConnectorSpec extends AnyFreeSpec with ScalaFutures
          |  "parameters": {}
          |}""".stripMargin
 
-    val url = "/hmrc/email"
-
     "Must return Done when email service returns ACCEPTED" in {
       val app = application
       running(app) {
         val connector = app.injector.instanceOf[EmailConnector]
+        val appConfig = app.injector.instanceOf[AppConfig]
+        val emailUrl = url"${appConfig.email}"
         server.stubFor(
-          WireMock.post(urlEqualTo(url))
+          WireMock.post(urlEqualTo(emailUrl.getPath))
             .withRequestBody(equalToJson(payload))
             .willReturn(aResponse().withStatus(202))
         )
@@ -78,8 +78,10 @@ class EmailConnectorSpec extends AnyFreeSpec with ScalaFutures
       val app = application
       running(app) {
         val connector = app.injector.instanceOf[EmailConnector]
+        val appConfig = app.injector.instanceOf[AppConfig]
+        val emailUrl = url"${appConfig.email}"
         server.stubFor(
-          WireMock.post(urlEqualTo(url))
+          WireMock.post(urlEqualTo(emailUrl.getPath))
             .withRequestBody(equalToJson(payload))
             .willReturn(aResponse().withStatus(500))
         )

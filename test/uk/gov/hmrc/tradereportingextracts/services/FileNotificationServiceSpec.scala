@@ -27,8 +27,9 @@ import play.api.http.Status.{BAD_REQUEST, CREATED, NOT_FOUND}
 import uk.gov.hmrc.crypto.Sensitive.SensitiveString
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.tradereportingextracts.connectors.EmailConnector
+import uk.gov.hmrc.tradereportingextracts.models.EmailTemplate.ReportAvailable
 import uk.gov.hmrc.tradereportingextracts.models.sdes.{FileNotificationMetadata, FileNotificationResponse}
-import uk.gov.hmrc.tradereportingextracts.models.{FileNotification as TreFileNotification, ReportRequest, ReportTypeName}
+import uk.gov.hmrc.tradereportingextracts.models.{EmailTemplate, FileNotification as TreFileNotification, ReportRequest, ReportTypeName}
 import uk.gov.hmrc.tradereportingextracts.utils.WireMockHelper
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -203,17 +204,17 @@ class FileNotificationServiceSpec
       val result = service.processFileNotification(completeFileNotification)
       whenReady(result) { _ =>
         verify(mockEmailConnector).sendEmailRequest(
-          eqTo("tre_report_available"),
+          eqTo(EmailTemplate.ReportAvailable.id),
           eqTo("user@verified.com"),
           eqTo(Map("reportRequestId" -> "XXXXX456"))
         )(any())
         verify(mockEmailConnector, never).sendEmailRequest(
-          eqTo("tre_report_available"),
+          eqTo(EmailTemplate.ReportAvailable.id),
           eqTo("recipient1@nonverified.com"),
           any()
         )(any())
         verify(mockEmailConnector, never).sendEmailRequest(
-          eqTo("tre_report_available"),
+          eqTo(EmailTemplate.ReportAvailable.id),
           eqTo("recipient2@nonverified.com"),
           any()
         )(any())
@@ -243,12 +244,12 @@ class FileNotificationServiceSpec
       val result = service.processFileNotification(completeFileNotification)
       whenReady(result) { _ =>
         verify(mockEmailConnector).sendEmailRequest(
-          eqTo("tre_report_available_non_verified"),
+          eqTo(EmailTemplate.ReportAvailableNonVerified.id),
           eqTo("recipient1@nonverified.com"),
           eqTo(Map("reportRequestId" -> "XXXXX456"))
         )(any())
         verify(mockEmailConnector).sendEmailRequest(
-          eqTo("tre_report_available_non_verified"),
+          eqTo(EmailTemplate.ReportAvailableNonVerified.id),
           eqTo("recipient2@nonverified.com"),
           eqTo(Map("reportRequestId" -> "XXXXX456"))
         )(any())
@@ -278,12 +279,12 @@ class FileNotificationServiceSpec
       val result = service.processFileNotification(completeFileNotification)
       whenReady(result) { _ =>
         verify(mockEmailConnector, never).sendEmailRequest(
-          eqTo("tre_report_available"),
+          eqTo(EmailTemplate.ReportAvailable.id),
           any(),
           any()
         )(any())
         verify(mockEmailConnector).sendEmailRequest(
-          eqTo("tre_report_available_non_verified"),
+          eqTo(EmailTemplate.ReportAvailableNonVerified.id),
           eqTo("recipient@nonverified.com"),
           any()
         )(any())

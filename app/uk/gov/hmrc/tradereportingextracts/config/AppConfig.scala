@@ -21,37 +21,34 @@ import play.api.Configuration
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 
 @Singleton
-class AppConfig @Inject() (val config: Configuration, servicesConfig: ServicesConfig):
+class AppConfig @Inject() (
+  val config: Configuration,
+  servicesConfig: ServicesConfig,
+  eisConfig: EISConfig,
+  sdesConfig: SdesConfig,
+  customsDataStoreConfig: CustomsDataStoreConfig
+):
 
   val appName: String = config.get[String]("appName")
 
   val reportRequestTTLDays: Long = config.get[Long]("mongodb.reportRequestTTLInDays")
   var userTTLDays: Long          = config.get[Long]("mongodb.userTTLInDays")
 
-  lazy val customsDataStore: String = servicesConfig.baseUrl("customs-data-store") +
-    config.get[String]("microservice.services.customs-data-store.context")
-  lazy val verifiedEmailUrl: String =
-    customsDataStore + config.get[String]("microservice.services.customs-data-store.verified-email")
+  lazy val customsDataStore: String      = customsDataStoreConfig.url
+  lazy val verifiedEmailUrl: String      = customsDataStoreConfig.verifiedEmailUrl
+  lazy val companyInformationUrl: String = customsDataStoreConfig.companyInformationUrl
+  lazy val eoriHistoryUrl: String        = customsDataStoreConfig.eoriHistoryUrl
 
-  lazy val companyInformationUrl: String =
-    customsDataStore + config.get[String]("microservice.services.customs-data-store.company-information")
+  lazy val eisAPI1AuthToken: String    = eisConfig.authTokenAPI1
+  lazy val eisAPI6AuthToken: String    = eisConfig.authTokenAPI6
+  lazy val eoriUpdateAuthToken: String = config.get[String]("etmp.auth-token")
 
-  lazy val eoriHistoryUrl: String =
-    customsDataStore + config.get[String]("microservice.services.customs-data-store.eori-history")
+  lazy val eis: String          = eisConfig.url
+  lazy val sdes: String         = sdesConfig.url
+  lazy val treXClientId: String = sdesConfig.treXClientId
+  lazy val email: String        = servicesConfig.baseUrl("email") + "/hmrc/email"
 
-  lazy val eisAuthToken: String     = config.get[String]("microservice.services.eis.auth-token")
-  lazy val etmpAuthToken: String    = config.get[String]("etmp.auth-token")
-  lazy val eisAPI6AuthToken: String = config.get[String]("eis.auth-token")
-
-  lazy val eis: String                 = servicesConfig.baseUrl("eis") + config.get[String]("microservice.services.eis.context")
-  lazy val sdes: String                = servicesConfig.baseUrl("sdes") + config.get[String]("microservice.services.sdes.context")
-  lazy val sdesInformationType: String = config.get[String]("microservice.services.sdes.information-type")
-  lazy val treXClientId: String        = config.get[String]("microservice.services.sdes.x-client-id")
-  lazy val email: String               = servicesConfig.baseUrl("email")
-
-  lazy val eisRequestTraderReportMaxRetries: Int =
-    config.get[Int]("microservice.services.eis.request-trader-report.max-retries")
-  lazy val eisRequestTraderReportRetryDelay: Int =
-    config.get[Int]("microservice.services.eis.request-trader-report.retry-delay")
+  lazy val eisRequestTraderReportMaxRetries: Int = eisConfig.requestTraderReportMaxRetries
+  lazy val eisRequestTraderReportRetryDelay: Int = eisConfig.requestTraderReportRetryDelay
 
   lazy val dailySubmissionLimit: Int = config.get[Int]("reportRequest.dailySubmissionLimit")
