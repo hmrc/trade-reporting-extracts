@@ -36,7 +36,6 @@ import uk.gov.hmrc.http.HeaderCarrier
 
 import scala.concurrent.{ExecutionContext, Future}
 import uk.gov.hmrc.tradereportingextracts.models.StatusCode.FAILED
-import uk.gov.hmrc.tradereportingextracts.models.audit.{AuditEvent, ReportGenerationFailureEvent}
 
 import java.time.{Instant, LocalDate}
 
