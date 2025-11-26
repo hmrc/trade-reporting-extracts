@@ -120,7 +120,7 @@ class ReportRequestService @Inject() (
   def processReportStatus(
     headers: Headers,
     eisReportStatusRequest: EisReportStatusRequest
-                         )(using ec: ExecutionContext, headerCarrier: HeaderCarrier): Future[Unit] = {
+  )(using ec: ExecutionContext, headerCarrier: HeaderCarrier): Future[Unit] = {
     val correlationId = headers.get(XCorrelationID.toString).getOrElse("unknown-correlation-id")
     reportRequestRepository.findByCorrelationId(correlationId).flatMap {
       case Some(req) =>

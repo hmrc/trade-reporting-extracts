@@ -41,7 +41,7 @@ class ReportStatusController @Inject() (
     with Logging {
 
   def notifyReportStatus(): Action[AnyContent] = Action.async { request =>
-    implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromRequest(request)
+    implicit val hc: HeaderCarrier  = HeaderCarrierConverter.fromRequest(request)
     def missingHeaders: Seq[String] =
       HeaderUtils.missingHeaders(request, EisReportStatusHeaders.allHeaders)
 
