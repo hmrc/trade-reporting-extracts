@@ -132,8 +132,6 @@ class ReportRequestService @Inject() (
           eisReportStatusRequest.statusType
         ) match {
           case (false, StatusType.ERROR) =>
-            println("============")
-            println(hc)
             auditService.audit(
               ReportGenerationFailureEvent(
                 xCorrelationId = updatedReportRequest.correlationId,
