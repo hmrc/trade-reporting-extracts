@@ -116,4 +116,24 @@ class RequestedReportsControllerSpec extends SpecBase:
 
       status(result) mustBe BAD_REQUEST
     }
+
+    "return 500 InternalServerError when service throws an exception" in {
+      val eori = "GB123456789000"
+
+      when(mockReportRequestService.getReportRequestsForUser(eori))
+        .thenReturn(Future.failed(new RuntimeException("error")))
+      when(mockStubBehaviour.stubAuth(Some(permission), EmptyRetrieval))
+        .thenReturn(Future.successful(EmptyRetrieval))
+
+      val request: Request[JsValue] =
+        FakeRequest(GET, "/requested-reports")
+          .withHeaders(AUTHORIZATION -> "my-token")
+          .withBody(Json.obj("eori" -> eori))
+
+      val result: Future[Result] = controller.getRequestedReports()(request)
+
+      status(result) mustBe INTERNAL_SERVER_ERROR
+      contentAsJson(result) mustBe Json.obj("error" -> "Internal server error")
+    }
+
   }

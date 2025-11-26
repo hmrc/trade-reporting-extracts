@@ -61,6 +61,197 @@ class ReportRequestServiceSpec
     reset(mockEmailConnector)
     reset(mockAuditService)
   }
+
+  val reportRequest = ReportRequest(
+    "id",
+    "corr",
+    "Report",
+    "GB123",
+    EoriRole.TRADER,
+    Seq("GB123"),
+    Some(SensitiveString("test@example.com")),
+    Seq(SensitiveString("test@example.com")),
+    ReportTypeName.IMPORTS_ITEM_REPORT,
+    Instant.now(),
+    Instant.now(),
+    Instant.now(),
+    Seq.empty,
+    None,
+    Instant.now
+  )
+
+  "create" should {
+
+    val service = new ReportRequestService(mockReportRequestRepository, null, null, null)
+
+    "return true when insert succeeds" in {
+
+      when(mockReportRequestRepository.insert(any())(any())).thenReturn(Future.successful(true))
+
+      service.create(reportRequest).futureValue mustBe true
+    }
+
+    "return false when insert fails" in {
+
+      when(mockReportRequestRepository.insert(any())(any())).thenReturn(Future.successful(false))
+
+      service.create(reportRequest).futureValue mustBe false
+    }
+  }
+
+  "createAll" should {
+
+    val service = new ReportRequestService(mockReportRequestRepository, null, null, null)
+
+    "return true when insertAll succeeds" in {
+
+      when(mockReportRequestRepository.insertAll(any())(any())).thenReturn(Future.successful(true))
+
+      service.createAll(Seq(reportRequest, reportRequest.copy(reportRequestId = "id2"))).futureValue mustBe true
+    }
+
+    "return false when insertAll fails" in {
+
+      when(mockReportRequestRepository.insertAll(any())(any())).thenReturn(Future.successful(false))
+
+      service.createAll(Seq(reportRequest, reportRequest.copy(reportRequestId = "id2"))).futureValue mustBe false
+    }
+  }
+
+  "get" should {
+
+    val service = new ReportRequestService(mockReportRequestRepository, null, null, null)
+
+    "return report when report found found" in {
+
+      when(mockReportRequestRepository.findByReportRequestId(any())(any()))
+        .thenReturn(Future.successful(Some(reportRequest)))
+
+      service.get("id").futureValue mustBe Some(reportRequest)
+    }
+
+    "return None when no report found" in {
+
+      when(mockReportRequestRepository.findByReportRequestId(any())(any())).thenReturn(Future.successful(None))
+
+      service.get("id").futureValue mustBe None
+    }
+  }
+
+  "update" should {
+
+    val service = new ReportRequestService(mockReportRequestRepository, null, null, null)
+
+    "return true when updated" in {
+
+      when(mockReportRequestRepository.update(any())(any())).thenReturn(Future.successful(true))
+
+      service.update(reportRequest).futureValue mustBe true
+    }
+
+    "return false when not updated" in {
+
+      when(mockReportRequestRepository.update(any())(any())).thenReturn(Future.successful(false))
+
+      service.update(reportRequest).futureValue mustBe false
+    }
+  }
+
+  "delete" should {
+
+    val service = new ReportRequestService(mockReportRequestRepository, null, null, null)
+
+    "return true when deleted" in {
+
+      when(mockReportRequestRepository.delete(any())(any())).thenReturn(Future.successful(true))
+
+      service.delete(reportRequest).futureValue mustBe true
+    }
+
+    "return false when not deleted" in {
+
+      when(mockReportRequestRepository.delete(any())(any())).thenReturn(Future.successful(false))
+
+      service.delete(reportRequest).futureValue mustBe false
+    }
+  }
+
+  "getByRequesterEORI" should {
+
+    val service = new ReportRequestService(mockReportRequestRepository, null, null, null)
+
+    "return reports when reports found" in {
+
+      when(mockReportRequestRepository.findByRequesterEORI(any())(using any()))
+        .thenReturn(Future.successful(Seq(reportRequest)))
+
+      service.getByRequesterEORI("eori").futureValue mustBe Seq(reportRequest)
+    }
+
+    "return empty seq when no reports found" in {
+
+      when(mockReportRequestRepository.findByRequesterEORI(any())(using any()))
+        .thenReturn(Future.successful(Seq.empty))
+
+      service.getByRequesterEORI("eori").futureValue mustBe Seq.empty
+    }
+  }
+
+  "getAvailableReports" should {
+
+    val service = new ReportRequestService(mockReportRequestRepository, null, null, null)
+
+    "return reports when reports found" in {
+
+      when(mockReportRequestRepository.getAvailableReports(any())(using any()))
+        .thenReturn(Future.successful(Seq(reportRequest)))
+
+      service.getAvailableReports("eori").futureValue mustBe Seq(reportRequest)
+    }
+
+    "return an empty sequence when none found" in {
+
+      when(mockReportRequestRepository.getAvailableReports(any())(using any()))
+        .thenReturn(Future.successful(Seq.empty))
+
+      service.getAvailableReports("eori").futureValue mustBe Seq.empty
+    }
+  }
+
+  "getAvailableReportsByHistory" should {
+
+    val service = new ReportRequestService(mockReportRequestRepository, null, null, null)
+
+    "return reports when reports found" in {
+
+      when(mockReportRequestRepository.getAvailableReportsByHistory(any())(using any()))
+        .thenReturn(Future.successful(Seq(reportRequest)))
+
+      service.getAvailableReportsByHistory(Seq("eori1", "eori2")).futureValue mustBe Seq(reportRequest)
+    }
+
+    "reutrn an empty sequence when none found" in {
+
+      when(mockReportRequestRepository.getAvailableReportsByHistory(any())(using any()))
+        .thenReturn(Future.successful(Seq.empty))
+
+      service.getAvailableReportsByHistory(Seq("eori1", "eori2")).futureValue mustBe Seq.empty
+    }
+  }
+
+  "countAvailableReports" should {
+
+    val service = new ReportRequestService(mockReportRequestRepository, null, null, null)
+
+    "return count when reports found" in {
+
+      when(mockReportRequestRepository.countAvailableReports(any())(using any()))
+        .thenReturn(Future.successful(5))
+
+      service.countAvailableReports("eori").futureValue mustBe 5
+    }
+  }
+
   "determineReportStatus" should {
 
     "return ERROR when not complete and at least one notification has ERROR status" in {

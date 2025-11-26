@@ -21,8 +21,12 @@ import org.mockito.Mockito.*
 import org.scalatest.freespec.AsyncFreeSpec
 import org.scalatest.matchers.must.Matchers
 import org.scalatestplus.mockito.MockitoSugar
+import uk.gov.hmrc.crypto.Sensitive.SensitiveString
+import uk.gov.hmrc.tradereportingextracts.models.eis.EisReportStatusRequest
+import uk.gov.hmrc.tradereportingextracts.models.{EoriRole, ReportRequest, ReportTypeName, StatusCode}
 import uk.gov.hmrc.tradereportingextracts.repositories.ReportRequestRepository
 
+import java.time.Instant
 import scala.concurrent.{ExecutionContext, Future}
 
 class RequestReferenceServiceSpec extends AsyncFreeSpec with Matchers with MockitoSugar {
