@@ -19,6 +19,7 @@ package uk.gov.hmrc.tradereportingextracts.controllers
 import play.api.Logging
 import play.api.libs.json.*
 import play.api.mvc.*
+import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 import uk.gov.hmrc.tradereportingextracts.config.AppConfig
 import uk.gov.hmrc.tradereportingextracts.models.eis.*
 import uk.gov.hmrc.tradereportingextracts.models.eis.EisReportStatusHeaders.*
@@ -35,10 +36,10 @@ class ReportStatusController @Inject() (
   cc: ControllerComponents,
   appConfig: AppConfig
 )(using ec: ExecutionContext)
-    extends AbstractController(cc)
+    extends BackendController(cc)
     with Logging {
 
-  def notifyReportStatus(): Action[AnyContent] = Action.async { request =>
+  def notifyReportStatus(): Action[AnyContent] = Action.async { implicit request =>
     def missingHeaders: Seq[String] =
       HeaderUtils.missingHeaders(request, EisReportStatusHeaders.allHeaders)
 
