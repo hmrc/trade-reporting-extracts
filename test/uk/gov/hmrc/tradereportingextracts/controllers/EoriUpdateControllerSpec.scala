@@ -42,7 +42,7 @@ class EoriUpdateControllerSpec extends SpecBase {
       status(result) shouldBe CREATED
     }
   }
-  "return 400 BadRequest" in new Setup {
+  "return 400 BadRequest when missing headers" in new Setup {
     val request = FakeRequest(PUT, routes.EoriUpdateController.eoriUpdate().url)
       .withHeaders(
         "authorization"    -> "Bearer EtmpAuthToken",
@@ -52,6 +52,53 @@ class EoriUpdateControllerSpec extends SpecBase {
         "content-type"     -> "application/json"
       )
     val result  = route(app, request).value
+    status(result) shouldBe BAD_REQUEST
+  }
+
+  "return 403 forbidden when not authorised" in new Setup {
+    val eoriUpdate = EoriUpdate(newEori = "GB987654321098", oldEori = "GB123456789012")
+    val request    = FakeRequest(PUT, routes.EoriUpdateController.eoriUpdate().url)
+      .withHeaders(
+        "authorization"         -> "wrongToken",
+        "content-type"          -> "application/json",
+        "date"                  -> "Mon, 02 Oct 2023 14:30:00 GMT",
+        "x-correlation-id"      -> "asfd-asdf-asdf",
+        "x-transmitting-system" -> "CDAP",
+        "source-system"         -> "CDAP"
+      )
+      .withBody(Json.toJson(eoriUpdate))
+    val result     = route(app, request).value
+    status(result) shouldBe FORBIDDEN
+  }
+
+  "return 400 BadRequest when missing body" in new Setup {
+    val eoriUpdate = EoriUpdate(newEori = "GB987654321098", oldEori = "GB123456789012")
+    val request    = FakeRequest(PUT, routes.EoriUpdateController.eoriUpdate().url)
+      .withHeaders(
+        "authorization"         -> "Bearer EtmpAuthToken",
+        "content-type"          -> "application/json",
+        "date"                  -> "Mon, 02 Oct 2023 14:30:00 GMT",
+        "x-correlation-id"      -> "asfd-asdf-asdf",
+        "x-transmitting-system" -> "CDAP",
+        "source-system"         -> "CDAP"
+      )
+    val result     = route(app, request).value
+    status(result) shouldBe BAD_REQUEST
+  }
+
+  "return 400 BadRequest when invalid body" in new Setup {
+    val eoriUpdate = EoriUpdate(newEori = "GB987654321098", oldEori = "GB123456789012")
+    val request    = FakeRequest(PUT, routes.EoriUpdateController.eoriUpdate().url)
+      .withHeaders(
+        "authorization"         -> "Bearer EtmpAuthToken",
+        "content-type"          -> "application/json",
+        "date"                  -> "Mon, 02 Oct 2023 14:30:00 GMT",
+        "x-correlation-id"      -> "asfd-asdf-asdf",
+        "x-transmitting-system" -> "CDAP",
+        "source-system"         -> "CDAP"
+      )
+      .withBody(Json.obj("invalidField" -> "invalidValue"))
+    val result     = route(app, request).value
     status(result) shouldBe BAD_REQUEST
   }
 

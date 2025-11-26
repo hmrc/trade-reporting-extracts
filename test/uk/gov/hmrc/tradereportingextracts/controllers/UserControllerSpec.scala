@@ -191,7 +191,7 @@ class UserControllerSpec extends SpecBase {
     }
   }
 
-  "UserController.getUserDetails" should {
+  "UserController.getUserAndEmail" should {
 
     "return 201 OK with user details when valid EORI is provided" in new Setup {
       val eori                           = "GB123456789000"
@@ -220,6 +220,17 @@ class UserControllerSpec extends SpecBase {
       val result: Future[Result]         = controller.getUserAndEmail.apply(request)
       status(result)        shouldBe CREATED
       contentAsJson(result) shouldBe Json.toJson(userDetails)
+    }
+
+    "return bad request when eori missing" in new Setup {
+      when(mockStubBehaviour.stubAuth(Some(readPermission), EmptyRetrieval))
+        .thenReturn(Future.successful(EmptyRetrieval))
+      val request: FakeRequest[JsObject] = FakeRequest(GET, routes.UserController.getUserAndEmail.url)
+        .withHeaders("Content-Type" -> "application/json", AUTHORIZATION -> "my-token")
+        .withBody(Json.obj("invalid" -> "invalidEori"))
+      val result: Future[Result]         = controller.getUserAndEmail.apply(request)
+      status(result)        shouldBe BAD_REQUEST
+      contentAsString(result) should include("Missing or invalid 'eori' field")
     }
   }
 
@@ -373,6 +384,34 @@ class UserControllerSpec extends SpecBase {
       contentAsString(result) should include("No authorised user found for the trader EORI")
     }
 
+    "should return bad request when invalid thirdPartyEori field" in new Setup {
+
+      when(mockStubBehaviour.stubAuth(Some(readPermission), EmptyRetrieval))
+        .thenReturn(Future.successful(EmptyRetrieval))
+
+      val request: FakeRequest[JsObject] = FakeRequest(GET, routes.UserController.getAuthorisedBusinessDetails.url)
+        .withHeaders(AUTHORIZATION -> "my-token")
+        .withBody(Json.obj("traderEori" -> "eori", "invalidField" -> "eori"))
+
+      val result: Future[Result] = controller.getAuthorisedBusinessDetails.apply(request)
+      status(result)        shouldBe BAD_REQUEST
+      contentAsString(result) should include("Missing or invalid 'thirdPartyEori' field")
+    }
+
+    "should return bad request when invalid traderEori field" in new Setup {
+
+      when(mockStubBehaviour.stubAuth(Some(readPermission), EmptyRetrieval))
+        .thenReturn(Future.successful(EmptyRetrieval))
+
+      val request: FakeRequest[JsObject] = FakeRequest(GET, routes.UserController.getAuthorisedBusinessDetails.url)
+        .withHeaders(AUTHORIZATION -> "my-token")
+        .withBody(Json.obj("invalidField" -> "eori", "thirdPartyEori" -> "eori"))
+
+      val result: Future[Result] = controller.getAuthorisedBusinessDetails.apply(request)
+      status(result)        shouldBe BAD_REQUEST
+      contentAsString(result) should include("Missing or invalid 'traderEori' field")
+    }
+
   }
 
   "UserController.getUsersByAuthorisedEoriWithStatus" should {
@@ -422,6 +461,46 @@ class UserControllerSpec extends SpecBase {
       val result = controller.getUsersByAuthorisedEoriWithStatus.apply(request)
       contentAsJson(result) shouldBe Json.toJson(eoriBusinessInfos)
     }
+
+    "return 500 InternalServerError when the service throws an exceptions" in new Setup {
+      val authorisedEori = "GB111111111111"
+
+      when(mockUserService.getUsersByAuthorisedEoriWithStatus(authorisedEori))
+        .thenReturn(Future.failed(new RuntimeException("error")))
+      when(mockStubBehaviour.stubAuth(Some(readPermission), EmptyRetrieval))
+        .thenReturn(Future.successful(EmptyRetrieval))
+
+      val request = FakeRequest(GET, routes.UserController.getUsersByAuthorisedEoriWithStatus.url)
+        .withHeaders("Content-Type" -> "application/json", AUTHORIZATION -> "my-token")
+        .withBody(Json.obj("thirdPartyEori" -> authorisedEori))
+
+      val result = controller.getUsersByAuthorisedEoriWithStatus.apply(request)
+      status(result) shouldBe INTERNAL_SERVER_ERROR
+    }
+
+    "return bad request when invalid body" in new Setup {
+      val authorisedEori    = "GB111111111111"
+      val eoriBusinessInfos = Seq(
+        EoriBusinessInfo(
+          eori = "GB123456789000",
+          businessInfo = None,
+          status = Some(UserActiveStatus.Active)
+        )
+      )
+
+      when(mockUserService.getUsersByAuthorisedEoriWithStatus(authorisedEori))
+        .thenReturn(Future.successful(eoriBusinessInfos))
+      when(mockStubBehaviour.stubAuth(Some(readPermission), EmptyRetrieval))
+        .thenReturn(Future.successful(EmptyRetrieval))
+
+      val request = FakeRequest(GET, routes.UserController.getUsersByAuthorisedEoriWithStatus.url)
+        .withHeaders("Content-Type" -> "application/json", AUTHORIZATION -> "my-token")
+        .withBody(Json.obj("invalidField" -> authorisedEori))
+
+      val result = controller.getUsersByAuthorisedEoriWithStatus.apply(request)
+      status(result)        shouldBe BAD_REQUEST
+      contentAsString(result) should include("Missing or invalid 'thirdPartyEori' field")
+    }
   }
 
   "UserController.getUsersByAuthorisedEoriWithDateFilter" should {
@@ -470,6 +549,46 @@ class UserControllerSpec extends SpecBase {
 
       val result = controller.getUsersByAuthorisedEoriWithDateFilter.apply(request)
       contentAsJson(result) shouldBe Json.toJson(eoriBusinessInfos)
+    }
+
+    "return 500 InternalServerError when the service throws an exceptions" in new Setup {
+      val authorisedEori = "GB111111111111"
+
+      when(mockUserService.getUsersByAuthorisedEoriWithDateFilter(authorisedEori))
+        .thenReturn(Future.failed(new RuntimeException("error")))
+      when(mockStubBehaviour.stubAuth(Some(readPermission), EmptyRetrieval))
+        .thenReturn(Future.successful(EmptyRetrieval))
+
+      val request = FakeRequest(GET, routes.UserController.getUsersByAuthorisedEoriWithDateFilter.url)
+        .withHeaders("Content-Type" -> "application/json", AUTHORIZATION -> "my-token")
+        .withBody(Json.obj("thirdPartyEori" -> authorisedEori))
+
+      val result = controller.getUsersByAuthorisedEoriWithDateFilter.apply(request)
+      status(result) shouldBe INTERNAL_SERVER_ERROR
+    }
+
+    "return bad request when invalid body" in new Setup {
+      val authorisedEori    = "GB111111111111"
+      val eoriBusinessInfos = Seq(
+        EoriBusinessInfo(
+          eori = "GB123456789000",
+          businessInfo = None,
+          status = None
+        )
+      )
+
+      when(mockUserService.getUsersByAuthorisedEoriWithDateFilter(authorisedEori))
+        .thenReturn(Future.successful(eoriBusinessInfos))
+      when(mockStubBehaviour.stubAuth(Some(readPermission), EmptyRetrieval))
+        .thenReturn(Future.successful(EmptyRetrieval))
+
+      val request = FakeRequest(GET, routes.UserController.getUsersByAuthorisedEoriWithDateFilter.url)
+        .withHeaders("Content-Type" -> "application/json", AUTHORIZATION -> "my-token")
+        .withBody(Json.obj("invalidField" -> authorisedEori))
+
+      val result = controller.getUsersByAuthorisedEoriWithDateFilter.apply(request)
+      status(result)        shouldBe BAD_REQUEST
+      contentAsString(result) should include("Missing or invalid 'thirdPartyEori' field")
     }
   }
 

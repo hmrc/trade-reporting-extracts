@@ -470,3 +470,15 @@ class ReportRequestRepositorySpec
       fetchedRecord contains reportRequest
     }
   }
+
+  "getAvailableReportsByHistory" should {
+    "return only ReportRequests where all parts are present using EORI history" in {
+      val reportRequestWithEoriHistory = reportRequest.copy(requesterEORI = "historicalEori")
+      val insertResult                 = reportRequestRepository.insert(reportRequestWithEoriHistory).futureValue
+
+      insertResult mustEqual true
+      reportRequestRepository.getAvailableReportsByHistory(Seq("historicalEori", "anotherEori")).futureValue mustBe Seq(
+        reportRequestWithEoriHistory
+      )
+    }
+  }

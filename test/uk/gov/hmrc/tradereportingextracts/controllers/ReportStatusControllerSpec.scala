@@ -33,53 +33,82 @@ class ReportStatusControllerSpec extends SpecBase {
       status(result) shouldBe BAD_REQUEST
     }
   }
-  "ReportStatusController" should {
-    "return 403 Forbidden" in new Setup {
-      val request = FakeRequest(PUT, routes.ReportStatusController.notifyReportStatus().url)
-        .withHeaders(
-          "content-type"          -> "application/json",
-          "authorization"         -> "Invalid-auth-token",
-          "date"                  -> "Mon, 02 Oct 2023 14:30:00 GMT",
-          "x-correlation-id"      -> "asfd-asdf-asdf",
-          "x-transmitting-system" -> "CDAP",
-          "source-system"         -> "CDAP"
-        )
-
-      val result = route(app, request).value
-      status(result) shouldBe FORBIDDEN
-    }
-  }
-  "ReportStatusController" should {
-    "return 201 Created" in new Setup {
-      val eisReportStatusRequest = EisReportStatusRequest(
-        applicationComponent = EisReportStatusRequest.ApplicationComponent.CDAP,
-        statusCode = "200",
-        statusMessage = "Report processed successfully",
-        statusTimestamp = "2023-10-02T14:30:00Z",
-        statusType = EisReportStatusRequest.StatusType.INFORMATION
+  "return 403 Forbidden" in new Setup {
+    val request = FakeRequest(PUT, routes.ReportStatusController.notifyReportStatus().url)
+      .withHeaders(
+        "content-type"          -> "application/json",
+        "authorization"         -> "Invalid-auth-token",
+        "date"                  -> "Mon, 02 Oct 2023 14:30:00 GMT",
+        "x-correlation-id"      -> "asfd-asdf-asdf",
+        "x-transmitting-system" -> "CDAP",
+        "source-system"         -> "CDAP"
       )
-      val request                = FakeRequest(PUT, routes.ReportStatusController.notifyReportStatus().url)
-        .withHeaders(
-          "content-type"          -> "application/json",
-          "authorization"         -> "Bearer EisAuthToken",
-          "date"                  -> "Mon, 02 Oct 2023 14:30:00 GMT",
-          "x-correlation-id"      -> "asfd-asdf-asdf",
-          "x-transmitting-system" -> "CDAP",
-          "source-system"         -> "CDAP"
-        )
-        .withBody(Json.toJson(eisReportStatusRequest))
 
-      val result = route(app, request).value
-      status(result) shouldBe CREATED
-    }
+    val result = route(app, request).value
+    status(result) shouldBe FORBIDDEN
+
   }
-  "ReportStatusController" should {
-    "return 404 MethodNotAllowed" in new Setup {
-      val request = FakeRequest(GET, routes.ReportStatusController.notifyReportStatus().url)
 
-      val result = route(app, request).value
-      status(result) shouldBe 404
-    }
+  "return 201 Created" in new Setup {
+    val eisReportStatusRequest = EisReportStatusRequest(
+      applicationComponent = EisReportStatusRequest.ApplicationComponent.CDAP,
+      statusCode = "200",
+      statusMessage = "Report processed successfully",
+      statusTimestamp = "2023-10-02T14:30:00Z",
+      statusType = EisReportStatusRequest.StatusType.INFORMATION
+    )
+    val request                = FakeRequest(PUT, routes.ReportStatusController.notifyReportStatus().url)
+      .withHeaders(
+        "content-type"          -> "application/json",
+        "authorization"         -> "Bearer EisAuthToken",
+        "date"                  -> "Mon, 02 Oct 2023 14:30:00 GMT",
+        "x-correlation-id"      -> "asfd-asdf-asdf",
+        "x-transmitting-system" -> "CDAP",
+        "source-system"         -> "CDAP"
+      )
+      .withBody(Json.toJson(eisReportStatusRequest))
+
+    val result = route(app, request).value
+    status(result) shouldBe CREATED
+
+  }
+  "return 404 MethodNotAllowed" in new Setup {
+    val request = FakeRequest(GET, routes.ReportStatusController.notifyReportStatus().url)
+
+    val result = route(app, request).value
+    status(result) shouldBe 404
+
+  }
+
+  "return 400 when missing body" in new Setup {
+    val request = FakeRequest(PUT, routes.ReportStatusController.notifyReportStatus().url)
+      .withHeaders(
+        "content-type"          -> "application/json",
+        "authorization"         -> "Bearer EisAuthToken",
+        "date"                  -> "Mon, 02 Oct 2023 14:30:00 GMT",
+        "x-correlation-id"      -> "asfd-asdf-asdf",
+        "x-transmitting-system" -> "CDAP",
+        "source-system"         -> "CDAP"
+      )
+
+    val result = route(app, request).value
+    status(result) shouldBe 400
+  }
+
+  "return 400 when invalid body" in new Setup {
+    val request = FakeRequest(PUT, routes.ReportStatusController.notifyReportStatus().url)
+      .withHeaders(
+        "content-type"          -> "application/json",
+        "authorization"         -> "Bearer EisAuthToken",
+        "date"                  -> "Mon, 02 Oct 2023 14:30:00 GMT",
+        "x-correlation-id"      -> "asfd-asdf-asdf",
+        "x-transmitting-system" -> "CDAP",
+        "source-system"         -> "CDAP"
+      )
+      .withBody(Json.obj("invalidField" -> "invalidValue"))
+
+    val result = route(app, request).value
+    status(result) shouldBe 400
   }
 
   trait Setup {
