@@ -44,7 +44,7 @@ class EisConnector @Inject() (
     val currentDate            = ZonedDateTime
       .now(ZoneOffset.UTC)
       .format(DateTimeFormatter.ofPattern("EEE, dd MMM yyyy HH:mm:ss 'GMT'"))
-    val eisAuthToken           = "Bearer " + appConfig.eisAPI6AuthToken
+    val eisAuthToken           = "Bearer " + appConfig.eisAPI1AuthToken
     logger.info(s"Requesting trader report at : $requestTraderReportUrl")
     httpClient
       .put(requestTraderReportUrl)
