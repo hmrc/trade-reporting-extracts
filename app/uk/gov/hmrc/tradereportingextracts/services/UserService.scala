@@ -120,6 +120,9 @@ class UserService @Inject() (
   def addAuthorisedUser(eori: String, authorisedUser: AuthorisedUser): Future[ThirdPartyAddedConfirmation] =
     userRepository.addAuthorisedUser(eori, authorisedUser)
 
+  def updateAuthorisedUser(eori: String, authorisedUser: AuthorisedUser): Future[ThirdPartyAddedConfirmation] =
+    userRepository.updateAuthorisedUser(eori, authorisedUser)
+
   def getAuthorisedUser(eori: String, thirdPartyEori: String): Future[Option[AuthorisedUser]] =
     userRepository.getAuthorisedUser(eori, thirdPartyEori)
 
