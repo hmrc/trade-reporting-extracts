@@ -28,6 +28,7 @@ import uk.gov.hmrc.mongo.test.CleanMongoCollectionSupport
 import uk.gov.hmrc.tradereportingextracts.config.AppConfig
 import uk.gov.hmrc.tradereportingextracts.models.AccessType.{EXPORTS, IMPORTS}
 import uk.gov.hmrc.tradereportingextracts.models.etmp.EoriUpdate
+import uk.gov.hmrc.tradereportingextracts.models.thirdParty.ThirdPartyAddedConfirmation
 import uk.gov.hmrc.tradereportingextracts.models.{AuthorisedUser, User, UserActiveStatus}
 import uk.gov.hmrc.tradereportingextracts.services.UserService
 
@@ -77,22 +78,22 @@ class UserRepositorySpec
 
   "UserRepositorySpec" should {
 
-//    "insertUser with TTL" should {
-//      "must insert a user with TTL successfully" in {
-//        implicit val patienceConfig: PatienceConfig = PatienceConfig(timeout = 70.seconds, interval = 1.second)
-//
-//        val result = for {
-//          _             <- createIndex(mongoComponent.database, "tre-user", "accessDate", "accessDate-ttl-index")
-//          insertResult  <- userRepository.insert(user)
-//          _              = Thread.sleep(65000)
-//          fetchedRecord <- userRepository.findByEori(user.eori)
-//        } yield {
-//          insertResult mustEqual true
-//          fetchedRecord mustBe None
-//        }
-//        result.futureValue
-//      }
-//    }
+    //    "insertUser with TTL" should {
+    //      "must insert a user with TTL successfully" in {
+    //        implicit val patienceConfig: PatienceConfig = PatienceConfig(timeout = 70.seconds, interval = 1.second)
+    //
+    //        val result = for {
+    //          _             <- createIndex(mongoComponent.database, "tre-user", "accessDate", "accessDate-ttl-index")
+    //          insertResult  <- userRepository.insert(user)
+    //          _              = Thread.sleep(65000)
+    //          fetchedRecord <- userRepository.findByEori(user.eori)
+    //        } yield {
+    //          insertResult mustEqual true
+    //          fetchedRecord mustBe None
+    //        }
+    //        result.futureValue
+    //      }
+    //    }
 
     "insertUser" should {
       "must insert a user successfully" in {
@@ -103,14 +104,14 @@ class UserRepositorySpec
 
     "findByUserid" should {
       "must be able to retrieve a user successfully using a userid" in {
-        val insertResult  = userRepository.insert(user).futureValue
+        val insertResult = userRepository.insert(user).futureValue
         val fetchedRecord = userRepository.findByEori(user.eori).futureValue
         insertResult mustEqual true
         fetchedRecord.get mustEqual user
       }
 
       "must return none if eori not found" in {
-        val insertResult  = userRepository.insert(user).futureValue
+        val insertResult = userRepository.insert(user).futureValue
         val fetchedRecord = userRepository.findByEori("nonExistingEori").futureValue
         insertResult mustEqual true
         fetchedRecord must be(None)
@@ -119,11 +120,11 @@ class UserRepositorySpec
 
     "updateByUserEori" should {
       "must be able to update an existing user" in {
-        val eoriNew                   = "EORI-NEW"
-        val insertResult              = userRepository.insert(user).futureValue
+        val eoriNew = "EORI-NEW"
+        val insertResult = userRepository.insert(user).futureValue
         val fetchedBeforeUpdateRecord = userRepository.findByEori(user.eori).futureValue
-        val updatedRecord             = userRepository.updateEori(EoriUpdate(eoriNew, user.eori)).futureValue
-        val fetchedRecord             = userRepository.findByEori(eoriNew).futureValue
+        val updatedRecord = userRepository.updateEori(EoriUpdate(eoriNew, user.eori)).futureValue
+        val fetchedRecord = userRepository.findByEori(eoriNew).futureValue
         insertResult mustEqual true
         fetchedBeforeUpdateRecord.get mustEqual user
         updatedRecord mustEqual true
@@ -133,12 +134,12 @@ class UserRepositorySpec
 
     "updateAuthorisedUserEori" should {
       "must be able to update an existing authorised user" in {
-        val eoriNew                   = "EORI-NEW"
-        val insertResult              = userRepository.insert(user).futureValue
+        val eoriNew = "EORI-NEW"
+        val insertResult = userRepository.insert(user).futureValue
         val fetchedBeforeUpdateRecord = userRepository.findByEori(user.eori).futureValue
-        val updatedRecord             =
+        val updatedRecord =
           userRepository.updateAuthorisedUserEori(EoriUpdate(eoriNew, user.authorisedUsers.head.eori)).futureValue
-        val fetchedRecord             = userRepository.findByEori(user.eori).futureValue
+        val fetchedRecord = userRepository.findByEori(user.eori).futureValue
         insertResult mustEqual true
         fetchedBeforeUpdateRecord.get mustEqual user
         updatedRecord mustEqual true
@@ -148,9 +149,9 @@ class UserRepositorySpec
 
     "deleteByUserId" should {
       "must be able to delete an existing user" in {
-        val insertResult              = userRepository.insert(user).futureValue
+        val insertResult = userRepository.insert(user).futureValue
         val fetchedBeforeUpdateRecord = userRepository.findByEori(user.eori).futureValue
-        val deletedRecord             = userRepository.deleteByEori(user.eori).futureValue
+        val deletedRecord = userRepository.deleteByEori(user.eori).futureValue
         insertResult mustEqual true
         fetchedBeforeUpdateRecord.get mustEqual user
         deletedRecord mustEqual true
@@ -178,14 +179,14 @@ class UserRepositorySpec
 
     "getOrCreateUser" should {
       "must create a new user if it does not exist" in {
-        val eori              = "NEW-EORI"
+        val eori = "NEW-EORI"
         val (result, isExist) = userRepository.getOrCreateUser(eori).futureValue
         result.eori mustEqual eori
         isExist mustEqual false
       }
 
       "must return existing user with updatd accessDate if it exists" in {
-        val insertResult      = userRepository.insert(user).futureValue
+        val insertResult = userRepository.insert(user).futureValue
         val (result, isExist) = userRepository.getOrCreateUser(user.eori).futureValue
         insertResult mustEqual true
         result.accessDate.compareTo(Instant.now().minusSeconds(1)) >= 0
@@ -213,7 +214,7 @@ class UserRepositorySpec
       }
 
       "fail if the user does not exist" in {
-        val nonExistentEori   = "NON-EXISTENT-EORI"
+        val nonExistentEori = "NON-EXISTENT-EORI"
         val newAuthorisedUser = AuthorisedUser(
           eori = "AUTH-EORI-NEW",
           accessStart = Instant.parse("2024-01-01T00:00:00Z"),
@@ -234,10 +235,10 @@ class UserRepositorySpec
     "getAuthorisedUser" should {
       "return authorised user if there is one" in {
 
-        val eori           = "EORI1234"
+        val eori = "EORI1234"
         val thirdPartyEori = "AUTH-EORI-1"
         userRepository.insert(user).futureValue
-        val result         = userRepository.getAuthorisedUser(eori, thirdPartyEori).futureValue
+        val result = userRepository.getAuthorisedUser(eori, thirdPartyEori).futureValue
         result mustBe Some(
           AuthorisedUser(
             eori = "AUTH-EORI-1",
@@ -251,9 +252,9 @@ class UserRepositorySpec
       }
 
       "return none if no authorised user found" in {
-        val eori           = "EORI1234"
+        val eori = "EORI1234"
         val thirdPartyEori = "NON-AUTH-EORI"
-        val result         = userRepository.getAuthorisedUser(eori, thirdPartyEori).futureValue
+        val result = userRepository.getAuthorisedUser(eori, thirdPartyEori).futureValue
         result mustBe None
       }
     }
@@ -294,8 +295,8 @@ class UserRepositorySpec
     "getUsersByAuthorisedEoriWithStatus" should {
       val cutoffDate = today.minusDays(3)
       "return users who have authorised a specific EORI with correct status" in {
-        val accessStart     = today.minusDays(1).toInstant(ZoneOffset.UTC)
-        val accessEnd       = today.plusDays(5).toInstant(ZoneOffset.UTC)
+        val accessStart = today.minusDays(1).toInstant(ZoneOffset.UTC)
+        val accessEnd = today.plusDays(5).toInstant(ZoneOffset.UTC)
         val reportDataStart = cutoffDate.toInstant(ZoneOffset.UTC)
 
         val authorisedEori = "AUTH-EORI-1"
@@ -374,12 +375,12 @@ class UserRepositorySpec
 
     "deleteAuthorisedUser" should {
       "should return true when repository deletion succeeds" in {
-        val repo                    = mock[UserRepository]
-        val cds                     = mock[uk.gov.hmrc.tradereportingextracts.connectors.CustomsDataStoreConnector]
+        val repo = mock[UserRepository]
+        val cds = mock[uk.gov.hmrc.tradereportingextracts.connectors.CustomsDataStoreConnector]
         val reportRequestRepository = mock[ReportRequestRepository]
-        val service                 = new UserService(repo, reportRequestRepository, cds)
-        val eori                    = "GB987654321098"
-        val thirdEori               = "GB123456123456"
+        val service = new UserService(repo, reportRequestRepository, cds)
+        val eori = "GB987654321098"
+        val thirdEori = "GB123456123456"
 
         org.mockito.Mockito
           .when(repo.deleteAuthorisedUser(eori, thirdEori))
@@ -392,12 +393,12 @@ class UserRepositorySpec
       }
 
       "should return false when repository indicates not found" in {
-        val repo                    = mock[UserRepository]
-        val cds                     = mock[uk.gov.hmrc.tradereportingextracts.connectors.CustomsDataStoreConnector]
+        val repo = mock[UserRepository]
+        val cds = mock[uk.gov.hmrc.tradereportingextracts.connectors.CustomsDataStoreConnector]
         val reportRequestRepository = mock[ReportRequestRepository]
-        val service                 = new UserService(repo, reportRequestRepository, cds)
-        val eori                    = "GB987654321098"
-        val thirdEori               = "GB000000000000"
+        val service = new UserService(repo, reportRequestRepository, cds)
+        val eori = "GB987654321098"
+        val thirdEori = "GB000000000000"
 
         org.mockito.Mockito
           .when(repo.deleteAuthorisedUser(eori, thirdEori))
@@ -410,12 +411,12 @@ class UserRepositorySpec
       }
 
       "should fail the future when repository fails" in {
-        val repo                    = mock[UserRepository]
-        val cds                     = mock[uk.gov.hmrc.tradereportingextracts.connectors.CustomsDataStoreConnector]
+        val repo = mock[UserRepository]
+        val cds = mock[uk.gov.hmrc.tradereportingextracts.connectors.CustomsDataStoreConnector]
         val reportRequestRepository = mock[ReportRequestRepository]
-        val service                 = new UserService(repo, reportRequestRepository, cds)
-        val eori                    = "GB987654321098"
-        val thirdEori               = "GB123456123456"
+        val service = new UserService(repo, reportRequestRepository, cds)
+        val eori = "GB987654321098"
+        val thirdEori = "GB123456123456"
 
         when(
           repo.deleteAuthorisedUser(
@@ -432,9 +433,9 @@ class UserRepositorySpec
 
     "getUsersByAuthorisedEoriWithDateFilter" should {
       val fixedInstant: Instant = LocalDate.of(2025, 9, 26).atStartOfDay(ZoneOffset.UTC).toInstant
-      val fixedClock: Clock     = Clock.fixed(fixedInstant, ZoneOffset.UTC)
+      val fixedClock: Clock = Clock.fixed(fixedInstant, ZoneOffset.UTC)
 
-      val now      = fixedInstant // 2025-09-26T00:00:00Z
+      val now = fixedInstant // 2025-09-26T00:00:00Z
       val t2Cutoff = LocalDate.of(2025, 9, 23).atStartOfDay(ZoneOffset.UTC).toInstant
 
       def insertTestUsers(): Unit = {
@@ -510,8 +511,8 @@ class UserRepositorySpec
       "return users with authorisedEori and valid date filters" in {
         insertTestUsers()
         val result = userRepository.getUsersByAuthorisedEoriWithDateFilter("GB123456789011", fixedClock).futureValue
-        val eoris  = result.map(_.eori)
-        eoris must contain allOf ("GB123456124444", "GB999999999999")
+        val eoris = result.map(_.eori)
+        eoris must contain allOf("GB123456124444", "GB999999999999")
         eoris must not contain "GB888888888888"
         eoris must not contain "GB123456789011"
         eoris must not contain "GB777777777777"
@@ -524,7 +525,7 @@ class UserRepositorySpec
       }
 
       "not return users if reportDataStart is after cutoff" in {
-        val user   = User(
+        val user = User(
           eori = "GB666666666666",
           authorisedUsers = Seq(
             AuthorisedUser(
@@ -549,7 +550,7 @@ class UserRepositorySpec
       }
 
       "not return users if accessStart is after now" in {
-        val user   = User(
+        val user = User(
           eori = "GB222222222222",
           authorisedUsers = Seq(
             AuthorisedUser(
@@ -569,7 +570,7 @@ class UserRepositorySpec
       }
 
       "not return users if accessEnd is before now" in {
-        val user   = User(
+        val user = User(
           eori = "GB333333333333",
           authorisedUsers = Seq(
             AuthorisedUser(
@@ -586,6 +587,52 @@ class UserRepositorySpec
         userRepository.insert(user).futureValue
         val result = userRepository.getUsersByAuthorisedEoriWithDateFilter("GB123456789011", fixedClock).futureValue
         result.map(_.eori) must not contain "GB333333333333"
+      }
+    }
+
+    "update authorised user" should {
+
+      val updatedAuthorisedUser = AuthorisedUser(
+        eori = "AUTH-EORI-1",
+        accessStart = Instant.parse("2024-01-01T00:00:00Z"),
+        accessEnd = Some(Instant.parse("2024-12-31T23:59:59Z")),
+        reportDataStart = Some(Instant.parse("2024-01-01T10:00:00Z")),
+        reportDataEnd = Some(Instant.parse("2024-12-31T23:59:59Z")),
+        accessType = Set(IMPORTS, EXPORTS),
+        referenceName = Some("Updated Reference")
+      )
+
+      "must update an existing authorised user successfully" in {
+        val insertResult = userRepository.insert(user).futureValue
+        val updatedRecord = userRepository.updateAuthorisedUser(user.eori, updatedAuthorisedUser).futureValue
+        val fetchedRecord = userRepository.getAuthorisedUser(user.eori, "AUTH-EORI-1").futureValue
+        insertResult mustEqual true
+        updatedRecord mustEqual ThirdPartyAddedConfirmation("AUTH-EORI-1")
+        fetchedRecord.get mustEqual updatedAuthorisedUser
+      }
+
+      "must not update other authorised users when updating one" in {
+        val insertResult = userRepository.insert(user).futureValue
+        val updatedRecord = userRepository.updateAuthorisedUser(user.eori, updatedAuthorisedUser).futureValue
+        val fetchedRecord = userRepository.getAuthorisedUser(user.eori, "AUTH-EORI-2").futureValue
+        val otherAuthorisedUser = AuthorisedUser(
+          eori = "AUTH-EORI-2",
+          accessStart = Instant.parse("2023-01-01T00:00:00Z"),
+          accessEnd = Some(Instant.parse("2023-12-31T23:59:59Z")),
+          reportDataStart = Some(Instant.parse("2023-01-01T10:00:00Z")),
+          reportDataEnd = Some(Instant.parse("2023-12-31T23:59:59Z")),
+          accessType = Set(IMPORTS)
+        )
+        insertResult mustEqual true
+        updatedRecord mustEqual ThirdPartyAddedConfirmation("AUTH-EORI-1")
+        fetchedRecord.get mustEqual otherAuthorisedUser
+      }
+
+      "Must fail if the user does not exist" in {
+        val nonExistentEori = "foo"
+
+        val result = userRepository.updateAuthorisedUser(nonExistentEori, updatedAuthorisedUser).failed.futureValue
+        result mustBe an[Exception]
       }
     }
   }
