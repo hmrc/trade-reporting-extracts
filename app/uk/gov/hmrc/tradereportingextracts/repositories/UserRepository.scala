@@ -34,7 +34,7 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.jdk.CollectionConverters.SeqHasAsJava
 
 @Singleton
-class UserRepository @Inject() (appConfig: AppConfig, mongoComponent: MongoComponent, clock: Clock = Clock.systemUTC())(
+class UserRepository @Inject() (appConfig: AppConfig, mongoComponent: MongoComponent)(
   using ec: ExecutionContext
 ) extends PlayMongoRepository[User](
       collectionName = "tre-user",

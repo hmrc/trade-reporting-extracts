@@ -25,8 +25,8 @@ import uk.gov.hmrc.http.HttpReads.Implicits.*
 import uk.gov.hmrc.http.client.HttpClientV2
 import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse, StringContextOps, UpstreamErrorResponse}
 import uk.gov.hmrc.tradereportingextracts.config.AppConfig
-import uk.gov.hmrc.tradereportingextracts.models.{EmailRequest, EmailTemplate}
 import uk.gov.hmrc.tradereportingextracts.connectors.ConnectorFailureLogger.*
+import uk.gov.hmrc.tradereportingextracts.models.EmailRequest
 
 import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
