@@ -128,10 +128,10 @@ class AvailableReportService @Inject() (
       }
   }
 
-  def getAvailableReportsCount(eoriValue: String): Future[Long] =
+  def getAvailableReportsCount(eoriValue: String): Future[Int] =
     reportRequestService.countAvailableReports(eoriValue).recover { case ex: Exception =>
       logger.error(ex.getMessage, ex)
-      0L
+      0
     }
 
   def findByReportRequestId(reportRequestId: String)(implicit hc: HeaderCarrier): Future[Option[ReportRequest]] =

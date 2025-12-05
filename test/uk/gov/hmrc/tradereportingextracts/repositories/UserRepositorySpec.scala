@@ -32,7 +32,7 @@ import uk.gov.hmrc.tradereportingextracts.models.{AuthorisedUser, User, UserActi
 import uk.gov.hmrc.tradereportingextracts.services.UserService
 
 import java.time.temporal.ChronoUnit
-import java.time.{Clock, Instant, LocalDate, ZoneOffset}
+import java.time.{Clock, Instant, LocalDate, LocalDateTime, ZoneOffset}
 import scala.concurrent.ExecutionContext
 import scala.concurrent.ExecutionContext.Implicits.global
 
@@ -47,10 +47,10 @@ class UserRepositorySpec
 
   val appConfig: AppConfig = app.injector.instanceOf[AppConfig]
 
-  val clock = Clock.fixed(Instant.parse("2025-10-09T00:00:00Z"), ZoneOffset.UTC)
-  val today = LocalDate.now(clock).atStartOfDay()
+  val clock: Clock = Clock.fixed(Instant.parse("2025-10-09T00:00:00Z"), ZoneOffset.UTC)
+  val today: LocalDateTime = LocalDate.now(clock).atStartOfDay()
 
-  val userRepository: UserRepository = UserRepository(appConfig, mongoComponent, clock)
+  val userRepository: UserRepository = UserRepository(appConfig, mongoComponent)
   val user: User                     = User(
     eori = "EORI1234",
     additionalEmails = Seq("asd@gmail.com", "dfsf@gmail.com"),

@@ -97,7 +97,7 @@ class AvailableReportControllerSpec extends PlaySpec with MockitoSugar {
   "getAvailableReportsCount" should {
     "return Ok with count when EORI is present" in {
       when(mockService.getAvailableReportsCount(any[String]))
-        .thenReturn(Future.successful(5L))
+        .thenReturn(Future.successful(25))
       when(mockStubBehaviour.stubAuth(Some(permission), EmptyRetrieval))
         .thenReturn(Future.successful(EmptyRetrieval))
       val request =
@@ -105,7 +105,7 @@ class AvailableReportControllerSpec extends PlaySpec with MockitoSugar {
       val result  = controller.getAvailableReportsCount()(request)
 
       status(result) mustBe OK
-      contentAsJson(result) mustBe Json.toJson(5L)
+      contentAsJson(result) mustBe Json.toJson(25)
     }
 
     "return BadRequest when EORI is missing" in {
