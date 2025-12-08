@@ -49,7 +49,7 @@ class ReportStatusController @Inject() (
     (missingHeaders, isAuthorized, request.body.asJson) match {
       case (headers, _, _) if headers.nonEmpty =>
         logger.error(
-          s"reportstatusnotification missing required headers for CorrelationID: ${request.headers.get(XCorrelationID.toString).getOrElse("")}"
+          s"reportstatusnotification missing required headers: ${headers.mkString(", ")} for CorrelationID: ${request.headers.get(XCorrelationID.toString).getOrElse("")}"
         )
         Future.successful(
           BadRequest.withHeaders(
