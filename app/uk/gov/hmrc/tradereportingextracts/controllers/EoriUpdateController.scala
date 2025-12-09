@@ -34,7 +34,8 @@ class EoriUpdateController @Inject() (
   cc: ControllerComponents,
   userService: UserService,
   appConfig: AppConfig
-) extends AbstractController(cc) with Logging{
+) extends AbstractController(cc)
+    with Logging {
 
   def eoriUpdate(): Action[AnyContent] = Action.async { request =>
     def missingHeaders: Seq[String] =
@@ -46,7 +47,8 @@ class EoriUpdateController @Inject() (
     (missingHeaders, isAuthorized, request.body.asJson) match {
       case (headers, _, _) if headers.nonEmpty =>
         logger.error(
-          s"eoriUpdate missing required headers: ${headers.mkString(", ")} for CorrelationID: ${request.headers.get(xCorrelationID.toString).getOrElse("")}"
+          s"eoriUpdate missing required headers: ${headers
+              .mkString(", ")} for CorrelationID: ${request.headers.get(xCorrelationID.toString).getOrElse("")}"
         )
         Future.successful(
           BadRequest.withHeaders(

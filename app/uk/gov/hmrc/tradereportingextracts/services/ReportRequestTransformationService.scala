@@ -34,10 +34,10 @@ class ReportRequestTransformationService @Inject() (
 )(implicit ec: ExecutionContext) {
 
   private val reportMap: Map[String, ReportTypeName] = Map(
-    "importheader" -> ReportTypeName.IMPORTS_HEADER_REPORT,
-    "importitem" -> ReportTypeName.IMPORTS_ITEM_REPORT,
+    "importheader"  -> ReportTypeName.IMPORTS_HEADER_REPORT,
+    "importitem"    -> ReportTypeName.IMPORTS_ITEM_REPORT,
     "importtaxline" -> ReportTypeName.IMPORTS_TAXLINE_REPORT,
-    "exportitem" -> ReportTypeName.EXPORTS_ITEM_REPORT
+    "exportitem"    -> ReportTypeName.EXPORTS_ITEM_REPORT
   )
   def transformReportRequest(
     eoriValue: String,

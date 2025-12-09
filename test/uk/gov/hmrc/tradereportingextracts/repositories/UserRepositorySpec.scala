@@ -47,7 +47,7 @@ class UserRepositorySpec
 
   val appConfig: AppConfig = app.injector.instanceOf[AppConfig]
 
-  val clock: Clock = Clock.fixed(Instant.parse("2025-10-09T00:00:00Z"), ZoneOffset.UTC)
+  val clock: Clock         = Clock.fixed(Instant.parse("2025-10-09T00:00:00Z"), ZoneOffset.UTC)
   val today: LocalDateTime = LocalDate.now(clock).atStartOfDay()
 
   val userRepository: UserRepository = UserRepository(appConfig, mongoComponent)
