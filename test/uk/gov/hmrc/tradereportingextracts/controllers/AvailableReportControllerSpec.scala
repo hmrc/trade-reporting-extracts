@@ -101,7 +101,7 @@ class AvailableReportControllerSpec extends PlaySpec with MockitoSugar {
       when(mockStubBehaviour.stubAuth(Some(permission), EmptyRetrieval))
         .thenReturn(Future.successful(EmptyRetrieval))
       val request =
-        FakeRequest().withJsonBody(Json.obj("eori" -> "GB123456789000")).withHeaders(AUTHORIZATION -> "my-token")
+        FakeRequest().withJsonBody(Json.obj(eori -> "GB123456789000")).withHeaders(AUTHORIZATION -> "my-token")
       val result  = controller.getAvailableReportsCount()(request)
 
       status(result) mustBe OK

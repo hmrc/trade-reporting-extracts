@@ -24,6 +24,7 @@ import uk.gov.hmrc.tradereportingextracts.models.AuthorisedUser
 import uk.gov.hmrc.tradereportingextracts.models.thirdParty.EoriBusinessInfo
 import uk.gov.hmrc.tradereportingextracts.repositories.ReportRequestRepository
 import uk.gov.hmrc.tradereportingextracts.services.UserService
+import uk.gov.hmrc.tradereportingextracts.utils.ApplicationConstants.eori
 import uk.gov.hmrc.tradereportingextracts.utils.PermissionsUtil.{readPermission, writePermission}
 
 import javax.inject.{Inject, Singleton}
@@ -39,7 +40,7 @@ class UserController @Inject() (
     extends BackendController(cc):
 
   def setupUser(): Action[JsValue] = auth.authorizedAction(readPermission).async(parse.json) { implicit request =>
-    (request.body \ "eori").validate[String] match {
+    (request.body \ eori).validate[String] match {
       case JsSuccess(eori, _) =>
         userService.getOrCreateUser(eori).map { userDetails =>
           Created(Json.toJson(userDetails))
@@ -51,7 +52,7 @@ class UserController @Inject() (
 
   def getAuthorisedEoris: Action[JsValue] =
     auth.authorizedAction(readPermission).async(parse.json) { implicit request =>
-      (request.body \ "eori").validate[String] match {
+      (request.body \ eori).validate[String] match {
         case JsSuccess(eori, _) =>
           userService
             .getAuthorisedEoris(eori)
@@ -68,7 +69,7 @@ class UserController @Inject() (
 
   def getNotificationEmail: Action[JsValue] =
     auth.authorizedAction(readPermission).async(parse.json) { implicit request =>
-      (request.body \ "eori").validate[String] match {
+      (request.body \ eori).validate[String] match {
         case JsSuccess(eori, _) =>
           userService
             .getNotificationEmail(eori)
@@ -82,7 +83,7 @@ class UserController @Inject() (
     }
 
   def getUserAndEmail: Action[JsValue] = auth.authorizedAction(readPermission).async(parse.json) { implicit request =>
-    (request.body \ "eori").validate[String] match {
+    (request.body \ eori).validate[String] match {
       case JsSuccess(eori, _) =>
         userService.getUserAndEmailDetails(eori).map { userDetails =>
           Created(Json.toJson(userDetails))
@@ -94,7 +95,7 @@ class UserController @Inject() (
 
   def getThirdPartyDetails: Action[JsValue] =
     auth.authorizedAction(readPermission).async(parse.json) { implicit request =>
-      val eoriResult           = (request.body \ "eori").validate[String]
+      val eoriResult           = (request.body \ eori).validate[String]
       val thirdPartyEoriResult = (request.body \ "thirdPartyEori").validate[String]
 
       (eoriResult, thirdPartyEoriResult) match {

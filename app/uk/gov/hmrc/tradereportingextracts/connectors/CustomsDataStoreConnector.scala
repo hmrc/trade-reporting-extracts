@@ -26,6 +26,7 @@ import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse, StringContextOps, Upstream
 import uk.gov.hmrc.tradereportingextracts.config.AppConfig
 import uk.gov.hmrc.tradereportingextracts.models.{CompanyInformation, EoriHistory, EoriHistoryResponse, NotificationEmail}
 import uk.gov.hmrc.tradereportingextracts.connectors.ConnectorFailureLogger.*
+import uk.gov.hmrc.tradereportingextracts.utils.ApplicationConstants
 
 import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
@@ -39,7 +40,7 @@ class CustomsDataStoreConnector @Inject() (appConfig: AppConfig, httpClient: Htt
     logger.info(s"Requesting company information at : ${appConfig.companyInformationUrl}")
     httpClient
       .post(url"${appConfig.companyInformationUrl}")
-      .withBody(Json.obj("eori" -> eori))
+      .withBody(Json.obj(ApplicationConstants.eori -> eori))
       .execute[HttpResponse]
       .flatMap { response =>
         response.status match {
@@ -54,7 +55,7 @@ class CustomsDataStoreConnector @Inject() (appConfig: AppConfig, httpClient: Htt
     logger.info(s"Requesting EORI history at : ${appConfig.eoriHistoryUrl}")
     httpClient
       .post(url"${appConfig.eoriHistoryUrl}")
-      .withBody(Json.obj("eori" -> eori))
+      .withBody(Json.obj(ApplicationConstants.eori -> eori))
       .execute[HttpResponse]
       .flatMap { response =>
         response.status match {
@@ -69,7 +70,7 @@ class CustomsDataStoreConnector @Inject() (appConfig: AppConfig, httpClient: Htt
     logger.info(s"Requesting notification email at : ${appConfig.verifiedEmailUrl}")
     httpClient
       .post(url"${appConfig.verifiedEmailUrl}")
-      .withBody(Json.obj("eori" -> eori))
+      .withBody(Json.obj(ApplicationConstants.eori -> eori))
       .execute[HttpResponse]
       .flatMap { response =>
         response.status match {

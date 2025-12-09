@@ -27,6 +27,7 @@ import uk.gov.hmrc.tradereportingextracts.models.thirdParty.ThirdPartyRequest
 import uk.gov.hmrc.tradereportingextracts.models.{AccessType, AuthorisedUser, EmailTemplate}
 import uk.gov.hmrc.tradereportingextracts.repositories.ReportRequestRepository
 import uk.gov.hmrc.tradereportingextracts.services.UserService
+import uk.gov.hmrc.tradereportingextracts.utils.ApplicationConstants
 import uk.gov.hmrc.tradereportingextracts.utils.PermissionsUtil.writePermission
 
 import javax.inject.Inject
@@ -88,7 +89,7 @@ class ThirdPartyRequestController @Inject() (
   def deleteThirdPartyDetails(): Action[JsValue] =
     auth.authorizedAction(writePermission).async(parse.json) { implicit request =>
       try {
-        val eoriResult           = (request.body \ "eori").validate[String]
+        val eoriResult           = (request.body \ ApplicationConstants.eori).validate[String]
         val thirdPartyEoriResult = (request.body \ "thirdPartyEori").validate[String]
         (eoriResult, thirdPartyEoriResult) match {
           case (JsSuccess(eori, _), JsSuccess(thirdPartyEori, _)) =>

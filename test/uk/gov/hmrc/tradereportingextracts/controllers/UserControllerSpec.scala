@@ -31,6 +31,7 @@ import uk.gov.hmrc.tradereportingextracts.models.*
 import uk.gov.hmrc.tradereportingextracts.repositories.ReportRequestRepository
 import uk.gov.hmrc.tradereportingextracts.services.UserService
 import uk.gov.hmrc.tradereportingextracts.utils.SpecBase
+import uk.gov.hmrc.tradereportingextracts.utils.ApplicationConstants
 
 import java.time.{Instant, LocalDate, LocalDateTime, ZoneOffset}
 import scala.concurrent.{ExecutionContext, Future}
@@ -72,7 +73,7 @@ class UserControllerSpec extends SpecBase {
 
       val request: FakeRequest[JsObject] = FakeRequest(POST, routes.UserController.getNotificationEmail.url)
         .withHeaders("Content-Type" -> "application/json", AUTHORIZATION -> "my-token")
-        .withBody(Json.obj("eori" -> eori))
+        .withBody(Json.obj(ApplicationConstants.eori -> eori))
 
       val result: Future[Result] = controller.getNotificationEmail.apply(request)
 
@@ -102,7 +103,7 @@ class UserControllerSpec extends SpecBase {
         .thenReturn(Future.successful(EmptyRetrieval))
       val request: FakeRequest[JsObject] = FakeRequest(POST, routes.UserController.getNotificationEmail.url)
         .withHeaders("Content-Type" -> "application/json", AUTHORIZATION -> "my-token")
-        .withBody(Json.obj("eori" -> eori))
+        .withBody(Json.obj(ApplicationConstants.eori -> eori))
 
       val result: Future[Result] = controller.getNotificationEmail.apply(request)
 
@@ -130,7 +131,7 @@ class UserControllerSpec extends SpecBase {
 
       val request: FakeRequest[JsObject] = FakeRequest(GET, routes.UserController.setupUser().url)
         .withHeaders("Content-Type" -> "application/json", AUTHORIZATION -> "my-token")
-        .withBody(Json.obj("eori" -> eori))
+        .withBody(Json.obj(ApplicationConstants.eori -> eori))
 
       val result: Future[Result] = controller.setupUser().apply(request)
 
@@ -165,7 +166,7 @@ class UserControllerSpec extends SpecBase {
 
       val request: FakeRequest[JsObject] = FakeRequest(POST, routes.UserController.getAuthorisedEoris.url)
         .withHeaders("Content-Type" -> "application/json", AUTHORIZATION -> "my-token")
-        .withBody(Json.obj("eori" -> eori))
+        .withBody(Json.obj(ApplicationConstants.eori -> eori))
 
       val result: Future[Result] = controller.getAuthorisedEoris.apply(request)
 
@@ -182,7 +183,7 @@ class UserControllerSpec extends SpecBase {
         .thenReturn(Future.successful(EmptyRetrieval))
       val request: FakeRequest[JsObject] = FakeRequest(POST, routes.UserController.getAuthorisedEoris.url)
         .withHeaders("Content-Type" -> "application/json", AUTHORIZATION -> "my-token")
-        .withBody(Json.obj("eori" -> eori))
+        .withBody(Json.obj(ApplicationConstants.eori -> eori))
 
       val result: Future[Result] = controller.getAuthorisedEoris.apply(request)
 
@@ -216,7 +217,7 @@ class UserControllerSpec extends SpecBase {
         .thenReturn(Future.successful(EmptyRetrieval))
       val request: FakeRequest[JsObject] = FakeRequest(GET, routes.UserController.getUserAndEmail.url)
         .withHeaders("Content-Type" -> "application/json", AUTHORIZATION -> "my-token")
-        .withBody(Json.obj("eori" -> eori))
+        .withBody(Json.obj(ApplicationConstants.eori -> eori))
       val result: Future[Result]         = controller.getUserAndEmail.apply(request)
       status(result)        shouldBe CREATED
       contentAsJson(result) shouldBe Json.toJson(userDetails)
@@ -269,7 +270,7 @@ class UserControllerSpec extends SpecBase {
 
       val request: FakeRequest[JsObject] = FakeRequest(GET, routes.UserController.getAuthorisedEoris.url)
         .withHeaders(AUTHORIZATION -> "my-token")
-        .withBody(Json.obj("eori" -> eori, "thirdPartyEori" -> thirdPartyEori))
+        .withBody(Json.obj(ApplicationConstants.eori -> eori, "thirdPartyEori" -> thirdPartyEori))
 
       val result: Future[Result] = controller.getThirdPartyDetails.apply(request)
       status(result)        shouldBe OK
@@ -286,7 +287,7 @@ class UserControllerSpec extends SpecBase {
 
       val request: FakeRequest[JsObject] = FakeRequest(GET, routes.UserController.getAuthorisedEoris.url)
         .withHeaders(AUTHORIZATION -> "my-token")
-        .withBody(Json.obj("eori" -> eori, "thirdPartyEori" -> thirdPartyEori))
+        .withBody(Json.obj(ApplicationConstants.eori -> eori, "thirdPartyEori" -> thirdPartyEori))
 
       val result: Future[Result] = controller.getThirdPartyDetails.apply(request)
       status(result)        shouldBe NOT_FOUND
@@ -317,7 +318,7 @@ class UserControllerSpec extends SpecBase {
 
       val request: FakeRequest[JsObject] = FakeRequest(GET, routes.UserController.getAuthorisedEoris.url)
         .withHeaders(AUTHORIZATION -> "my-token")
-        .withBody(Json.obj("eori" -> eori))
+        .withBody(Json.obj(ApplicationConstants.eori -> eori))
 
       val result: Future[Result] = controller.getThirdPartyDetails.apply(request)
       status(result)        shouldBe BAD_REQUEST

@@ -31,6 +31,7 @@ import uk.gov.hmrc.tradereportingextracts.models.ReportTypeName.EXPORTS_ITEM_REP
 import uk.gov.hmrc.tradereportingextracts.models.{GetReportRequestsResponse, UserReport}
 import uk.gov.hmrc.tradereportingextracts.services.ReportRequestService
 import uk.gov.hmrc.tradereportingextracts.utils.SpecBase
+import uk.gov.hmrc.tradereportingextracts.utils.ApplicationConstants
 
 import java.time.Instant
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -80,7 +81,7 @@ class RequestedReportsControllerSpec extends SpecBase:
 
       val request: Request[JsValue] = FakeRequest(GET, "/requested-reports")
         .withHeaders(AUTHORIZATION -> "my-token")
-        .withBody(Json.obj("eori" -> eori))
+        .withBody(Json.obj(ApplicationConstants.eori -> eori))
 
       val result: Future[Result] = controller.getRequestedReports()(request)
 
@@ -98,7 +99,7 @@ class RequestedReportsControllerSpec extends SpecBase:
 
       val request: Request[JsValue] = FakeRequest(GET, "/requested-reports")
         .withHeaders(AUTHORIZATION -> "my-token")
-        .withBody(Json.obj("eori" -> eori))
+        .withBody(Json.obj(ApplicationConstants.eori -> eori))
 
       val result: Future[Result] = controller.getRequestedReports()(request)
 
@@ -125,10 +126,9 @@ class RequestedReportsControllerSpec extends SpecBase:
       when(mockStubBehaviour.stubAuth(Some(permission), EmptyRetrieval))
         .thenReturn(Future.successful(EmptyRetrieval))
 
-      val request: Request[JsValue] =
-        FakeRequest(GET, "/requested-reports")
-          .withHeaders(AUTHORIZATION -> "my-token")
-          .withBody(Json.obj("eori" -> eori))
+      val request: Request[JsValue] = FakeRequest(GET, "/requested-reports")
+        .withHeaders(AUTHORIZATION -> "my-token")
+        .withBody(Json.obj(ApplicationConstants.eori -> eori))
 
       val result: Future[Result] = controller.getRequestedReports()(request)
 
