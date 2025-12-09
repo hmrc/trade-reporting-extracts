@@ -668,5 +668,39 @@ class UserServiceSpec
         verify(mockRepository, org.mockito.Mockito.never()).deleteAuthorisedUser(trader.eori, userWithoutEndDate.eori)
       }
     }
+
+    "updateAuthorisedUser" - {
+
+      val eori           = "GB1"
+      val authorisedUser = AuthorisedUser(
+        eori = "GB1",
+        accessStart = Instant.parse("2024-01-01T00:00:00Z"),
+        accessEnd = Some(Instant.parse("2024-12-31T23:59:59Z")),
+        reportDataStart = Some(Instant.parse("2024-01-01T10:00:00Z")),
+        reportDataEnd = Some(Instant.parse("2024-12-31T23:59:59Z")),
+        accessType = Set(AccessType.IMPORTS)
+      )
+
+      "should return confirmation when user is updated" in {
+        val confirmation = ThirdPartyAddedConfirmation(
+          thirdPartyEori = "GB2"
+        )
+        when(mockRepository.updateAuthorisedUser(any(), any()))
+          .thenReturn(Future.successful(confirmation))
+
+        val result = service.updateAuthorisedUser(eori, authorisedUser).futureValue
+        result mustBe confirmation
+      }
+
+      "should fail if repository fails" in {
+
+        when(mockRepository.updateAuthorisedUser(any(), any()))
+          .thenReturn(Future.failed(new Exception("User not found")))
+
+        val result = service.updateAuthorisedUser(eori, authorisedUser).failed.futureValue
+        result mustBe an[Exception]
+        result.getMessage must include("User not found")
+      }
+    }
   }
 }

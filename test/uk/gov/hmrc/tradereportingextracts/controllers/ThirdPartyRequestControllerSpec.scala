@@ -36,7 +36,7 @@ import uk.gov.hmrc.tradereportingextracts.models.thirdParty.ThirdPartyAddedConfi
 import uk.gov.hmrc.tradereportingextracts.repositories.ReportRequestRepository
 import uk.gov.hmrc.tradereportingextracts.services.UserService
 
-import java.time.LocalDateTime
+import java.time.{Instant, LocalDateTime}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import org.mockito.ArgumentMatchers.{eq as eqTo, *}
@@ -284,6 +284,88 @@ class ThirdPartyRequestControllerSpec extends AnyFreeSpec with Matchers with Moc
       )
       status(result) mustBe BAD_REQUEST
       contentAsString(result) must include("Missing or invalid")
+    }
+  }
+
+  "editThirdPartyRequest" - {
+
+    "should return 200 OK with confirmation for valid request" in {
+      val requestBody = Json.parse("""
+                                     |{
+                                     |  "userEORI":"GB1",
+                                     |  "thirdPartyEORI":"GB2",
+                                     |  "accessStart":"2025-09-09T00:00:00Z",
+                                     |  "accessEnd":"2025-09-09T10:59:38.334682780Z",
+                                     |  "reportDateStart":"2025-09-10T00:00:00Z",
+                                     |  "reportDateEnd":"2025-09-09T10:59:38.334716742Z",
+                                     |  "accessType":["IMPORT","EXPORT"],
+                                     |  "referenceName":"TestReport"
+                                     |}
+        """.stripMargin)
+
+      val confirmation = ThirdPartyAddedConfirmation(
+        thirdPartyEori = "GB2"
+      )
+      when(mockStubBehaviour.stubAuth(Some(permission), EmptyRetrieval))
+        .thenReturn(Future.successful(EmptyRetrieval))
+      when(userService.getAuthorisedUser(any(), any()))
+        .thenReturn(
+          Future.successful(
+            Some(
+              AuthorisedUser(
+                "GB2",
+                Instant.parse("2025-01-01T00:00:00Z"),
+                None,
+                None,
+                None,
+                Set(AccessType.IMPORTS),
+                Some("OldRef")
+              )
+            )
+          )
+        )
+      when(userService.updateAuthorisedUser(any(), any()))
+        .thenReturn(Future.successful(confirmation))
+
+      val result =
+        controller.editThirdPartyRequest()(FakeRequest().withHeaders(AUTHORIZATION -> "my-token").withBody(requestBody))
+      status(result) mustBe OK
+      contentAsJson(result) mustBe Json.toJson(confirmation)
+    }
+
+    "should return 400 BadRequest for invalid JSON" in {
+      val invalidJson = Json.parse("""{"foo": "bar"}""")
+      val result      =
+        controller.editThirdPartyRequest()(FakeRequest().withHeaders(AUTHORIZATION -> "my-token").withBody(invalidJson))
+      status(result) mustBe BAD_REQUEST
+      (contentAsJson(result) \ "error").as[String] must include("Invalid edit request format")
+    }
+
+    "should return 400 BadRequest when authorised user not found" in {
+      val requestBody = Json.parse("""
+                                     |{
+                                     |  "userEORI":"GB1",
+                                     |  "thirdPartyEORI":"GB2",
+                                     |  "accessStart":"2025-09-09T00:00:00Z",
+                                     |  "accessEnd":"2025-09-09T10:59:38.334682780Z",
+                                     |  "reportDateStart":"2025-09-10T00:00:00Z",
+                                     |  "reportDateEnd":"2025-09-09T10:59:38.334716742Z",
+                                     |  "accessType":["IMPORT","EXPORT"],
+                                     |  "referenceName":"TestReport"
+                                     |}
+        """.stripMargin)
+
+      when(mockStubBehaviour.stubAuth(Some(permission), EmptyRetrieval))
+        .thenReturn(Future.successful(EmptyRetrieval))
+      when(userService.getAuthorisedUser(any(), any()))
+        .thenReturn(Future.successful(None))
+      when(userService.updateAuthorisedUser(any(), any()))
+        .thenReturn(Future.failed(new Exception("Authorised user not found")))
+
+      val result =
+        controller.editThirdPartyRequest()(FakeRequest().withHeaders(AUTHORIZATION -> "my-token").withBody(requestBody))
+      status(result) mustBe BAD_REQUEST
+      (contentAsJson(result) \ "error").as[String] must include("Authorised user not found")
     }
   }
 }

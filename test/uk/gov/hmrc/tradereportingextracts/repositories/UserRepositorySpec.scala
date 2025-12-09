@@ -28,6 +28,7 @@ import uk.gov.hmrc.mongo.test.CleanMongoCollectionSupport
 import uk.gov.hmrc.tradereportingextracts.config.AppConfig
 import uk.gov.hmrc.tradereportingextracts.models.AccessType.{EXPORTS, IMPORTS}
 import uk.gov.hmrc.tradereportingextracts.models.etmp.EoriUpdate
+import uk.gov.hmrc.tradereportingextracts.models.thirdParty.ThirdPartyAddedConfirmation
 import uk.gov.hmrc.tradereportingextracts.models.{AuthorisedUser, User, UserActiveStatus}
 import uk.gov.hmrc.tradereportingextracts.services.UserService
 
@@ -77,22 +78,22 @@ class UserRepositorySpec
 
   "UserRepositorySpec" should {
 
-//    "insertUser with TTL" should {
-//      "must insert a user with TTL successfully" in {
-//        implicit val patienceConfig: PatienceConfig = PatienceConfig(timeout = 70.seconds, interval = 1.second)
-//
-//        val result = for {
-//          _             <- createIndex(mongoComponent.database, "tre-user", "accessDate", "accessDate-ttl-index")
-//          insertResult  <- userRepository.insert(user)
-//          _              = Thread.sleep(65000)
-//          fetchedRecord <- userRepository.findByEori(user.eori)
-//        } yield {
-//          insertResult mustEqual true
-//          fetchedRecord mustBe None
-//        }
-//        result.futureValue
-//      }
-//    }
+    //    "insertUser with TTL" should {
+    //      "must insert a user with TTL successfully" in {
+    //        implicit val patienceConfig: PatienceConfig = PatienceConfig(timeout = 70.seconds, interval = 1.second)
+    //
+    //        val result = for {
+    //          _             <- createIndex(mongoComponent.database, "tre-user", "accessDate", "accessDate-ttl-index")
+    //          insertResult  <- userRepository.insert(user)
+    //          _              = Thread.sleep(65000)
+    //          fetchedRecord <- userRepository.findByEori(user.eori)
+    //        } yield {
+    //          insertResult mustEqual true
+    //          fetchedRecord mustBe None
+    //        }
+    //        result.futureValue
+    //      }
+    //    }
 
     "insertUser" should {
       "must insert a user successfully" in {
@@ -586,6 +587,52 @@ class UserRepositorySpec
         userRepository.insert(user).futureValue
         val result = userRepository.getUsersByAuthorisedEoriWithDateFilter("GB123456789011", fixedClock).futureValue
         result.map(_.eori) must not contain "GB333333333333"
+      }
+    }
+
+    "update authorised user" should {
+
+      val updatedAuthorisedUser = AuthorisedUser(
+        eori = "AUTH-EORI-1",
+        accessStart = Instant.parse("2024-01-01T00:00:00Z"),
+        accessEnd = Some(Instant.parse("2024-12-31T23:59:59Z")),
+        reportDataStart = Some(Instant.parse("2024-01-01T10:00:00Z")),
+        reportDataEnd = Some(Instant.parse("2024-12-31T23:59:59Z")),
+        accessType = Set(IMPORTS, EXPORTS),
+        referenceName = Some("Updated Reference")
+      )
+
+      "must update an existing authorised user successfully" in {
+        val insertResult  = userRepository.insert(user).futureValue
+        val updatedRecord = userRepository.updateAuthorisedUser(user.eori, updatedAuthorisedUser).futureValue
+        val fetchedRecord = userRepository.getAuthorisedUser(user.eori, "AUTH-EORI-1").futureValue
+        insertResult mustEqual true
+        updatedRecord mustEqual ThirdPartyAddedConfirmation("AUTH-EORI-1")
+        fetchedRecord.get mustEqual updatedAuthorisedUser
+      }
+
+      "must not update other authorised users when updating one" in {
+        val insertResult        = userRepository.insert(user).futureValue
+        val updatedRecord       = userRepository.updateAuthorisedUser(user.eori, updatedAuthorisedUser).futureValue
+        val fetchedRecord       = userRepository.getAuthorisedUser(user.eori, "AUTH-EORI-2").futureValue
+        val otherAuthorisedUser = AuthorisedUser(
+          eori = "AUTH-EORI-2",
+          accessStart = Instant.parse("2023-01-01T00:00:00Z"),
+          accessEnd = Some(Instant.parse("2023-12-31T23:59:59Z")),
+          reportDataStart = Some(Instant.parse("2023-01-01T10:00:00Z")),
+          reportDataEnd = Some(Instant.parse("2023-12-31T23:59:59Z")),
+          accessType = Set(IMPORTS)
+        )
+        insertResult mustEqual true
+        updatedRecord mustEqual ThirdPartyAddedConfirmation("AUTH-EORI-1")
+        fetchedRecord.get mustEqual otherAuthorisedUser
+      }
+
+      "Must fail if the user does not exist" in {
+        val nonExistentEori = "foo"
+
+        val result = userRepository.updateAuthorisedUser(nonExistentEori, updatedAuthorisedUser).failed.futureValue
+        result mustBe an[Exception]
       }
     }
   }

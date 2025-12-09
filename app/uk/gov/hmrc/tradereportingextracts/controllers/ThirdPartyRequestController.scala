@@ -23,8 +23,8 @@ import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.internalauth.client.BackendAuthComponents
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 import uk.gov.hmrc.tradereportingextracts.connectors.{CustomsDataStoreConnector, EmailConnector}
-import uk.gov.hmrc.tradereportingextracts.models.thirdParty.ThirdPartyRequest
-import uk.gov.hmrc.tradereportingextracts.models.{AccessType, AuthorisedUser, EmailTemplate}
+import uk.gov.hmrc.tradereportingextracts.models.{AccessType, AuthorisedUser, EmailTemplate, NotificationEmail}
+import uk.gov.hmrc.tradereportingextracts.models.thirdParty.{ThirdPartyAddedConfirmation, ThirdPartyRequest}
 import uk.gov.hmrc.tradereportingextracts.repositories.ReportRequestRepository
 import uk.gov.hmrc.tradereportingextracts.services.UserService
 import uk.gov.hmrc.tradereportingextracts.utils.ApplicationConstants
@@ -79,11 +79,45 @@ class ThirdPartyRequestController @Inject() (
       }
     }
 
+  def editThirdPartyRequest(): Action[JsValue] =
+    auth.authorizedAction(writePermission).async(parse.json) { implicit request =>
+      request.body.validate[ThirdPartyRequest] match {
+        case JsSuccess(value, _) =>
+          (for {
+            maybeAuthorisedUser   <- userService.getAuthorisedUser(value.userEORI, value.thirdPartyEORI)
+            updatedAuthorisedUser <- maybeAuthorisedUser match {
+                                       case Some(prevDetails) =>
+                                         val updatedAuthorisedUser = prevDetails.copy(
+                                           accessStart = value.accessStart,
+                                           accessEnd = value.accessEnd,
+                                           reportDataStart = value.reportDateStart,
+                                           reportDataEnd = value.reportDateEnd,
+                                           accessType = getAccessType(value.accessType),
+                                           referenceName = value.referenceName
+                                         )
+                                         Future.successful(updatedAuthorisedUser)
+                                       case None              =>
+                                         Future.failed(new Exception("Authorised user not found"))
+                                     }
+            _                     <- userService.updateAuthorisedUser(value.userEORI, updatedAuthorisedUser)
+          } yield Ok(Json.toJson(ThirdPartyAddedConfirmation(value.thirdPartyEORI))))
+            .recover { case ex =>
+              logger.error(s"Error editing third party request: ${ex.getMessage}", ex)
+              BadRequest(Json.obj("error" -> ex.getMessage))
+            }
+        case JsError(_)          =>
+          Future.successful(BadRequest(Json.obj("error" -> "Invalid edit request format")))
+      }
+    }
+
   private def getAccessType(accessTypes: Set[String]): Set[AccessType] =
     accessTypes.flatMap {
-      case s if s.equalsIgnoreCase("IMPORT") => Some(AccessType.IMPORTS)
-      case s if s.equalsIgnoreCase("EXPORT") => Some(AccessType.EXPORTS)
-      case _                                 => None
+      case s if s.equalsIgnoreCase("IMPORT") || s.equalsIgnoreCase("IMPORTS") =>
+        Some(AccessType.IMPORTS)
+      case s if s.equalsIgnoreCase("EXPORT") || s.equalsIgnoreCase("EXPORTS") =>
+        Some(AccessType.EXPORTS)
+      case _                                                                  =>
+        None
     }
 
   def deleteThirdPartyDetails(): Action[JsValue] =
