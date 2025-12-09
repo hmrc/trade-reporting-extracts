@@ -33,6 +33,12 @@ class ReportRequestTransformationService @Inject() (
   requestReferenceService: RequestReferenceService
 )(implicit ec: ExecutionContext) {
 
+  private val reportMap: Map[String, ReportTypeName] = Map(
+    "importheader"  -> ReportTypeName.IMPORTS_HEADER_REPORT,
+    "importitem"    -> ReportTypeName.IMPORTS_ITEM_REPORT,
+    "importtaxline" -> ReportTypeName.IMPORTS_TAXLINE_REPORT,
+    "exportitem"    -> ReportTypeName.EXPORTS_ITEM_REPORT
+  )
   def transformReportRequest(
     eoriValue: String,
     reportRequestUserAnswersModel: ReportRequestUserAnswersModel,
@@ -42,13 +48,18 @@ class ReportRequestTransformationService @Inject() (
 
     val userAnswers = reportRequestUserAnswersModel
 
-    def getReportType(reportTypes: String): ReportTypeName =
-      reportTypes match {
-        case x if x.contains("importHeader")  => ReportTypeName.IMPORTS_HEADER_REPORT
-        case x if x.contains("importItem")    => ReportTypeName.IMPORTS_ITEM_REPORT
-        case x if x.contains("importTaxLine") => ReportTypeName.IMPORTS_TAXLINE_REPORT
-        case x if x.contains("exportItem")    => ReportTypeName.EXPORTS_ITEM_REPORT
-      }
+    def getReportType(reportType: String): ReportTypeName = {
+      val normalized =
+        Option(reportType)
+          .map(_.trim.toLowerCase)
+          .filter(_.nonEmpty)
+          .getOrElse(throw new IllegalArgumentException("reportType must be a non-empty string"))
+
+      reportMap.getOrElse(
+        normalized,
+        throw new IllegalArgumentException(s"Unknown report type: '$reportType'")
+      )
+    }
 
     def getRole(roles: Set[String]): EoriRole =
       roles match {

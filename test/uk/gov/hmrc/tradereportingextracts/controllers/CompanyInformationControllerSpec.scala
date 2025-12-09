@@ -26,6 +26,7 @@ import uk.gov.hmrc.internalauth.client.*
 import uk.gov.hmrc.tradereportingextracts.models.{AddressInformation, CompanyInformation}
 import uk.gov.hmrc.tradereportingextracts.services.CompanyInformationService
 import uk.gov.hmrc.tradereportingextracts.utils.SpecBase
+import uk.gov.hmrc.tradereportingextracts.utils.ApplicationConstants
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -66,7 +67,7 @@ class CompanyInformationControllerSpec extends SpecBase {
 
       val request = FakeRequest(POST, routes.CompanyInformationController.getCompanyInformation.url)
         .withHeaders("Content-Type" -> "application/json", AUTHORIZATION -> "Bearer token")
-        .withBody(Json.obj("eori" -> eori))
+        .withBody(Json.obj(ApplicationConstants.eori -> eori))
 
       val result = controller.getCompanyInformation.apply(request)
 

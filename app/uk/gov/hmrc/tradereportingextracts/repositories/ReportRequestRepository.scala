@@ -130,7 +130,7 @@ class ReportRequestRepository @Inject() (appConfig: AppConfig, mongoComponent: M
         .map(_.filter(_.isReportStatusComplete))
     }
 
-  def countAvailableReports(eori: String)(using ec: ExecutionContext): Future[Long] = Mdc.preservingMdc {
+  def countAvailableReports(eori: String)(using ec: ExecutionContext): Future[Int] = Mdc.preservingMdc {
     collection
       .find(Filters.equal("requesterEORI", eori))
       .toFuture()

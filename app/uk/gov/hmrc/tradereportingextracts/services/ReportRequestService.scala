@@ -114,7 +114,7 @@ class ReportRequestService @Inject() (
   def getAvailableReportsByHistory(eoriHistory: Seq[String])(using ec: ExecutionContext): Future[Seq[ReportRequest]] =
     reportRequestRepository.getAvailableReportsByHistory(eoriHistory)
 
-  def countAvailableReports(eori: String)(using ec: ExecutionContext): Future[Long] =
+  def countAvailableReports(eori: String)(using ec: ExecutionContext): Future[Int] =
     reportRequestRepository.countAvailableReports(eori)
 
   def processReportStatus(

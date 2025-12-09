@@ -242,7 +242,7 @@ class AvailableReportServiceSpec extends AnyWordSpec with Matchers with ScalaFut
       val mockAppConfig: AppConfig      = mock[AppConfig]
       val mockAuditService              = mock[AuditService]
       when(mockReportRequestService.countAvailableReports(any())(using any()))
-        .thenReturn(Future.successful(5L))
+        .thenReturn(Future.successful(25))
 
       val service =
         new AvailableReportService(
@@ -254,7 +254,7 @@ class AvailableReportServiceSpec extends AnyWordSpec with Matchers with ScalaFut
         )
 
       whenReady(service.getAvailableReportsCount(eori)) { count =>
-        count shouldBe 5L
+        count shouldBe 25
       }
     }
 

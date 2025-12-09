@@ -18,6 +18,7 @@ package uk.gov.hmrc.tradereportingextracts.controllers
 
 import play.api.libs.json.*
 import play.api.mvc.*
+import play.api.Logging
 import uk.gov.hmrc.tradereportingextracts.config.AppConfig
 import uk.gov.hmrc.tradereportingextracts.models.etmp.*
 import uk.gov.hmrc.tradereportingextracts.models.etmp.EoriUpdateHeaders.*
@@ -33,7 +34,8 @@ class EoriUpdateController @Inject() (
   cc: ControllerComponents,
   userService: UserService,
   appConfig: AppConfig
-) extends AbstractController(cc) {
+) extends AbstractController(cc)
+    with Logging {
 
   def eoriUpdate(): Action[AnyContent] = Action.async { request =>
     def missingHeaders: Seq[String] =
@@ -44,6 +46,10 @@ class EoriUpdateController @Inject() (
 
     (missingHeaders, isAuthorized, request.body.asJson) match {
       case (headers, _, _) if headers.nonEmpty =>
+        logger.error(
+          s"eoriUpdate missing required headers: ${headers
+              .mkString(", ")} for CorrelationID: ${request.headers.get(xCorrelationID.toString).getOrElse("")}"
+        )
         Future.successful(
           BadRequest.withHeaders(
             date.toString           -> getCurrentHttpDate,
@@ -51,6 +57,9 @@ class EoriUpdateController @Inject() (
           )
         )
       case (_, false, _)                       =>
+        logger.error(
+          s"eoriUpdate unauthorised request for CorrelationID: ${request.headers.get(xCorrelationID.toString).getOrElse("")}"
+        )
         Future.successful(
           Forbidden.withHeaders(
             date.toString           -> getCurrentHttpDate,
@@ -58,6 +67,9 @@ class EoriUpdateController @Inject() (
           )
         )
       case (_, _, None)                        =>
+        logger.error(
+          s"eoriUpdate missing request body for CorrelationID: ${request.headers.get(xCorrelationID.toString).getOrElse("")}"
+        )
         Future.successful(
           BadRequest.withHeaders(
             date.toString           -> getCurrentHttpDate,
@@ -67,6 +79,9 @@ class EoriUpdateController @Inject() (
       case (_, _, Some(json))                  =>
         json.validate[EoriUpdate] match {
           case JsError(errors) =>
+            logger.error(
+              s"eoriUpdate invalid request body for CorrelationID: ${request.headers.get(xCorrelationID.toString).getOrElse("")}"
+            )
             Future.successful(
               BadRequest.withHeaders(
                 date.toString           -> getCurrentHttpDate,
