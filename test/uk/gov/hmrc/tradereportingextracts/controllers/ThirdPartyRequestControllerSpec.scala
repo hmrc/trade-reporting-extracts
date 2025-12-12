@@ -480,7 +480,7 @@ class ThirdPartyRequestControllerSpec extends AnyFreeSpec with Matchers with Moc
 
       status(result) mustBe OK
 
-      verify(mockCustomsDataStoreConnector).getCompanyInformation(eqTo("GB2"))
+      verify(mockCustomsDataStoreConnector).getCompanyInformation(eqTo("GB1"))
       verify(mockCustomsDataStoreConnector).getNotificationEmail(eqTo("GB2"))
       verify(mockEmailConnector).sendEmailRequest(
         eqTo(EmailTemplate.ThirdPartyAccessUpdatedTp.id),
