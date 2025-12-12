@@ -104,7 +104,7 @@ class ThirdPartyRequestController @Inject() (
               if (updatedAuthorisedUser.copy(referenceName = prevAuthorisedUser.referenceName) != prevAuthorisedUser) {
                 for {
                   businessName    <-
-                    customsDataStoreConnector.getCompanyInformation(value.thirdPartyEORI).map { companyInfo =>
+                    customsDataStoreConnector.getCompanyInformation(value.userEORI).map { companyInfo =>
                       if (companyInfo.consent == "1") Map("businessName" -> companyInfo.name)
                       else Map()
                     }
