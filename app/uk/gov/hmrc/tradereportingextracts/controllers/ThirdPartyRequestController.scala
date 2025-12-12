@@ -23,7 +23,6 @@ import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.internalauth.client.BackendAuthComponents
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 import uk.gov.hmrc.tradereportingextracts.connectors.{CustomsDataStoreConnector, EmailConnector}
-import uk.gov.hmrc.tradereportingextracts.models.audit.ThirdPartyAccessUpdatedEvent
 import uk.gov.hmrc.tradereportingextracts.models.{AccessType, AuthorisedUser, EmailTemplate, NotificationEmail}
 import uk.gov.hmrc.tradereportingextracts.models.thirdParty.{ThirdPartyAddedConfirmation, ThirdPartyRequest}
 import uk.gov.hmrc.tradereportingextracts.repositories.ReportRequestRepository
