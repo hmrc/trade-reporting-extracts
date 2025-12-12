@@ -367,5 +367,127 @@ class ThirdPartyRequestControllerSpec extends AnyFreeSpec with Matchers with Moc
       status(result) mustBe BAD_REQUEST
       (contentAsJson(result) \ "error").as[String] must include("Authorised user not found")
     }
+
+    "When just reference name changed, email and report cleanup should not occur" in {
+
+      reset(mockCustomsDataStoreConnector, mockEmailConnector, mockReportRequestRepository)
+
+      val requestBody = Json.parse("""
+          |{
+          |  "userEORI":"GB1",
+          |  "thirdPartyEORI":"GB2",
+          |  "accessStart":"2025-09-09T00:00:00Z",
+          |  "accessType":["IMPORT"],
+          |  "referenceName":"newRef"
+          |}
+        """.stripMargin)
+
+      val confirmation = ThirdPartyAddedConfirmation(thirdPartyEori = "GB2")
+
+      when(mockStubBehaviour.stubAuth(Some(permission), EmptyRetrieval))
+        .thenReturn(Future.successful(EmptyRetrieval))
+
+      when(userService.getAuthorisedUser(any(), any()))
+        .thenReturn(
+          Future.successful(
+            Some(
+              AuthorisedUser(
+                "GB2",
+                Instant.parse("2025-09-09T00:00:00Z"),
+                None,
+                None,
+                None,
+                Set(AccessType.IMPORTS),
+                Some("OldRef")
+              )
+            )
+          )
+        )
+
+      when(userService.updateAuthorisedUser(any(), any()))
+        .thenReturn(Future.successful(confirmation))
+
+      when(mockCustomsDataStoreConnector.getCompanyInformation(any()))
+        .thenReturn(Future.successful(CompanyInformation(name = "Test Business", consent = "1")))
+      when(mockCustomsDataStoreConnector.getNotificationEmail(any()))
+        .thenReturn(Future.successful(NotificationEmail("test@email.com", LocalDateTime.now())))
+      when(mockEmailConnector.sendEmailRequest(any(), any(), any())(any()))
+        .thenReturn(Future.successful(Done))
+      when(mockReportRequestRepository.deleteReportsForThirdPartyRemoval(any(), any())(any()))
+        .thenReturn(Future.successful(true))
+
+      val result =
+        controller.editThirdPartyRequest()(FakeRequest().withHeaders(AUTHORIZATION -> "my-token").withBody(requestBody))
+
+      status(result) mustBe OK
+
+      verify(mockCustomsDataStoreConnector, times(0)).getCompanyInformation(any())
+      verify(mockCustomsDataStoreConnector, times(0)).getNotificationEmail(any())
+      verify(mockEmailConnector, times(0)).sendEmailRequest(any(), any(), any())(any())
+      verify(mockReportRequestRepository, times(0)).deleteReportsForThirdPartyRemoval(any(), any())(any())
+    }
+
+    "When anything but reference name changed, send email and cleanup third party reports" in {
+
+      reset(mockCustomsDataStoreConnector, mockEmailConnector, mockReportRequestRepository)
+
+      val requestBody = Json.parse("""
+          |{
+          |  "userEORI":"GB1",
+          |  "thirdPartyEORI":"GB2",
+          |  "accessStart":"2025-09-09T00:00:00Z",
+          |  "accessType":["EXPORT"],
+          |  "referenceName":"newRef"
+          |}
+        """.stripMargin)
+
+      val confirmation = ThirdPartyAddedConfirmation(thirdPartyEori = "GB2")
+
+      when(mockStubBehaviour.stubAuth(Some(permission), EmptyRetrieval))
+        .thenReturn(Future.successful(EmptyRetrieval))
+
+      when(userService.getAuthorisedUser(any(), any()))
+        .thenReturn(
+          Future.successful(
+            Some(
+              AuthorisedUser(
+                "GB2",
+                Instant.parse("2025-09-09T00:00:00Z"),
+                None,
+                None,
+                None,
+                Set(AccessType.IMPORTS),
+                Some("OldRef")
+              )
+            )
+          )
+        )
+
+      when(userService.updateAuthorisedUser(any(), any()))
+        .thenReturn(Future.successful(confirmation))
+
+      when(mockCustomsDataStoreConnector.getCompanyInformation(any()))
+        .thenReturn(Future.successful(CompanyInformation(name = "Test Business", consent = "1")))
+      when(mockCustomsDataStoreConnector.getNotificationEmail(any()))
+        .thenReturn(Future.successful(NotificationEmail("notify@test.com", LocalDateTime.now())))
+      when(mockEmailConnector.sendEmailRequest(any(), any(), any())(any()))
+        .thenReturn(Future.successful(Done))
+      when(mockReportRequestRepository.deleteReportsForThirdPartyRemoval(any(), any())(any()))
+        .thenReturn(Future.successful(true))
+
+      val result =
+        controller.editThirdPartyRequest()(FakeRequest().withHeaders(AUTHORIZATION -> "my-token").withBody(requestBody))
+
+      status(result) mustBe OK
+
+      verify(mockCustomsDataStoreConnector).getCompanyInformation(eqTo("GB2"))
+      verify(mockCustomsDataStoreConnector).getNotificationEmail(eqTo("GB2"))
+      verify(mockEmailConnector).sendEmailRequest(
+        eqTo(EmailTemplate.ThirdPartyAccessUpdatedTp.id),
+        eqTo("notify@test.com"),
+        eqTo(Map("businessName" -> "Test Business"))
+      )(any())
+      verify(mockReportRequestRepository).deleteReportsForThirdPartyRemoval(eqTo("GB1"), eqTo("GB2"))(any())
+    }
   }
 }
