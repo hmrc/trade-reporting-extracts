@@ -23,8 +23,10 @@ import scala.util.Try
 
 case class EoriHistory(eori: String, validFrom: Option[String], validUntil: Option[String]):
   def isValid: Boolean               = validFrom.isDefined && validUntil.isDefined
-  def validFromLocalDate: LocalDate  = validFrom.flatMap(date => Try(LocalDate.parse(date)).toOption).getOrElse(LocalDate.MIN)
-  def validUntilLocalDate: LocalDate = validUntil.flatMap(date => Try(LocalDate.parse(date)).toOption).getOrElse(LocalDate.MAX)
+  def validFromLocalDate: LocalDate  =
+    validFrom.flatMap(date => Try(LocalDate.parse(date)).toOption).getOrElse(LocalDate.MIN)
+  def validUntilLocalDate: LocalDate =
+    validUntil.flatMap(date => Try(LocalDate.parse(date)).toOption).getOrElse(LocalDate.MAX)
 
 object EoriHistory {
   implicit val format: OFormat[EoriHistory] = Json.format[EoriHistory]
