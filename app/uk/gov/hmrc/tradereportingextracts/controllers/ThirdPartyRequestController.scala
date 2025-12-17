@@ -114,7 +114,7 @@ class ThirdPartyRequestController @Inject() (
                                          logger.info(s"No notification email found for third party EORI after third party edited")
                                        case _                                        =>
                                          emailConnector
-                                           .sendEmailRequest(EmailTemplate.ThirdPartyAccessUpdatedTp.id, thirdPartyEmail, businessName)
+                                           .sendEmailRequest(EmailTemplate.ThirdPartyAccessEditedTp.id, thirdPartyEmail, businessName)
                                      }
                   _               <- reportRequestRepository
                                        .deleteReportsForThirdPartyRemoval(value.userEORI, updatedAuthorisedUser.eori)
