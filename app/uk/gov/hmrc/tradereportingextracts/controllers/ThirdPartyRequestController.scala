@@ -29,6 +29,7 @@ import uk.gov.hmrc.tradereportingextracts.repositories.ReportRequestRepository
 import uk.gov.hmrc.tradereportingextracts.services.UserService
 import uk.gov.hmrc.tradereportingextracts.utils.ApplicationConstants
 import uk.gov.hmrc.tradereportingextracts.utils.PermissionsUtil.writePermission
+import uk.gov.hmrc.tradereportingextracts.services.AuditService
 
 import javax.inject.Inject
 import scala.collection.immutable.Map
@@ -66,7 +67,7 @@ class ThirdPartyRequestController @Inject() (
             thirdPartyEmail          <- customsDataStoreConnector.getNotificationEmail(value.thirdPartyEORI).map(_.address)
             _                         = thirdPartyEmail match {
                                           case thirdPartyEmail if thirdPartyEmail == "" =>
-                                            logger.info(s"No notification email found for third party EORI")
+                                            logger.info(s"No notification email found for third party EORI after third party added")
                                           case _                                        =>
                                             emailConnector.sendEmailRequest(EmailTemplate.ThirdPartyAddedTp.id, thirdPartyEmail, Map())
                                         }
@@ -84,22 +85,41 @@ class ThirdPartyRequestController @Inject() (
       request.body.validate[ThirdPartyRequest] match {
         case JsSuccess(value, _) =>
           (for {
-            maybeAuthorisedUser   <- userService.getAuthorisedUser(value.userEORI, value.thirdPartyEORI)
-            updatedAuthorisedUser <- maybeAuthorisedUser match {
-                                       case Some(prevDetails) =>
-                                         val updatedAuthorisedUser = prevDetails.copy(
-                                           accessStart = value.accessStart,
-                                           accessEnd = value.accessEnd,
-                                           reportDataStart = value.reportDateStart,
-                                           reportDataEnd = value.reportDateEnd,
-                                           accessType = getAccessType(value.accessType),
-                                           referenceName = value.referenceName
-                                         )
-                                         Future.successful(updatedAuthorisedUser)
-                                       case None              =>
-                                         Future.failed(new Exception("Authorised user not found"))
+            maybeAuthorisedUser  <- userService.getAuthorisedUser(value.userEORI, value.thirdPartyEORI)
+            prevAuthorisedUser   <- maybeAuthorisedUser match {
+                                      case Some(value) => Future.successful(value)
+                                      case None        => Future.failed(new Exception("Authorised user not found"))
+                                    }
+            updatedAuthorisedUser = prevAuthorisedUser.copy(
+                                      accessStart = value.accessStart,
+                                      accessEnd = value.accessEnd,
+                                      reportDataStart = value.reportDateStart,
+                                      reportDataEnd = value.reportDateEnd,
+                                      accessType = getAccessType(value.accessType),
+                                      referenceName = value.referenceName
+                                    )
+            _                    <- userService.updateAuthorisedUser(value.userEORI, updatedAuthorisedUser)
+            // only send email and handle report cleanup if there are any changes but reference name
+            _                     =
+              if (updatedAuthorisedUser.copy(referenceName = prevAuthorisedUser.referenceName) != prevAuthorisedUser) {
+                for {
+                  businessName    <-
+                    customsDataStoreConnector.getCompanyInformation(value.userEORI).map { companyInfo =>
+                      if (companyInfo.consent == "1") Map("businessName" -> companyInfo.name)
+                      else Map()
+                    }
+                  thirdPartyEmail <- customsDataStoreConnector.getNotificationEmail(value.thirdPartyEORI).map(_.address)
+                  _                = thirdPartyEmail match {
+                                       case thirdPartyEmail if thirdPartyEmail == "" =>
+                                         logger.info(s"No notification email found for third party EORI after third party edited")
+                                       case _                                        =>
+                                         emailConnector
+                                           .sendEmailRequest(EmailTemplate.ThirdPartyAccessEditedTp.id, thirdPartyEmail, businessName)
                                      }
-            _                     <- userService.updateAuthorisedUser(value.userEORI, updatedAuthorisedUser)
+                  _               <- reportRequestRepository
+                                       .deleteReportsForThirdPartyRemoval(value.userEORI, updatedAuthorisedUser.eori)
+                } yield ()
+              }
           } yield Ok(Json.toJson(ThirdPartyAddedConfirmation(value.thirdPartyEORI))))
             .recover { case ex =>
               logger.error(s"Error editing third party request: ${ex.getMessage}", ex)
@@ -133,13 +153,13 @@ class ThirdPartyRequestController @Inject() (
                 case true =>
                   for {
                     thirdPartyEmail <- customsDataStoreConnector.getNotificationEmail(thirdPartyEori).map(_.address)
-                    businessName    <- customsDataStoreConnector.getCompanyInformation(thirdPartyEori).map { companyInfo =>
+                    businessName    <- customsDataStoreConnector.getCompanyInformation(eori).map { companyInfo =>
                                          if (companyInfo.consent == "1") Map("businessName" -> companyInfo.name)
                                          else Map()
                                        }
                     _                = thirdPartyEmail match {
                                          case thirdPartyEmail if thirdPartyEmail == "" =>
-                                           logger.info(s"No notification email found for third party EORI")
+                                           logger.info(s"No notification email found for third party EORI after third party deleted")
                                          case _                                        =>
                                            emailConnector
                                              .sendEmailRequest(EmailTemplate.ThirdPartyAccessRemoved.id, thirdPartyEmail, businessName)
