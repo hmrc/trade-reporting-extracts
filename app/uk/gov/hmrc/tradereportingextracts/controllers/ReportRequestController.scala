@@ -36,6 +36,7 @@ class ReportRequestController @Inject() (
   reportRequestTransformationService: ReportRequestTransformationService,
   eisService: EisService,
   auditService: AuditService,
+  userService: UserService,
   appConfig: AppConfig
 )(implicit executionContext: ExecutionContext)
     extends BackendController(cc) {
@@ -46,7 +47,16 @@ class ReportRequestController @Inject() (
         val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
         val startDate = LocalDate.parse(value.reportStartDate, formatter)
         val endDate   = LocalDate.parse(value.reportEndDate, formatter)
+
+        // Update TTL for trader's EORI when accessed by third-party
+        val traderTtlUpdate = value.whichEori match {
+          case Some(traderEori) if traderEori != value.eori =>
+            userService.keepAlive(traderEori).recover(_ => false)
+          case _                                            => Future.successful(true)
+        }
+
         (for {
+          _              <- traderTtlUpdate
           userEmail      <- customsDataStoreConnector.getNotificationEmail(value.eori).map(_.address)
           eoriHistory    <- customsDataStoreConnector
                               .getEoriHistory(value.whichEori.get)

@@ -30,7 +30,7 @@ import uk.gov.hmrc.tradereportingextracts.config.AppConfig
 import uk.gov.hmrc.tradereportingextracts.connectors.CustomsDataStoreConnector
 import uk.gov.hmrc.tradereportingextracts.models.audit.ReportRequestSubmittedEvent
 import uk.gov.hmrc.tradereportingextracts.models.{EoriHistory, EoriHistoryResponse, NotificationEmail, ReportRequest}
-import uk.gov.hmrc.tradereportingextracts.services.{EisService, ReportRequestService, RequestReferenceService}
+import uk.gov.hmrc.tradereportingextracts.services.{EisService, ReportRequestService, RequestReferenceService, UserService}
 import uk.gov.hmrc.tradereportingextracts.utils.{SpecBase, WireMockHelper}
 
 import java.time.LocalDateTime
@@ -41,6 +41,7 @@ class ReportRequestControllerSpec extends SpecBase with WireMockHelper {
   val mockReportRequestService: ReportRequestService           = mock[ReportRequestService]
   val mockRequestReferenceService: RequestReferenceService     = mock[RequestReferenceService]
   val mockEisService: EisService                               = mock[EisService]
+  val mockUserService: UserService                             = mock[UserService]
   val mockAuditConnector: AuditConnector                       = mock[AuditConnector]
   val mockAppConfig: AppConfig                                 = mock[AppConfig]
 
@@ -50,6 +51,7 @@ class ReportRequestControllerSpec extends SpecBase with WireMockHelper {
     reset(mockCustomsDataStoreConnector)
     reset(mockRequestReferenceService)
     reset(mockEisService)
+    reset(mockUserService)
     reset(mockAppConfig)
   }
 
@@ -59,6 +61,7 @@ class ReportRequestControllerSpec extends SpecBase with WireMockHelper {
       bind[ReportRequestService].toInstance(mockReportRequestService),
       bind[RequestReferenceService].toInstance(mockRequestReferenceService),
       bind[EisService].toInstance(mockEisService),
+      bind[UserService].toInstance(mockUserService),
       bind[AppConfig].toInstance(mockAppConfig)
     )
     .build()
@@ -328,6 +331,131 @@ class ReportRequestControllerSpec extends SpecBase with WireMockHelper {
       val thrown = route(app, request).value.failed.futureValue
       thrown mustBe a[RuntimeException]
       thrown.getMessage must include("CDS Unavailable")
+    }
+
+    "update third-party EORI TTL when processing third-party report request" in {
+      val inputJson: JsValue = Json.parse(
+        """
+          {
+            "eori": "GB123456789014",
+            "reportStartDate": "2025-04-16",
+            "reportEndDate": "2025-05-16",
+            "whichEori": "GB987654321000",
+            "reportName": "ThirdPartyReport",
+            "eoriRole": ["declarant"],
+            "reportType": ["importHeader"],
+            "dataType": "import",
+            "additionalEmail": ["email1@gmail.com"]
+          }
+        """
+      )
+
+      when(mockUserService.keepAlive(eqTo("GB987654321000")))
+        .thenReturn(Future.successful(true))
+
+      when(mockCustomsDataStoreConnector.getNotificationEmail(any()))
+        .thenReturn(Future.successful(NotificationEmail("email@example.com", LocalDateTime.now())))
+
+      when(mockCustomsDataStoreConnector.getEoriHistory(any()))
+        .thenReturn(
+          Future.successful(
+            EoriHistoryResponse(
+              Seq(
+                EoriHistory(
+                  "GB987654321000",
+                  Some("2023-02-01"),
+                  Some("2023-03-01")
+                )
+              )
+            )
+          )
+        )
+
+      when(mockRequestReferenceService.generateUnique())
+        .thenReturn(Future.successful("REF-00000001"))
+
+      when(mockReportRequestService.createAll(any())(any()))
+        .thenReturn(Future.successful(true))
+
+      val reportRequestCaptor = ArgumentCaptor.forClass(classOf[ReportRequest])
+      when(mockEisService.requestTraderReport(any(), reportRequestCaptor.capture())(any()))
+        .thenAnswer(_ => Future.successful(reportRequestCaptor.getValue))
+
+      doNothing()
+        .when(mockAuditConnector)
+        .sendExplicitAudit(any[String], any[ReportRequestSubmittedEvent])(any(), any(), any())
+
+      val request = FakeRequest(POST, "/trade-reporting-extracts/create-report-request")
+        .withHeaders("Content-Type" -> "application/json")
+        .withJsonBody(inputJson)
+
+      val result = route(app, request).value
+
+      status(result) mustBe OK
+
+      // Verify that keepAlive was called for the trader's EORI (whichEori)
+      verify(mockUserService).keepAlive("GB987654321000")
+    }
+
+    "not update TTL when request is not for third-party" in {
+      val inputJson: JsValue = Json.parse(
+        """
+          {
+            "eori": "GB123456789014",
+            "reportStartDate": "2025-04-16",
+            "reportEndDate": "2025-05-16",
+            "whichEori": "GB123456789014",
+            "reportName": "MyReport",
+            "eoriRole": ["declarant"],
+            "reportType": ["importHeader"],
+            "dataType": "import",
+            "additionalEmail": ["email1@gmail.com"]
+          }
+        """
+      )
+
+      when(mockCustomsDataStoreConnector.getNotificationEmail(any()))
+        .thenReturn(Future.successful(NotificationEmail("email@example.com", LocalDateTime.now())))
+
+      when(mockCustomsDataStoreConnector.getEoriHistory(any()))
+        .thenReturn(
+          Future.successful(
+            EoriHistoryResponse(
+              Seq(
+                EoriHistory(
+                  "GB123456789014",
+                  Some("2023-02-01"),
+                  Some("2023-03-01")
+                )
+              )
+            )
+          )
+        )
+
+      when(mockRequestReferenceService.generateUnique())
+        .thenReturn(Future.successful("REF-00000001"))
+
+      when(mockReportRequestService.createAll(any())(any()))
+        .thenReturn(Future.successful(true))
+
+      val reportRequestCaptor = ArgumentCaptor.forClass(classOf[ReportRequest])
+      when(mockEisService.requestTraderReport(any(), reportRequestCaptor.capture())(any()))
+        .thenAnswer(_ => Future.successful(reportRequestCaptor.getValue))
+
+      doNothing()
+        .when(mockAuditConnector)
+        .sendExplicitAudit(any[String], any[ReportRequestSubmittedEvent])(any(), any(), any())
+
+      val request = FakeRequest(POST, "/trade-reporting-extracts/create-report-request")
+        .withHeaders("Content-Type" -> "application/json")
+        .withJsonBody(inputJson)
+
+      val result = route(app, request).value
+
+      status(result) mustBe OK
+
+      // Verify that keepAlive was NOT called since eori == whichEori
+      verify(mockUserService, never()).keepAlive(any())
     }
   }
 

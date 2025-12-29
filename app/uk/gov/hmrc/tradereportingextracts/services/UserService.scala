@@ -48,6 +48,9 @@ class UserService @Inject() (
   def deleteByEori(eori: String): Future[Boolean] =
     userRepository.deleteByEori(eori)
 
+  def keepAlive(eori: String): Future[Boolean] =
+    userRepository.keepAlive(eori)
+
   def deleteAuthorisedUser(eori: String, authorisedEori: String): Future[Boolean] =
     userRepository.deleteAuthorisedUser(eori, authorisedEori)
 
