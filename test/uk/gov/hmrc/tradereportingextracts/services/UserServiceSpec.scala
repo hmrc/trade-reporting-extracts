@@ -17,12 +17,12 @@
 package uk.gov.hmrc.tradereportingextracts.services
 
 import org.mockito.ArgumentMatchers.any
-import org.mockito.Mockito.{verify, when}
+import org.mockito.Mockito.{reset, verify, when}
 import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}
 import org.scalatest.freespec.AnyFreeSpec
 import org.scalatest.matchers.must.Matchers
 import org.scalatest.matchers.should.Matchers.shouldBe
-import org.scalatest.{OptionValues, TryValues}
+import org.scalatest.{BeforeAndAfterEach, OptionValues, TryValues}
 import org.scalatestplus.mockito.MockitoSugar
 import org.scalatestplus.mockito.MockitoSugar.mock
 import uk.gov.hmrc.tradereportingextracts.connectors.CustomsDataStoreConnector
@@ -41,16 +41,22 @@ class UserServiceSpec
     with TryValues
     with OptionValues
     with ScalaFutures
-    with IntegrationPatience {
+    with IntegrationPatience
+    with BeforeAndAfterEach {
 
   implicit val ec: ExecutionContext = ExecutionContext.global
 
-  "UserService" - {
+  val mockRepository                = mock[UserRepository]
+  val mockCustomsDataStoreConnector = mock[CustomsDataStoreConnector]
+  val mockReportRequestRepository   = mock[ReportRequestRepository]
+  val service                       = new UserService(mockRepository, mockReportRequestRepository, mockCustomsDataStoreConnector)
 
-    val mockRepository                = mock[UserRepository]
-    val mockCustomsDataStoreConnector = mock[CustomsDataStoreConnector]
-    val mockReportRequestRepository   = mock[ReportRequestRepository]
-    val service                       = new UserService(mockRepository, mockReportRequestRepository, mockCustomsDataStoreConnector)
+  override def beforeEach(): Unit = {
+    super.beforeEach()
+    reset(mockRepository, mockCustomsDataStoreConnector, mockReportRequestRepository)
+  }
+
+  "UserService" - {
 
     val eori            = "EORI1234"
     val authorisedEoris = Seq("AUTH-EORI-1", "AUTH-EORI-2")
@@ -141,6 +147,27 @@ class UserServiceSpec
         val result = service.deleteByEori(eori)
 
         result.futureValue mustEqual false
+      }
+    }
+
+    "keepAlive" - {
+
+      "must update user TTL when repository returns true" in {
+        when(mockRepository.keepAlive(eori)).thenReturn(Future.successful(true))
+
+        val result = service.keepAlive(eori)
+
+        result.futureValue mustEqual true
+        verify(mockRepository).keepAlive(eori)
+      }
+
+      "must fail when repository returns false" in {
+        when(mockRepository.keepAlive(eori)).thenReturn(Future.successful(false))
+
+        val result = service.keepAlive(eori)
+
+        result.futureValue mustEqual false
+        verify(mockRepository).keepAlive(eori)
       }
     }
 
