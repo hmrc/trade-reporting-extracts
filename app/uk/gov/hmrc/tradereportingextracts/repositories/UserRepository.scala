@@ -77,6 +77,17 @@ class UserRepository @Inject() (appConfig: AppConfig, mongoComponent: MongoCompo
     }
   }
 
+  def keepAlive(eori: String): Future[Boolean] = Mdc.preservingMdc {
+    val now = java.time.Instant.now()
+    collection
+      .updateOne(
+        filter = Filters.equal("eori", eori),
+        update = Updates.set("accessDate", now)
+      )
+      .toFuture()
+      .map(_.getModifiedCount > 0)
+  }
+
   def update(user: User): Future[Boolean] = Mdc.preservingMdc {
     collection
       .replaceOne(Filters.equal("eori", user.eori), user)

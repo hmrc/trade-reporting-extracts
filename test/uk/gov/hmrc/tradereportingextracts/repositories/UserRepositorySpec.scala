@@ -194,6 +194,25 @@ class UserRepositorySpec
       }
     }
 
+    "keepAlive" should {
+      "update accessDate for existing user and return true" in {
+        val existingUser = user.copy(accessDate = Instant.now().minus(1, ChronoUnit.HOURS))
+        userRepository.insert(existingUser).futureValue
+
+        val result = userRepository.keepAlive(existingUser.eori).futureValue
+        result mustBe true
+
+        // Verify the accessDate was updated
+        val updatedUser = userRepository.findByEori(existingUser.eori).futureValue.get
+        updatedUser.accessDate.compareTo(Instant.now().minusSeconds(5)) >= 0 mustBe true
+      }
+
+      "return false when user does not exist" in {
+        val result = userRepository.keepAlive("non-existent-eori").futureValue
+        result mustBe false
+      }
+    }
+
     "addAuthorisedUser" should {
       "add a new authorised user to an existing user" in {
         val baseUser = user.copy(authorisedUsers = Seq.empty)
