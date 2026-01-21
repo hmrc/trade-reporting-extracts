@@ -28,13 +28,13 @@ import java.time.Instant
 
 class AdditionalEmailRecordSpec extends PlaySpec with GuiceOneAppPerSuite with Matchers {
 
-  lazy val cryptoProvider: CryptoProvider = app.injector.instanceOf[CryptoProvider]
+  lazy val cryptoProvider: CryptoProvider       = app.injector.instanceOf[CryptoProvider]
   implicit val crypto: Encrypter with Decrypter = cryptoProvider.get
 
-  val now = Instant.parse("2026-01-20T10:30:00Z")
+  val now        = Instant.parse("2026-01-20T10:30:00Z")
   val testEmail1 = "test1@example.com"
   val testEmail2 = "test2@example.com"
-  val testEori = "GB123456789000"
+  val testEori   = "GB123456789000"
 
   val emailEntry1 = AdditionalEmailEntry(
     email = SensitiveString(testEmail1),
@@ -60,8 +60,8 @@ class AdditionalEmailRecordSpec extends PlaySpec with GuiceOneAppPerSuite with M
     }
 
     "serialize and deserialize to/from JSON correctly" in {
-      val entryFormat = AdditionalEmailFormats.formats._1
-      val json = Json.toJson(emailEntry1)(entryFormat)
+      val entryFormat       = AdditionalEmailFormats.formats._1
+      val json              = Json.toJson(emailEntry1)(entryFormat)
       val deserializedEntry = json.as[AdditionalEmailEntry](entryFormat)
 
       deserializedEntry.email.decryptedValue mustEqual emailEntry1.email.decryptedValue
@@ -95,8 +95,8 @@ class AdditionalEmailRecordSpec extends PlaySpec with GuiceOneAppPerSuite with M
     }
 
     "serialize and deserialize to/from JSON correctly" in {
-      val recordFormat = AdditionalEmailFormats.formats._2
-      val json = Json.toJson(emailRecord)(recordFormat)
+      val recordFormat       = AdditionalEmailFormats.formats._2
+      val json               = Json.toJson(emailRecord)(recordFormat)
       val deserializedRecord = json.as[AdditionalEmailRecord](recordFormat)
 
       deserializedRecord.traderEori mustEqual emailRecord.traderEori
@@ -107,9 +107,9 @@ class AdditionalEmailRecordSpec extends PlaySpec with GuiceOneAppPerSuite with M
     }
 
     "handle empty email list" in {
-      val emptyRecord = AdditionalEmailRecord(testEori, Seq.empty, now)
+      val emptyRecord  = AdditionalEmailRecord(testEori, Seq.empty, now)
       val recordFormat = AdditionalEmailFormats.formats._2
-      val json = Json.toJson(emptyRecord)(recordFormat)
+      val json         = Json.toJson(emptyRecord)(recordFormat)
       val deserialized = json.as[AdditionalEmailRecord](recordFormat)
 
       deserialized.traderEori mustEqual testEori
@@ -120,13 +120,13 @@ class AdditionalEmailRecordSpec extends PlaySpec with GuiceOneAppPerSuite with M
 
   "AdditionalEmailFormats" should {
     "provide correct format tuples" in {
-      val formats = AdditionalEmailFormats.formats
+      val formats                     = AdditionalEmailFormats.formats
       val (entryFormat, recordFormat) = formats
 
-      entryFormat must not be null
+      entryFormat  must not be null
       recordFormat must not be null
 
-      val entryJson = Json.toJson(emailEntry1)(entryFormat)
+      val entryJson  = Json.toJson(emailEntry1)(entryFormat)
       val recordJson = Json.toJson(emailRecord)(recordFormat)
 
       entryJson.as[AdditionalEmailEntry](entryFormat) mustEqual emailEntry1
@@ -143,7 +143,7 @@ class AdditionalEmailRecordSpec extends PlaySpec with GuiceOneAppPerSuite with M
       // The encrypted values will be different, but both should deserialize to same original data
       val deserialized1 = json1.as[AdditionalEmailRecord](formats1._2)
       val deserialized2 = json2.as[AdditionalEmailRecord](formats2._2)
-      
+
       deserialized1 mustEqual emailRecord
       deserialized2 mustEqual emailRecord
       deserialized1 mustEqual deserialized2

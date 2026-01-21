@@ -37,19 +37,17 @@ case class AdditionalEmailEntry(
 object AdditionalEmailFormats:
   def formats(using crypto: Encrypter & Decrypter) = {
     import MongoInstantFormat.*
-    given sensitiveFormat: Format[SensitiveString] = 
+    given sensitiveFormat: Format[SensitiveString]    =
       JsonEncryption.sensitiveEncrypterDecrypter(SensitiveString.apply)
-    given entryFormat: Format[AdditionalEmailEntry] = Json.format[AdditionalEmailEntry]
+    given entryFormat: Format[AdditionalEmailEntry]   = Json.format[AdditionalEmailEntry]
     given recordFormat: Format[AdditionalEmailRecord] = Json.format[AdditionalEmailRecord]
     (entryFormat, recordFormat)
   }
 
 object AdditionalEmailRecord:
-  def encryptedFormat(using crypto: Encrypter & Decrypter): Format[AdditionalEmailRecord] = {
+  def encryptedFormat(using crypto: Encrypter & Decrypter): Format[AdditionalEmailRecord] =
     AdditionalEmailFormats.formats._2
-  }
 
 object AdditionalEmailEntry:
-  def encryptedFormat(using crypto: Encrypter & Decrypter): Format[AdditionalEmailEntry] = {
+  def encryptedFormat(using crypto: Encrypter & Decrypter): Format[AdditionalEmailEntry] =
     AdditionalEmailFormats.formats._1
-  }

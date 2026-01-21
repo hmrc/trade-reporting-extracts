@@ -39,10 +39,10 @@ class AdditionalEmailServiceSpec
   implicit val ec: ExecutionContext = ExecutionContext.global
 
   val mockRepository: AdditionalEmailRepository = mock[AdditionalEmailRepository]
-  val service = new AdditionalEmailService(mockRepository)
+  val service                                   = new AdditionalEmailService(mockRepository)
 
-  val testEori = "GB123456789000"
-  val testEmail = "test@example.com"
+  val testEori     = "GB123456789000"
+  val testEmail    = "test@example.com"
   val anotherEmail = "another@example.com"
 
   override def beforeEach(): Unit = {

@@ -35,9 +35,9 @@ import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
 class AdditionalEmailRepository @Inject() (
-  appConfig: AppConfig, 
+  appConfig: AppConfig,
   mongoComponent: MongoComponent
-)(using 
+)(using
   ec: ExecutionContext,
   crypto: Encrypter with Decrypter
 ) extends PlayMongoRepository[AdditionalEmailRecord](
@@ -84,12 +84,12 @@ class AdditionalEmailRepository @Inject() (
 
   def getEmailsForEori(eori: String): Future[Seq[String]] = Mdc.preservingMdc {
     for {
-      _ <- cleanExpiredEmails(eori)
+      _      <- cleanExpiredEmails(eori)
       result <- findByEori(eori).map {
-        case Some(record) => 
-          record.additionalEmails.map(_.email.decryptedValue)
-        case None => Seq.empty
-      }
+                  case Some(record) =>
+                    record.additionalEmails.map(_.email.decryptedValue)
+                  case None         => Seq.empty
+                }
     } yield result
   }
 
@@ -107,45 +107,45 @@ class AdditionalEmailRepository @Inject() (
   def addEmail(eori: String, email: String): Future[Boolean] = Mdc.preservingMdc {
     val now = Instant.now()
     for {
-      _ <- cleanExpiredEmails(eori)
+      _      <- cleanExpiredEmails(eori)
       result <- findByEori(eori).flatMap {
-      case Some(existingRecord) =>
-        val existingEmailIndex = existingRecord.additionalEmails.indexWhere(_.email.decryptedValue == email)
-        if (existingEmailIndex >= 0) {
-          val updatedEmails = existingRecord.additionalEmails.updated(
-            existingEmailIndex,
-            existingRecord.additionalEmails(existingEmailIndex).copy(accessDate = now)
-          )
-          val updatedRecord = existingRecord.copy(
-            additionalEmails = updatedEmails,
-            lastAccessed = now
-          )
-          upsert(updatedRecord)
-        } else {
-          val encryptedEmail = SensitiveString(email)
-          val newEmailEntry = AdditionalEmailEntry(encryptedEmail, now)
-          val updatedRecord = existingRecord.copy(
-            additionalEmails = existingRecord.additionalEmails :+ newEmailEntry,
-            lastAccessed = now
-          )
-          upsert(updatedRecord)
-        }
-      case None =>
-        val encryptedEmail = SensitiveString(email)
-        val emailEntry = AdditionalEmailEntry(encryptedEmail, now)
-        val newRecord = AdditionalEmailRecord(
-          traderEori = eori,
-          additionalEmails = Seq(emailEntry),
-          lastAccessed = now
-        )
-        upsert(newRecord)
-      }
+                  case Some(existingRecord) =>
+                    val existingEmailIndex = existingRecord.additionalEmails.indexWhere(_.email.decryptedValue == email)
+                    if (existingEmailIndex >= 0) {
+                      val updatedEmails = existingRecord.additionalEmails.updated(
+                        existingEmailIndex,
+                        existingRecord.additionalEmails(existingEmailIndex).copy(accessDate = now)
+                      )
+                      val updatedRecord = existingRecord.copy(
+                        additionalEmails = updatedEmails,
+                        lastAccessed = now
+                      )
+                      upsert(updatedRecord)
+                    } else {
+                      val encryptedEmail = SensitiveString(email)
+                      val newEmailEntry  = AdditionalEmailEntry(encryptedEmail, now)
+                      val updatedRecord  = existingRecord.copy(
+                        additionalEmails = existingRecord.additionalEmails :+ newEmailEntry,
+                        lastAccessed = now
+                      )
+                      upsert(updatedRecord)
+                    }
+                  case None                 =>
+                    val encryptedEmail = SensitiveString(email)
+                    val emailEntry     = AdditionalEmailEntry(encryptedEmail, now)
+                    val newRecord      = AdditionalEmailRecord(
+                      traderEori = eori,
+                      additionalEmails = Seq(emailEntry),
+                      lastAccessed = now
+                    )
+                    upsert(newRecord)
+                }
     } yield result
   }
 
   def removeEmail(eori: String, email: String): Future[Boolean] = Mdc.preservingMdc {
     val now = Instant.now()
-    
+
     collection
       .updateOne(
         filter = Filters.equal("traderEori", eori),
@@ -162,31 +162,31 @@ class AdditionalEmailRepository @Inject() (
     val now = Instant.now()
 
     for {
-      _ <- cleanExpiredEmails(eori)
+      _      <- cleanExpiredEmails(eori)
       result <- findByEori(eori).flatMap {
-        case Some(existingRecord) =>
-          val existingEmailIndex = existingRecord.additionalEmails.indexWhere(_.email.decryptedValue == email)
-          if (existingEmailIndex >= 0) {
-            val updatedEmails = existingRecord.additionalEmails.updated(
-              existingEmailIndex,
-              existingRecord.additionalEmails(existingEmailIndex).copy(accessDate = now)
-            )
-            val updatedRecord = existingRecord.copy(
-              additionalEmails = updatedEmails,
-              lastAccessed = now
-            )
-            upsert(updatedRecord)
-          } else {
-            Future.successful(false)
-          }
-        case None => Future.successful(false)
-      }
+                  case Some(existingRecord) =>
+                    val existingEmailIndex = existingRecord.additionalEmails.indexWhere(_.email.decryptedValue == email)
+                    if (existingEmailIndex >= 0) {
+                      val updatedEmails = existingRecord.additionalEmails.updated(
+                        existingEmailIndex,
+                        existingRecord.additionalEmails(existingEmailIndex).copy(accessDate = now)
+                      )
+                      val updatedRecord = existingRecord.copy(
+                        additionalEmails = updatedEmails,
+                        lastAccessed = now
+                      )
+                      upsert(updatedRecord)
+                    } else {
+                      Future.successful(false)
+                    }
+                  case None                 => Future.successful(false)
+                }
     } yield result
   }
 
   def updateLastAccessed(eori: String): Future[Boolean] = Mdc.preservingMdc {
     val now = Instant.now()
-    
+
     collection
       .updateOne(
         filter = Filters.equal("traderEori", eori),

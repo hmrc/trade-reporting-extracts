@@ -16,7 +16,6 @@
 
 package uk.gov.hmrc.tradereportingextracts.services
 
-
 import uk.gov.hmrc.tradereportingextracts.repositories.AdditionalEmailRepository
 
 import javax.inject.{Inject, Singleton}
@@ -27,11 +26,10 @@ class AdditionalEmailService @Inject() (
   additionalEmailRepository: AdditionalEmailRepository
 )(using ec: ExecutionContext):
 
-  def getAdditionalEmails(eori: String): Future[Seq[String]] = {
+  def getAdditionalEmails(eori: String): Future[Seq[String]] =
     additionalEmailRepository.getEmailsForEori(eori)
-  }
 
-  def addAdditionalEmail(eori: String, email: String): Future[Boolean] = {
+  def addAdditionalEmail(eori: String, email: String): Future[Boolean] =
     getAdditionalEmails(eori).flatMap { existingEmails =>
       if (existingEmails.contains(email)) {
         additionalEmailRepository.updateEmailAccessDate(eori, email)
@@ -39,20 +37,15 @@ class AdditionalEmailService @Inject() (
         additionalEmailRepository.addEmail(eori, email)
       }
     }
-  }
 
-  def removeAdditionalEmail(eori: String, email: String): Future[Boolean] = {
+  def removeAdditionalEmail(eori: String, email: String): Future[Boolean] =
     additionalEmailRepository.removeEmail(eori, email)
-  }
 
-  def updateEmailAccessDate(eori: String, email: String): Future[Boolean] = {
+  def updateEmailAccessDate(eori: String, email: String): Future[Boolean] =
     additionalEmailRepository.updateEmailAccessDate(eori, email)
-  }
 
-  def updateLastAccessed(eori: String): Future[Boolean] = {
+  def updateLastAccessed(eori: String): Future[Boolean] =
     additionalEmailRepository.updateLastAccessed(eori)
-  }
 
-  def deleteAllEmailsForEori(eori: String): Future[Boolean] = {
+  def deleteAllEmailsForEori(eori: String): Future[Boolean] =
     additionalEmailRepository.deleteByEori(eori)
-  }

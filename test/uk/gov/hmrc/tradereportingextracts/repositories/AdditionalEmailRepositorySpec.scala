@@ -31,26 +31,27 @@ import java.time.Instant
 import java.time.temporal.ChronoUnit
 import scala.concurrent.ExecutionContext.Implicits.global
 
-class AdditionalEmailRepositorySpec extends PlaySpec 
-  with GuiceOneAppPerSuite 
-  with Matchers 
-  with ScalaFutures 
-  with IntegrationPatience 
-  with DefaultPlayMongoRepositorySupport[AdditionalEmailRecord] {
+class AdditionalEmailRepositorySpec
+    extends PlaySpec
+    with GuiceOneAppPerSuite
+    with Matchers
+    with ScalaFutures
+    with IntegrationPatience
+    with DefaultPlayMongoRepositorySupport[AdditionalEmailRecord] {
 
-  lazy val appConfig: AppConfig = app.injector.instanceOf[AppConfig]
-  lazy val cryptoProvider: CryptoProvider = app.injector.instanceOf[CryptoProvider]
+  lazy val appConfig: AppConfig                 = app.injector.instanceOf[AppConfig]
+  lazy val cryptoProvider: CryptoProvider       = app.injector.instanceOf[CryptoProvider]
   implicit val crypto: Encrypter with Decrypter = cryptoProvider.get
 
   override protected val repository = new AdditionalEmailRepository(appConfig, mongoComponent)
-  private val repo = repository.asInstanceOf[AdditionalEmailRepository]
+  private val repo                  = repository.asInstanceOf[AdditionalEmailRepository]
 
-  val testEori1 = "GB123456789000"
-  val testEori2 = "GB987654321000"
+  val testEori1  = "GB123456789000"
+  val testEori2  = "GB987654321000"
   val testEmail1 = "test1@example.com"
   val testEmail2 = "test2@example.com"
   val testEmail3 = "test3@example.com"
-  val now = Instant.now()
+  val now        = Instant.now()
 
   "AdditionalEmailRepository" should {
 
@@ -63,10 +64,10 @@ class AdditionalEmailRepositorySpec extends PlaySpec
 
       "return the record when it exists for EORI" in {
         val emailEntry = AdditionalEmailEntry(SensitiveString(testEmail1), now)
-        val record = AdditionalEmailRecord(testEori1, Seq(emailEntry), now)
-        
+        val record     = AdditionalEmailRecord(testEori1, Seq(emailEntry), now)
+
         repo.collection.insertOne(record).toFuture().futureValue
-        
+
         val result = repo.findByEori(testEori1).futureValue
         result mustBe defined
         result.get.traderEori mustEqual testEori1
@@ -85,10 +86,10 @@ class AdditionalEmailRepositorySpec extends PlaySpec
       "return decrypted emails for existing EORI" in {
         val emailEntry1 = AdditionalEmailEntry(SensitiveString(testEmail1), now)
         val emailEntry2 = AdditionalEmailEntry(SensitiveString(testEmail2), now)
-        val record = AdditionalEmailRecord(testEori1, Seq(emailEntry1, emailEntry2), now)
-        
+        val record      = AdditionalEmailRecord(testEori1, Seq(emailEntry1, emailEntry2), now)
+
         repo.collection.insertOne(record).toFuture().futureValue
-        
+
         val result = repo.getEmailsForEori(testEori1).futureValue
         result must contain theSameElementsAs Seq(testEmail1, testEmail2)
       }
@@ -115,7 +116,7 @@ class AdditionalEmailRepositorySpec extends PlaySpec
         val storedRecord = repo.findByEori(testEori1).futureValue
         storedRecord mustBe defined
         storedRecord.get.additionalEmails must have size 2
-        
+
         val emails = storedRecord.get.additionalEmails.map(_.email.decryptedValue)
         emails must contain theSameElementsAs Seq(testEmail1, testEmail2)
       }
@@ -130,7 +131,7 @@ class AdditionalEmailRepositorySpec extends PlaySpec
 
       "successfully update lastAccessed when EORI exists" in {
         repo.addEmail(testEori1, testEmail1).futureValue
-        val originalRecord = repo.findByEori(testEori1).futureValue.get
+        val originalRecord       = repo.findByEori(testEori1).futureValue.get
         val originalLastAccessed = originalRecord.lastAccessed
 
         val result = repo.updateLastAccessed(testEori1).futureValue
@@ -145,7 +146,7 @@ class AdditionalEmailRepositorySpec extends PlaySpec
 
       "return true when successfully deleting existing record" in {
         repo.addEmail(testEori1, testEmail1).futureValue
-        
+
         val result = repo.deleteByEori(testEori1).futureValue
         result mustBe true
 
@@ -163,10 +164,10 @@ class AdditionalEmailRepositorySpec extends PlaySpec
 
       "store emails encrypted and retrieve them decrypted" in {
         repo.addEmail(testEori1, testEmail1).futureValue
-        
-        val record = repo.findByEori(testEori1).futureValue.get
+
+        val record          = repo.findByEori(testEori1).futureValue.get
         val storedEncrypted = record.additionalEmails.head.email
-        val decryptedValue = storedEncrypted.decryptedValue
+        val decryptedValue  = storedEncrypted.decryptedValue
         decryptedValue mustEqual testEmail1
         storedEncrypted.toString must not equal testEmail1
       }
@@ -174,7 +175,7 @@ class AdditionalEmailRepositorySpec extends PlaySpec
       "maintain encryption across database operations" in {
         repo.addEmail(testEori1, testEmail1).futureValue
         repo.updateLastAccessed(testEori1).futureValue
-        
+
         val emails = repo.getEmailsForEori(testEori1).futureValue
         emails must contain only testEmail1
       }
@@ -183,22 +184,22 @@ class AdditionalEmailRepositorySpec extends PlaySpec
     "AC2: Individual Email TTL (365 days)" should {
 
       "automatically clean expired emails during addEmail operation" in {
-        val now = Instant.now()
+        val now         = Instant.now()
         val expiredDate = now.minusSeconds(365 * 24 * 60 * 60 + 3600) // 365 days + 1 hour ago
-        val validDate = now.minusSeconds(364 * 24 * 60 * 60) // 364 days ago
+        val validDate   = now.minusSeconds(364 * 24 * 60 * 60) // 364 days ago
 
         // Create a record with both expired and valid emails
-        val expiredEmail = AdditionalEmailEntry(SensitiveString(testEmail1), expiredDate)
-        val validEmail = AdditionalEmailEntry(SensitiveString(testEmail2), validDate)
+        val expiredEmail  = AdditionalEmailEntry(SensitiveString(testEmail1), expiredDate)
+        val validEmail    = AdditionalEmailEntry(SensitiveString(testEmail2), validDate)
         val initialRecord = AdditionalEmailRecord(testEori1, Seq(expiredEmail, validEmail), now)
-        
+
         // Insert initial record directly
         repo.collection.insertOne(initialRecord).toFuture().futureValue
-        
+
         // Adding a new email should trigger cleanup
         val newEmail = "new@example.com"
         repo.addEmail(testEori1, newEmail).futureValue mustBe true
-        
+
         // Verify expired email was removed, valid email and new email remain
         val emails = repo.getEmailsForEori(testEori1).futureValue
         emails must have size 2
@@ -208,21 +209,21 @@ class AdditionalEmailRepositorySpec extends PlaySpec
       }
 
       "automatically clean expired emails during updateEmailAccessDate operation" in {
-        val now = Instant.now()
+        val now         = Instant.now()
         val expiredDate = now.minusSeconds(365 * 24 * 60 * 60 + 3600) // 365 days + 1 hour ago
-        val validDate = now.minusSeconds(364 * 24 * 60 * 60) // 364 days ago
+        val validDate   = now.minusSeconds(364 * 24 * 60 * 60) // 364 days ago
 
         // Create a record with both expired and valid emails
-        val expiredEmail = AdditionalEmailEntry(SensitiveString(testEmail1), expiredDate)
-        val validEmail = AdditionalEmailEntry(SensitiveString(testEmail2), validDate)
+        val expiredEmail  = AdditionalEmailEntry(SensitiveString(testEmail1), expiredDate)
+        val validEmail    = AdditionalEmailEntry(SensitiveString(testEmail2), validDate)
         val initialRecord = AdditionalEmailRecord(testEori2, Seq(expiredEmail, validEmail), now)
-        
+
         // Insert initial record directly
         repo.collection.insertOne(initialRecord).toFuture().futureValue
-        
+
         // Updating access date should trigger cleanup
         repo.updateEmailAccessDate(testEori2, testEmail2).futureValue mustBe true
-        
+
         // Verify expired email was removed, updated email remains
         val emails = repo.getEmailsForEori(testEori2).futureValue
         emails must have size 1
@@ -231,19 +232,20 @@ class AdditionalEmailRepositorySpec extends PlaySpec
       }
 
       "preserve emails that are exactly 365 days old" in {
-        val now = Instant.now()
-        val exactlyOldDate = now.minus(365, ChronoUnit.DAYS).plusSeconds(1) // Exactly 365 days ago + 1 second (should be preserved)
+        val now            = Instant.now()
+        val exactlyOldDate =
+          now.minus(365, ChronoUnit.DAYS).plusSeconds(1) // Exactly 365 days ago + 1 second (should be preserved)
 
         // Create a record with an email exactly 365 days old
         val borderlineEmail = AdditionalEmailEntry(SensitiveString(testEmail1), exactlyOldDate)
-        val initialRecord = AdditionalEmailRecord(testEori1, Seq(borderlineEmail), now)
-        
+        val initialRecord   = AdditionalEmailRecord(testEori1, Seq(borderlineEmail), now)
+
         // Insert initial record directly
         repo.collection.insertOne(initialRecord).toFuture().futureValue
-        
+
         // Adding a new email should not remove the 365-day-old email (should preserve it)
         repo.addEmail(testEori1, testEmail2).futureValue mustBe true
-        
+
         // Verify both emails are preserved
         val emails = repo.getEmailsForEori(testEori1).futureValue
         emails must have size 2
@@ -252,26 +254,26 @@ class AdditionalEmailRepositorySpec extends PlaySpec
       }
 
       "clean multiple expired emails while preserving valid ones" in {
-        val now = Instant.now()
+        val now          = Instant.now()
         val expired1Date = now.minusSeconds(366 * 24 * 60 * 60) // 366 days ago
         val expired2Date = now.minusSeconds(400 * 24 * 60 * 60) // 400 days ago
-        val validDate1 = now.minusSeconds(100 * 24 * 60 * 60) // 100 days ago
-        val validDate2 = now.minusSeconds(200 * 24 * 60 * 60) // 200 days ago
+        val validDate1   = now.minusSeconds(100 * 24 * 60 * 60) // 100 days ago
+        val validDate2   = now.minusSeconds(200 * 24 * 60 * 60) // 200 days ago
 
         // Create a record with multiple expired and valid emails
         val expired1 = AdditionalEmailEntry(SensitiveString("expired1@example.com"), expired1Date)
         val expired2 = AdditionalEmailEntry(SensitiveString("expired2@example.com"), expired2Date)
-        val valid1 = AdditionalEmailEntry(SensitiveString("valid1@example.com"), validDate1)
-        val valid2 = AdditionalEmailEntry(SensitiveString("valid2@example.com"), validDate2)
-        
+        val valid1   = AdditionalEmailEntry(SensitiveString("valid1@example.com"), validDate1)
+        val valid2   = AdditionalEmailEntry(SensitiveString("valid2@example.com"), validDate2)
+
         val initialRecord = AdditionalEmailRecord(testEori2, Seq(expired1, expired2, valid1, valid2), now)
-        
+
         // Insert initial record directly
         repo.collection.insertOne(initialRecord).toFuture().futureValue
-        
+
         // Update access date should trigger cleanup
         repo.updateEmailAccessDate(testEori2, "valid1@example.com").futureValue mustBe true
-        
+
         // Verify only valid emails remain
         val emails = repo.getEmailsForEori(testEori2).futureValue
         emails must have size 2
@@ -282,21 +284,21 @@ class AdditionalEmailRepositorySpec extends PlaySpec
       }
 
       "handle edge case when all emails are expired" in {
-        val now = Instant.now()
+        val now          = Instant.now()
         val expired1Date = now.minusSeconds(366 * 24 * 60 * 60) // 366 days ago
         val expired2Date = now.minusSeconds(400 * 24 * 60 * 60) // 400 days ago
 
         // Create a record with only expired emails
-        val expired1 = AdditionalEmailEntry(SensitiveString("expired1@example.com"), expired1Date)
-        val expired2 = AdditionalEmailEntry(SensitiveString("expired2@example.com"), expired2Date)
+        val expired1      = AdditionalEmailEntry(SensitiveString("expired1@example.com"), expired1Date)
+        val expired2      = AdditionalEmailEntry(SensitiveString("expired2@example.com"), expired2Date)
         val initialRecord = AdditionalEmailRecord(testEori1, Seq(expired1, expired2), now)
-        
+
         // Insert initial record directly
         repo.collection.insertOne(initialRecord).toFuture().futureValue
-        
+
         // Adding a new email should clean all expired emails
         repo.addEmail(testEori1, testEmail1).futureValue mustBe true
-        
+
         // Verify only the newly added email remains
         val emails = repo.getEmailsForEori(testEori1).futureValue
         emails must have size 1
@@ -306,21 +308,21 @@ class AdditionalEmailRepositorySpec extends PlaySpec
       }
 
       "not affect operations when no emails are expired" in {
-        val now = Instant.now()
+        val now         = Instant.now()
         val recentDate1 = now.minusSeconds(100 * 24 * 60 * 60) // 100 days ago
         val recentDate2 = now.minusSeconds(200 * 24 * 60 * 60) // 200 days ago
 
         // Create a record with only recent emails
-        val recent1 = AdditionalEmailEntry(SensitiveString("recent1@example.com"), recentDate1)
-        val recent2 = AdditionalEmailEntry(SensitiveString("recent2@example.com"), recentDate2)
+        val recent1       = AdditionalEmailEntry(SensitiveString("recent1@example.com"), recentDate1)
+        val recent2       = AdditionalEmailEntry(SensitiveString("recent2@example.com"), recentDate2)
         val initialRecord = AdditionalEmailRecord(testEori2, Seq(recent1, recent2), now)
-        
+
         // Insert initial record directly
         repo.collection.insertOne(initialRecord).toFuture().futureValue
-        
+
         // Update access date should not remove any emails
         repo.updateEmailAccessDate(testEori2, "recent1@example.com").futureValue mustBe true
-        
+
         // Verify all emails are preserved
         val emails = repo.getEmailsForEori(testEori2).futureValue
         emails must have size 2
