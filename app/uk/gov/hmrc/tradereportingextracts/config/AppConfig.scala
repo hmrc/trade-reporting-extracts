@@ -33,6 +33,7 @@ class AppConfig @Inject() (
 
   val reportRequestTTLDays: Long = config.get[Long]("mongodb.reportRequestTTLInDays")
   var userTTLDays: Long          = config.get[Long]("mongodb.userTTLInDays")
+  val emailTTLDays: Long         = config.get[Long]("mongodb.emailTTLInDays")
 
   lazy val customsDataStore: String      = customsDataStoreConfig.url
   lazy val verifiedEmailUrl: String      = customsDataStoreConfig.verifiedEmailUrl

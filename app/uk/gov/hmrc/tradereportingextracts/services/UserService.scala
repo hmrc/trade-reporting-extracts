@@ -30,7 +30,8 @@ import scala.concurrent.{ExecutionContext, Future}
 class UserService @Inject() (
   userRepository: UserRepository,
   reportRequestRepository: ReportRequestRepository,
-  customsDataStoreConnector: CustomsDataStoreConnector
+  customsDataStoreConnector: CustomsDataStoreConnector,
+  additionalEmailService: AdditionalEmailService
 )(using ec: ExecutionContext):
 
   def insert(user: User): Future[Boolean] =
@@ -56,17 +57,25 @@ class UserService @Inject() (
 
   def getOrCreateUser(eori: String): Future[UserDetails] =
     for {
-      (user, isExist)    <- userRepository.getOrCreateUser(eori)
-      companyInformation <- customsDataStoreConnector.getCompanyInformation(eori)
-    } yield
-      if isExist then cleanExpiredAccesses(user).foreach(_ => ())
-      UserDetails(
-        eori = user.eori,
-        additionalEmails = user.additionalEmails,
-        authorisedUsers = user.authorisedUsers,
-        companyInformation = companyInformation,
-        notificationEmail = NotificationEmail()
-      )
+      (user, isExist)       <- userRepository.getOrCreateUser(eori)
+      companyInfoFuture      = customsDataStoreConnector.getCompanyInformation(eori)
+      additionalEmailsFuture = additionalEmailService.getAdditionalEmails(eori)
+      companyInformation    <- companyInfoFuture
+      additionalEmails      <- additionalEmailsFuture
+      _                     <- if (isExist) {
+                                 additionalEmailService
+                                   .updateLastAccessed(eori)
+                                   .flatMap(_ => cleanExpiredAccesses(user))
+                               } else {
+                                 Future.successful(())
+                               }
+    } yield UserDetails(
+      eori = user.eori,
+      additionalEmails = additionalEmails,
+      authorisedUsers = user.authorisedUsers,
+      companyInformation = companyInformation,
+      notificationEmail = NotificationEmail()
+    )
 
   def cleanExpiredAccesses(user: User): Future[Unit] = {
     val now = Instant.now()
@@ -188,3 +197,12 @@ class UserService @Inject() (
                      }
                    )
     } yield eoriInfos
+
+  def addAdditionalEmail(eori: String, emailAddress: String): Future[Boolean] =
+    additionalEmailService.addAdditionalEmail(eori, emailAddress)
+
+  def removeAdditionalEmail(eori: String, emailAddress: String): Future[Boolean] =
+    additionalEmailService.removeAdditionalEmail(eori, emailAddress)
+
+  def updateEmailLastUsed(eori: String, emailAddress: String): Future[Boolean] =
+    additionalEmailService.updateEmailAccessDate(eori, emailAddress)
