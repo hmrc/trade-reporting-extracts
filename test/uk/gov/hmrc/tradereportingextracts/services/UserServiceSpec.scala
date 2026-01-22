@@ -49,7 +49,13 @@ class UserServiceSpec
   val mockRepository                = mock[UserRepository]
   val mockCustomsDataStoreConnector = mock[CustomsDataStoreConnector]
   val mockReportRequestRepository   = mock[ReportRequestRepository]
-  val service                       = new UserService(mockRepository, mockReportRequestRepository, mockCustomsDataStoreConnector)
+  val mockAdditionEmailService      = mock[AdditionalEmailService]
+  val service                       = new UserService(
+    mockRepository,
+    mockReportRequestRepository,
+    mockCustomsDataStoreConnector,
+    mockAdditionEmailService
+  )
 
   override def beforeEach(): Unit = {
     super.beforeEach()

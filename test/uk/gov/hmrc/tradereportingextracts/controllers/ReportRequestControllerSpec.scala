@@ -87,6 +87,9 @@ class ReportRequestControllerSpec extends SpecBase with WireMockHelper {
       when(mockCustomsDataStoreConnector.getNotificationEmail(any()))
         .thenReturn(Future.successful(NotificationEmail("email@example.com", LocalDateTime.now())))
 
+      when(mockUserService.updateEmailLastUsed(any(), any()))
+        .thenReturn(Future.successful(true))
+
       when(mockCustomsDataStoreConnector.getEoriHistory(any()))
         .thenReturn(
           Future.successful(
@@ -156,6 +159,9 @@ class ReportRequestControllerSpec extends SpecBase with WireMockHelper {
       )
       when(mockCustomsDataStoreConnector.getNotificationEmail(any()))
         .thenReturn(Future.successful(NotificationEmail("email@example.com", LocalDateTime.now())))
+
+      when(mockUserService.updateEmailLastUsed(any(), any()))
+        .thenReturn(Future.successful(true))
 
       when(mockCustomsDataStoreConnector.getEoriHistory(any()))
         .thenReturn(
@@ -230,6 +236,9 @@ class ReportRequestControllerSpec extends SpecBase with WireMockHelper {
       )
       when(mockCustomsDataStoreConnector.getNotificationEmail(any()))
         .thenReturn(Future.successful(NotificationEmail("email@example.com", LocalDateTime.now())))
+
+      when(mockUserService.updateEmailLastUsed(any(), any()))
+        .thenReturn(Future.successful(true))
 
       when(mockCustomsDataStoreConnector.getEoriHistory(any()))
         .thenReturn(
@@ -321,6 +330,9 @@ class ReportRequestControllerSpec extends SpecBase with WireMockHelper {
         """
       )
 
+      when(mockUserService.updateEmailLastUsed(any(), any()))
+        .thenReturn(Future.successful(true))
+
       when(mockCustomsDataStoreConnector.getNotificationEmail(any()))
         .thenReturn(Future.failed(new RuntimeException("CDS Unavailable")))
 
@@ -351,6 +363,9 @@ class ReportRequestControllerSpec extends SpecBase with WireMockHelper {
       )
 
       when(mockUserService.keepAlive(eqTo("GB987654321000")))
+        .thenReturn(Future.successful(true))
+
+      when(mockUserService.updateEmailLastUsed(any(), any()))
         .thenReturn(Future.successful(true))
 
       when(mockCustomsDataStoreConnector.getNotificationEmail(any()))
@@ -395,6 +410,8 @@ class ReportRequestControllerSpec extends SpecBase with WireMockHelper {
 
       // Verify that keepAlive was called for the trader's EORI (whichEori)
       verify(mockUserService).keepAlive("GB987654321000")
+      // Verify that updateEmailLastUsed was called for the additional email
+      verify(mockUserService).updateEmailLastUsed("GB123456789014", "email1@gmail.com")
     }
 
     "not update TTL when request is not for third-party" in {
@@ -410,6 +427,139 @@ class ReportRequestControllerSpec extends SpecBase with WireMockHelper {
             "reportType": ["importHeader"],
             "dataType": "import",
             "additionalEmail": ["email1@gmail.com"]
+          }
+        """
+      )
+      when(mockUserService.updateEmailLastUsed(any(), any()))
+        .thenReturn(Future.successful(true))
+      when(mockCustomsDataStoreConnector.getNotificationEmail(any()))
+        .thenReturn(Future.successful(NotificationEmail("email@example.com", LocalDateTime.now())))
+
+      when(mockUserService.updateEmailLastUsed(any(), any()))
+        .thenReturn(Future.successful(true))
+
+      when(mockCustomsDataStoreConnector.getEoriHistory(any()))
+        .thenReturn(
+          Future.successful(
+            EoriHistoryResponse(
+              Seq(
+                EoriHistory(
+                  "GB123456789014",
+                  Some("2023-02-01"),
+                  Some("2023-03-01")
+                )
+              )
+            )
+          )
+        )
+
+      when(mockRequestReferenceService.generateUnique())
+        .thenReturn(Future.successful("REF-00000001"))
+
+      when(mockReportRequestService.createAll(any())(any()))
+        .thenReturn(Future.successful(true))
+
+      val reportRequestCaptor = ArgumentCaptor.forClass(classOf[ReportRequest])
+      when(mockEisService.requestTraderReport(any(), reportRequestCaptor.capture())(any()))
+        .thenAnswer(_ => Future.successful(reportRequestCaptor.getValue))
+
+      doNothing()
+        .when(mockAuditConnector)
+        .sendExplicitAudit(any[String], any[ReportRequestSubmittedEvent])(any(), any(), any())
+
+      val request = FakeRequest(POST, "/trade-reporting-extracts/create-report-request")
+        .withHeaders("Content-Type" -> "application/json")
+        .withJsonBody(inputJson)
+
+      val result = route(app, request).value
+
+      status(result) mustBe OK
+
+      // Verify that keepAlive was NOT called since eori == whichEori
+      verify(mockUserService, never()).keepAlive(any())
+      // Verify that updateEmailLastUsed was called for the additional email
+      verify(mockUserService).updateEmailLastUsed("GB123456789014", "email1@gmail.com")
+    }
+
+    "update additional email TTL when processing request with multiple additional emails" in {
+      val inputJson: JsValue = Json.parse(
+        """
+          {
+            "eori": "GB123456789014",
+            "reportStartDate": "2025-04-16",
+            "reportEndDate": "2025-05-16",
+            "whichEori": "GB123456789014",
+            "reportName": "MyReport",
+            "eoriRole": ["declarant"],
+            "reportType": ["importHeader"],
+            "dataType": "import",
+            "additionalEmail": ["email1@gmail.com", "email2@example.com", "email3@test.org"]
+          }
+        """
+      )
+
+      when(mockCustomsDataStoreConnector.getNotificationEmail(any()))
+        .thenReturn(Future.successful(NotificationEmail("email@example.com", LocalDateTime.now())))
+
+      when(mockUserService.updateEmailLastUsed(any(), any()))
+        .thenReturn(Future.successful(true))
+
+      when(mockCustomsDataStoreConnector.getEoriHistory(any()))
+        .thenReturn(
+          Future.successful(
+            EoriHistoryResponse(
+              Seq(
+                EoriHistory(
+                  "GB123456789014",
+                  Some("2023-02-01"),
+                  Some("2023-03-01")
+                )
+              )
+            )
+          )
+        )
+
+      when(mockRequestReferenceService.generateUnique())
+        .thenReturn(Future.successful("REF-00000001"))
+
+      when(mockReportRequestService.createAll(any())(any()))
+        .thenReturn(Future.successful(true))
+
+      val reportRequestCaptor = ArgumentCaptor.forClass(classOf[ReportRequest])
+      when(mockEisService.requestTraderReport(any(), reportRequestCaptor.capture())(any()))
+        .thenAnswer(_ => Future.successful(reportRequestCaptor.getValue))
+
+      doNothing()
+        .when(mockAuditConnector)
+        .sendExplicitAudit(any[String], any[ReportRequestSubmittedEvent])(any(), any(), any())
+
+      val request = FakeRequest(POST, "/trade-reporting-extracts/create-report-request")
+        .withHeaders("Content-Type" -> "application/json")
+        .withJsonBody(inputJson)
+
+      val result = route(app, request).value
+
+      status(result) mustBe OK
+
+      // Verify that updateEmailLastUsed was called for each additional email
+      verify(mockUserService).updateEmailLastUsed("GB123456789014", "email1@gmail.com")
+      verify(mockUserService).updateEmailLastUsed("GB123456789014", "email2@example.com")
+      verify(mockUserService).updateEmailLastUsed("GB123456789014", "email3@test.org")
+      verify(mockUserService, times(3)).updateEmailLastUsed(eqTo("GB123456789014"), any())
+    }
+
+    "handle request without additional emails without calling updateEmailLastUsed" in {
+      val inputJson: JsValue = Json.parse(
+        """
+          {
+            "eori": "GB123456789014",
+            "reportStartDate": "2025-04-16",
+            "reportEndDate": "2025-05-16",
+            "whichEori": "GB123456789014",
+            "reportName": "MyReport",
+            "eoriRole": ["declarant"],
+            "reportType": ["importHeader"],
+            "dataType": "import"
           }
         """
       )
@@ -454,8 +604,8 @@ class ReportRequestControllerSpec extends SpecBase with WireMockHelper {
 
       status(result) mustBe OK
 
-      // Verify that keepAlive was NOT called since eori == whichEori
-      verify(mockUserService, never()).keepAlive(any())
+      // Verify that updateEmailLastUsed was NOT called when no additional emails
+      verify(mockUserService, never()).updateEmailLastUsed(any(), any())
     }
   }
 

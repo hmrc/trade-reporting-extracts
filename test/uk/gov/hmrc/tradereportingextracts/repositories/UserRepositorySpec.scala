@@ -30,7 +30,7 @@ import uk.gov.hmrc.tradereportingextracts.models.AccessType.{EXPORTS, IMPORTS}
 import uk.gov.hmrc.tradereportingextracts.models.etmp.EoriUpdate
 import uk.gov.hmrc.tradereportingextracts.models.thirdParty.ThirdPartyAddedConfirmation
 import uk.gov.hmrc.tradereportingextracts.models.{AuthorisedUser, User, UserActiveStatus}
-import uk.gov.hmrc.tradereportingextracts.services.UserService
+import uk.gov.hmrc.tradereportingextracts.services.{AdditionalEmailService, UserService}
 
 import java.time.temporal.ChronoUnit
 import java.time.{Clock, Instant, LocalDate, LocalDateTime, ZoneOffset}
@@ -397,7 +397,8 @@ class UserRepositorySpec
         val repo                    = mock[UserRepository]
         val cds                     = mock[uk.gov.hmrc.tradereportingextracts.connectors.CustomsDataStoreConnector]
         val reportRequestRepository = mock[ReportRequestRepository]
-        val service                 = new UserService(repo, reportRequestRepository, cds)
+        val additionalEmailService  = mock[AdditionalEmailService]
+        val service                 = new UserService(repo, reportRequestRepository, cds, additionalEmailService)
         val eori                    = "GB987654321098"
         val thirdEori               = "GB123456123456"
 
@@ -415,7 +416,8 @@ class UserRepositorySpec
         val repo                    = mock[UserRepository]
         val cds                     = mock[uk.gov.hmrc.tradereportingextracts.connectors.CustomsDataStoreConnector]
         val reportRequestRepository = mock[ReportRequestRepository]
-        val service                 = new UserService(repo, reportRequestRepository, cds)
+        val additionalEmailService  = mock[AdditionalEmailService]
+        val service                 = new UserService(repo, reportRequestRepository, cds, additionalEmailService)
         val eori                    = "GB987654321098"
         val thirdEori               = "GB000000000000"
 
@@ -433,7 +435,8 @@ class UserRepositorySpec
         val repo                    = mock[UserRepository]
         val cds                     = mock[uk.gov.hmrc.tradereportingextracts.connectors.CustomsDataStoreConnector]
         val reportRequestRepository = mock[ReportRequestRepository]
-        val service                 = new UserService(repo, reportRequestRepository, cds)
+        val additionalEmailService  = mock[AdditionalEmailService]
+        val service                 = new UserService(repo, reportRequestRepository, cds, additionalEmailService)
         val eori                    = "GB987654321098"
         val thirdEori               = "GB123456123456"
 

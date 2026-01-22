@@ -58,6 +58,11 @@ class ReportRequestController @Inject() (
         (for {
           _              <- traderTtlUpdate
           userEmail      <- customsDataStoreConnector.getNotificationEmail(value.eori).map(_.address)
+          _              <- value.additionalEmail
+                              .map { emails =>
+                                Future.sequence(emails.map(email => userService.updateEmailLastUsed(value.eori, email)))
+                              }
+                              .getOrElse(Future.successful(Seq.empty))
           eoriHistory    <- customsDataStoreConnector
                               .getEoriHistory(value.whichEori.get)
                               .map(_.filterByDateRange(startDate, endDate).map(_.eori))
@@ -108,5 +113,4 @@ class ReportRequestController @Inject() (
   def getReportRequestLimitNumber: Action[AnyContent] = Action.async {
     Future.successful(Ok(Json.toJson(appConfig.dailySubmissionLimit.toString)))
   }
-
 }
