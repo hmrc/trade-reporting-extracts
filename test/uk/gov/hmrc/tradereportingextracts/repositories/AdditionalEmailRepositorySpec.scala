@@ -16,15 +16,16 @@
 
 package uk.gov.hmrc.tradereportingextracts.repositories
 
-import org.mongodb.scala.{ObservableFuture, SingleObservableFuture}
-import org.scalatest.matchers.must.Matchers
+import org.mongodb.scala.SingleObservableFuture
 import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}
+import org.scalatest.matchers.must.Matchers
 import org.scalatestplus.play.PlaySpec
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import uk.gov.hmrc.crypto.Sensitive.SensitiveString
 import uk.gov.hmrc.crypto.{Decrypter, Encrypter}
 import uk.gov.hmrc.mongo.test.DefaultPlayMongoRepositorySupport
 import uk.gov.hmrc.tradereportingextracts.config.{AppConfig, CryptoProvider}
+import uk.gov.hmrc.tradereportingextracts.models.etmp.EoriUpdate
 import uk.gov.hmrc.tradereportingextracts.models.{AdditionalEmailEntry, AdditionalEmailRecord}
 
 import java.time.Instant
@@ -330,5 +331,93 @@ class AdditionalEmailRepositorySpec
         emails must contain("recent2@example.com")
       }
     }
+
+    "updateEori" should {
+
+      "return true and update the traderEori when a record exists" in {
+        val originalEori = testEori1
+        val newEori      = "GB111111111000"
+
+        val now        = Instant.now()
+        val emailEntry = AdditionalEmailEntry(SensitiveString(testEmail1), now)
+        val record     = AdditionalEmailRecord(originalEori, Seq(emailEntry), now)
+
+        repo.collection.insertOne(record).toFuture().futureValue
+
+        val result = repo.updateEori(EoriUpdate(oldEori = originalEori, newEori = newEori)).futureValue
+        result mustBe true
+
+        repo.findByEori(originalEori).futureValue mustBe None
+
+        val updated = repo.findByEori(newEori).futureValue
+        updated mustBe defined
+        updated.get.traderEori mustEqual newEori
+        updated.get.additionalEmails must have size 1
+        updated.get.additionalEmails.head.email.decryptedValue mustEqual testEmail1
+        updated.get.lastAccessed.truncatedTo(ChronoUnit.SECONDS) mustEqual now.truncatedTo(ChronoUnit.SECONDS)
+      }
+
+      "return true even when the old EORI does not exist (acknowledged but no-op)" in {
+        val nonExistentEori = "GB000000000000"
+        val newEori         = "GB222222222000"
+
+        val result = repo.updateEori(EoriUpdate(oldEori = nonExistentEori, newEori = newEori)).futureValue
+        result mustBe true
+
+        repo.findByEori(nonExistentEori).futureValue mustBe None
+        repo.findByEori(newEori).futureValue mustBe None
+      }
+
+      "not affect other records" in {
+        val eoriToChange   = "GB555555555000"
+        val unaffectedEori = "GB666666666000"
+        val newEori        = "GB777777777000"
+
+        val tNow = Instant.now()
+        repo.collection
+          .insertOne(
+            AdditionalEmailRecord(eoriToChange, Seq(AdditionalEmailEntry(SensitiveString(testEmail1), tNow)), tNow)
+          )
+          .toFuture()
+          .futureValue
+
+        repo.collection
+          .insertOne(
+            AdditionalEmailRecord(unaffectedEori, Seq(AdditionalEmailEntry(SensitiveString(testEmail2), tNow)), tNow)
+          )
+          .toFuture()
+          .futureValue
+
+        repo.findByEori(eoriToChange).futureValue mustBe defined
+        repo.findByEori(unaffectedEori).futureValue mustBe defined
+
+        val updated = repo.updateEori(EoriUpdate(newEori, eoriToChange)).futureValue
+        updated mustBe true
+
+        repo.findByEori(eoriToChange).futureValue mustBe None
+        repo.findByEori(newEori).futureValue.map(_.additionalEmails.map(_.email.decryptedValue)) mustBe Some(
+          Seq(testEmail1)
+        )
+        repo.findByEori(unaffectedEori).futureValue.map(_.additionalEmails.map(_.email.decryptedValue)) mustBe Some(
+          Seq(testEmail2)
+        )
+      }
+
+      "keep encryption intact after EORI update" in {
+        val originalEori = "GB888888888000"
+        val newEori      = "GB999999999000"
+
+        repo.addEmail(originalEori, testEmail1).futureValue mustBe true
+
+        repo.updateEori(EoriUpdate(newEori, originalEori)).futureValue mustBe true
+
+        val stored          = repo.findByEori(newEori).futureValue.get
+        val storedEncrypted = stored.additionalEmails.head.email
+        storedEncrypted.decryptedValue mustEqual testEmail1
+        storedEncrypted.toString must not equal testEmail1
+      }
+
+    }
+
   }
 }

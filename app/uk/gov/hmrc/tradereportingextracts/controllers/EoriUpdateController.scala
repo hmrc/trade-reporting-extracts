@@ -22,7 +22,7 @@ import play.api.Logging
 import uk.gov.hmrc.tradereportingextracts.config.AppConfig
 import uk.gov.hmrc.tradereportingextracts.models.etmp.*
 import uk.gov.hmrc.tradereportingextracts.models.etmp.EoriUpdateHeaders.*
-import uk.gov.hmrc.tradereportingextracts.services.UserService
+import uk.gov.hmrc.tradereportingextracts.services.{AdditionalEmailService, UserService}
 import uk.gov.hmrc.tradereportingextracts.utils.HttpDateFormatter.getCurrentHttpDate
 import uk.gov.hmrc.tradereportingextracts.utils.HeaderUtils
 
@@ -33,9 +33,18 @@ import scala.concurrent.Future
 class EoriUpdateController @Inject() (
   cc: ControllerComponents,
   userService: UserService,
+  additionalEmailService: AdditionalEmailService,
   appConfig: AppConfig
 ) extends AbstractController(cc)
     with Logging {
+
+  private def respond(status: Status)(implicit request: RequestHeader): Future[Result] =
+    Future.successful(
+      status.withHeaders(
+        date.toString           -> getCurrentHttpDate,
+        xCorrelationID.toString -> request.headers.get(xCorrelationID.toString).getOrElse("")
+      )
+    )
 
   def eoriUpdate(): Action[AnyContent] = Action.async { request =>
     def missingHeaders: Seq[String] =
@@ -50,52 +59,32 @@ class EoriUpdateController @Inject() (
           s"eoriUpdate missing required headers: ${headers
               .mkString(", ")} for CorrelationID: ${request.headers.get(xCorrelationID.toString).getOrElse("")}"
         )
-        Future.successful(
-          BadRequest.withHeaders(
-            date.toString           -> getCurrentHttpDate,
-            xCorrelationID.toString -> request.headers.get(xCorrelationID.toString).getOrElse("")
-          )
-        )
-      case (_, false, _)                       =>
+        respond(BadRequest)(request)
+
+      case (_, false, _) =>
         logger.error(
           s"eoriUpdate unauthorised request for CorrelationID: ${request.headers.get(xCorrelationID.toString).getOrElse("")}"
         )
-        Future.successful(
-          Forbidden.withHeaders(
-            date.toString           -> getCurrentHttpDate,
-            xCorrelationID.toString -> request.headers.get(xCorrelationID.toString).getOrElse("")
-          )
-        )
-      case (_, _, None)                        =>
+        respond(Forbidden)(request)
+
+      case (_, _, None) =>
         logger.error(
           s"eoriUpdate missing request body for CorrelationID: ${request.headers.get(xCorrelationID.toString).getOrElse("")}"
         )
-        Future.successful(
-          BadRequest.withHeaders(
-            date.toString           -> getCurrentHttpDate,
-            xCorrelationID.toString -> request.headers.get(xCorrelationID.toString).getOrElse("")
-          )
-        )
-      case (_, _, Some(json))                  =>
+        respond(BadRequest)(request)
+
+      case (_, _, Some(json)) =>
         json.validate[EoriUpdate] match {
-          case JsError(errors) =>
+          case JsError(_) =>
             logger.error(
               s"eoriUpdate invalid request body for CorrelationID: ${request.headers.get(xCorrelationID.toString).getOrElse("")}"
             )
-            Future.successful(
-              BadRequest.withHeaders(
-                date.toString           -> getCurrentHttpDate,
-                xCorrelationID.toString -> request.headers.get(xCorrelationID.toString).getOrElse("")
-              )
-            )
+            respond(BadRequest)(request)
+
           case JsSuccess(_, _) =>
             userService.updateEori(json.as[EoriUpdate])
-            Future.successful(
-              Created.withHeaders(
-                date.toString           -> getCurrentHttpDate,
-                xCorrelationID.toString -> request.headers.get(xCorrelationID.toString).getOrElse("")
-              )
-            )
+            additionalEmailService.updateEori(json.as[EoriUpdate])
+            respond(Created)(request)
         }
     }
   }
