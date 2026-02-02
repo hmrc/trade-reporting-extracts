@@ -19,7 +19,6 @@ package uk.gov.hmrc.tradereportingextracts.repositories
 import com.google.inject.{Inject, Singleton}
 import org.mongodb.scala.*
 import org.mongodb.scala.model.*
-
 import uk.gov.hmrc.crypto.{Decrypter, Encrypter}
 import uk.gov.hmrc.mongo.MongoComponent
 import uk.gov.hmrc.mongo.play.json.PlayMongoRepository
@@ -27,6 +26,7 @@ import uk.gov.hmrc.mdc.Mdc
 import uk.gov.hmrc.tradereportingextracts.config.AppConfig
 import uk.gov.hmrc.tradereportingextracts.models.{AdditionalEmailEntry, AdditionalEmailRecord}
 import uk.gov.hmrc.crypto.Sensitive.*
+import uk.gov.hmrc.tradereportingextracts.models.etmp.EoriUpdate
 
 import java.time.Instant
 import java.time.temporal.ChronoUnit
@@ -199,6 +199,20 @@ class AdditionalEmailRepository @Inject() (
   def deleteByEori(eori: String): Future[Boolean] = Mdc.preservingMdc {
     collection
       .deleteOne(Filters.equal("traderEori", eori))
+      .toFuture()
+      .map(_.wasAcknowledged())
+  }
+
+  def updateEori(eoriUpdate: EoriUpdate): Future[Boolean] = Mdc.preservingMdc {
+    val updateQuery  = Filters.equal("traderEori", eoriUpdate.oldEori)
+    val updateAction = Updates.combine(
+      Updates.set("traderEori", eoriUpdate.newEori)
+    )
+    collection
+      .updateOne(
+        filter = updateQuery,
+        update = updateAction
+      )
       .toFuture()
       .map(_.wasAcknowledged())
   }
