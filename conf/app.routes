@@ -47,5 +47,5 @@ DELETE      /trade-reporting-extracts/remove-third-party                    uk.g
 
 PUT         /trade-reporting-extracts/edit-third-party-request            uk.gov.hmrc.tradereportingextracts.controllers.ThirdPartyRequestController.editThirdPartyRequest()
 
-POST        /trade-reporting-extracts/additional-email              uk.gov.hmrc.tradereportingextracts.controllers.UserController.addAdditionalEmail()
+POST        /trade-reporting-extracts/add-additional-email              uk.gov.hmrc.tradereportingextracts.controllers.UserController.addAdditionalEmail()
 
