@@ -177,3 +177,20 @@ class UserController @Inject() (
           Future.successful(BadRequest("Missing or invalid 'thirdPartyEori' field"))
       }
     }
+
+  def addAdditionalEmail(): Action[JsValue] =
+    auth.authorizedAction(writePermission).async(parse.json) { implicit request =>
+      ((request.body \ "eori").validate[String], (request.body \ "emailAddress").validate[String]) match {
+        case (JsSuccess(eori, _), JsSuccess(emailAddress, _)) =>
+          userService.addAdditionalEmail(eori, emailAddress).map {
+            case true  => Ok
+            case false => InternalServerError("Failed to add additional email")
+          }
+        case (JsError(_), JsError(_))                         =>
+          Future.successful(BadRequest("Missing or invalid 'eori' and 'emailAddress' fields"))
+        case (JsError(_), _)                                  =>
+          Future.successful(BadRequest("Missing or invalid 'eori' field"))
+        case (_, JsError(_))                                  =>
+          Future.successful(BadRequest("Missing or invalid 'emailAddress' field"))
+      }
+    }

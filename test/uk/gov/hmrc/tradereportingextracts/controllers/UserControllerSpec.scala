@@ -702,6 +702,46 @@ class UserControllerSpec extends SpecBase {
     }
   }
 
+  "UserController.addAdditionalEmail" should {
+
+    "return 200 OK when valid EORI and email address are provided" in new Setup {
+      val eori         = "GB123456789000"
+      val emailAddress = "test@example.com"
+
+      when(mockUserService.addAdditionalEmail(eori, emailAddress))
+        .thenReturn(Future.successful(true))
+      when(mockStubBehaviour.stubAuth(Some(writePermission), EmptyRetrieval))
+        .thenReturn(Future.successful(EmptyRetrieval))
+
+      val request: FakeRequest[JsObject] = FakeRequest(POST, routes.UserController.addAdditionalEmail().url)
+        .withHeaders("Content-Type" -> "application/json", AUTHORIZATION -> "my-token")
+        .withBody(Json.obj("eori" -> eori, "emailAddress" -> emailAddress))
+
+      val result: Future[Result] = controller.addAdditionalEmail().apply(request)
+
+      status(result) shouldBe OK
+    }
+
+    "return 500 InternalServerError when service fails to add additional email" in new Setup {
+      val eori         = "GB123456789000"
+      val emailAddress = "test@example.com"
+
+      when(mockUserService.addAdditionalEmail(eori, emailAddress))
+        .thenReturn(Future.successful(false))
+      when(mockStubBehaviour.stubAuth(Some(writePermission), EmptyRetrieval))
+        .thenReturn(Future.successful(EmptyRetrieval))
+
+      val request: FakeRequest[JsObject] = FakeRequest(POST, routes.UserController.addAdditionalEmail().url)
+        .withHeaders("Content-Type" -> "application/json", AUTHORIZATION -> "my-token")
+        .withBody(Json.obj("eori" -> eori, "emailAddress" -> emailAddress))
+
+      val result: Future[Result] = controller.addAdditionalEmail().apply(request)
+
+      status(result)        shouldBe INTERNAL_SERVER_ERROR
+      contentAsString(result) should include("Failed to add additional email")
+    }
+  }
+
   trait Setup {
     val app: Application = application
       .build()
