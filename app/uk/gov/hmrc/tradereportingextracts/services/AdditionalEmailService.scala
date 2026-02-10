@@ -52,6 +52,4 @@ class AdditionalEmailService @Inject() (
     additionalEmailRepository.deleteByEori(eori)
 
   def updateEori(eoriUpdate: EoriUpdate): Future[Boolean] =
-    for {
-      userEoriUpdate <- additionalEmailRepository.updateEori(eoriUpdate)
-    } yield userEoriUpdate
+    additionalEmailRepository.updateEori(eoriUpdate)
