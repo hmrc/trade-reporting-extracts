@@ -16,13 +16,14 @@
 
 package uk.gov.hmrc.tradereportingextracts.services
 
-import org.mockito.ArgumentMatchers.{any, eq as eqTo}
+import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito.*
 import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}
 import org.scalatest.freespec.AnyFreeSpec
 import org.scalatest.matchers.must.Matchers
 import org.scalatest.{BeforeAndAfterEach, OptionValues}
 import org.scalatestplus.mockito.MockitoSugar
+import uk.gov.hmrc.tradereportingextracts.models.etmp.EoriUpdate
 import uk.gov.hmrc.tradereportingextracts.repositories.AdditionalEmailRepository
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -275,6 +276,46 @@ class AdditionalEmailServiceSpec
         val result = service.updateLastAccessed(testEori)
 
         result.failed.futureValue mustBe exception
+      }
+    }
+
+    "updateEori" - {
+
+      "must update EORI successfully" in {
+        val update = EoriUpdate(oldEori = "GB111111111000", newEori = "GB222222222000")
+
+        when(mockRepository.updateEori(update))
+          .thenReturn(Future.successful(true))
+
+        val result = service.updateEori(update)
+
+        result.futureValue mustBe true
+        verify(mockRepository).updateEori(update)
+      }
+
+      "must return false when repository update fails" in {
+        val update = EoriUpdate(oldEori = "GB333333333000", newEori = "GB444444444000")
+
+        when(mockRepository.updateEori(update))
+          .thenReturn(Future.successful(false))
+
+        val result = service.updateEori(update)
+
+        result.futureValue mustBe false
+        verify(mockRepository).updateEori(update)
+      }
+
+      "must handle repository failure" in {
+        val update    = EoriUpdate(oldEori = "GB555555555000", newEori = "GB666666666000")
+        val exception = new RuntimeException("Database error")
+
+        when(mockRepository.updateEori(update))
+          .thenReturn(Future.failed(exception))
+
+        val result = service.updateEori(update)
+
+        result.failed.futureValue mustBe exception
+        verify(mockRepository).updateEori(update)
       }
     }
 

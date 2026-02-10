@@ -16,6 +16,7 @@
 
 package uk.gov.hmrc.tradereportingextracts.services
 
+import uk.gov.hmrc.tradereportingextracts.models.etmp.EoriUpdate
 import uk.gov.hmrc.tradereportingextracts.repositories.AdditionalEmailRepository
 
 import javax.inject.{Inject, Singleton}
@@ -49,3 +50,6 @@ class AdditionalEmailService @Inject() (
 
   def deleteAllEmailsForEori(eori: String): Future[Boolean] =
     additionalEmailRepository.deleteByEori(eori)
+
+  def updateEori(eoriUpdate: EoriUpdate): Future[Boolean] =
+    additionalEmailRepository.updateEori(eoriUpdate)
