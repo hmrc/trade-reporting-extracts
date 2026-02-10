@@ -119,9 +119,10 @@ class UserService @Inject() (
       (user, isExist)    <- userRepository.getOrCreateUser(eori)
       companyInformation <- customsDataStoreConnector.getCompanyInformation(eori)
       notificationEmail  <- customsDataStoreConnector.getNotificationEmail(eori)
+      additionalEmails   <- additionalEmailService.getAdditionalEmails(eori)
     } yield UserDetails(
       eori = user.eori,
-      additionalEmails = user.additionalEmails,
+      additionalEmails = additionalEmails,
       authorisedUsers = user.authorisedUsers,
       companyInformation = companyInformation.copy(
         address = AddressInformation()

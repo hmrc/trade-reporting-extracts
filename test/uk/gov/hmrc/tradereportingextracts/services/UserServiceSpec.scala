@@ -59,7 +59,7 @@ class UserServiceSpec
 
   override def beforeEach(): Unit = {
     super.beforeEach()
-    reset(mockRepository, mockCustomsDataStoreConnector, mockReportRequestRepository)
+    reset(mockRepository, mockCustomsDataStoreConnector, mockReportRequestRepository, mockAdditionEmailService)
   }
 
   "UserService" - {
@@ -400,14 +400,16 @@ class UserServiceSpec
         )
         val notificationEmail  =
           NotificationEmail("test@test.com", LocalDateTime.now())
+        val additionalEmails   = Seq("test@test.com")
         when(mockCustomsDataStoreConnector.getCompanyInformation(eori))
           .thenReturn(Future.successful(companyInformation))
         when(mockRepository.getOrCreateUser(eori)).thenReturn(Future.successful(user, false))
         when(mockCustomsDataStoreConnector.getNotificationEmail(eori)).thenReturn(Future.successful(notificationEmail))
+        when(mockAdditionEmailService.getAdditionalEmails(eori)).thenReturn(Future.successful(additionalEmails))
         val result             = service.getUserAndEmailDetails(eori)
         result.futureValue mustEqual UserDetails(
           eori = user.eori,
-          additionalEmails = user.additionalEmails,
+          additionalEmails = additionalEmails,
           authorisedUsers = user.authorisedUsers,
           companyInformation = companyInformation,
           notificationEmail = notificationEmail
@@ -422,14 +424,16 @@ class UserServiceSpec
           address = AddressInformation()
         )
         val notificationEmail  = NotificationEmail()
+        val additionalEmails   = Seq.empty[String]
         when(mockCustomsDataStoreConnector.getCompanyInformation(eori))
           .thenReturn(Future.successful(companyInformation))
         when(mockRepository.getOrCreateUser(eori)).thenReturn(Future.successful(user, false))
         when(mockCustomsDataStoreConnector.getNotificationEmail(eori)).thenReturn(Future.successful(notificationEmail))
+        when(mockAdditionEmailService.getAdditionalEmails(eori)).thenReturn(Future.successful(additionalEmails))
         val result             = service.getUserAndEmailDetails(eori)
         result.futureValue mustEqual UserDetails(
           eori = user.eori,
-          additionalEmails = user.additionalEmails,
+          additionalEmails = additionalEmails,
           authorisedUsers = user.authorisedUsers,
           companyInformation = companyInformation,
           notificationEmail = notificationEmail
