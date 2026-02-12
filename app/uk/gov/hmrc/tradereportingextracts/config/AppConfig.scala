@@ -53,3 +53,5 @@ class AppConfig @Inject() (
   lazy val eisRequestTraderReportRetryDelay: Int = eisConfig.requestTraderReportRetryDelay
 
   lazy val dailySubmissionLimit: Int = config.get[Int]("reportRequest.dailySubmissionLimit")
+
+  lazy val tacticalXIFeatureEnabled: Boolean = config.get[Boolean]("features.tactical-xi")

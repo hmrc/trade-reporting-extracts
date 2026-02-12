@@ -17,6 +17,7 @@
 package uk.gov.hmrc.tradereportingextracts.services
 
 import uk.gov.hmrc.crypto.Sensitive.SensitiveString
+import uk.gov.hmrc.tradereportingextracts.config.AppConfig
 
 import javax.inject.{Inject, Singleton}
 import uk.gov.hmrc.tradereportingextracts.models.eis.EisReportRequest
@@ -30,7 +31,8 @@ import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
 class ReportRequestTransformationService @Inject() (
-  requestReferenceService: RequestReferenceService
+  requestReferenceService: RequestReferenceService,
+  appConfig: AppConfig
 )(implicit ec: ExecutionContext) {
 
   private val reportMap: Map[String, ReportTypeName] = Map(
@@ -76,7 +78,11 @@ class ReportRequestTransformationService @Inject() (
         reportName = userAnswers.reportName,
         requesterEORI = eoriValue,
         eoriRole = getRole(userAnswers.eoriRole),
-        reportEORIs = historicalEoris :+ userAnswers.whichEori.getOrElse(""),
+        reportEORIs = if (appConfig.tacticalXIFeatureEnabled) {
+          transformToXIEorisWithGBEoris(historicalEoris :+ userAnswers.whichEori.getOrElse(""))
+        } else {
+          historicalEoris :+ userAnswers.whichEori.getOrElse("")
+        },
         userEmail = Some(SensitiveString(userEmail)),
         recipientEmails = userAnswers.additionalEmail.getOrElse(Seq()).toSeq.map(email => SensitiveString(email)),
         reportTypeName = getReportType(userAnswers.reportType.head),
@@ -89,6 +95,9 @@ class ReportRequestTransformationService @Inject() (
       )
     }
   }
+
+  private def transformToXIEorisWithGBEoris(eoris: Seq[String]): Seq[String] =
+    eoris ++ eoris.map(_.replaceFirst("GB", "XI"))
 
   def toEisReportRequest(reportRequest: ReportRequest): EisReportRequest =
     EisReportRequest(
