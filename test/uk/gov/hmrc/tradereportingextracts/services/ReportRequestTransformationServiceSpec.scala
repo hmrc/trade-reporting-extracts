@@ -17,22 +17,32 @@
 package uk.gov.hmrc.tradereportingextracts.services
 
 import org.mockito.Mockito.*
+import org.scalatest.BeforeAndAfterEach
 import org.scalatest.freespec.AsyncFreeSpec
 import org.scalatest.matchers.must.Matchers
 import org.scalatestplus.mockito.MockitoSugar
 import uk.gov.hmrc.crypto.Sensitive.SensitiveString
+import uk.gov.hmrc.tradereportingextracts.config.AppConfig
 import uk.gov.hmrc.tradereportingextracts.models.*
 import uk.gov.hmrc.tradereportingextracts.models.eis.EisReportRequest
+import uk.gov.hmrc.tradereportingextracts.utils.{SpecBase, WireMockHelper}
 
 import java.time.{Instant, LocalDate, ZoneOffset}
 import scala.concurrent.Future
 
-class ReportRequestTransformationServiceSpec extends AsyncFreeSpec with Matchers with MockitoSugar {
+class ReportRequestTransformationServiceSpec extends AsyncFreeSpec with Matchers with MockitoSugar with WireMockHelper {
 
+  val mockAppConfig: AppConfig                             = mock[AppConfig]
   val mockRequestReferenceService: RequestReferenceService = mock[RequestReferenceService]
+  when(mockAppConfig.tacticalXIFeatureEnabled).thenReturn(false)
   when(mockRequestReferenceService.generateUnique()).thenReturn(Future.successful("REF-00000001"))
 
-  val service = new ReportRequestTransformationService(mockRequestReferenceService)
+  val service = new ReportRequestTransformationService(mockRequestReferenceService, mockAppConfig)
+
+  override def beforeEach(): Unit = {
+    super.beforeEach()
+    reset(mockAppConfig)
+  }
 
   val reportRequestTemplate: ReportRequestUserAnswersModel = ReportRequestUserAnswersModel(
     eori = "GB123456789000",
@@ -113,119 +123,176 @@ class ReportRequestTransformationServiceSpec extends AsyncFreeSpec with Matchers
           result.reportTypeName mustBe ReportTypeName.EXPORTS_ITEM_REPORT
         }
     }
-  }
 
-  "toEisReportRequest" - {
-    "convert ReportRequest to EisReportRequest" in {
-      service
-        .transformReportRequest(
-          "GB123456789000",
-          reportRequestTemplate,
-          Seq("GB123456789001"),
-          "user@email.com"
+    "tactical XI implementation" - {
+      "when tactical xi feature is enabled, should transform EORIs to include GB and XI versions" in {
+        when(mockAppConfig.tacticalXIFeatureEnabled).thenReturn(true)
+
+        val service         = new ReportRequestTransformationService(mockRequestReferenceService, mockAppConfig)
+        val model           = reportRequestTemplate.copy(
+          whichEori = Some("GB123456789002"),
+          eoriRole = Set("declarant"),
+          reportType = Set("importHeader")
         )
-        .map { reportRequest =>
-          val eisRequest = service.toEisReportRequest(reportRequest)
-          eisRequest.eori must contain allOf ("GB123456789001", "GB123456789000")
-          eisRequest.eoriRole mustBe EisReportRequest.EoriRole.DECLARANT
-          eisRequest.reportTypeName mustBe EisReportRequest.ReportTypeName.IMPORTSHEADERREPORT
-          eisRequest.requestID mustBe "REF-00000001"
-          eisRequest.requesterEori mustBe "GB123456789000"
-          eisRequest.startDate mustBe "2025-04-01"
-          eisRequest.endDate mustBe "2025-04-30"
-        }
-    }
-  }
+        val historicalEoris = Seq("GB123456789001")
 
-  "reportConfirmationTransformer" - {
-    "should transform ReportRequest to ReportConfirmation for all report types" in {
-      val requests = Seq(
-        ReportRequest(
-          reportRequestId = "REF-1",
-          correlationId = "corr-1",
-          reportName = "Name1",
-          requesterEORI = "EORI1",
-          eoriRole = EoriRole.DECLARANT,
-          reportEORIs = Seq("EORI1"),
-          userEmail = Some(SensitiveString("user1@test.com")),
-          recipientEmails = Seq(SensitiveString("user1@test.com")),
-          reportTypeName = ReportTypeName.IMPORTS_HEADER_REPORT,
-          reportStart = Instant.now,
-          reportEnd = Instant.now,
-          createDate = Instant.now,
-          notifications = Seq(),
-          fileNotifications = None,
-          updateDate = Instant.now
-        ),
-        ReportRequest(
-          reportRequestId = "REF-2",
-          correlationId = "corr-2",
-          reportName = "Name2",
-          requesterEORI = "EORI2",
-          eoriRole = EoriRole.TRADER,
-          reportEORIs = Seq("EORI2"),
-          userEmail = Some(SensitiveString("user2@test.com")),
-          recipientEmails = Seq(SensitiveString("user2@test.com")),
-          reportTypeName = ReportTypeName.IMPORTS_ITEM_REPORT,
-          reportStart = Instant.now,
-          reportEnd = Instant.now,
-          createDate = Instant.now,
-          notifications = Seq(),
-          fileNotifications = None,
-          updateDate = Instant.now
-        ),
-        ReportRequest(
-          reportRequestId = "REF-3",
-          correlationId = "corr-3",
-          reportName = "Name3",
-          requesterEORI = "EORI3",
-          eoriRole = EoriRole.TRADER_DECLARANT,
-          reportEORIs = Seq("EORI3"),
-          userEmail = Some(SensitiveString("user3@test.com")),
-          recipientEmails = Seq(SensitiveString("user3@test.com")),
-          reportTypeName = ReportTypeName.IMPORTS_TAXLINE_REPORT,
-          reportStart = Instant.now,
-          reportEnd = Instant.now,
-          createDate = Instant.now,
-          notifications = Seq(),
-          fileNotifications = None,
-          updateDate = Instant.now
+        service
+          .transformReportRequest(
+            "GB123456789000",
+            model,
+            historicalEoris,
+            "test@test.com"
+          )
+          .map { result =>
+            result.reportEORIs must contain allOf (
+              "GB123456789001",
+              "GB123456789002",
+              "XI123456789001",
+              "XI123456789002"
+            )
+          }
+      }
+
+      "when tactical xi feature is not enabled, should only contain GB Eoris" in {
+        val model           = reportRequestTemplate.copy(
+          whichEori = Some("GB123456789002"),
+          eoriRole = Set("declarant"),
+          reportType = Set("importHeader")
         )
-      )
+        val historicalEoris = Seq("GB123456789001")
 
-      val confirmations = service.reportConfirmationTransformer(requests)
-      confirmations mustBe Seq(
-        ReportConfirmation("Name1", "importHeader", "REF-1"),
-        ReportConfirmation("Name2", "importItem", "REF-2"),
-        ReportConfirmation("Name3", "importTaxLine", "REF-3")
-      )
+        service
+          .transformReportRequest(
+            "GB123456789000",
+            model,
+            historicalEoris,
+            "test@test.com"
+          )
+          .map { result =>
+            result.reportEORIs must contain allOf (
+              "GB123456789001",
+              "GB123456789002"
+            )
+            result.reportEORIs must not contain allOf(
+              "XI123456789001",
+              "XI123456789002"
+            )
+          }
+      }
     }
 
-    "shoudl tranform export items correctly" in {
-      val requests = Seq(
-        ReportRequest(
-          reportRequestId = "REF-1",
-          correlationId = "corr-1",
-          reportName = "Name1",
-          requesterEORI = "EORI1",
-          eoriRole = EoriRole.TRADER,
-          reportEORIs = Seq("EORI1"),
-          userEmail = Some(SensitiveString("user1@test.com")),
-          recipientEmails = Seq(SensitiveString("user1@test.com")),
-          reportTypeName = ReportTypeName.EXPORTS_ITEM_REPORT,
-          reportStart = Instant.now,
-          reportEnd = Instant.now,
-          createDate = Instant.now,
-          notifications = Seq(),
-          fileNotifications = None,
-          updateDate = Instant.now
-        )
-      )
+    "toEisReportRequest" - {
+      "convert ReportRequest to EisReportRequest" in {
+        service
+          .transformReportRequest(
+            "GB123456789000",
+            reportRequestTemplate,
+            Seq("GB123456789001"),
+            "user@email.com"
+          )
+          .map { reportRequest =>
+            val eisRequest = service.toEisReportRequest(reportRequest)
+            eisRequest.eori must contain allOf ("GB123456789001", "GB123456789000")
+            eisRequest.eoriRole mustBe EisReportRequest.EoriRole.DECLARANT
+            eisRequest.reportTypeName mustBe EisReportRequest.ReportTypeName.IMPORTSHEADERREPORT
+            eisRequest.requestID mustBe "REF-00000001"
+            eisRequest.requesterEori mustBe "GB123456789000"
+            eisRequest.startDate mustBe "2025-04-01"
+            eisRequest.endDate mustBe "2025-04-30"
+          }
+      }
+    }
 
-      val confirmations = service.reportConfirmationTransformer(requests)
-      confirmations mustBe Seq(
-        ReportConfirmation("Name1", "exportItem", "REF-1")
-      )
+    "reportConfirmationTransformer" - {
+      "should transform ReportRequest to ReportConfirmation for all report types" in {
+        val requests = Seq(
+          ReportRequest(
+            reportRequestId = "REF-1",
+            correlationId = "corr-1",
+            reportName = "Name1",
+            requesterEORI = "EORI1",
+            eoriRole = EoriRole.DECLARANT,
+            reportEORIs = Seq("EORI1"),
+            userEmail = Some(SensitiveString("user1@test.com")),
+            recipientEmails = Seq(SensitiveString("user1@test.com")),
+            reportTypeName = ReportTypeName.IMPORTS_HEADER_REPORT,
+            reportStart = Instant.now,
+            reportEnd = Instant.now,
+            createDate = Instant.now,
+            notifications = Seq(),
+            fileNotifications = None,
+            updateDate = Instant.now
+          ),
+          ReportRequest(
+            reportRequestId = "REF-2",
+            correlationId = "corr-2",
+            reportName = "Name2",
+            requesterEORI = "EORI2",
+            eoriRole = EoriRole.TRADER,
+            reportEORIs = Seq("EORI2"),
+            userEmail = Some(SensitiveString("user2@test.com")),
+            recipientEmails = Seq(SensitiveString("user2@test.com")),
+            reportTypeName = ReportTypeName.IMPORTS_ITEM_REPORT,
+            reportStart = Instant.now,
+            reportEnd = Instant.now,
+            createDate = Instant.now,
+            notifications = Seq(),
+            fileNotifications = None,
+            updateDate = Instant.now
+          ),
+          ReportRequest(
+            reportRequestId = "REF-3",
+            correlationId = "corr-3",
+            reportName = "Name3",
+            requesterEORI = "EORI3",
+            eoriRole = EoriRole.TRADER_DECLARANT,
+            reportEORIs = Seq("EORI3"),
+            userEmail = Some(SensitiveString("user3@test.com")),
+            recipientEmails = Seq(SensitiveString("user3@test.com")),
+            reportTypeName = ReportTypeName.IMPORTS_TAXLINE_REPORT,
+            reportStart = Instant.now,
+            reportEnd = Instant.now,
+            createDate = Instant.now,
+            notifications = Seq(),
+            fileNotifications = None,
+            updateDate = Instant.now
+          )
+        )
+
+        val confirmations = service.reportConfirmationTransformer(requests)
+        confirmations mustBe Seq(
+          ReportConfirmation("Name1", "importHeader", "REF-1"),
+          ReportConfirmation("Name2", "importItem", "REF-2"),
+          ReportConfirmation("Name3", "importTaxLine", "REF-3")
+        )
+      }
+
+      "shoudl tranform export items correctly" in {
+        val requests = Seq(
+          ReportRequest(
+            reportRequestId = "REF-1",
+            correlationId = "corr-1",
+            reportName = "Name1",
+            requesterEORI = "EORI1",
+            eoriRole = EoriRole.TRADER,
+            reportEORIs = Seq("EORI1"),
+            userEmail = Some(SensitiveString("user1@test.com")),
+            recipientEmails = Seq(SensitiveString("user1@test.com")),
+            reportTypeName = ReportTypeName.EXPORTS_ITEM_REPORT,
+            reportStart = Instant.now,
+            reportEnd = Instant.now,
+            createDate = Instant.now,
+            notifications = Seq(),
+            fileNotifications = None,
+            updateDate = Instant.now
+          )
+        )
+
+        val confirmations = service.reportConfirmationTransformer(requests)
+        confirmations mustBe Seq(
+          ReportConfirmation("Name1", "exportItem", "REF-1")
+        )
+      }
     }
   }
 }
