@@ -1,6 +1,6 @@
 # microservice specific routes
 
-GET         /trade-reporting-extracts/eori/setup-user                      uk.gov.hmrc.tradereportingextracts.controllers.UserController.setupUser()
+GET         /trade-reporting-extracts/eori/setup-user                      uk.gov.hmrc.tradereportingextracts.controllers.UserController.getOrSetupUser()
 
 POST        /trade-reporting-extracts/user/authorised-eoris                uk.gov.hmrc.tradereportingextracts.controllers.UserController.getAuthorisedEoris
 POST        /trade-reporting-extracts/user/notification-email              uk.gov.hmrc.tradereportingextracts.controllers.UserController.getNotificationEmail
@@ -46,6 +46,8 @@ DELETE      /trade-reporting-extracts/third-party-access-self-removal      uk.go
 DELETE      /trade-reporting-extracts/remove-third-party                    uk.gov.hmrc.tradereportingextracts.controllers.ThirdPartyRequestController.deleteThirdPartyDetails()
 
 PUT         /trade-reporting-extracts/edit-third-party-request            uk.gov.hmrc.tradereportingextracts.controllers.ThirdPartyRequestController.editThirdPartyRequest()
+
+GET         /trade-reporting-extracts/get-additional-emails             uk.gov.hmrc.tradereportingextracts.controllers.UserController.getAdditionalEmails
 
 POST        /trade-reporting-extracts/add-additional-email              uk.gov.hmrc.tradereportingextracts.controllers.UserController.addAdditionalEmail()
 

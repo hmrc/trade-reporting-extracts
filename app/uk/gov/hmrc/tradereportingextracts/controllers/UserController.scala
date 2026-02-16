@@ -39,7 +39,7 @@ class UserController @Inject() (
 )(using executionContext: ExecutionContext)
     extends BackendController(cc):
 
-  def setupUser(): Action[JsValue] = auth.authorizedAction(readPermission).async(parse.json) { implicit request =>
+  def getOrSetupUser(): Action[JsValue] = auth.authorizedAction(readPermission).async(parse.json) { implicit request =>
     (request.body \ eori).validate[String] match {
       case JsSuccess(eori, _) =>
         userService.getOrCreateUser(eori).map { userDetails =>
@@ -175,6 +175,23 @@ class UserController @Inject() (
           Future.successful(BadRequest("Missing or invalid 'traderEori' field"))
         case (_, JsError(_))                                          =>
           Future.successful(BadRequest("Missing or invalid 'thirdPartyEori' field"))
+      }
+    }
+
+  def getAdditionalEmails: Action[JsValue] =
+    auth.authorizedAction(readPermission).async(parse.json) { implicit request =>
+      (request.body \ eori).validate[String] match {
+        case JsSuccess(eori, _) =>
+          userService
+            .getUserAdditionalEmails(eori)
+            .map { additionalEmails =>
+              Ok(Json.toJson(additionalEmails))
+            }
+            .recover { case e: Exception =>
+              InternalServerError(e.getMessage)
+            }
+        case JsError(_)         =>
+          Future.successful(BadRequest("Missing or invalid 'eori' field"))
       }
     }
 
