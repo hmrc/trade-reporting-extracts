@@ -44,9 +44,12 @@ class CustomsDataStoreConnector @Inject() (appConfig: AppConfig, httpClient: Htt
       .execute[HttpResponse]
       .flatMap { response =>
         response.status match {
-          case OK => Future.successful(response.json.as[CompanyInformation])
-          case _  =>
-            logger.error(s"Unexpected response from : ${appConfig.companyInformationUrl}")
+          case OK        => Future.successful(response.json.as[CompanyInformation])
+          case NOT_FOUND =>
+            logger.info(s"Company information not found for EORI: $eori")
+            Future.successful(CompanyInformation())
+          case _         =>
+            logger.error(s"Unexpected response from : ${appConfig.companyInformationUrl}, status: ${response.status}")
             Future.successful(CompanyInformation())
         }
       }

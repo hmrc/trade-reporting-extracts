@@ -137,7 +137,7 @@ class CustomsDataStoreConnectorSpec
         }
       }
 
-      "return empty CompanyInformation when response is not OK" in {
+      "return empty CompanyInformation when response is 404 (EORI not found)" in {
         val app = applicationWithPort(server.port)
         running(app) {
           val connector = app.injector.instanceOf[CustomsDataStoreConnector]
@@ -147,6 +147,23 @@ class CustomsDataStoreConnectorSpec
             WireMock
               .post(WireMock.urlEqualTo(new URI(appConfig.companyInformationUrl).getPath))
               .willReturn(WireMock.aResponse().withStatus(404))
+          )
+
+          val result = connector.getCompanyInformation(eori).futureValue
+          result mustBe CompanyInformation()
+        }
+      }
+
+      "return empty CompanyInformation when response is 500 (internal server error)" in {
+        val app = applicationWithPort(server.port)
+        running(app) {
+          val connector = app.injector.instanceOf[CustomsDataStoreConnector]
+          val appConfig = app.injector.instanceOf[AppConfig]
+
+          server.stubFor(
+            WireMock
+              .post(WireMock.urlEqualTo(new URI(appConfig.companyInformationUrl).getPath))
+              .willReturn(WireMock.aResponse().withStatus(500))
           )
 
           val result = connector.getCompanyInformation(eori).futureValue
