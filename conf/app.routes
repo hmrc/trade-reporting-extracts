@@ -49,5 +49,7 @@ PUT         /trade-reporting-extracts/edit-third-party-request            uk.gov
 
 GET         /trade-reporting-extracts/get-additional-emails             uk.gov.hmrc.tradereportingextracts.controllers.UserController.getAdditionalEmails
 
-POST        /trade-reporting-extracts/add-additional-email              uk.gov.hmrc.tradereportingextracts.controllers.UserController.addAdditionalEmail()
+POST        /trade-reporting-extracts/add-additional-email              uk.gov.hmrc.tradereportingextracts.controllers.AdditionalEmailsController.addAdditionalEmail()
+
+DELETE      /trade-reporting-extracts/remove-additional-email           uk.gov.hmrc.tradereportingextracts.controllers.AdditionalEmailsController.removeAdditionalEmail()
 

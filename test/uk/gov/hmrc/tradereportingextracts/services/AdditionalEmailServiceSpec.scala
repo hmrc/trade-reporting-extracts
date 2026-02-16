@@ -23,8 +23,9 @@ import org.scalatest.freespec.AnyFreeSpec
 import org.scalatest.matchers.must.Matchers
 import org.scalatest.{BeforeAndAfterEach, OptionValues}
 import org.scalatestplus.mockito.MockitoSugar
+import uk.gov.hmrc.tradereportingextracts.models.User
 import uk.gov.hmrc.tradereportingextracts.models.etmp.EoriUpdate
-import uk.gov.hmrc.tradereportingextracts.repositories.AdditionalEmailRepository
+import uk.gov.hmrc.tradereportingextracts.repositories.{AdditionalEmailRepository, UserRepository}
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -40,7 +41,8 @@ class AdditionalEmailServiceSpec
   implicit val ec: ExecutionContext = ExecutionContext.global
 
   val mockRepository: AdditionalEmailRepository = mock[AdditionalEmailRepository]
-  val service                                   = new AdditionalEmailService(mockRepository)
+  val mockUserRepository: UserRepository        = mock[UserRepository]
+  val service                                   = new AdditionalEmailService(mockRepository, mockUserRepository)
 
   val testEori     = "GB123456789000"
   val testEmail    = "test@example.com"
@@ -89,6 +91,9 @@ class AdditionalEmailServiceSpec
 
     "addAdditionalEmail" - {
 
+      when(mockUserRepository.findByEori(testEori))
+        .thenReturn(Future.successful(Some(User(testEori))))
+
       "must add new email when it doesn't exist" in {
         when(mockRepository.getEmailsForEori(testEori))
           .thenReturn(Future.successful(Seq.empty))
@@ -134,7 +139,6 @@ class AdditionalEmailServiceSpec
           .thenReturn(Future.successful(Seq(testEmail)))
         when(mockRepository.updateEmailAccessDate(testEori, testEmail))
           .thenReturn(Future.successful(false))
-
         val result = service.addAdditionalEmail(testEori, testEmail)
 
         result.futureValue mustBe false
@@ -178,6 +182,7 @@ class AdditionalEmailServiceSpec
         verify(mockRepository).addEmail(testEori, upperCaseEmail)
         verify(mockRepository, never()).updateEmailAccessDate(any(), any())
       }
+
     }
 
     "removeAdditionalEmail" - {
@@ -387,6 +392,8 @@ class AdditionalEmailServiceSpec
           .thenReturn(Future.successful(Seq("existing@example.com")))
         when(mockRepository.updateEmailAccessDate(testEori, "existing@example.com"))
           .thenReturn(Future.successful(true))
+        when(mockUserRepository.findByEori(testEori))
+          .thenReturn(Future.successful(Some(User(testEori))))
 
         val result = service.addAdditionalEmail(testEori, "existing@example.com")
 

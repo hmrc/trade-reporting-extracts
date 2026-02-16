@@ -219,12 +219,3 @@ class UserService @Inject() (
                      }
                    )
     } yield eoriInfos
-
-  def addAdditionalEmail(eori: String, emailAddress: String): Future[Boolean] =
-    additionalEmailService.addAdditionalEmail(eori, emailAddress)
-
-  def removeAdditionalEmail(eori: String, emailAddress: String): Future[Boolean] =
-    additionalEmailService.removeAdditionalEmail(eori, emailAddress)
-
-  def updateEmailLastUsed(eori: String, emailAddress: String): Future[Boolean] =
-    additionalEmailService.updateEmailAccessDate(eori, emailAddress)

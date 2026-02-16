@@ -17,26 +17,33 @@
 package uk.gov.hmrc.tradereportingextracts.services
 
 import uk.gov.hmrc.tradereportingextracts.models.etmp.EoriUpdate
-import uk.gov.hmrc.tradereportingextracts.repositories.AdditionalEmailRepository
+import uk.gov.hmrc.tradereportingextracts.repositories.{AdditionalEmailRepository, UserRepository}
 
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
 class AdditionalEmailService @Inject() (
-  additionalEmailRepository: AdditionalEmailRepository
+  additionalEmailRepository: AdditionalEmailRepository,
+  userRepository: UserRepository
 )(using ec: ExecutionContext):
 
   def getAdditionalEmails(eori: String): Future[Seq[String]] =
     additionalEmailRepository.getEmailsForEori(eori)
 
-  def addAdditionalEmail(eori: String, email: String): Future[Boolean] =
-    getAdditionalEmails(eori).flatMap { existingEmails =>
-      if (existingEmails.contains(email)) {
-        additionalEmailRepository.updateEmailAccessDate(eori, email)
-      } else {
-        additionalEmailRepository.addEmail(eori, email)
-      }
+  def addAdditionalEmail(eori: String, email: String)(using ec: ExecutionContext): Future[Boolean] =
+    userRepository.findByEori(eori).flatMap {
+      case Some(_) =>
+        getAdditionalEmails(eori).flatMap { existingEmails =>
+          if (existingEmails.contains(email)) {
+            additionalEmailRepository.updateEmailAccessDate(eori, email)
+          } else {
+            additionalEmailRepository.addEmail(eori, email)
+          }
+        }
+
+      case None =>
+        Future.successful(false)
     }
 
   def removeAdditionalEmail(eori: String, email: String): Future[Boolean] =
