@@ -706,6 +706,126 @@ class UserServiceSpec
       }
     }
 
+    "getOrCreateUser" - {
+
+      "must return user details with empty additional emails for existing user" in {
+        val user               = User(eori, additionalEmails = Seq(), authorisedUsers = Seq.empty)
+        val companyInformation = CompanyInformation(
+          name = "Test Company",
+          consent = "1"
+        )
+        when(mockRepository.getOrCreateUser(eori)).thenReturn(Future.successful(user, true))
+        when(mockCustomsDataStoreConnector.getCompanyInformation(eori))
+          .thenReturn(Future.successful(companyInformation))
+        when(mockAdditionEmailService.updateLastAccessed(eori)).thenReturn(Future.successful(true))
+        when(mockRepository.getUsersByAuthorisedEori(eori)).thenReturn(Future.successful(Seq.empty))
+
+        val result = service.getOrCreateUser(eori)
+
+        val actualResult = result.futureValue
+        actualResult.eori mustEqual user.eori
+        actualResult.additionalEmails mustEqual Seq.empty
+        actualResult.authorisedUsers mustEqual user.authorisedUsers
+        actualResult.companyInformation mustEqual companyInformation
+
+        verify(mockAdditionEmailService).updateLastAccessed(eori)
+      }
+
+      "must return user details with empty additional emails and instantiate additional email object for new user" in {
+        val user               = User(eori, additionalEmails = Seq(), authorisedUsers = Seq.empty)
+        val companyInformation = CompanyInformation(
+          name = "Test Company",
+          consent = "1"
+        )
+        when(mockRepository.getOrCreateUser(eori)).thenReturn(Future.successful(user, false))
+        when(mockCustomsDataStoreConnector.getCompanyInformation(eori))
+          .thenReturn(Future.successful(companyInformation))
+        when(mockAdditionEmailService.getAdditionalEmails(eori)).thenReturn(Future.successful(Seq("test@example.com")))
+
+        val result = service.getOrCreateUser(eori)
+
+        val actualResult = result.futureValue
+        actualResult.eori mustEqual user.eori
+        actualResult.additionalEmails mustEqual Seq.empty
+        actualResult.authorisedUsers mustEqual user.authorisedUsers
+        actualResult.companyInformation mustEqual companyInformation
+
+        verify(mockAdditionEmailService).getAdditionalEmails(eori)
+      }
+    }
+
+    "getUserDetailsAll" - {
+
+      "must return user details with additional emails for existing user" in {
+        val user               = User(eori, additionalEmails = Seq(), authorisedUsers = Seq.empty)
+        val companyInformation = CompanyInformation(
+          name = "Test Company",
+          consent = "1"
+        )
+        val additionalEmails   = Seq("email1@example.com", "email2@example.com")
+        when(mockRepository.getOrCreateUser(eori)).thenReturn(Future.successful(user, true))
+        when(mockCustomsDataStoreConnector.getCompanyInformation(eori))
+          .thenReturn(Future.successful(companyInformation))
+        when(mockAdditionEmailService.getAdditionalEmails(eori)).thenReturn(Future.successful(additionalEmails))
+        when(mockAdditionEmailService.updateLastAccessed(eori)).thenReturn(Future.successful(true))
+        when(mockRepository.getUsersByAuthorisedEori(eori)).thenReturn(Future.successful(Seq.empty))
+
+        val result = service.getUserDetailsAll(eori)
+
+        val actualResult = result.futureValue
+        actualResult.eori mustEqual user.eori
+        actualResult.additionalEmails mustEqual additionalEmails
+        actualResult.authorisedUsers mustEqual user.authorisedUsers
+        actualResult.companyInformation mustEqual companyInformation
+
+        verify(mockAdditionEmailService).updateLastAccessed(eori)
+        verify(mockAdditionEmailService).getAdditionalEmails(eori)
+      }
+
+      "must return user details with additional emails for new user" in {
+        val user               = User(eori, additionalEmails = Seq(), authorisedUsers = Seq.empty)
+        val companyInformation = CompanyInformation(
+          name = "Test Company",
+          consent = "1"
+        )
+        val additionalEmails   = Seq("email1@example.com")
+        when(mockRepository.getOrCreateUser(eori)).thenReturn(Future.successful(user, false))
+        when(mockCustomsDataStoreConnector.getCompanyInformation(eori))
+          .thenReturn(Future.successful(companyInformation))
+        when(mockAdditionEmailService.getAdditionalEmails(eori)).thenReturn(Future.successful(additionalEmails))
+
+        val result = service.getUserDetailsAll(eori)
+
+        val actualResult = result.futureValue
+        actualResult.eori mustEqual user.eori
+        actualResult.additionalEmails mustEqual additionalEmails
+        actualResult.authorisedUsers mustEqual user.authorisedUsers
+        actualResult.companyInformation mustEqual companyInformation
+
+        verify(mockAdditionEmailService).getAdditionalEmails(eori)
+      }
+
+      "must return user details with empty additional emails when service returns empty" in {
+        val user               = User(eori, additionalEmails = Seq(), authorisedUsers = Seq.empty)
+        val companyInformation = CompanyInformation(
+          name = "Test Company",
+          consent = "1"
+        )
+        when(mockRepository.getOrCreateUser(eori)).thenReturn(Future.successful(user, false))
+        when(mockCustomsDataStoreConnector.getCompanyInformation(eori))
+          .thenReturn(Future.successful(companyInformation))
+        when(mockAdditionEmailService.getAdditionalEmails(eori)).thenReturn(Future.successful(Seq.empty))
+
+        val result = service.getUserDetailsAll(eori)
+
+        val actualResult = result.futureValue
+        actualResult.eori mustEqual user.eori
+        actualResult.additionalEmails mustEqual Seq.empty
+        actualResult.authorisedUsers mustEqual user.authorisedUsers
+        actualResult.companyInformation mustEqual companyInformation
+      }
+    }
+
     "updateAuthorisedUser" - {
 
       val eori           = "GB1"

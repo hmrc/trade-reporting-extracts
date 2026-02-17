@@ -57,18 +57,36 @@ class UserService @Inject() (
 
   def getOrCreateUser(eori: String): Future[UserDetails] =
     for {
-      (user, isExist)       <- userRepository.getOrCreateUser(eori)
-      companyInfoFuture      = customsDataStoreConnector.getCompanyInformation(eori)
-      additionalEmailsFuture = additionalEmailService.getAdditionalEmails(eori)
-      companyInformation    <- companyInfoFuture
-      additionalEmails      <- additionalEmailsFuture
-      _                     <- if (isExist) {
-                                 additionalEmailService
-                                   .updateLastAccessed(eori)
-                                   .flatMap(_ => cleanExpiredAccesses(user))
-                               } else {
-                                 Future.successful(())
-                               }
+      (user, isExist)    <- userRepository.getOrCreateUser(eori)
+      companyInfoFuture   = customsDataStoreConnector.getCompanyInformation(eori)
+      companyInformation <- companyInfoFuture
+      _                  <- if (isExist) {
+                              additionalEmailService
+                                .updateLastAccessed(eori)
+                                .flatMap(_ => cleanExpiredAccesses(user))
+                            } else {
+                              additionalEmailService.getAdditionalEmails(eori).map(_ => ())
+                            }
+    } yield UserDetails(
+      eori = user.eori,
+      additionalEmails = Seq.empty,
+      authorisedUsers = user.authorisedUsers,
+      companyInformation = companyInformation,
+      notificationEmail = NotificationEmail()
+    )
+
+  def getUserDetailsAll(eori: String): Future[UserDetails] =
+    for {
+      (user, isExist)    <- userRepository.getOrCreateUser(eori)
+      companyInformation <- customsDataStoreConnector.getCompanyInformation(eori)
+      additionalEmails   <- additionalEmailService.getAdditionalEmails(eori)
+      _                  <- if (isExist) {
+                              additionalEmailService
+                                .updateLastAccessed(eori)
+                                .flatMap(_ => cleanExpiredAccesses(user))
+                            } else {
+                              Future.successful(())
+                            }
     } yield UserDetails(
       eori = user.eori,
       additionalEmails = additionalEmails,
@@ -107,6 +125,9 @@ class UserService @Inject() (
       _ <- traderDeletesFut
     } yield ()
   }
+
+  def getUserAdditionalEmails(eori: String): Future[Seq[String]] =
+    additionalEmailService.getAdditionalEmails(eori)
 
   def getAuthorisedEoris(eori: String): Future[Seq[String]] =
     userRepository.getAuthorisedEoris(eori)
