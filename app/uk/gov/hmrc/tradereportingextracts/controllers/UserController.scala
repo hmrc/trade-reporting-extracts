@@ -249,19 +249,23 @@ class UserController @Inject() (
       }
     }
 
-    def getAdditionalEmails: Action[JsValue] =
-      auth.authorizedAction(readPermission).async(parse.json) { implicit request =>
-        (request.body \ eori).validate[String] match {
-          case JsSuccess(eori, _) =>
-            userService
-              .getUserAdditionalEmails(eori)
-              .map { additionalEmails =>
-                Ok(Json.toJson(additionalEmails))
-              }
-              .recover { case e: Exception =>
-                InternalServerError(e.getMessage)
-              }
-          case JsError(_)         =>
-            Future.successful(BadRequest("Missing or invalid 'eori' field"))
-        }
+  def getAdditionalEmails: Action[JsValue] =
+    auth.authorizedAction(readPermission).async(parse.json) { implicit request =>
+      validateFields(
+        "eori" -> (request.body \ eori).validate[String]
+      ) match {
+
+        case Right(values) =>
+          val eoriValue = values("eori")
+
+          userService
+            .getUserAdditionalEmails(eoriValue)
+            .map(additionalEmails => Ok(Json.toJson(additionalEmails)))
+            .recover { case e: Exception =>
+              InternalServerError(e.getMessage)
+            }
+
+        case Left(errorResult) =>
+          Future.successful(errorResult)
       }
+    }
