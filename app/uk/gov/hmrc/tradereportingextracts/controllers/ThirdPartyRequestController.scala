@@ -23,13 +23,12 @@ import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.internalauth.client.BackendAuthComponents
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 import uk.gov.hmrc.tradereportingextracts.connectors.{CustomsDataStoreConnector, EmailConnector}
-import uk.gov.hmrc.tradereportingextracts.models.{AccessType, AuthorisedUser, EmailTemplate, NotificationEmail}
+import uk.gov.hmrc.tradereportingextracts.models.{AccessType, AuthorisedUser, EmailTemplate}
 import uk.gov.hmrc.tradereportingextracts.models.thirdParty.{ThirdPartyAddedConfirmation, ThirdPartyRequest}
 import uk.gov.hmrc.tradereportingextracts.repositories.ReportRequestRepository
 import uk.gov.hmrc.tradereportingextracts.services.UserService
 import uk.gov.hmrc.tradereportingextracts.utils.ApplicationConstants
 import uk.gov.hmrc.tradereportingextracts.utils.PermissionsUtil.writePermission
-import uk.gov.hmrc.tradereportingextracts.services.AuditService
 
 import javax.inject.Inject
 import scala.collection.immutable.Map
