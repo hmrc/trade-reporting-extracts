@@ -37,6 +37,7 @@ class ReportRequestController @Inject() (
   eisService: EisService,
   auditService: AuditService,
   userService: UserService,
+  additionalEmailService: AdditionalEmailService,
   appConfig: AppConfig
 )(implicit executionContext: ExecutionContext)
     extends BackendController(cc) {
@@ -60,7 +61,7 @@ class ReportRequestController @Inject() (
           userEmail      <- customsDataStoreConnector.getNotificationEmail(value.eori).map(_.address)
           _              <- value.additionalEmail
                               .map { emails =>
-                                Future.sequence(emails.map(email => userService.updateEmailLastUsed(value.eori, email)))
+                                Future.sequence(emails.map(email => additionalEmailService.updateEmailAccessDate(value.eori, email)))
                               }
                               .getOrElse(Future.successful(Seq.empty))
           eoriHistory    <- customsDataStoreConnector

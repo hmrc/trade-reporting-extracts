@@ -143,20 +143,30 @@ class AdditionalEmailRepository @Inject() (
     } yield result
   }
 
-  def removeEmail(eori: String, email: String): Future[Boolean] = Mdc.preservingMdc {
-    val now = Instant.now()
+  def removeEmail(eori: String, email: String): Future[Boolean] =
+    Mdc.preservingMdc {
+      val now = Instant.now()
 
-    collection
-      .updateOne(
-        filter = Filters.equal("traderEori", eori),
-        update = Updates.combine(
-          Updates.pull("additionalEmails", Filters.equal("email", email)),
-          Updates.set("lastAccessed", now)
-        )
-      )
-      .toFuture()
-      .map(_.getModifiedCount > 0)
-  }
+      findByEori(eori)
+        .flatMap {
+          case Some(existingRecord) =>
+            val updatedEmails =
+              existingRecord.additionalEmails.filterNot(_.email.decryptedValue.equalsIgnoreCase(email))
+
+            if (updatedEmails.size == existingRecord.additionalEmails.size) {
+              Future.successful(false)
+            } else {
+              val updatedRecord =
+                existingRecord.copy(
+                  additionalEmails = updatedEmails,
+                  lastAccessed = now
+                )
+              upsert(updatedRecord).map(_ => true)
+            }
+          case None                 =>
+            Future.successful(false)
+        }
+    }
 
   def updateEmailAccessDate(eori: String, email: String): Future[Boolean] = Mdc.preservingMdc {
     val now = Instant.now()

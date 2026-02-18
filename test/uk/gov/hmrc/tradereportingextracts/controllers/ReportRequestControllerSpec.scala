@@ -30,7 +30,7 @@ import uk.gov.hmrc.tradereportingextracts.config.AppConfig
 import uk.gov.hmrc.tradereportingextracts.connectors.CustomsDataStoreConnector
 import uk.gov.hmrc.tradereportingextracts.models.audit.ReportRequestSubmittedEvent
 import uk.gov.hmrc.tradereportingextracts.models.{EoriHistory, EoriHistoryResponse, NotificationEmail, ReportRequest}
-import uk.gov.hmrc.tradereportingextracts.services.{EisService, ReportRequestService, RequestReferenceService, UserService}
+import uk.gov.hmrc.tradereportingextracts.services.{AdditionalEmailService, EisService, ReportRequestService, RequestReferenceService, UserService}
 import uk.gov.hmrc.tradereportingextracts.utils.{SpecBase, WireMockHelper}
 
 import java.time.LocalDateTime
@@ -42,6 +42,7 @@ class ReportRequestControllerSpec extends SpecBase with WireMockHelper {
   val mockRequestReferenceService: RequestReferenceService     = mock[RequestReferenceService]
   val mockEisService: EisService                               = mock[EisService]
   val mockUserService: UserService                             = mock[UserService]
+  val mockAdditionalEmailService: AdditionalEmailService       = mock[AdditionalEmailService]
   val mockAuditConnector: AuditConnector                       = mock[AuditConnector]
   val mockAppConfig: AppConfig                                 = mock[AppConfig]
 
@@ -52,6 +53,7 @@ class ReportRequestControllerSpec extends SpecBase with WireMockHelper {
     reset(mockRequestReferenceService)
     reset(mockEisService)
     reset(mockUserService)
+    reset(mockAdditionalEmailService)
     reset(mockAppConfig)
   }
 
@@ -60,6 +62,7 @@ class ReportRequestControllerSpec extends SpecBase with WireMockHelper {
       bind[CustomsDataStoreConnector].toInstance(mockCustomsDataStoreConnector),
       bind[ReportRequestService].toInstance(mockReportRequestService),
       bind[RequestReferenceService].toInstance(mockRequestReferenceService),
+      bind[AdditionalEmailService].toInstance(mockAdditionalEmailService),
       bind[EisService].toInstance(mockEisService),
       bind[UserService].toInstance(mockUserService),
       bind[AppConfig].toInstance(mockAppConfig)
@@ -87,7 +90,7 @@ class ReportRequestControllerSpec extends SpecBase with WireMockHelper {
       when(mockCustomsDataStoreConnector.getNotificationEmail(any()))
         .thenReturn(Future.successful(NotificationEmail("email@example.com", LocalDateTime.now())))
 
-      when(mockUserService.updateEmailLastUsed(any(), any()))
+      when(mockAdditionalEmailService.updateEmailAccessDate(any(), any()))
         .thenReturn(Future.successful(true))
 
       when(mockCustomsDataStoreConnector.getEoriHistory(any()))
@@ -160,7 +163,7 @@ class ReportRequestControllerSpec extends SpecBase with WireMockHelper {
       when(mockCustomsDataStoreConnector.getNotificationEmail(any()))
         .thenReturn(Future.successful(NotificationEmail("email@example.com", LocalDateTime.now())))
 
-      when(mockUserService.updateEmailLastUsed(any(), any()))
+      when(mockAdditionalEmailService.updateEmailAccessDate(any(), any()))
         .thenReturn(Future.successful(true))
 
       when(mockCustomsDataStoreConnector.getEoriHistory(any()))
@@ -237,7 +240,7 @@ class ReportRequestControllerSpec extends SpecBase with WireMockHelper {
       when(mockCustomsDataStoreConnector.getNotificationEmail(any()))
         .thenReturn(Future.successful(NotificationEmail("email@example.com", LocalDateTime.now())))
 
-      when(mockUserService.updateEmailLastUsed(any(), any()))
+      when(mockAdditionalEmailService.updateEmailAccessDate(any(), any()))
         .thenReturn(Future.successful(true))
 
       when(mockCustomsDataStoreConnector.getEoriHistory(any()))
@@ -330,7 +333,7 @@ class ReportRequestControllerSpec extends SpecBase with WireMockHelper {
         """
       )
 
-      when(mockUserService.updateEmailLastUsed(any(), any()))
+      when(mockAdditionalEmailService.updateEmailAccessDate(any(), any()))
         .thenReturn(Future.successful(true))
 
       when(mockCustomsDataStoreConnector.getNotificationEmail(any()))
@@ -365,7 +368,7 @@ class ReportRequestControllerSpec extends SpecBase with WireMockHelper {
       when(mockUserService.keepAlive(eqTo("GB987654321000")))
         .thenReturn(Future.successful(true))
 
-      when(mockUserService.updateEmailLastUsed(any(), any()))
+      when(mockAdditionalEmailService.updateEmailAccessDate(any(), any()))
         .thenReturn(Future.successful(true))
 
       when(mockCustomsDataStoreConnector.getNotificationEmail(any()))
@@ -411,7 +414,7 @@ class ReportRequestControllerSpec extends SpecBase with WireMockHelper {
       // Verify that keepAlive was called for the trader's EORI (whichEori)
       verify(mockUserService).keepAlive("GB987654321000")
       // Verify that updateEmailLastUsed was called for the additional email
-      verify(mockUserService).updateEmailLastUsed("GB123456789014", "email1@gmail.com")
+      verify(mockAdditionalEmailService).updateEmailAccessDate("GB123456789014", "email1@gmail.com")
     }
 
     "not update TTL when request is not for third-party" in {
@@ -430,12 +433,12 @@ class ReportRequestControllerSpec extends SpecBase with WireMockHelper {
           }
         """
       )
-      when(mockUserService.updateEmailLastUsed(any(), any()))
+      when(mockAdditionalEmailService.updateEmailAccessDate(any(), any()))
         .thenReturn(Future.successful(true))
       when(mockCustomsDataStoreConnector.getNotificationEmail(any()))
         .thenReturn(Future.successful(NotificationEmail("email@example.com", LocalDateTime.now())))
 
-      when(mockUserService.updateEmailLastUsed(any(), any()))
+      when(mockAdditionalEmailService.updateEmailAccessDate(any(), any()))
         .thenReturn(Future.successful(true))
 
       when(mockCustomsDataStoreConnector.getEoriHistory(any()))
@@ -478,7 +481,7 @@ class ReportRequestControllerSpec extends SpecBase with WireMockHelper {
       // Verify that keepAlive was NOT called since eori == whichEori
       verify(mockUserService, never()).keepAlive(any())
       // Verify that updateEmailLastUsed was called for the additional email
-      verify(mockUserService).updateEmailLastUsed("GB123456789014", "email1@gmail.com")
+      verify(mockAdditionalEmailService).updateEmailAccessDate("GB123456789014", "email1@gmail.com")
     }
 
     "update additional email TTL when processing request with multiple additional emails" in {
@@ -501,7 +504,7 @@ class ReportRequestControllerSpec extends SpecBase with WireMockHelper {
       when(mockCustomsDataStoreConnector.getNotificationEmail(any()))
         .thenReturn(Future.successful(NotificationEmail("email@example.com", LocalDateTime.now())))
 
-      when(mockUserService.updateEmailLastUsed(any(), any()))
+      when(mockAdditionalEmailService.updateEmailAccessDate(any(), any()))
         .thenReturn(Future.successful(true))
 
       when(mockCustomsDataStoreConnector.getEoriHistory(any()))
@@ -542,10 +545,10 @@ class ReportRequestControllerSpec extends SpecBase with WireMockHelper {
       status(result) mustBe OK
 
       // Verify that updateEmailLastUsed was called for each additional email
-      verify(mockUserService).updateEmailLastUsed("GB123456789014", "email1@gmail.com")
-      verify(mockUserService).updateEmailLastUsed("GB123456789014", "email2@example.com")
-      verify(mockUserService).updateEmailLastUsed("GB123456789014", "email3@test.org")
-      verify(mockUserService, times(3)).updateEmailLastUsed(eqTo("GB123456789014"), any())
+      verify(mockAdditionalEmailService).updateEmailAccessDate("GB123456789014", "email1@gmail.com")
+      verify(mockAdditionalEmailService).updateEmailAccessDate("GB123456789014", "email2@example.com")
+      verify(mockAdditionalEmailService).updateEmailAccessDate("GB123456789014", "email3@test.org")
+      verify(mockAdditionalEmailService, times(3)).updateEmailAccessDate(eqTo("GB123456789014"), any())
     }
 
     "handle request without additional emails without calling updateEmailLastUsed" in {
@@ -605,7 +608,7 @@ class ReportRequestControllerSpec extends SpecBase with WireMockHelper {
       status(result) mustBe OK
 
       // Verify that updateEmailLastUsed was NOT called when no additional emails
-      verify(mockUserService, never()).updateEmailLastUsed(any(), any())
+      verify(mockAdditionalEmailService, never()).updateEmailAccessDate(any(), any())
     }
   }
 
