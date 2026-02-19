@@ -79,9 +79,9 @@ class ReportRequestTransformationService @Inject() (
         requesterEORI = eoriValue,
         eoriRole = getRole(userAnswers.eoriRole),
         reportEORIs = if (appConfig.tacticalXIFeatureEnabled) {
-          transformToXIEorisWithGBEoris(historicalEoris :+ userAnswers.whichEori.getOrElse(""))
+          transformToXIEorisWithGBEoris(historicalEoris :+ userAnswers.whichEori)
         } else {
-          historicalEoris :+ userAnswers.whichEori.getOrElse("")
+          historicalEoris :+ userAnswers.whichEori
         },
         userEmail = Some(SensitiveString(userEmail)),
         recipientEmails = userAnswers.additionalEmail.getOrElse(Seq()).toSeq.map(email => SensitiveString(email)),

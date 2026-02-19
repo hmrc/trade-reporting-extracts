@@ -50,10 +50,10 @@ class ReportRequestController @Inject() (
         val endDate   = LocalDate.parse(value.reportEndDate, formatter)
 
         // Update TTL for trader's EORI when accessed by third-party
-        val traderTtlUpdate = value.whichEori match {
-          case Some(traderEori) if traderEori != value.eori =>
-            userService.keepAlive(traderEori).recover(_ => false)
-          case _                                            => Future.successful(true)
+        val traderTtlUpdate = if(value.whichEori != value.eori) {
+          userService.keepAlive(value.whichEori).recover(_ => false)
+        } else {
+          Future.successful(true)
         }
 
         (for {
@@ -65,7 +65,7 @@ class ReportRequestController @Inject() (
                               }
                               .getOrElse(Future.successful(Seq.empty))
           eoriHistory    <- customsDataStoreConnector
-                              .getEoriHistory(value.whichEori.get)
+                              .getEoriHistory(value.whichEori)
                               .map(_.filterByDateRange(startDate, endDate).map(_.eori))
           reportRequests <- Future.sequence {
                               value.reportType.toSeq.map { reportTypeName =>
