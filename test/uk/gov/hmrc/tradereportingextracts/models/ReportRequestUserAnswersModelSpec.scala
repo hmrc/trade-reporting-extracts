@@ -29,7 +29,7 @@ class ReportRequestUserAnswersModelSpec extends AnyFreeSpec with Matchers with O
       val model = ReportRequestUserAnswersModel(
         eori = "GB1234567890",
         dataType = "import",
-        whichEori = Some("GB1234567890"),
+        whichEori = "GB1234567890",
         eoriRole = Set("declarant"),
         reportType = Set("importHeader", "importTaxLine"),
         reportStartDate = "2021-01-01",
@@ -42,7 +42,7 @@ class ReportRequestUserAnswersModelSpec extends AnyFreeSpec with Matchers with O
 
       (json \ "eori").as[String] mustBe "GB1234567890"
       (json \ "dataType").as[String] mustBe "import"
-      (json \ "whichEori").asOpt[String] mustBe Some("GB1234567890")
+      (json \ "whichEori").as[String] mustBe "GB1234567890"
       (json \ "eoriRole").as[Set[String]] mustBe Set("declarant")
       (json \ "reportType").as[Set[String]] mustBe Set("importHeader", "importTaxLine")
       (json \ "reportStartDate").as[String] mustBe "2021-01-01"
@@ -71,7 +71,7 @@ class ReportRequestUserAnswersModelSpec extends AnyFreeSpec with Matchers with O
 
       model.eori mustBe "GB1234567890"
       model.dataType mustBe "import"
-      model.whichEori mustBe Some("GB1234567890")
+      model.whichEori mustBe "GB1234567890"
       model.eoriRole mustBe Set("declarant")
       model.reportType mustBe Set("importHeader", "importTaxLine")
       model.reportStartDate mustBe "2021-01-01"

@@ -21,7 +21,7 @@ import play.api.libs.json.{Json, OFormat}
 case class ReportRequestUserAnswersModel(
   eori: String,
   dataType: String,
-  whichEori: Option[String],
+  whichEori: String,
   eoriRole: Set[String],
   reportType: Set[String],
   reportStartDate: String,

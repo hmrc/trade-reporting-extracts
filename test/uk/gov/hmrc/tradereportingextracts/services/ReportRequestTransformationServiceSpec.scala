@@ -48,7 +48,7 @@ class ReportRequestTransformationServiceSpec extends AsyncFreeSpec with Matchers
     eori = "GB123456789000",
     reportStartDate = "2025-04-01",
     reportEndDate = "2025-04-30",
-    whichEori = Some("GB123456789000"),
+    whichEori = "GB123456789000",
     reportName = "TestReport",
     eoriRole = Set("declarant"),
     reportType = Set("importHeader"),
@@ -130,7 +130,7 @@ class ReportRequestTransformationServiceSpec extends AsyncFreeSpec with Matchers
 
         val service         = new ReportRequestTransformationService(mockRequestReferenceService, mockAppConfig)
         val model           = reportRequestTemplate.copy(
-          whichEori = Some("GB123456789002"),
+          whichEori = "GB123456789002",
           eoriRole = Set("declarant"),
           reportType = Set("importHeader")
         )
@@ -155,7 +155,7 @@ class ReportRequestTransformationServiceSpec extends AsyncFreeSpec with Matchers
 
       "when tactical xi feature is not enabled, should only contain GB Eoris" in {
         val model           = reportRequestTemplate.copy(
-          whichEori = Some("GB123456789002"),
+          whichEori = "GB123456789002",
           eoriRole = Set("declarant"),
           reportType = Set("importHeader")
         )
