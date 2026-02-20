@@ -50,7 +50,7 @@ class ReportRequestController @Inject() (
         val endDate   = LocalDate.parse(value.reportEndDate, formatter)
 
         // Update TTL for trader's EORI when accessed by third-party
-        val traderTtlUpdate = if(value.whichEori != value.eori) {
+        val traderTtlUpdate = if (value.whichEori != value.eori) {
           userService.keepAlive(value.whichEori).recover(_ => false)
         } else {
           Future.successful(true)
