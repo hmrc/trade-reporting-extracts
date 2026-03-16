@@ -17,10 +17,12 @@
 package uk.gov.hmrc.tradereportingextracts.controllers
 
 import play.api.libs.json.{JsValue, Json}
+import play.api.Logging
 import play.api.mvc.{Action, ControllerComponents}
 import uk.gov.hmrc.internalauth.client.*
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
-import uk.gov.hmrc.tradereportingextracts.models.AuthorisedUser
+import uk.gov.hmrc.tradereportingextracts.connectors.{CustomsDataStoreConnector, EmailConnector}
+import uk.gov.hmrc.tradereportingextracts.models.{AuthorisedUser, EmailTemplate}
 import uk.gov.hmrc.tradereportingextracts.models.thirdParty.EoriBusinessInfo
 import uk.gov.hmrc.tradereportingextracts.repositories.ReportRequestRepository
 import uk.gov.hmrc.tradereportingextracts.services.UserService
@@ -36,9 +38,12 @@ class UserController @Inject() (
   userService: UserService,
   cc: ControllerComponents,
   auth: BackendAuthComponents,
-  reportRequestRepository: ReportRequestRepository
+  reportRequestRepository: ReportRequestRepository,
+  customsDataStoreConnector: CustomsDataStoreConnector,
+  emailConnector: EmailConnector
 )(using executionContext: ExecutionContext)
-    extends BackendController(cc):
+    extends BackendController(cc)
+    with Logging:
 
   def getOrSetupUser(): Action[JsValue] = auth.authorizedAction(readPermission).async(parse.json) { implicit request =>
     validateFields(
@@ -230,12 +235,30 @@ class UserController @Inject() (
             .deleteAuthorisedUser(traderEori, thirdPartyEori)
             .flatMap {
               case true =>
-                reportRequestRepository
-                  .deleteReportsForThirdPartyRemoval(traderEori, thirdPartyEori)
-                  .map {
-                    case true  => Ok
-                    case false => InternalServerError("Failed to remove reports for third party access removal")
-                  }
+                for {
+                  traderEmail <- customsDataStoreConnector.getNotificationEmail(traderEori).map(_.address)
+                  result      <- reportRequestRepository
+                                   .deleteReportsForThirdPartyRemoval(traderEori, thirdPartyEori)
+                                   .flatMap {
+                                     case true =>
+                                       traderEmail match {
+                                         case ""    =>
+                                           logger.info(
+                                             s"No notification email found for trader EORI after third party access self deleted"
+                                           )
+                                           Future.successful(Ok)
+                                         case email =>
+                                           emailConnector
+                                             .sendEmailRequest(EmailTemplate.ThirdPartyAccessSelfRemoved.id, email, Map())
+                                             .flatMap(_ => Future.successful(Ok))
+                                       }
+
+                                     case false =>
+                                       Future.successful(
+                                         InternalServerError("Failed to remove reports for third party access removal")
+                                       )
+                                   }
+                } yield result
 
               case false =>
                 Future.successful(InternalServerError("Failed to remove third party access"))
