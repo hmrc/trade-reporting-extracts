@@ -233,14 +233,14 @@ class AvailableReportServiceSpec extends AnyWordSpec with Matchers with ScalaFut
     }
 
     "return all SDES responses as actions when dummyReportEnabled is true" in {
-      val mockReportRequestService = mock[ReportRequestService]
-      val mockSDESConnector = mock[SDESConnector]
+      val mockReportRequestService      = mock[ReportRequestService]
+      val mockSDESConnector             = mock[SDESConnector]
       val mockCustomsDataStoreConnector = mock[CustomsDataStoreConnector]
-      val mockAppConfig: AppConfig = mock[AppConfig]
-      val mockAuditService = mock[AuditService]
-      val eori = "GB123456789000"
-      val reportRequestId = "req-1"
-      val fileNotification = FileNotification(
+      val mockAppConfig: AppConfig      = mock[AppConfig]
+      val mockAuditService              = mock[AuditService]
+      val eori                          = "GB123456789000"
+      val reportRequestId               = "req-1"
+      val fileNotification              = FileNotification(
         "file.csv",
         123L,
         30,
@@ -252,7 +252,7 @@ class AvailableReportServiceSpec extends AnyWordSpec with Matchers with ScalaFut
         "true",
         ""
       )
-      val reportRequest = ReportRequest(
+      val reportRequest                 = ReportRequest(
         reportRequestId = reportRequestId,
         correlationId = "ABCD-DEFG",
         reportName = "Jan Report",
@@ -269,7 +269,7 @@ class AvailableReportServiceSpec extends AnyWordSpec with Matchers with ScalaFut
         fileNotifications = Some(Seq(fileNotification)),
         updateDate = Instant.parse("2023-01-03T10:00:00Z")
       )
-      val sdesResponse = Seq(
+      val sdesResponse                  = Seq(
         FileAvailableResponse(
           filename = "file.csv",
           downloadURL = "http://example.com/file.csv",
@@ -304,20 +304,20 @@ class AvailableReportServiceSpec extends AnyWordSpec with Matchers with ScalaFut
       whenReady(service.getAvailableReports(eori)) { result =>
         result.availableUserReports should not be empty
         val userReport = result.availableUserReports.get.head
-        userReport.action.size shouldBe 2
-        userReport.action.map(_.fileName) should contain allOf("file.csv", "dummy.csv")
+        userReport.action.size          shouldBe 2
+        userReport.action.map(_.fileName) should contain allOf ("file.csv", "dummy.csv")
       }
     }
 
     "return only matching SDES responses as actions when dummyReportEnabled is false" in {
-      val mockReportRequestService = mock[ReportRequestService]
-      val mockSDESConnector = mock[SDESConnector]
+      val mockReportRequestService      = mock[ReportRequestService]
+      val mockSDESConnector             = mock[SDESConnector]
       val mockCustomsDataStoreConnector = mock[CustomsDataStoreConnector]
-      val mockAppConfig: AppConfig = mock[AppConfig]
-      val mockAuditService = mock[AuditService]
-      val eori = "GB123456789000"
-      val reportRequestId = "req-1"
-      val fileNotification = FileNotification(
+      val mockAppConfig: AppConfig      = mock[AppConfig]
+      val mockAuditService              = mock[AuditService]
+      val eori                          = "GB123456789000"
+      val reportRequestId               = "req-1"
+      val fileNotification              = FileNotification(
         "file.csv",
         123L,
         30,
@@ -329,7 +329,7 @@ class AvailableReportServiceSpec extends AnyWordSpec with Matchers with ScalaFut
         "true",
         ""
       )
-      val reportRequest = ReportRequest(
+      val reportRequest                 = ReportRequest(
         reportRequestId = reportRequestId,
         correlationId = "ABCD-DEFG",
         reportName = "Jan Report",
@@ -346,7 +346,7 @@ class AvailableReportServiceSpec extends AnyWordSpec with Matchers with ScalaFut
         fileNotifications = Some(Seq(fileNotification)),
         updateDate = Instant.parse("2023-01-03T10:00:00Z")
       )
-      val sdesResponse = Seq(
+      val sdesResponse                  = Seq(
         FileAvailableResponse(
           filename = "file.csv",
           downloadURL = "http://example.com/file.csv",
@@ -381,7 +381,7 @@ class AvailableReportServiceSpec extends AnyWordSpec with Matchers with ScalaFut
       whenReady(service.getAvailableReports(eori)) { result =>
         result.availableUserReports should not be empty
         val userReport = result.availableUserReports.get.head
-        userReport.action.size shouldBe 1
+        userReport.action.size          shouldBe 1
         userReport.action.head.fileName shouldBe "file.csv"
       }
     }

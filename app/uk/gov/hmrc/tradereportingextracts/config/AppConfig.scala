@@ -58,4 +58,3 @@ class AppConfig @Inject() (
 
   lazy val dummyReportEnabled: Boolean =
     config.get[Boolean]("features.dummy-report-enabled")
-
