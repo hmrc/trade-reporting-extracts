@@ -231,6 +231,160 @@ class AvailableReportServiceSpec extends AnyWordSpec with Matchers with ScalaFut
         userReport.action.size     shouldBe 1
       }
     }
+
+    "return all SDES responses as actions when dummyReportEnabled is true" in {
+      val mockReportRequestService      = mock[ReportRequestService]
+      val mockSDESConnector             = mock[SDESConnector]
+      val mockCustomsDataStoreConnector = mock[CustomsDataStoreConnector]
+      val mockAppConfig: AppConfig      = mock[AppConfig]
+      val mockAuditService              = mock[AuditService]
+      val eori                          = "GB123456789000"
+      val reportRequestId               = "req-1"
+      val fileNotification              = FileNotification(
+        "file.csv",
+        123L,
+        30,
+        "CSV",
+        "Core-ID",
+        "req-id-456",
+        "IMPORTS-ITEM-REPORT",
+        "1",
+        "true",
+        ""
+      )
+      val reportRequest                 = ReportRequest(
+        reportRequestId = reportRequestId,
+        correlationId = "ABCD-DEFG",
+        reportName = "Jan Report",
+        requesterEORI = eori,
+        eoriRole = EoriRole.TRADER,
+        reportEORIs = Array(eori).toIndexedSeq,
+        userEmail = Some(SensitiveString("test@example.com")),
+        recipientEmails = Seq(SensitiveString("email1@example.com")),
+        reportTypeName = ReportTypeName.IMPORTS_ITEM_REPORT,
+        reportStart = Instant.parse("2023-01-01T00:00:00Z"),
+        reportEnd = Instant.parse("2023-12-31T23:59:59Z"),
+        createDate = Instant.parse("2023-01-01T10:00:00Z"),
+        notifications = Seq(),
+        fileNotifications = Some(Seq(fileNotification)),
+        updateDate = Instant.parse("2023-01-03T10:00:00Z")
+      )
+      val sdesResponse                  = Seq(
+        FileAvailableResponse(
+          filename = "file.csv",
+          downloadURL = "http://example.com/file.csv",
+          fileSize = 123L,
+          metadata = Seq(FileAvailableMetadataItem.MDTPReportRequestIDMetadataItem(reportRequestId))
+        ),
+        FileAvailableResponse(
+          filename = "dummy.csv",
+          downloadURL = "http://example.com/dummy.csv",
+          fileSize = 456L,
+          metadata = Seq(FileAvailableMetadataItem.MDTPReportRequestIDMetadataItem("dummy-id"))
+        )
+      )
+
+      when(mockAppConfig.dummyReportEnabled).thenReturn(true)
+      when(mockSDESConnector.fetchAvailableReportFileUrl(any())(any()))
+        .thenReturn(Future.successful(sdesResponse))
+      when(mockCustomsDataStoreConnector.getEoriHistory(any()))
+        .thenReturn(Future.successful(EoriHistoryResponse(Seq(EoriHistory(eori, Some("2023-01-01"), None)))))
+      when(mockReportRequestService.getAvailableReportsByHistory(any())(using any()))
+        .thenReturn(Future.successful(Seq(reportRequest)))
+
+      val service =
+        new AvailableReportService(
+          mockReportRequestService,
+          mockSDESConnector,
+          mockCustomsDataStoreConnector,
+          mockAuditService,
+          mockAppConfig
+        )
+
+      whenReady(service.getAvailableReports(eori)) { result =>
+        result.availableUserReports should not be empty
+        val userReport = result.availableUserReports.get.head
+        userReport.action.size          shouldBe 2
+        userReport.action.map(_.fileName) should contain allOf ("file.csv", "dummy.csv")
+      }
+    }
+
+    "return only matching SDES responses as actions when dummyReportEnabled is false" in {
+      val mockReportRequestService      = mock[ReportRequestService]
+      val mockSDESConnector             = mock[SDESConnector]
+      val mockCustomsDataStoreConnector = mock[CustomsDataStoreConnector]
+      val mockAppConfig: AppConfig      = mock[AppConfig]
+      val mockAuditService              = mock[AuditService]
+      val eori                          = "GB123456789000"
+      val reportRequestId               = "req-1"
+      val fileNotification              = FileNotification(
+        "file.csv",
+        123L,
+        30,
+        "CSV",
+        "Core-ID",
+        "req-id-456",
+        "IMPORTS-ITEM-REPORT",
+        "1",
+        "true",
+        ""
+      )
+      val reportRequest                 = ReportRequest(
+        reportRequestId = reportRequestId,
+        correlationId = "ABCD-DEFG",
+        reportName = "Jan Report",
+        requesterEORI = eori,
+        eoriRole = EoriRole.TRADER,
+        reportEORIs = Array(eori).toIndexedSeq,
+        userEmail = Some(SensitiveString("test@example.com")),
+        recipientEmails = Seq(SensitiveString("email1@example.com")),
+        reportTypeName = ReportTypeName.IMPORTS_ITEM_REPORT,
+        reportStart = Instant.parse("2023-01-01T00:00:00Z"),
+        reportEnd = Instant.parse("2023-12-31T23:59:59Z"),
+        createDate = Instant.parse("2023-01-01T10:00:00Z"),
+        notifications = Seq(),
+        fileNotifications = Some(Seq(fileNotification)),
+        updateDate = Instant.parse("2023-01-03T10:00:00Z")
+      )
+      val sdesResponse                  = Seq(
+        FileAvailableResponse(
+          filename = "file.csv",
+          downloadURL = "http://example.com/file.csv",
+          fileSize = 123L,
+          metadata = Seq(FileAvailableMetadataItem.MDTPReportRequestIDMetadataItem(reportRequestId))
+        ),
+        FileAvailableResponse(
+          filename = "dummy.csv",
+          downloadURL = "http://example.com/dummy.csv",
+          fileSize = 456L,
+          metadata = Seq(FileAvailableMetadataItem.MDTPReportRequestIDMetadataItem("dummy-id"))
+        )
+      )
+
+      when(mockAppConfig.dummyReportEnabled).thenReturn(false)
+      when(mockSDESConnector.fetchAvailableReportFileUrl(any())(any()))
+        .thenReturn(Future.successful(sdesResponse))
+      when(mockCustomsDataStoreConnector.getEoriHistory(any()))
+        .thenReturn(Future.successful(EoriHistoryResponse(Seq(EoriHistory(eori, Some("2023-01-01"), None)))))
+      when(mockReportRequestService.getAvailableReportsByHistory(any())(using any()))
+        .thenReturn(Future.successful(Seq(reportRequest)))
+
+      val service =
+        new AvailableReportService(
+          mockReportRequestService,
+          mockSDESConnector,
+          mockCustomsDataStoreConnector,
+          mockAuditService,
+          mockAppConfig
+        )
+
+      whenReady(service.getAvailableReports(eori)) { result =>
+        result.availableUserReports should not be empty
+        val userReport = result.availableUserReports.get.head
+        userReport.action.size          shouldBe 1
+        userReport.action.head.fileName shouldBe "file.csv"
+      }
+    }
   }
 
   "getAvailableReportsCount" should {

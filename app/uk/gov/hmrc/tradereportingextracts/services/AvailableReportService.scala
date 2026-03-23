@@ -74,12 +74,16 @@ class AvailableReportService @Inject() (
     val (userRequests, thirdPartyRequests) =
       reportRequests.partition(req => req.reportEORIs.exists(eoriHistory.contains))
 
-    def actionsFor(req: ReportRequest): Seq[AvailableReportAction] =
-      sdesResponse
-        .filter(_.metadata.exists {
+    def actionsFor(req: ReportRequest): Seq[AvailableReportAction] = {
+      val result = if (appConfig.dummyReportEnabled) {
+        sdesResponse
+      } else {
+        sdesResponse.filter(_.metadata.exists {
           case FileAvailableMetadataItem.MDTPReportRequestIDMetadataItem(value) => value == req.reportRequestId
           case _                                                                => false
         })
+      }
+      result
         .map { sdesFile =>
           AvailableReportAction(
             fileURL = sdesFile.downloadURL,
@@ -92,6 +96,7 @@ class AvailableReportService @Inject() (
             fileName = sdesFile.filename
           )
         }
+    }
 
     val availableUserReports = userRequests.map { req =>
       AvailableUserReportResponse(

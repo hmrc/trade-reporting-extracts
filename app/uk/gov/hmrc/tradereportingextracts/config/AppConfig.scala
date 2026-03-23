@@ -55,3 +55,6 @@ class AppConfig @Inject() (
   lazy val dailySubmissionLimit: Int = config.get[Int]("reportRequest.dailySubmissionLimit")
 
   lazy val tacticalXIFeatureEnabled: Boolean = config.get[Boolean]("features.tactical-xi")
+
+  lazy val dummyReportEnabled: Boolean =
+    config.get[Boolean]("features.dummy-report-enabled")
