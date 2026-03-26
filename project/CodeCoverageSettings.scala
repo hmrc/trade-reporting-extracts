@@ -15,7 +15,8 @@ object CodeCoverageSettings {
     "testonly",
     "testOnlyDoNotUseInAppConf.*",
     "uk.gov.hmrc.tradereportingextracts.config",
-    ".*javascript.*"
+    ".*javascript.*",
+    ".*models.*"
   )
 
   private val excludedFiles: Seq[String] = Seq(

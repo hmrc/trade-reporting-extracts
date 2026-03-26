@@ -110,6 +110,21 @@ class ReportRequestTransformationServiceSpec extends AsyncFreeSpec with Matchers
         }
     }
 
+    "create a ReportRequest for trader-declarant when declarant and exporter" in {
+      val model = reportRequestTemplate.copy(eoriRole = Set("declarant", "exporter"), reportType = Set("importTaxLine"))
+      service
+        .transformReportRequest(
+          "GB123456789000",
+          model,
+          Seq(),
+          "user@email.com"
+        )
+        .map { result =>
+          result.eoriRole mustBe EoriRole.TRADER_DECLARANT
+          result.reportTypeName mustBe ReportTypeName.IMPORTS_TAXLINE_REPORT
+        }
+    }
+
     "create a ReportRequest for exportItem" in {
       val model = reportRequestTemplate.copy(eoriRole = Set("exporter"), reportType = Set("exportItem"))
       service
@@ -195,6 +210,46 @@ class ReportRequestTransformationServiceSpec extends AsyncFreeSpec with Matchers
             eisRequest.eori must contain allOf ("GB123456789001", "GB123456789000")
             eisRequest.eoriRole mustBe EisReportRequest.EoriRole.DECLARANT
             eisRequest.reportTypeName mustBe EisReportRequest.ReportTypeName.IMPORTSHEADERREPORT
+            eisRequest.requestID mustBe "REF-00000001"
+            eisRequest.requesterEori mustBe "GB123456789000"
+            eisRequest.startDate mustBe "2025-04-01"
+            eisRequest.endDate mustBe "2025-04-30"
+          }
+      }
+
+      "convert ReportRequest to EisReportRequest correctly when exporter and trader" in {
+        service
+          .transformReportRequest(
+            "GB123456789000",
+            reportRequestTemplate.copy(eoriRole = Set("exporter"), reportType = Set("exportItem")),
+            Seq("GB123456789001"),
+            "user@email.com"
+          )
+          .map { reportRequest =>
+            val eisRequest = service.toEisReportRequest(reportRequest)
+            eisRequest.eori must contain allOf ("GB123456789001", "GB123456789000")
+            eisRequest.eoriRole mustBe EisReportRequest.EoriRole.TRADER
+            eisRequest.reportTypeName mustBe EisReportRequest.ReportTypeName.EXPORTSITEMREPORT
+            eisRequest.requestID mustBe "REF-00000001"
+            eisRequest.requesterEori mustBe "GB123456789000"
+            eisRequest.startDate mustBe "2025-04-01"
+            eisRequest.endDate mustBe "2025-04-30"
+          }
+      }
+
+      "convert ReportRequest to EisReportRequest correctly when trader declarant and trader" in {
+        service
+          .transformReportRequest(
+            "GB123456789000",
+            reportRequestTemplate.copy(eoriRole = Set("exporter", "declarant"), reportType = Set("exportItem")),
+            Seq("GB123456789001"),
+            "user@email.com"
+          )
+          .map { reportRequest =>
+            val eisRequest = service.toEisReportRequest(reportRequest)
+            eisRequest.eori must contain allOf ("GB123456789001", "GB123456789000")
+            eisRequest.eoriRole mustBe EisReportRequest.EoriRole.TRADERDECLARANT
+            eisRequest.reportTypeName mustBe EisReportRequest.ReportTypeName.EXPORTSITEMREPORT
             eisRequest.requestID mustBe "REF-00000001"
             eisRequest.requesterEori mustBe "GB123456789000"
             eisRequest.startDate mustBe "2025-04-01"

@@ -78,23 +78,6 @@ class UserRepositorySpec
 
   "UserRepositorySpec" should {
 
-    //    "insertUser with TTL" should {
-    //      "must insert a user with TTL successfully" in {
-    //        implicit val patienceConfig: PatienceConfig = PatienceConfig(timeout = 70.seconds, interval = 1.second)
-    //
-    //        val result = for {
-    //          _             <- createIndex(mongoComponent.database, "tre-user", "accessDate", "accessDate-ttl-index")
-    //          insertResult  <- userRepository.insert(user)
-    //          _              = Thread.sleep(65000)
-    //          fetchedRecord <- userRepository.findByEori(user.eori)
-    //        } yield {
-    //          insertResult mustEqual true
-    //          fetchedRecord mustBe None
-    //        }
-    //        result.futureValue
-    //      }
-    //    }
-
     "insertUser" should {
       "must insert a user successfully" in {
         val insertResult = userRepository.insert(user).futureValue
@@ -655,6 +638,23 @@ class UserRepositorySpec
 
         val result = userRepository.updateAuthorisedUser(nonExistentEori, updatedAuthorisedUser).failed.futureValue
         result mustBe an[Exception]
+      }
+    }
+
+    "deleteAuthorisedUser" should {
+
+      "return true when authorised user is deleted successfully" in {
+        val insertResult  = userRepository.insert(user).futureValue
+        val deleted       = userRepository.deleteAuthorisedUser(user.eori, "eori1").futureValue
+        val fetchedRecord = userRepository.getAuthorisedUser(user.eori, "eori1").futureValue
+        insertResult mustEqual true
+        deleted mustEqual true
+        fetchedRecord mustBe None
+      }
+
+      "return exception when authorised user to delete is not found" in {
+        val deleted = userRepository.deleteAuthorisedUser(user.eori, "foo").failed.futureValue
+        deleted mustBe an[Exception]
       }
     }
   }
