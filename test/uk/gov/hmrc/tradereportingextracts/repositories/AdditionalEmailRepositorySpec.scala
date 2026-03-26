@@ -121,6 +121,19 @@ class AdditionalEmailRepositorySpec
         val emails = storedRecord.get.additionalEmails.map(_.email.decryptedValue)
         emails must contain theSameElementsAs Seq(testEmail1, testEmail2)
       }
+
+      "upsert email if email already added " in {
+        repo.addEmail(testEori1, testEmail1).futureValue
+        val result = repo.addEmail(testEori1, testEmail1).futureValue
+        result mustBe true
+
+        val storedRecord = repo.findByEori(testEori1).futureValue
+        storedRecord mustBe defined
+        storedRecord.get.additionalEmails must have size 1
+
+        val emails = storedRecord.get.additionalEmails.map(_.email.decryptedValue)
+        emails must contain theSameElementsAs Seq(testEmail1)
+      }
     }
 
     "updateLastAccessed" should {
@@ -419,5 +432,32 @@ class AdditionalEmailRepositorySpec
 
     }
 
+    "removeEmail" should {
+
+      "return true and remove the specified email when it exists" in {
+        repo.addEmail(testEori1, testEmail1).futureValue
+        repo.addEmail(testEori1, testEmail2).futureValue
+
+        val result = repo.removeEmail(testEori1, testEmail1).futureValue
+        result mustBe true
+
+        val emails = repo.getEmailsForEori(testEori1).futureValue
+        emails must have size 1
+        emails must contain only testEmail2
+      }
+
+      "return false when the specified email does not exist" in {
+        repo.addEmail(testEori1, testEmail1).futureValue
+
+        val result = repo.removeEmail(testEori1, testEmail2).futureValue
+
+        result mustBe false
+      }
+
+      "if no eori no found return false" in {
+        val result = repo.removeEmail("nonexistent", testEmail1).futureValue
+        result mustBe false
+      }
+    }
   }
 }
