@@ -137,7 +137,7 @@ class ReportRequestService @Inject() (
               _ <- reportRequestRepository.update(updatedReportRequest)
               _  = if (eisReportStatusRequest.statusCode != StatusCode.FILENOREC.toString) {
                      logger.warn(
-                       s"Report generation failed for reportRequestId: $maskedId with status code: ${eisReportStatusRequest.statusCode}"
+                       s"Report generation failed for reportRequestId: ${req.reportRequestId} / correlationId: {${req.correlationId} with status code: ${eisReportStatusRequest.statusCode}"
                      )
                    }
               _  = auditService.audit(
