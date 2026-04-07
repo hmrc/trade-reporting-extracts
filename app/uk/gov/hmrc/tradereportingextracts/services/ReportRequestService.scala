@@ -131,9 +131,15 @@ class ReportRequestService @Inject() (
           req.notifications.exists(_.statusType == EisReportStatusRequest.StatusType.ERROR),
           eisReportStatusRequest.statusType
         ) match {
+          // Only send email and audit if the current notification is an error and there are no previous error notifications for this report request. Also logs a warning if error is not due to no data being available.
           case (false, StatusType.ERROR) =>
             for {
               _ <- reportRequestRepository.update(updatedReportRequest)
+              _  = if (eisReportStatusRequest.statusCode != StatusCode.FILENOREC.toString) {
+                     logger.warn(
+                       s"Report generation failed for reportRequestId: ${req.reportRequestId} / correlationId: ${req.correlationId} with status code: ${eisReportStatusRequest.statusCode}"
+                     )
+                   }
               _  = auditService.audit(
                      ReportGenerationFailureEvent(
                        xCorrelationId = updatedReportRequest.correlationId,
