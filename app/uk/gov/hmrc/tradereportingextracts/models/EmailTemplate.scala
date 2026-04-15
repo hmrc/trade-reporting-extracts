@@ -21,6 +21,9 @@ sealed trait EmailTemplate { def id: String }
 object EmailTemplate {
   case object ThirdPartyAddedTp extends EmailTemplate { val id: String = "tre_third_party_added_tp" }
   case object ThirdPartyAccessRemoved extends EmailTemplate { val id: String = "tre_third_party_access_removed" }
+  case object ThirdPartyAccessSelfRemoved extends EmailTemplate {
+    val id: String = "tre_third_party_access_self_removed"
+  }
   case object ThirdPartyAccessEditedTp extends EmailTemplate { val id: String = "tre_third_party_access_edited_tp" }
   case object ReportAvailable extends EmailTemplate {
     val id: String = "tre_report_available"

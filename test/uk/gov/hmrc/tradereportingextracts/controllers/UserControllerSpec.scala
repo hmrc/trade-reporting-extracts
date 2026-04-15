@@ -16,8 +16,10 @@
 
 package uk.gov.hmrc.tradereportingextracts.controllers
 
+import org.mockito.Mockito.*
+import org.apache.pekko.Done
 import org.mockito.ArgumentMatchers.any
-import org.mockito.Mockito.when
+import org.mockito.Mockito.{never, verify, when}
 import play.api.Application
 import play.api.libs.json.{JsArray, JsObject, JsString, Json}
 import play.api.mvc.Result
@@ -26,17 +28,17 @@ import play.api.test.{FakeRequest, Helpers}
 import uk.gov.hmrc.internalauth.client.*
 import uk.gov.hmrc.internalauth.client.Retrieval.EmptyRetrieval
 import uk.gov.hmrc.internalauth.client.test.{BackendAuthComponentsStub, StubBehaviour}
+import uk.gov.hmrc.tradereportingextracts.connectors.{CustomsDataStoreConnector, EmailConnector}
 import uk.gov.hmrc.tradereportingextracts.models.thirdParty.EoriBusinessInfo
 import uk.gov.hmrc.tradereportingextracts.models.*
 import uk.gov.hmrc.tradereportingextracts.repositories.ReportRequestRepository
 import uk.gov.hmrc.tradereportingextracts.services.UserService
-import uk.gov.hmrc.tradereportingextracts.utils.SpecBase
-import uk.gov.hmrc.tradereportingextracts.utils.ApplicationConstants
+import uk.gov.hmrc.tradereportingextracts.utils.{ApplicationConstants, SpecBase, WireMockHelper}
 
 import java.time.{Instant, LocalDate, LocalDateTime, ZoneOffset}
 import scala.concurrent.{ExecutionContext, Future}
 
-class UserControllerSpec extends SpecBase {
+class UserControllerSpec extends SpecBase with WireMockHelper {
 
   implicit val ec: ExecutionContext                        = ExecutionContext.Implicits.global
   private val mockUserService: UserService                 = mock[UserService]
@@ -44,18 +46,39 @@ class UserControllerSpec extends SpecBase {
   private val backendAuthComponents: BackendAuthComponents =
     BackendAuthComponentsStub(mockStubBehaviour)(Helpers.stubControllerComponents())
   private val mockReportRequestRepository                  = mock[ReportRequestRepository]
-  val controller                                           =
+  private val mockCustomsDataStoreConnector                = mock[CustomsDataStoreConnector]
+  private val mockEmailConnector                           = mock[EmailConnector]
+
+  override def beforeEach(): Unit = {
+    super.beforeEach()
+    reset(mockEmailConnector)
+  }
+
+  val controllerWithConnectors =
     new UserController(
       mockUserService,
       Helpers.stubControllerComponents(),
       backendAuthComponents,
-      mockReportRequestRepository
+      mockReportRequestRepository,
+      mockCustomsDataStoreConnector,
+      mockEmailConnector
     )(using ec)
-  val readPermission: Predicate.Permission                 = Predicate.Permission(
+
+  val controller =
+    new UserController(
+      mockUserService,
+      Helpers.stubControllerComponents(),
+      backendAuthComponents,
+      mockReportRequestRepository,
+      null,
+      null
+    )(using ec)
+
+  val readPermission: Predicate.Permission = Predicate.Permission(
     Resource(ResourceType("trade-reporting-extracts"), ResourceLocation("trade-reporting-extracts/*")),
     IAAction("READ")
   )
-  val writePermission                                      = Predicate.Permission(
+  val writePermission                      = Predicate.Permission(
     Resource(ResourceType("trade-reporting-extracts"), ResourceLocation("trade-reporting-extracts/*")),
     IAAction("WRITE")
   )
@@ -649,14 +672,20 @@ class UserControllerSpec extends SpecBase {
 
   "UserController.thirdPartyAccessSelfRemoval" should {
 
-    "return an OK when authorised user deleted and third party reports removed" in new Setup {
-      val traderEori     = "123"
-      val thirdPartyEori = "456"
+    val traderEori     = "123"
+    val thirdPartyEori = "456"
+
+    "return an OK when authorised user deleted and third party reports removed and send email" in new Setup {
 
       when(mockUserService.deleteAuthorisedUser(traderEori, thirdPartyEori))
         .thenReturn(Future.successful(true))
       when(mockReportRequestRepository.deleteReportsForThirdPartyRemoval(traderEori, thirdPartyEori))
         .thenReturn(Future.successful(true))
+      when(mockCustomsDataStoreConnector.getNotificationEmail(traderEori))
+        .thenReturn(Future.successful(NotificationEmail("trader@example.com", LocalDateTime.now())))
+      when(mockEmailConnector.sendEmailRequest(any(), any(), any())(any()))
+        .thenReturn(Future.successful(Done))
+
       when(mockStubBehaviour.stubAuth(Some(writePermission), EmptyRetrieval))
         .thenReturn(Future.successful(EmptyRetrieval))
 
@@ -664,14 +693,15 @@ class UserControllerSpec extends SpecBase {
         .withHeaders("Content-Type" -> "application/json", AUTHORIZATION -> "my-token")
         .withBody(Json.obj("traderEori" -> traderEori, "thirdPartyEori" -> thirdPartyEori))
 
-      val result: Future[Result] = controller.thirdPartyAccessSelfRemoval.apply(request)
+      val result: Future[Result] = controllerWithConnectors.thirdPartyAccessSelfRemoval.apply(request)
 
       status(result) shouldBe OK
+
+      verify(mockEmailConnector)
+        .sendEmailRequest(any(), any(), any())(any())
     }
 
     "return an internal server error when authorised user delete fails" in new Setup {
-      val traderEori     = "123"
-      val thirdPartyEori = "456"
 
       when(mockUserService.deleteAuthorisedUser(traderEori, thirdPartyEori))
         .thenReturn(Future.successful(false))
@@ -682,15 +712,13 @@ class UserControllerSpec extends SpecBase {
         .withHeaders("Content-Type" -> "application/json", AUTHORIZATION -> "my-token")
         .withBody(Json.obj("traderEori" -> traderEori, "thirdPartyEori" -> thirdPartyEori))
 
-      val result: Future[Result] = controller.thirdPartyAccessSelfRemoval.apply(request)
+      val result: Future[Result] = controllerWithConnectors.thirdPartyAccessSelfRemoval.apply(request)
 
       status(result)        shouldBe INTERNAL_SERVER_ERROR
       contentAsString(result) should include("Failed to remove third party access")
     }
 
     "return an internal server error when deleteReportsForThirdParty fails" in new Setup {
-      val traderEori     = "123"
-      val thirdPartyEori = "456"
 
       when(mockUserService.deleteAuthorisedUser(traderEori, thirdPartyEori))
         .thenReturn(Future.successful(true))
@@ -703,14 +731,14 @@ class UserControllerSpec extends SpecBase {
         .withHeaders("Content-Type" -> "application/json", AUTHORIZATION -> "my-token")
         .withBody(Json.obj("traderEori" -> traderEori, "thirdPartyEori" -> thirdPartyEori))
 
-      val result: Future[Result] = controller.thirdPartyAccessSelfRemoval.apply(request)
+      val result: Future[Result] = controllerWithConnectors.thirdPartyAccessSelfRemoval.apply(request)
 
-      status(result)        shouldBe INTERNAL_SERVER_ERROR
-      contentAsString(result) should include("Failed to remove reports for third party access removal")
+      status(result) shouldBe INTERNAL_SERVER_ERROR
+
+      verify(mockEmailConnector, never()).sendEmailRequest(any(), any(), any())(any())
     }
 
     "return a bad request when invalid traderEori" in new Setup {
-      val thirdPartyEori = "456"
 
       when(mockStubBehaviour.stubAuth(Some(writePermission), EmptyRetrieval))
         .thenReturn(Future.successful(EmptyRetrieval))
@@ -719,14 +747,13 @@ class UserControllerSpec extends SpecBase {
         .withHeaders("Content-Type" -> "application/json", AUTHORIZATION -> "my-token")
         .withBody(Json.obj("wrongField" -> "value", "thirdPartyEori" -> thirdPartyEori))
 
-      val result: Future[Result] = controller.thirdPartyAccessSelfRemoval.apply(request)
+      val result: Future[Result] = controllerWithConnectors.thirdPartyAccessSelfRemoval.apply(request)
 
       status(result)        shouldBe BAD_REQUEST
       contentAsString(result) should include("Missing or invalid 'traderEori' field")
     }
 
     "return a bad request when invalid thirdPartyEori" in new Setup {
-      val traderEori = "123"
 
       when(mockStubBehaviour.stubAuth(Some(writePermission), EmptyRetrieval))
         .thenReturn(Future.successful(EmptyRetrieval))
@@ -735,13 +762,14 @@ class UserControllerSpec extends SpecBase {
         .withHeaders("Content-Type" -> "application/json", AUTHORIZATION -> "my-token")
         .withBody(Json.obj("traderEori" -> traderEori, "wrongField" -> "value"))
 
-      val result: Future[Result] = controller.thirdPartyAccessSelfRemoval.apply(request)
+      val result: Future[Result] = controllerWithConnectors.thirdPartyAccessSelfRemoval.apply(request)
 
       status(result)        shouldBe BAD_REQUEST
       contentAsString(result) should include("Missing or invalid 'thirdPartyEori' field")
     }
 
     "return a bad request when both EORIs are invalid" in new Setup {
+
       val request: FakeRequest[JsObject] = FakeRequest(POST, routes.UserController.thirdPartyAccessSelfRemoval.url)
         .withHeaders("Content-Type" -> "application/json", AUTHORIZATION -> "my-token")
         .withBody(Json.obj("foo" -> "bar", "fizz" -> "buzz"))
@@ -749,7 +777,7 @@ class UserControllerSpec extends SpecBase {
       when(mockStubBehaviour.stubAuth(Some(writePermission), EmptyRetrieval))
         .thenReturn(Future.successful(EmptyRetrieval))
 
-      val result: Future[Result] = controller.thirdPartyAccessSelfRemoval.apply(request)
+      val result: Future[Result] = controllerWithConnectors.thirdPartyAccessSelfRemoval.apply(request)
 
       status(result)        shouldBe BAD_REQUEST
       contentAsString(result) should include("Missing or invalid 'traderEori', 'thirdPartyEori' fields")
