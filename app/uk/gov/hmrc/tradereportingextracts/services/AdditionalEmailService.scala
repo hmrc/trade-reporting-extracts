@@ -26,7 +26,7 @@ import scala.concurrent.{ExecutionContext, Future}
 class AdditionalEmailService @Inject() (
   additionalEmailRepository: AdditionalEmailRepository,
   userRepository: UserRepository
-)(using ec: ExecutionContext):
+):
 
   def getAdditionalEmails(eori: String): Future[Seq[String]] =
     additionalEmailRepository.getEmailsForEori(eori)

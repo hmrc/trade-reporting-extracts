@@ -22,7 +22,7 @@ import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.tradereportingextracts.connectors.{CustomsDataStoreConnector, EmailConnector}
 import uk.gov.hmrc.tradereportingextracts.models.*
 import uk.gov.hmrc.tradereportingextracts.models.audit.ReportGenerationFailureEvent
-import uk.gov.hmrc.tradereportingextracts.models.eis.EisReportStatusHeaders.XCorrelationID
+import uk.gov.hmrc.tradereportingextracts.models.CommonRequestHeaders.xCorrelationID
 import uk.gov.hmrc.tradereportingextracts.models.eis.EisReportStatusRequest
 import uk.gov.hmrc.tradereportingextracts.models.eis.EisReportStatusRequest.StatusType
 import uk.gov.hmrc.tradereportingextracts.repositories.ReportRequestRepository
@@ -121,7 +121,7 @@ class ReportRequestService @Inject() (
     headers: Headers,
     eisReportStatusRequest: EisReportStatusRequest
   )(implicit ec: ExecutionContext, hc: HeaderCarrier): Future[Unit] = {
-    val correlationId = headers.get(XCorrelationID.toString).getOrElse("unknown-correlation-id")
+    val correlationId = headers.get(xCorrelationID.toString).getOrElse("unknown-correlation-id")
     reportRequestRepository.findByCorrelationId(correlationId).flatMap {
       case Some(req) =>
         val maskedId             = req.reportRequestId.replaceFirst("^.{5}", "XXXXX")
