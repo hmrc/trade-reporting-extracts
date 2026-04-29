@@ -20,8 +20,9 @@ import play.api.libs.json.*
 import play.api.mvc.*
 import play.api.Logging
 import uk.gov.hmrc.tradereportingextracts.config.AppConfig
+import uk.gov.hmrc.tradereportingextracts.models.CommonRequestHeaders
 import uk.gov.hmrc.tradereportingextracts.models.etmp.*
-import uk.gov.hmrc.tradereportingextracts.models.etmp.EoriUpdateHeaders.*
+import uk.gov.hmrc.tradereportingextracts.models.CommonRequestHeaders.*
 import uk.gov.hmrc.tradereportingextracts.services.{AdditionalEmailService, UserService}
 import uk.gov.hmrc.tradereportingextracts.utils.HttpDateFormatter.getCurrentHttpDate
 import uk.gov.hmrc.tradereportingextracts.utils.HeaderUtils
@@ -48,7 +49,7 @@ class EoriUpdateController @Inject() (
 
   def eoriUpdate(): Action[AnyContent] = Action.async { request =>
     def missingHeaders: Seq[String] =
-      HeaderUtils.missingHeaders(request, EoriUpdateHeaders.allHeaders)
+      HeaderUtils.missingHeaders(request, CommonRequestHeaders.allHeaders)
 
     def isAuthorized: Boolean =
       HeaderUtils.isAuthorized(request, appConfig.eoriUpdateAuthToken, authorization.toString)

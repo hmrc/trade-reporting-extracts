@@ -14,22 +14,22 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.tradereportingextracts.models.eis
+package uk.gov.hmrc.tradereportingextracts.models
 
 import org.scalatest.freespec.AnyFreeSpec
 import org.scalatest.matchers.must.Matchers
 
-class EisReportRequestHeadersSpec extends AnyFreeSpec with Matchers {
+class CommonRequestHeadersSpec extends AnyFreeSpec with Matchers {
 
-  "EisReportRequestHeaders.allHeaders" - {
+  "CommonRequestHeaders.allHeaders" - {
     "must return all expected header names" in {
-      EisReportRequestHeaders.allHeaders must contain theSameElementsAs Seq(
-        "accept",
+      CommonRequestHeaders.allHeaders must contain theSameElementsAs Seq(
         "authorization",
         "content-type",
         "date",
         "x-correlation-id",
-        "x-forwarded-host"
+        "x-transmitting-system",
+        "source-system"
       )
     }
   }

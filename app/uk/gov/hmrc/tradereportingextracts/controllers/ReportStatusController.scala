@@ -21,8 +21,9 @@ import play.api.libs.json.*
 import play.api.mvc.*
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 import uk.gov.hmrc.tradereportingextracts.config.AppConfig
+import uk.gov.hmrc.tradereportingextracts.models.CommonRequestHeaders
 import uk.gov.hmrc.tradereportingextracts.models.eis.*
-import uk.gov.hmrc.tradereportingextracts.models.eis.EisReportStatusHeaders.*
+import uk.gov.hmrc.tradereportingextracts.models.CommonRequestHeaders.*
 import uk.gov.hmrc.tradereportingextracts.services.ReportRequestService
 import uk.gov.hmrc.tradereportingextracts.utils.HeaderUtils
 import uk.gov.hmrc.tradereportingextracts.utils.HttpDateFormatter.getCurrentHttpDate
@@ -41,41 +42,41 @@ class ReportStatusController @Inject() (
 
   def notifyReportStatus(): Action[AnyContent] = Action.async { implicit request =>
     def missingHeaders: Seq[String] =
-      HeaderUtils.missingHeaders(request, EisReportStatusHeaders.allHeaders)
+      HeaderUtils.missingHeaders(request, CommonRequestHeaders.allHeaders)
 
     def isAuthorized: Boolean =
-      HeaderUtils.isAuthorized(request, appConfig.eisAPI6AuthToken, Authorization.toString)
+      HeaderUtils.isAuthorized(request, appConfig.eisAPI6AuthToken, authorization.toString)
 
     (missingHeaders, isAuthorized, request.body.asJson) match {
       case (headers, _, _) if headers.nonEmpty =>
         logger.error(
           s"reportstatusnotification missing required headers: ${headers
-              .mkString(", ")} for CorrelationID: ${request.headers.get(XCorrelationID.toString).getOrElse("")}"
+              .mkString(", ")} for CorrelationID: ${request.headers.get(xCorrelationID.toString).getOrElse("")}"
         )
         Future.successful(
           BadRequest.withHeaders(
-            Date.toString           -> getCurrentHttpDate,
-            XCorrelationID.toString -> request.headers.get(XCorrelationID.toString).getOrElse("")
+            date.toString           -> getCurrentHttpDate,
+            xCorrelationID.toString -> request.headers.get(xCorrelationID.toString).getOrElse("")
           )
         )
       case (_, false, _)                       =>
         logger.error(
-          s"reportstatusnotification unauthorised request for CorrelationID: ${request.headers.get(XCorrelationID.toString).getOrElse("")}"
+          s"reportstatusnotification unauthorised request for CorrelationID: ${request.headers.get(xCorrelationID.toString).getOrElse("")}"
         )
         Future.successful(
           Forbidden.withHeaders(
-            Date.toString           -> getCurrentHttpDate,
-            XCorrelationID.toString -> request.headers.get(XCorrelationID.toString).getOrElse("")
+            date.toString           -> getCurrentHttpDate,
+            xCorrelationID.toString -> request.headers.get(xCorrelationID.toString).getOrElse("")
           )
         )
       case (_, _, None)                        =>
         logger.error(
-          s"reportstatusnotification missing request body for CorrelationID: ${request.headers.get(XCorrelationID.toString).getOrElse("")}"
+          s"reportstatusnotification missing request body for CorrelationID: ${request.headers.get(xCorrelationID.toString).getOrElse("")}"
         )
         Future.successful(
           BadRequest.withHeaders(
-            Date.toString           -> getCurrentHttpDate,
-            XCorrelationID.toString -> request.headers.get(XCorrelationID.toString).getOrElse("")
+            date.toString           -> getCurrentHttpDate,
+            xCorrelationID.toString -> request.headers.get(xCorrelationID.toString).getOrElse("")
           )
         )
       case (_, _, Some(json))                  =>
@@ -84,18 +85,18 @@ class ReportStatusController @Inject() (
             reportRequestService.processReportStatus(request.headers, json.as[EisReportStatusRequest])
             Future.successful(
               Created.withHeaders(
-                Date.toString           -> getCurrentHttpDate,
-                XCorrelationID.toString -> request.headers.get(XCorrelationID.toString).getOrElse("")
+                date.toString           -> getCurrentHttpDate,
+                xCorrelationID.toString -> request.headers.get(xCorrelationID.toString).getOrElse("")
               )
             )
           case JsError(errors) =>
             logger.error(
-              s"reportstatusnotification invalid request body for CorrelationID: ${request.headers.get(XCorrelationID.toString).getOrElse("")}"
+              s"reportstatusnotification invalid request body for CorrelationID: ${request.headers.get(xCorrelationID.toString).getOrElse("")}"
             )
             Future.successful(
               BadRequest.withHeaders(
-                Date.toString           -> getCurrentHttpDate,
-                XCorrelationID.toString -> request.headers.get(XCorrelationID.toString).getOrElse("")
+                date.toString           -> getCurrentHttpDate,
+                xCorrelationID.toString -> request.headers.get(xCorrelationID.toString).getOrElse("")
               )
             )
         }

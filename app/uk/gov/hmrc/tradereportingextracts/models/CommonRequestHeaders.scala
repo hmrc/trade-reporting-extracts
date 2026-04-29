@@ -14,23 +14,15 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.tradereportingextracts.models.eis
+package uk.gov.hmrc.tradereportingextracts.models
 
-import org.scalatest.freespec.AnyFreeSpec
-import org.scalatest.matchers.must.Matchers
+object CommonRequestHeaders extends Enumeration {
+  val authorization: Value       = Value("authorization")
+  val contentType: Value         = Value("content-type")
+  val date: Value                = Value("date")
+  val xCorrelationID: Value      = Value("x-correlation-id")
+  val XTransmittingSystem: Value = Value("x-transmitting-system")
+  val SourceSystem: Value        = Value("source-system")
 
-class EisReportStatusHeadersSpec extends AnyFreeSpec with Matchers {
-
-  "EisReportStatusHeaders.allHeaders" - {
-    "must return all expected header names" in {
-      EisReportStatusHeaders.allHeaders must contain theSameElementsAs Seq(
-        "authorization",
-        "content-type",
-        "date",
-        "x-correlation-id",
-        "x-transmitting-system",
-        "source-system"
-      )
-    }
-  }
+  def allHeaders: List[String] = values.map(_.toString).toList
 }
