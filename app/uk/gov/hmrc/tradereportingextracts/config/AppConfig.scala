@@ -58,3 +58,6 @@ class AppConfig @Inject() (
 
   lazy val dummyReportEnabled: Boolean =
     config.get[Boolean]("features.dummy-report-enabled")
+
+  lazy val errorHandlingQa: Boolean =
+    config.get[Boolean]("features.error-handling-qa")

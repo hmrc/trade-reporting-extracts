@@ -46,11 +46,17 @@ class CustomsDataStoreConnector @Inject() (appConfig: AppConfig, httpClient: Htt
         response.status match {
           case OK        => Future.successful(response.json.as[CompanyInformation])
           case NOT_FOUND =>
-            logger.info(s"Company information not found for EORI: $eori")
-            Future.successful(CompanyInformation())
+            if (appConfig.errorHandlingQa) {
+              logger.info(s"Company information not found for EORI: $eori")
+              Future.successful(CompanyInformation())
+            } else Future.failed(UpstreamErrorResponse(s"Company information not found for EORI: $eori", NOT_FOUND))
           case _         =>
-            logger.error(s"Unexpected response from : ${appConfig.companyInformationUrl}, status: ${response.status}")
-            Future.successful(CompanyInformation())
+            Future.failed(
+              UpstreamErrorResponse(
+                s"Unexpected response from getCompanyInformation : ${response.status}",
+                response.status
+              )
+            )
         }
       }
 
@@ -62,10 +68,19 @@ class CustomsDataStoreConnector @Inject() (appConfig: AppConfig, httpClient: Htt
       .execute[HttpResponse]
       .flatMap { response =>
         response.status match {
-          case OK => Future.successful(response.json.as[EoriHistoryResponse])
-          case _  =>
-            logger.error(s"Unexpected response from : ${appConfig.eoriHistoryUrl}")
-            Future.successful(EoriHistoryResponse(Seq.empty[EoriHistory]))
+          case OK        => Future.successful(response.json.as[EoriHistoryResponse])
+          case NOT_FOUND =>
+            if (appConfig.errorHandlingQa) {
+              logger.info(s"EoriHistory not found for EORI: $eori")
+              Future.successful(EoriHistoryResponse(Seq.empty[EoriHistory]))
+            } else Future.failed(UpstreamErrorResponse(s"EoriHistory not found for EORI: $eori", NOT_FOUND))
+          case _         =>
+            Future.failed(
+              UpstreamErrorResponse(
+                s"Unexpected response from getEoriHistory : ${response.status}",
+                response.status
+              )
+            )
         }
       }
 
