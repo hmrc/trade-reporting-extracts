@@ -28,10 +28,11 @@ import uk.gov.hmrc.tradereportingextracts.models.ReportRequest
 import uk.gov.hmrc.tradereportingextracts.models.StatusCode.*
 import uk.gov.hmrc.tradereportingextracts.models.eis.{EisReportRequest, EisReportResponseError, EisReportStatusRequest}
 import uk.gov.hmrc.http.Retries
-
+import scala.util.{Failure, Success}
 import java.time.{Clock, LocalDate}
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util.Try
 
 @Singleton
 class EisService @Inject() (
@@ -74,15 +75,14 @@ class EisService @Inject() (
           } else if (Status.isServerError(status)) {
             Future.failed(EisService.EisServerError(status, response.body))
           } else {
-            val errorMessage = Json.toJson(response.body).validate[EisReportResponseError] match {
-              case JsError(errors)        =>
+            val errorMessage   = Try(Json.parse(response.body).validate[EisReportResponseError]) match {
+              case Success(JsSuccess(value, _)) =>
+                logger.error(s"Failed to send report to EIS. Status: $status, Body: ${response.body}")
+                s"EIS Error: ${value.errorDetail.errorMessage.getOrElse("Unknown EIS error")}"
+              case _                            =>
                 logger.error(s"Unexpected response from EIS: ${response.body}")
                 s"Unexpected response from EIS: ${response.body}"
-              case JsSuccess(value, path) =>
-                logger.error(s"Failed to send report to EIS. Status: $status, Body: ${response.body}")
-                s"EIS Error: ${value.errorDetail.errorMessage}"
             }
-
             val updatedRequest = reportRequest.copy(notifications =
               reportRequest.notifications :+
                 EisReportStatusRequest(
@@ -97,8 +97,8 @@ class EisService @Inject() (
           }
         }
     }.transformWith {
-      case scala.util.Success(value)                                   => Future.successful(value)
-      case scala.util.Failure(EisService.EisServerError(status, body)) =>
+      case Success(value)                                   => Future.successful(value)
+      case Failure(EisService.EisServerError(status, body)) =>
         val errorMessage   = s"EIS server error after retries. Status: $status, Body: $body"
         val updatedRequest = reportRequest.copy(notifications =
           reportRequest.notifications :+
@@ -111,7 +111,7 @@ class EisService @Inject() (
             )
         )
         reportRequestService.update(updatedRequest).map(_ => updatedRequest)
-      case scala.util.Failure(ex)                                      => Future.failed(ex)
+      case Failure(ex)                                      => Future.failed(ex)
     }
   }
 
