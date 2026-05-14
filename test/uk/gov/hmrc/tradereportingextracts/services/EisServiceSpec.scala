@@ -16,6 +16,7 @@
 
 package uk.gov.hmrc.tradereportingextracts.services
 
+import com.typesafe.config.Config
 import org.apache.pekko.actor.ActorSystem
 import org.mockito.ArgumentCaptor
 import org.mockito.ArgumentMatchers.{any, eq as eqTo}
@@ -34,8 +35,10 @@ import uk.gov.hmrc.tradereportingextracts.models.StatusCode.*
 import uk.gov.hmrc.tradereportingextracts.models.eis.EisReportStatusRequest.{ApplicationComponent, StatusType}
 import uk.gov.hmrc.tradereportingextracts.models.eis.{EisReportRequest, EisReportStatusRequest}
 import uk.gov.hmrc.tradereportingextracts.models.{EoriRole, ReportRequest, ReportTypeName}
+import java.time.Duration
 
 import java.time.Instant
+import java.util
 import scala.concurrent.duration.*
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -52,11 +55,11 @@ class EisServiceSpec extends AnyWordSpec with Matchers with MockitoSugar with Sc
   val mockReportRequestService: ReportRequestService = mock[ReportRequestService]
   val mockAppConfig: AppConfig                       = mock[AppConfig]
   val mockActorSystem: ActorSystem                   = ActorSystem("test-system")
+  val mockConfig: Config                             = mock[Config]
 
-  when(mockAppConfig.eisRequestTraderReportRetryDelay).thenReturn(1)
-  when(mockAppConfig.eisRequestTraderReportMaxRetries).thenReturn(3)
-
-  val service = new EisService(mockConnector, mockReportRequestService, mockActorSystem, mockAppConfig)
+  when(mockConfig.getDurationList("http-verbs.retries.intervals"))
+    .thenReturn(util.Arrays.asList(Duration.ofSeconds(1), Duration.ofSeconds(1), Duration.ofSeconds(2)))
+  val service = new EisService(mockConnector, mockReportRequestService, mockConfig, mockActorSystem, mockAppConfig)
 
   val eisReportRequest: EisReportRequest = EisReportRequest(
     endDate = "2024-01-01",
@@ -91,40 +94,6 @@ class EisServiceSpec extends AnyWordSpec with Matchers with MockitoSugar with Sc
     HttpResponse(status, body = body)
 
   "EisService.requestTraderReport" should {
-
-    "return updated ReportRequest for OK, ACCEPTED, or NO_CONTENT" in {
-      Seq(OK, ACCEPTED, NO_CONTENT).foreach { responseStatus =>
-        reset(mockConnector, mockReportRequestService)
-
-        when(mockConnector.requestTraderReport(any(), any())(any()))
-          .thenReturn(Future.successful(httpResponse(responseStatus)))
-
-        when(mockReportRequestService.update(any())(any()))
-          .thenReturn(Future.successful(true))
-
-        val result = service.requestTraderReport(eisReportRequest, reportRequest)
-
-        whenReady(result) { updatedReportRequest =>
-          val captor = ArgumentCaptor.forClass(classOf[ReportRequest])
-          verify(mockReportRequestService).update(captor.capture())(any())
-
-          val persistedReportRequestAfterEis: ReportRequest = captor.getValue
-          persistedReportRequestAfterEis.notifications.head.copy(statusTimestamp = null) mustBe
-            EisReportStatusRequest(
-              applicationComponent = ApplicationComponent.TRE,
-              statusCode = INITIATED.toString,
-              statusMessage = "Report sent to EIS successfully",
-              statusTimestamp = null,
-              statusType = StatusType.INFORMATION
-            )
-
-          verify(mockConnector, times(1))
-            .requestTraderReport(eqTo(eisReportRequest), eqTo(reportRequest.correlationId))(any())
-
-          updatedReportRequest mustBe persistedReportRequestAfterEis
-        }
-      }
-    }
 
     "retry on INTERNAL_SERVER_ERROR and succeed if a later attempt is OK" in {
       reset(mockConnector, mockReportRequestService)
@@ -162,11 +131,46 @@ class EisServiceSpec extends AnyWordSpec with Matchers with MockitoSugar with Sc
       }
     }
 
+    "return updated ReportRequest for OK, ACCEPTED, or NO_CONTENT" in {
+      Seq(OK, ACCEPTED, NO_CONTENT).foreach { responseStatus =>
+        reset(mockConnector, mockReportRequestService)
+
+        when(mockConnector.requestTraderReport(any(), any())(any()))
+          .thenReturn(Future.successful(httpResponse(responseStatus)))
+
+        when(mockReportRequestService.update(any())(any()))
+          .thenReturn(Future.successful(true))
+
+        val result = service.requestTraderReport(eisReportRequest, reportRequest)
+
+        whenReady(result) { updatedReportRequest =>
+          val captor = ArgumentCaptor.forClass(classOf[ReportRequest])
+          verify(mockReportRequestService).update(captor.capture())(any())
+
+          val persistedReportRequestAfterEis: ReportRequest = captor.getValue
+          persistedReportRequestAfterEis.notifications.head.copy(statusTimestamp = null) mustBe
+            EisReportStatusRequest(
+              applicationComponent = ApplicationComponent.TRE,
+              statusCode = INITIATED.toString,
+              statusMessage = "Report sent to EIS successfully",
+              statusTimestamp = null,
+              statusType = StatusType.INFORMATION
+            )
+
+          verify(mockConnector, times(1))
+            .requestTraderReport(eqTo(eisReportRequest), eqTo(reportRequest.correlationId))(any())
+
+          updatedReportRequest mustBe persistedReportRequestAfterEis
+        }
+      }
+    }
+
     "return updated ReportRequest with FAILED status if all retries exhausted with INTERNAL_SERVER_ERROR" in {
       reset(mockConnector, mockReportRequestService)
 
       when(mockConnector.requestTraderReport(any(), any())(any()))
         .thenReturn(
+          Future.successful(httpResponse(INTERNAL_SERVER_ERROR)),
           Future.successful(httpResponse(INTERNAL_SERVER_ERROR)),
           Future.successful(httpResponse(INTERNAL_SERVER_ERROR)),
           Future.successful(httpResponse(INTERNAL_SERVER_ERROR))
@@ -188,15 +192,31 @@ class EisServiceSpec extends AnyWordSpec with Matchers with MockitoSugar with Sc
           EisReportStatusRequest(
             applicationComponent = ApplicationComponent.TRE,
             statusCode = FAILED.toString,
-            statusMessage = "Unexpected response from EIS: ",
+            statusMessage = "EIS server error after retries. Status: 500, Body: ",
             statusTimestamp = null,
             statusType = StatusType.ERROR
           )
 
-        verify(mockConnector, times(3)).requestTraderReport(eqTo(eisReportRequest), eqTo(reportRequest.correlationId))(
+        verify(mockConnector, times(4)).requestTraderReport(eqTo(eisReportRequest), eqTo(reportRequest.correlationId))(
           any()
         )
       }
     }
+
+    "propagate unexpected exceptions" in {
+      reset(mockConnector, mockReportRequestService)
+
+      val ex = new RuntimeException("unexpected")
+      when(mockConnector.requestTraderReport(any(), any())(any()))
+        .thenReturn(Future.failed(ex))
+
+      val result = service.requestTraderReport(eisReportRequest, reportRequest)
+
+      whenReady(result.failed) { thrown =>
+        thrown mustBe ex
+      }
+    }
+
   }
+
 }

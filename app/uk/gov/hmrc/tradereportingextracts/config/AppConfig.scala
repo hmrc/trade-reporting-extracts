@@ -49,9 +49,6 @@ class AppConfig @Inject() (
   lazy val treXClientId: String = sdesConfig.treXClientId
   lazy val email: String        = servicesConfig.baseUrl("email") + "/hmrc/email"
 
-  lazy val eisRequestTraderReportMaxRetries: Int = eisConfig.requestTraderReportMaxRetries
-  lazy val eisRequestTraderReportRetryDelay: Int = eisConfig.requestTraderReportRetryDelay
-
   lazy val dailySubmissionLimit: Int = config.get[Int]("reportRequest.dailySubmissionLimit")
 
   lazy val tacticalXIFeatureEnabled: Boolean = config.get[Boolean]("features.tactical-xi")
