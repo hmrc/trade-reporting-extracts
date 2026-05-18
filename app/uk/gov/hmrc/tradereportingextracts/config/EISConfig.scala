@@ -30,9 +30,3 @@ class EISConfig @Inject() (servicesConfig: ServicesConfig, config: Configuration
   val authTokenAPI1: String =
     config.get[String]("microservice.services.eis.auth-token")
   val authTokenAPI6: String = config.get[String]("eis.auth-token")
-
-  val requestTraderReportMaxRetries: Int =
-    config.get[Int]("microservice.services.eis.request-trader-report.max-retries")
-
-  val requestTraderReportRetryDelay: Int =
-    config.get[Int]("microservice.services.eis.request-trader-report.retry-delay")

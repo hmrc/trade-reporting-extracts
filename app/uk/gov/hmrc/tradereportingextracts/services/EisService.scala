@@ -17,7 +17,7 @@
 package uk.gov.hmrc.tradereportingextracts.services
 
 import org.apache.pekko.actor.ActorSystem
-import org.apache.pekko.pattern.after
+import com.typesafe.config.Config
 import play.api.Logging
 import play.api.http.Status
 import play.api.libs.json.{JsError, JsSuccess, Json}
@@ -27,31 +27,35 @@ import uk.gov.hmrc.tradereportingextracts.connectors.EisConnector
 import uk.gov.hmrc.tradereportingextracts.models.ReportRequest
 import uk.gov.hmrc.tradereportingextracts.models.StatusCode.*
 import uk.gov.hmrc.tradereportingextracts.models.eis.{EisReportRequest, EisReportResponseError, EisReportStatusRequest}
-
+import uk.gov.hmrc.http.Retries
+import scala.util.{Failure, Success}
 import java.time.{Clock, LocalDate}
 import javax.inject.{Inject, Singleton}
-import scala.concurrent.duration.*
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util.Try
 
 @Singleton
 class EisService @Inject() (
   connector: EisConnector,
   reportRequestService: ReportRequestService,
-  actorSystem: ActorSystem,
+  override val configuration: Config,
+  override val actorSystem: ActorSystem,
   appConfig: AppConfig
 )(implicit
   ec: ExecutionContext
-) extends Logging {
-
-  private val MaxRetries = appConfig.eisRequestTraderReportMaxRetries
-  private val RetryDelay = appConfig.eisRequestTraderReportRetryDelay
+) extends Logging
+    with Retries {
 
   def requestTraderReport(payload: EisReportRequest, reportRequest: ReportRequest)(implicit
     hc: HeaderCarrier
   ): Future[ReportRequest] = {
+    val clock = Clock.systemUTC()
 
-    def attempt(remainingAttempts: Int): Future[ReportRequest] = {
-      val clock = Clock.systemUTC()
+    val retryCondition: PartialFunction[Exception, Boolean] = { case EisService.EisServerError(_, _) =>
+      true
+    }
+
+    retryFor("EIS requestTraderReport")(retryCondition) {
       connector
         .requestTraderReport(payload, reportRequest.correlationId)
         .flatMap { response =>
@@ -68,21 +72,17 @@ class EisService @Inject() (
                 )
             )
             reportRequestService.update(updatedRequest).map(_ => updatedRequest)
-          } else if (Status.isServerError(status) && remainingAttempts > 1) {
-            logger.warn(
-              s"EIS request failed with status ${response.status}. Retrying... Attempts left: ${remainingAttempts - 1}"
-            )
-            after(RetryDelay.second, actorSystem.scheduler)(attempt(remainingAttempts - 1))
+          } else if (Status.isServerError(status)) {
+            Future.failed(EisService.EisServerError(status, response.body))
           } else {
-            val errorMessage = Json.toJson(response.body).validate[EisReportResponseError] match {
-              case JsError(errors)        =>
+            val errorMessage   = Try(Json.parse(response.body).validate[EisReportResponseError]) match {
+              case Success(JsSuccess(value, _)) =>
+                logger.error(s"Failed to send report to EIS. Status: $status, Body: ${response.body}")
+                s"EIS Error: ${value.errorDetail.errorMessage.getOrElse("Unknown EIS error")}"
+              case _                            =>
                 logger.error(s"Unexpected response from EIS: ${response.body}")
                 s"Unexpected response from EIS: ${response.body}"
-              case JsSuccess(value, path) =>
-                logger.error(s"Failed to send report to EIS. Status: $status, Body: ${response.body}")
-                s"EIS Error: ${value.errorDetail.errorMessage}"
             }
-
             val updatedRequest = reportRequest.copy(notifications =
               reportRequest.notifications :+
                 EisReportStatusRequest(
@@ -96,8 +96,26 @@ class EisService @Inject() (
             reportRequestService.update(updatedRequest).map(_ => updatedRequest)
           }
         }
+    }.transformWith {
+      case Success(value)                                   => Future.successful(value)
+      case Failure(EisService.EisServerError(status, body)) =>
+        val errorMessage   = s"EIS server error after retries. Status: $status, Body: $body"
+        val updatedRequest = reportRequest.copy(notifications =
+          reportRequest.notifications :+
+            EisReportStatusRequest(
+              applicationComponent = EisReportStatusRequest.ApplicationComponent.TRE,
+              statusCode = FAILED.toString,
+              statusMessage = errorMessage,
+              statusTimestamp = LocalDate.now(clock).toString,
+              statusType = EisReportStatusRequest.StatusType.ERROR
+            )
+        )
+        reportRequestService.update(updatedRequest).map(_ => updatedRequest)
+      case Failure(ex)                                      => Future.failed(ex)
     }
+  }
 
-    attempt(MaxRetries)
+  object EisService {
+    case class EisServerError(status: Int, body: String) extends Exception(s"Server error: $status, $body")
   }
 }
