@@ -34,7 +34,7 @@ class ReportRequestTransformationServiceSpec extends AsyncFreeSpec with Matchers
 
   val mockAppConfig: AppConfig                             = mock[AppConfig]
   val mockRequestReferenceService: RequestReferenceService = mock[RequestReferenceService]
-  when(mockAppConfig.tacticalXIFeatureEnabled).thenReturn(false)
+  when(mockAppConfig.strategicXIFeatureEnabled).thenReturn(false)
   when(mockRequestReferenceService.generateUnique()).thenReturn(Future.successful("REF-00000001"))
 
   val service = new ReportRequestTransformationService(mockRequestReferenceService, mockAppConfig)
@@ -139,11 +139,35 @@ class ReportRequestTransformationServiceSpec extends AsyncFreeSpec with Matchers
         }
     }
 
-    "tactical XI implementation" - {
-      "when tactical xi feature is enabled, should transform EORIs to include GB and XI versions" in {
-        when(mockAppConfig.tacticalXIFeatureEnabled).thenReturn(true)
+    "strategic XI implementation" - {
+      "when strategic xi feature is enabled, should only returns historical EORIs passed from connector response " in {
+        when(mockAppConfig.strategicXIFeatureEnabled).thenReturn(true)
 
         val service         = new ReportRequestTransformationService(mockRequestReferenceService, mockAppConfig)
+        val model           = reportRequestTemplate.copy(
+          whichEori = "GB123456789002",
+          eoriRole = Set("declarant"),
+          reportType = Set("importHeader")
+        )
+        val historicalEoris = Seq("GB123456789001", "XI123456789000")
+
+        service
+          .transformReportRequest(
+            "GB123456789000",
+            model,
+            historicalEoris,
+            "test@test.com"
+          )
+          .map { result =>
+            result.reportEORIs must contain allOf (
+              "GB123456789001",
+              "GB123456789002",
+              "XI123456789000"
+            )
+          }
+      }
+
+      "when strategic xi feature is not enabled, should transform all EORIs from connector response" in {
         val model           = reportRequestTemplate.copy(
           whichEori = "GB123456789002",
           eoriRole = Set("declarant"),
@@ -162,33 +186,6 @@ class ReportRequestTransformationServiceSpec extends AsyncFreeSpec with Matchers
             result.reportEORIs must contain allOf (
               "GB123456789001",
               "GB123456789002",
-              "XI123456789001",
-              "XI123456789002"
-            )
-          }
-      }
-
-      "when tactical xi feature is not enabled, should only contain GB Eoris" in {
-        val model           = reportRequestTemplate.copy(
-          whichEori = "GB123456789002",
-          eoriRole = Set("declarant"),
-          reportType = Set("importHeader")
-        )
-        val historicalEoris = Seq("GB123456789001")
-
-        service
-          .transformReportRequest(
-            "GB123456789000",
-            model,
-            historicalEoris,
-            "test@test.com"
-          )
-          .map { result =>
-            result.reportEORIs must contain allOf (
-              "GB123456789001",
-              "GB123456789002"
-            )
-            result.reportEORIs must not contain allOf(
               "XI123456789001",
               "XI123456789002"
             )
