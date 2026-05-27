@@ -79,11 +79,6 @@ class InternalAuthTokenInitializerImpl @Inject() (
               "resourceType"     -> "trade-reporting-extracts",
               "resourceLocation" -> "trade-reporting-extracts/*",
               "actions"          -> List("WRITE", "READ", "DELETE")
-            ),
-            Json.obj(
-              "resourceType"     -> "user-allow-list",
-              "resourceLocation" -> "trade-reporting-extracts-frontend",
-              "actions"          -> List("READ")
             )
           )
         )
