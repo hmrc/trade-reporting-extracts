@@ -71,7 +71,7 @@ class ReportRequestControllerSpec extends SpecBase with WireMockHelper {
 
   "createReportRequest" should {
 
-    "return OK and report ID for a single report when input is valid" in {
+    "return OK and report ID for a single report when input is valid when a trader requesting their own data" in {
       val inputJson: JsValue = Json.parse(
         """
           {
@@ -79,6 +79,79 @@ class ReportRequestControllerSpec extends SpecBase with WireMockHelper {
             "reportStartDate": "2025-04-16",
             "reportEndDate": "2025-05-16",
             "whichEori": "GB123456789014",
+            "reportName": "MyReport",
+            "eoriRole": ["declarant"],
+            "reportType": ["importHeader"],
+            "dataType": "import",
+            "additionalEmail": ["email1@gmail.com"]
+          }
+        """
+      )
+      when(mockCustomsDataStoreConnector.getNotificationEmail(any()))
+        .thenReturn(Future.successful(NotificationEmail("email@example.com", LocalDateTime.now())))
+
+      when(mockAdditionalEmailService.updateEmailAccessDate(any(), any()))
+        .thenReturn(Future.successful(true))
+
+      when(mockCustomsDataStoreConnector.getTraderEoriHistory(any()))
+        .thenReturn(
+          Future.successful(
+            EoriHistoryResponse(
+              Seq(
+                EoriHistory(
+                  "eori",
+                  Some("2023-02-01"),
+                  Some("2023-03-01")
+                )
+              )
+            )
+          )
+        )
+
+      when(mockRequestReferenceService.generateUnique())
+        .thenReturn(Future.successful("REF-00000001"))
+
+      when(mockReportRequestService.createAll(any())(any()))
+        .thenReturn(Future.successful(true))
+
+      val reportRequestCaptor = ArgumentCaptor.forClass(classOf[ReportRequest])
+      when(mockEisService.requestTraderReport(any(), reportRequestCaptor.capture())(any()))
+        .thenAnswer(_ => Future.successful(reportRequestCaptor.getValue))
+
+      doNothing()
+        .when(mockAuditConnector)
+        .sendExplicitAudit(any[String], any[ReportRequestSubmittedEvent])(any(), any(), any())
+
+      val request = FakeRequest(POST, "/trade-reporting-extracts/create-report-request")
+        .withHeaders("Content-Type" -> "application/json")
+        .withJsonBody(inputJson)
+
+      val result = route(app, request).value
+
+      status(result) mustBe OK
+      contentAsJson(result) mustBe Json.arr(
+        Json.obj(
+          "reportName"      -> "MyReport",
+          "reportType"      -> "importHeader",
+          "reportReference" -> "REF-00000001"
+        )
+      )
+
+      verify(mockReportRequestService).createAll(any())(any())
+
+      val capturedRequest = reportRequestCaptor.getValue
+      capturedRequest.reportRequestId mustBe "REF-00000001"
+      capturedRequest.requesterEORI mustBe "GB123456789014"
+    }
+
+    "return OK and report ID for a single report when input is valid when a third party requesting trader data" in {
+      val inputJson: JsValue = Json.parse(
+        """
+          {
+            "eori": "GB123456789014",
+            "reportStartDate": "2025-04-16",
+            "reportEndDate": "2025-05-16",
+            "whichEori": "GB123456789013",
             "reportName": "MyReport",
             "eoriRole": ["declarant"],
             "reportType": ["importHeader"],
@@ -113,6 +186,8 @@ class ReportRequestControllerSpec extends SpecBase with WireMockHelper {
 
       when(mockReportRequestService.createAll(any())(any()))
         .thenReturn(Future.successful(true))
+
+      when(mockUserService.keepAlive("GB123456789013")).thenReturn(Future.successful(true))
 
       val reportRequestCaptor = ArgumentCaptor.forClass(classOf[ReportRequest])
       when(mockEisService.requestTraderReport(any(), reportRequestCaptor.capture())(any()))
@@ -166,7 +241,7 @@ class ReportRequestControllerSpec extends SpecBase with WireMockHelper {
       when(mockAdditionalEmailService.updateEmailAccessDate(any(), any()))
         .thenReturn(Future.successful(true))
 
-      when(mockCustomsDataStoreConnector.getEoriHistory(any()))
+      when(mockCustomsDataStoreConnector.getTraderEoriHistory(any()))
         .thenReturn(
           Future.successful(
             EoriHistoryResponse(
@@ -243,7 +318,7 @@ class ReportRequestControllerSpec extends SpecBase with WireMockHelper {
       when(mockAdditionalEmailService.updateEmailAccessDate(any(), any()))
         .thenReturn(Future.successful(true))
 
-      when(mockCustomsDataStoreConnector.getEoriHistory(any()))
+      when(mockCustomsDataStoreConnector.getTraderEoriHistory(any()))
         .thenReturn(
           Future.successful(
             EoriHistoryResponse(
@@ -441,7 +516,7 @@ class ReportRequestControllerSpec extends SpecBase with WireMockHelper {
       when(mockAdditionalEmailService.updateEmailAccessDate(any(), any()))
         .thenReturn(Future.successful(true))
 
-      when(mockCustomsDataStoreConnector.getEoriHistory(any()))
+      when(mockCustomsDataStoreConnector.getTraderEoriHistory(any()))
         .thenReturn(
           Future.successful(
             EoriHistoryResponse(
@@ -507,7 +582,7 @@ class ReportRequestControllerSpec extends SpecBase with WireMockHelper {
       when(mockAdditionalEmailService.updateEmailAccessDate(any(), any()))
         .thenReturn(Future.successful(true))
 
-      when(mockCustomsDataStoreConnector.getEoriHistory(any()))
+      when(mockCustomsDataStoreConnector.getTraderEoriHistory(any()))
         .thenReturn(
           Future.successful(
             EoriHistoryResponse(
@@ -570,7 +645,7 @@ class ReportRequestControllerSpec extends SpecBase with WireMockHelper {
       when(mockCustomsDataStoreConnector.getNotificationEmail(any()))
         .thenReturn(Future.successful(NotificationEmail("email@example.com", LocalDateTime.now())))
 
-      when(mockCustomsDataStoreConnector.getEoriHistory(any()))
+      when(mockCustomsDataStoreConnector.getTraderEoriHistory(any()))
         .thenReturn(
           Future.successful(
             EoriHistoryResponse(

@@ -78,10 +78,10 @@ class ReportRequestTransformationService @Inject() (
         reportName = userAnswers.reportName,
         requesterEORI = eoriValue,
         eoriRole = getRole(userAnswers.eoriRole),
-        reportEORIs = if (appConfig.tacticalXIFeatureEnabled) {
-          transformToXIEorisWithGBEoris(historicalEoris :+ userAnswers.whichEori)
-        } else {
+        reportEORIs = if (appConfig.strategicXIFeatureEnabled) {
           historicalEoris :+ userAnswers.whichEori
+        } else {
+          transformToXIEorisWithGBEoris(historicalEoris :+ userAnswers.whichEori)
         },
         userEmail = Some(SensitiveString(userEmail)),
         recipientEmails = userAnswers.additionalEmail.getOrElse(Seq()).toSeq.map(email => SensitiveString(email)),

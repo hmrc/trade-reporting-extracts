@@ -60,10 +60,11 @@ class CustomsDataStoreConnector @Inject() (appConfig: AppConfig, httpClient: Htt
         }
       }
 
-  def getEoriHistory(eori: String): Future[EoriHistoryResponse] =
-    logger.info(s"Requesting EORI history at : ${appConfig.eoriHistoryUrl}")
+  def getEoriHistory(eori: String): Future[EoriHistoryResponse] = {
+    val url = if (appConfig.strategicXIFeatureEnabled) appConfig.eoriHistoryGBXIUrl else appConfig.eoriHistoryUrl
+    logger.info(s"Requesting EORI history at : $url")
     httpClient
-      .post(url"${appConfig.eoriHistoryUrl}")
+      .post(url"$url")
       .withBody(Json.obj(ApplicationConstants.eori -> eori))
       .execute[HttpResponse]
       .flatMap { response =>
@@ -83,6 +84,33 @@ class CustomsDataStoreConnector @Inject() (appConfig: AppConfig, httpClient: Htt
             )
         }
       }
+  }
+
+  def getTraderEoriHistory(eori: String): Future[EoriHistoryResponse] = {
+    val url =
+      if (appConfig.strategicXIFeatureEnabled) appConfig.eoriTraderHistoryGBXIUrl else appConfig.eoriTraderHistoryUrl
+    logger.info(s"Requesting EORI history at : $url")
+    httpClient
+      .get(url"$url")
+      .execute[HttpResponse]
+      .flatMap { response =>
+        response.status match {
+          case OK        => Future.successful(response.json.as[EoriHistoryResponse])
+          case NOT_FOUND =>
+            if (appConfig.errorHandlingQa) {
+              logger.info(s" Trader EoriHistory not found for EORI: $eori")
+              Future.successful(EoriHistoryResponse(Seq.empty[EoriHistory]))
+            } else Future.failed(UpstreamErrorResponse(s"Trader EoriHistory not found for EORI: $eori", NOT_FOUND))
+          case _         =>
+            Future.failed(
+              UpstreamErrorResponse(
+                s"Unexpected response from getEoriHistory : ${response.status}",
+                response.status
+              )
+            )
+        }
+      }
+  }
 
   def getNotificationEmail(eori: String): Future[NotificationEmail] =
     logger.info(s"Requesting notification email at : ${appConfig.verifiedEmailUrl}")
