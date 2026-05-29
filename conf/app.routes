@@ -11,11 +11,13 @@ POST        /trade-reporting-extracts/create-report-request                uk.go
 POST        /trade-reporting-extracts/notify-report-available              uk.gov.hmrc.tradereportingextracts.controllers.FileNotificationController.fileNotification()
 
 PUT         /tre/reportstatusnotification/v1                               uk.gov.hmrc.tradereportingextracts.controllers.ReportStatusController.notifyReportStatus()
+PUT         /trade-reporting-extracts/reportstatusnotification/v1          uk.gov.hmrc.tradereportingextracts.controllers.ReportStatusController.notifyReportStatus()
 
 GET         /trade-reporting-extracts/api/available-reports                uk.gov.hmrc.tradereportingextracts.controllers.AvailableReportController.getAvailableReports()
 GET         /trade-reporting-extracts/api/available-reports-count          uk.gov.hmrc.tradereportingextracts.controllers.AvailableReportController.getAvailableReportsCount()
 
 PUT         /tre/updateeori/v1                                             uk.gov.hmrc.tradereportingextracts.controllers.EoriUpdateController.eoriUpdate()
+PUT         /trade-reporting-extracts/updateeori/v1                        uk.gov.hmrc.tradereportingextracts.controllers.EoriUpdateController.eoriUpdate()
 
 GET         /trade-reporting-extracts/report-submission-limit/:eori        uk.gov.hmrc.tradereportingextracts.controllers.ReportRequestController.hasReachedSubmissionLimit(eori: String)
 
