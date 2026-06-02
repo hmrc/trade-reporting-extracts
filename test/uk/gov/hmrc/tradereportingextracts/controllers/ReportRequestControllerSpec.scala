@@ -93,7 +93,7 @@ class ReportRequestControllerSpec extends SpecBase with WireMockHelper {
       when(mockAdditionalEmailService.updateEmailAccessDate(any(), any()))
         .thenReturn(Future.successful(true))
 
-      when(mockCustomsDataStoreConnector.getTraderEoriHistory(any(), any()))
+      when(mockCustomsDataStoreConnector.getEoriHistory(any()))
         .thenReturn(
           Future.successful(
             EoriHistoryResponse(
@@ -241,7 +241,7 @@ class ReportRequestControllerSpec extends SpecBase with WireMockHelper {
       when(mockAdditionalEmailService.updateEmailAccessDate(any(), any()))
         .thenReturn(Future.successful(true))
 
-      when(mockCustomsDataStoreConnector.getTraderEoriHistory(any(), any()))
+      when(mockCustomsDataStoreConnector.getEoriHistory(any()))
         .thenReturn(
           Future.successful(
             EoriHistoryResponse(
@@ -318,7 +318,7 @@ class ReportRequestControllerSpec extends SpecBase with WireMockHelper {
       when(mockAdditionalEmailService.updateEmailAccessDate(any(), any()))
         .thenReturn(Future.successful(true))
 
-      when(mockCustomsDataStoreConnector.getTraderEoriHistory(any(), any()))
+      when(mockCustomsDataStoreConnector.getEoriHistory(any()))
         .thenReturn(
           Future.successful(
             EoriHistoryResponse(
@@ -516,7 +516,7 @@ class ReportRequestControllerSpec extends SpecBase with WireMockHelper {
       when(mockAdditionalEmailService.updateEmailAccessDate(any(), any()))
         .thenReturn(Future.successful(true))
 
-      when(mockCustomsDataStoreConnector.getTraderEoriHistory(any(), any()))
+      when(mockCustomsDataStoreConnector.getEoriHistory(any()))
         .thenReturn(
           Future.successful(
             EoriHistoryResponse(
@@ -582,7 +582,7 @@ class ReportRequestControllerSpec extends SpecBase with WireMockHelper {
       when(mockAdditionalEmailService.updateEmailAccessDate(any(), any()))
         .thenReturn(Future.successful(true))
 
-      when(mockCustomsDataStoreConnector.getTraderEoriHistory(any(), any()))
+      when(mockCustomsDataStoreConnector.getEoriHistory(any()))
         .thenReturn(
           Future.successful(
             EoriHistoryResponse(
@@ -645,7 +645,7 @@ class ReportRequestControllerSpec extends SpecBase with WireMockHelper {
       when(mockCustomsDataStoreConnector.getNotificationEmail(any()))
         .thenReturn(Future.successful(NotificationEmail("email@example.com", LocalDateTime.now())))
 
-      when(mockCustomsDataStoreConnector.getTraderEoriHistory(any(), any()))
+      when(mockCustomsDataStoreConnector.getEoriHistory(any()))
         .thenReturn(
           Future.successful(
             EoriHistoryResponse(
