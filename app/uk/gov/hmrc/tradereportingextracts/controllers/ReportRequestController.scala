@@ -64,7 +64,8 @@ class ReportRequestController @Inject() (
                                      Future.sequence(emails.map(email => additionalEmailService.updateEmailAccessDate(value.eori, email)))
                                    }
                                    .getOrElse(Future.successful(Seq.empty))
-          eoriHistory          = if (value.eori == value.whichEori) customsDataStoreConnector.getTraderEoriHistory(value.eori)
+          eoriHistory          = if (value.eori == value.whichEori)
+                                   customsDataStoreConnector.getTraderEoriHistory(value.eori, hc.authorization)
                                  else customsDataStoreConnector.getEoriHistory(value.whichEori)
           filteredEoriHisotry <- eoriHistory.map(_.filterByDateRange(startDate, endDate).map(_.eori))
           reportRequests      <- Future.sequence {
