@@ -30,7 +30,7 @@ import uk.gov.hmrc.tradereportingextracts.models.{CompanyInformation, EoriHistor
 import uk.gov.hmrc.tradereportingextracts.utils.WireMockHelper
 import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}
 import org.scalatest.freespec.AnyFreeSpec
-import uk.gov.hmrc.http.UpstreamErrorResponse
+import uk.gov.hmrc.http.{Authorization, UpstreamErrorResponse}
 
 import java.net.URI
 import java.time.LocalDateTime
@@ -351,6 +351,8 @@ class CustomsDataStoreConnectorSpec
 
     "getTraderEoriHistory" - {
 
+      val authToken = Authorization("Bearer some-token")
+
       val responseBody =
         s"""{
            |"eoriHistory": [
@@ -380,7 +382,7 @@ class CustomsDataStoreConnectorSpec
               .willReturn(WireMock.ok(responseBody))
           )
 
-          val result = connector.getTraderEoriHistory(eori).futureValue
+          val result = connector.getTraderEoriHistory(eori, Some(authToken)).futureValue
           result mustBe EoriHistoryResponse(
             Seq(
               EoriHistory(
@@ -411,7 +413,7 @@ class CustomsDataStoreConnectorSpec
               .willReturn(WireMock.ok(responseBody))
           )
 
-          val result = connector.getTraderEoriHistory(eori).futureValue
+          val result = connector.getTraderEoriHistory(eori, Some(authToken)).futureValue
           result mustBe EoriHistoryResponse(
             Seq(
               EoriHistory(
@@ -442,7 +444,7 @@ class CustomsDataStoreConnectorSpec
               .willReturn(WireMock.aResponse().withStatus(404))
           )
 
-          val result = connector.getTraderEoriHistory(eori).futureValue
+          val result = connector.getTraderEoriHistory(eori, Some(authToken)).futureValue
           result mustBe EoriHistoryResponse(Seq.empty)
         }
       }
@@ -465,7 +467,7 @@ class CustomsDataStoreConnectorSpec
               .willReturn(WireMock.aResponse().withStatus(404))
           )
 
-          val result = connector.getTraderEoriHistory(eori).failed.futureValue
+          val result = connector.getTraderEoriHistory(eori, Some(authToken)).failed.futureValue
           result mustBe a[UpstreamErrorResponse]
         }
       }
@@ -488,7 +490,7 @@ class CustomsDataStoreConnectorSpec
               .willReturn(WireMock.aResponse().withStatus(500))
           )
 
-          val result = connector.getTraderEoriHistory(eori).failed.futureValue
+          val result = connector.getTraderEoriHistory(eori, Some(authToken)).failed.futureValue
           result mustBe a[UpstreamErrorResponse]
         }
       }

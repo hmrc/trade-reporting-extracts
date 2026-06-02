@@ -21,8 +21,8 @@ import play.api.http.Status.{NOT_FOUND, OK}
 import play.api.libs.json.Json
 import play.api.libs.ws.writeableOf_JsValue
 import uk.gov.hmrc.http.HttpReads.Implicits.*
-import uk.gov.hmrc.http.client.HttpClientV2
-import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse, StringContextOps, UpstreamErrorResponse}
+import uk.gov.hmrc.http.client.{HttpClientV2, RequestBuilder}
+import uk.gov.hmrc.http.{Authorization, HeaderCarrier, HttpResponse, StringContextOps, UpstreamErrorResponse}
 import uk.gov.hmrc.tradereportingextracts.config.AppConfig
 import uk.gov.hmrc.tradereportingextracts.models.{CompanyInformation, EoriHistory, EoriHistoryResponse, NotificationEmail}
 import uk.gov.hmrc.tradereportingextracts.connectors.ConnectorFailureLogger.*
@@ -86,12 +86,23 @@ class CustomsDataStoreConnector @Inject() (appConfig: AppConfig, httpClient: Htt
       }
   }
 
-  def getTraderEoriHistory(eori: String): Future[EoriHistoryResponse] = {
+  def getTraderEoriHistory(eori: String, authorisationToken: Option[Authorization]): Future[EoriHistoryResponse] = {
     val url =
       if (appConfig.strategicXIFeatureEnabled) appConfig.eoriTraderHistoryGBXIUrl else appConfig.eoriTraderHistoryUrl
+
     logger.info(s"Requesting EORI history at : $url")
-    httpClient
-      .get(url"$url")
+
+    val bearerToken: Option[String] = authorisationToken.flatMap { token =>
+      token.value.split(",").find(_.startsWith("Bearer")).map(_.trim)
+    }
+
+    val http: RequestBuilder = bearerToken match {
+      case Some(token) =>
+        httpClient.get(url"$url").setHeader(("Authorization", s"$token"))
+      case _           => httpClient.get(url"$url")
+    }
+
+    http
       .execute[HttpResponse]
       .flatMap { response =>
         response.status match {
