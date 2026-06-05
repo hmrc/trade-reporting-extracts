@@ -161,96 +161,6 @@ class ReportRequestRepositorySpec
     }
   }
 
-  "getAvailableReports" should {
-    "return only ReportRequests where all parts are present" in {
-      val reqId          = "REQ123"
-      val reportRequests = Seq(
-        // Complete set: 1Of3, 2Of3, 3Of3
-        ReportRequest(
-          reportRequestId = reqId,
-          correlationId = "C1",
-          reportName = "Report1",
-          requesterEORI = "EORI-1",
-          eoriRole = EoriRole.TRADER,
-          reportEORIs = Array("EORI-1").toIndexedSeq,
-          userEmail = Some(SensitiveString("test@example.com")),
-          recipientEmails = Seq(SensitiveString("a@b.com")),
-          reportTypeName = ReportTypeName.IMPORTS_ITEM_REPORT,
-          reportStart = Instant.now,
-          reportEnd = Instant.now,
-          createDate = Instant.now,
-          notifications = Seq.empty,
-          fileNotifications = Some(
-            Seq(
-              FileNotification("f1", 1, 1, "CSV", "x", "y", "IMPORTS-ITEM-REPORT", "1", "false", ""),
-              FileNotification("f2", 1, 1, "CSV", "x", "y", "IMPORTS-ITEM-REPORT", "2", "false", ""),
-              FileNotification("f3", 1, 1, "CSV", "x", "y", "IMPORTS-ITEM-REPORT", "3", "true", "")
-            )
-          ),
-          updateDate = Instant.now
-        ),
-        // Incomplete set: only 1Of2
-        ReportRequest(
-          reportRequestId = "REQ124",
-          correlationId = "C2",
-          reportName = "Report2",
-          requesterEORI = "EORI-1",
-          eoriRole = EoriRole.TRADER,
-          reportEORIs = Array("EORI-1").toIndexedSeq,
-          userEmail = Some(SensitiveString("test@example.com")),
-          recipientEmails = Seq(SensitiveString("a@b.com")),
-          reportTypeName = ReportTypeName.IMPORTS_ITEM_REPORT,
-          reportStart = Instant.now,
-          reportEnd = Instant.now,
-          createDate = Instant.now,
-          notifications = Seq.empty,
-          fileNotifications = Some(
-            Seq(
-              FileNotification("f4", 1, 1, "CSV", "x", "y", "IMPORTS-ITEM-REPORT", "1", "false", "")
-            )
-          ),
-          updateDate = Instant.now
-        )
-      )
-
-      reportRequests.foreach(r => reportRequestRepository.insert(r).futureValue)
-
-      val result = reportRequestRepository.getAvailableReports("EORI-1").futureValue
-      result.map(_.reportRequestId) must contain only reqId
-    }
-
-    "not return ReportRequest if not all parts are present" in {
-      val reqId             = "REQ125"
-      val incompleteRequest = ReportRequest(
-        reportRequestId = reqId,
-        correlationId = "C3",
-        reportName = "Report3",
-        requesterEORI = "EORI-2",
-        eoriRole = EoriRole.TRADER,
-        reportEORIs = Array("EORI-2").toIndexedSeq,
-        userEmail = Some(SensitiveString("test@example.com")),
-        recipientEmails = Seq(SensitiveString("a@b.com")),
-        reportTypeName = ReportTypeName.IMPORTS_ITEM_REPORT,
-        reportStart = Instant.now,
-        reportEnd = Instant.now,
-        createDate = Instant.now,
-        notifications = Seq.empty,
-        fileNotifications = Some(
-          Seq(
-            FileNotification("f5", 1, 1, "CSV", "x", "y", "IMPORTS-ITEM-REPORT", "1", "false", "")
-            // Missing 2Of2
-          )
-        ),
-        updateDate = Instant.now
-      )
-
-      reportRequestRepository.insert(incompleteRequest).futureValue
-
-      val result = reportRequestRepository.getAvailableReports("EORI-2").futureValue
-      result mustBe empty
-    }
-  }
-
   "countAvailableReports" should {
     "return the correct count of ReportRequests where all parts are present" in {
       val reqId          = "REQ126"
@@ -428,7 +338,7 @@ class ReportRequestRepositorySpec
       val result = reportRequestRepository.deleteReportsForThirdPartyRemoval(traderEori, thirdPartyEori).futureValue
       result mustEqual true
 
-      val remaining = reportRequestRepository.getAvailableReports(thirdPartyEori).futureValue
+      val remaining = reportRequestRepository.getAvailableReportsByHistory(Seq(thirdPartyEori)).futureValue
       remaining.map(_.reportRequestId) must contain only "userRequest"
 
     }
@@ -453,21 +363,51 @@ class ReportRequestRepositorySpec
 
       val result    = reportRequestRepository.deleteReportsForThirdPartyRemoval(traderEori, thirdPartyEori).futureValue
       result mustEqual true
-      val remaining = reportRequestRepository.getAvailableReports(thirdPartyEori).futureValue
+      val remaining = reportRequestRepository.getAvailableReportsByHistory(Seq(thirdPartyEori)).futureValue
       remaining.map(_.reportRequestId) must contain only "thirdPartyRequestDifferentTrader"
 
     }
   }
 
   "getRequestedReportsByHistory" should {
+    val requestedReport = reportRequest.copy(fileNotifications = None)
     "must be able to retrieve a report successfully using a requester EORI history" in {
-      val insertResult  = reportRequestRepository.insert(reportRequest).futureValue
+      val insertResult  = reportRequestRepository.insert(requestedReport).futureValue
       val fetchedRecord =
+        reportRequestRepository
+          .getRequestedReportsByHistory(Seq("EORI-UNKNOWN", requestedReport.requesterEORI))
+          .futureValue
+      insertResult mustEqual true
+      fetchedRecord contains requestedReport
+    }
+
+    "should return requested report requests ordered by createDate descending" in {
+      val reportRequest1 = requestedReport.copy(
+        reportRequestId = "RE1",
+        createDate = Instant.parse("2023-01-01T10:00:00Z")
+      )
+      val reportRequest2 = requestedReport.copy(
+        reportRequestId = "RE2",
+        createDate = Instant.parse("2023-01-02T10:00:00Z")
+      )
+      val reportRequest3 = requestedReport.copy(
+        reportRequestId = "RE3",
+        createDate = Instant.parse("2023-01-03T10:00:00Z")
+      )
+
+      val insertResult =
+        reportRequestRepository.insertAll(Seq(reportRequest1, reportRequest2, reportRequest3)).futureValue
+
+      val fetchedRecords =
         reportRequestRepository
           .getRequestedReportsByHistory(Seq("EORI-UNKNOWN", reportRequest.requesterEORI))
           .futureValue
       insertResult mustEqual true
-      fetchedRecord contains reportRequest
+      fetchedRecords.map(_.reportRequestId) mustEqual Seq(
+        "RE3",
+        "RE2",
+        "RE1"
+      )
     }
   }
 
@@ -479,6 +419,34 @@ class ReportRequestRepositorySpec
       insertResult mustEqual true
       reportRequestRepository.getAvailableReportsByHistory(Seq("historicalEori", "anotherEori")).futureValue mustBe Seq(
         reportRequestWithEoriHistory
+      )
+    }
+
+    "should return report requests ordered by createDate descending" in {
+      val reportRequest1 = reportRequest.copy(
+        reportRequestId = "RE1",
+        requesterEORI = "eori",
+        createDate = Instant.parse("2023-01-01T10:00:00Z")
+      )
+      val reportRequest2 = reportRequest.copy(
+        reportRequestId = "RE2",
+        requesterEORI = "eori",
+        createDate = Instant.parse("2023-01-02T10:00:00Z")
+      )
+      val reportRequest3 = reportRequest.copy(
+        reportRequestId = "RE3",
+        requesterEORI = "eori",
+        createDate = Instant.parse("2023-01-03T10:00:00Z")
+      )
+
+      reportRequestRepository.insertAll(Seq(reportRequest1, reportRequest2, reportRequest3)).futureValue
+
+      val fetchedRecords =
+        reportRequestRepository.getAvailableReportsByHistory(Seq("eori")).futureValue
+      fetchedRecords.map(_.reportRequestId) mustEqual Seq(
+        "RE3",
+        "RE2",
+        "RE1"
       )
     }
   }

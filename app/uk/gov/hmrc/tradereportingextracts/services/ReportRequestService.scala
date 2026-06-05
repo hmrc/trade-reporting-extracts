@@ -108,9 +108,6 @@ class ReportRequestService @Inject() (
       reportEndDate = req.reportEnd
     )
 
-  def getAvailableReports(eori: String)(using ec: ExecutionContext): Future[Seq[ReportRequest]] =
-    reportRequestRepository.getAvailableReports(eori)
-
   def getAvailableReportsByHistory(eoriHistory: Seq[String])(using ec: ExecutionContext): Future[Seq[ReportRequest]] =
     reportRequestRepository.getAvailableReportsByHistory(eoriHistory)
 
