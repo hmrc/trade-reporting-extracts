@@ -60,15 +60,18 @@ class ReportRequestService @Inject() (
   def getReportRequestsForUser(eori: String)(using ec: ExecutionContext): Future[GetReportRequestsResponse] =
     for {
       eoriHistory                       <- customsDataStoreConnector.getEoriHistory(eori).map(_.eoriHistory.map(_.eori))
-      eoriHistoryWithCurrentEori         = if (eoriHistory.contains(eori)) eoriHistory else eoriHistory :+ eori
-      reportRequests                    <- reportRequestRepository.getRequestedReportsByHistory(eoriHistoryWithCurrentEori)
+      eoriHistoryWithCurrentEori         = { logger.info(s"EORI history for $eori: ${eoriHistory.mkString(", ")}");
+        if (eoriHistory.contains(eori)) eoriHistory else eoriHistory :+ eori}
+      reportRequests                    <- { logger.info(s"Fetching report requests for EORI history: ${eoriHistoryWithCurrentEori.mkString(", ")}");
+        reportRequestRepository.getRequestedReportsByHistory(eoriHistoryWithCurrentEori)}
       /*
       The first group (userRequests) contains requests where at least one reportEORI matches the user's EORI history.
       The second group (thirdPartyRequests) contains the rest.
        */
-      (userRequests, thirdPartyRequests) =
-        reportRequests.partition(rr => rr.reportEORIs.exists(eoriHistoryWithCurrentEori.contains))
-      userReports                        = userRequests.map(toUserReport)
+      (userRequests, thirdPartyRequests) ={ logger.info(s"Partitioning report requests into user and third party requests");
+        reportRequests.partition(rr => rr.reportEORIs.exists(eoriHistoryWithCurrentEori.contains))}
+      userReports                        = { logger.info(s"user requests: ${userRequests} thirdPartyRequests:  ${thirdPartyRequests} requests to user reports");
+        userRequests.map(toUserReport)}
       thirdPartyReportsFuture            = toThirdPartyReports(thirdPartyRequests)
       thirdPartyReports                 <- thirdPartyReportsFuture.map(_.toSeq)
     } yield GetReportRequestsResponse(

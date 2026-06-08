@@ -39,10 +39,19 @@ class ReportRequestRepository @Inject() (appConfig: AppConfig, mongoComponent: M
       collectionName = "tre-report-request",
       domainFormat = ReportRequest.encryptedFormat,
       indexes = Seq(
-        IndexModel(Indexes.ascending("reportRequestId"), IndexOptions().name("reportRequestId-index").unique(true)),
+        IndexModel(
+          Indexes.ascending("reportRequestId"),
+          IndexOptions().name("reportRequestId-index").unique(true)
+        ),
         IndexModel(
           Indexes.ascending("updateDate"),
-          IndexOptions().name("updateDate-ttl-index").expireAfter(appConfig.reportRequestTTLDays, TimeUnit.DAYS)
+          IndexOptions()
+            .name("updateDate-ttl-index")
+            .expireAfter(appConfig.reportRequestTTLDays, TimeUnit.DAYS)
+        ),
+        IndexModel(
+          Indexes.ascending("requesterEORI"),
+          IndexOptions().name("requesterEORI-index")
         )
       ),
       replaceIndexes = true
