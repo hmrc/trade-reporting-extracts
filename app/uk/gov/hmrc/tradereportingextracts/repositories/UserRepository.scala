@@ -244,14 +244,14 @@ class UserRepository @Inject() (appConfig: AppConfig, mongoComponent: MongoCompo
   ): Future[Seq[User]] = Mdc.preservingMdc {
     getUsersByAuthorisedEori(authorisedEori).map { users =>
       val cutoffDate = LocalDate.now(clock).minusDays(3).atStartOfDay(ZoneOffset.UTC).toInstant
-      val now = LocalDate.now(clock).atStartOfDay(ZoneOffset.UTC).toInstant
+      val now        = LocalDate.now(clock).atStartOfDay(ZoneOffset.UTC).toInstant
 
       users.filter { user =>
         user.authorisedUsers.exists { au =>
           au.eori == authorisedEori &&
-            !au.accessStart.isAfter(now) &&
-            (au.accessEnd.forall(_.isAfter(now))) &&
-            (au.reportDataStart.forall(dt => dt.isBefore(cutoffDate) || dt.equals(cutoffDate)))
+          !au.accessStart.isAfter(now) &&
+          (au.accessEnd.forall(_.isAfter(now))) &&
+          (au.reportDataStart.forall(dt => dt.isBefore(cutoffDate) || dt.equals(cutoffDate)))
         }
       }
     }

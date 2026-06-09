@@ -69,9 +69,7 @@ class CustomsDataStoreConnector @Inject() (appConfig: AppConfig, httpClient: Htt
       .execute[HttpResponse]
       .flatMap { response =>
         response.status match {
-          case OK        => { //log in console the eori history response for debugging purposes
-            logger.info(s"EoriHistory response for EORI: $eori is ${response.json.toString()}")
-            Future.successful(response.json.as[EoriHistoryResponse])}
+          case OK        => Future.successful(response.json.as[EoriHistoryResponse])
           case NOT_FOUND =>
             if (appConfig.errorHandlingQa) {
               logger.info(s"EoriHistory not found for EORI: $eori")
