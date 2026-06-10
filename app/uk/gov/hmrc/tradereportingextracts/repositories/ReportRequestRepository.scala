@@ -17,7 +17,7 @@
 package uk.gov.hmrc.tradereportingextracts.repositories
 
 import org.mongodb.scala.*
-import org.mongodb.scala.model.{Filters, IndexModel, IndexOptions, Indexes}
+import org.mongodb.scala.model.{Filters, IndexModel, IndexOptions, Indexes, Sorts}
 import uk.gov.hmrc.crypto.{Decrypter, Encrypter}
 import uk.gov.hmrc.mongo.MongoComponent
 import uk.gov.hmrc.mongo.play.json.PlayMongoRepository
@@ -111,21 +111,16 @@ class ReportRequestRepository @Inject() (appConfig: AppConfig, mongoComponent: M
     Mdc.preservingMdc {
       collection
         .find(Filters.in("requesterEORI", eoriHistory*))
+        .sort(Sorts.descending("createDate"))
         .toFuture()
         .map(_.filter(!_.isReportStatusComplete))
     }
-
-  def getAvailableReports(eori: String)(using ec: ExecutionContext): Future[Seq[ReportRequest]] = Mdc.preservingMdc {
-    collection
-      .find(Filters.equal("requesterEORI", eori))
-      .toFuture()
-      .map(_.filter(_.isReportStatusComplete))
-  }
 
   def getAvailableReportsByHistory(eoriHistory: Seq[String])(using ec: ExecutionContext): Future[Seq[ReportRequest]] =
     Mdc.preservingMdc {
       collection
         .find(Filters.in("requesterEORI", eoriHistory*))
+        .sort(Sorts.descending("createDate"))
         .toFuture()
         .map(_.filter(_.isReportStatusComplete))
     }

@@ -196,27 +196,6 @@ class ReportRequestServiceSpec
     }
   }
 
-  "getAvailableReports" should {
-
-    val service = new ReportRequestService(mockReportRequestRepository, null, null, null)
-
-    "return reports when reports found" in {
-
-      when(mockReportRequestRepository.getAvailableReports(any())(using any()))
-        .thenReturn(Future.successful(Seq(reportRequest)))
-
-      service.getAvailableReports("eori").futureValue mustBe Seq(reportRequest)
-    }
-
-    "return an empty sequence when none found" in {
-
-      when(mockReportRequestRepository.getAvailableReports(any())(using any()))
-        .thenReturn(Future.successful(Seq.empty))
-
-      service.getAvailableReports("eori").futureValue mustBe Seq.empty
-    }
-  }
-
   "getAvailableReportsByHistory" should {
 
     val service = new ReportRequestService(mockReportRequestRepository, null, null, null)
