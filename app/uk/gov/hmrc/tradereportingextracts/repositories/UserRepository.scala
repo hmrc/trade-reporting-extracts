@@ -47,7 +47,13 @@ class UserRepository @Inject() (appConfig: AppConfig, mongoComponent: MongoCompo
         ),
         IndexModel(
           Indexes.ascending("accessDate"),
-          IndexOptions().name("accessDate-ttl-index").expireAfter(appConfig.userTTLDays, TimeUnit.DAYS)
+          IndexOptions()
+            .name("accessDate-ttl-index")
+            .expireAfter(appConfig.userTTLDays, TimeUnit.DAYS)
+        ),
+        IndexModel(
+          Indexes.ascending("authorisedUsers.eori"),
+          IndexOptions().name("authorisedUsers-eori-index")
         )
       ),
       replaceIndexes = true
@@ -236,24 +242,18 @@ class UserRepository @Inject() (appConfig: AppConfig, mongoComponent: MongoCompo
     authorisedEori: String,
     clock: Clock = Clock.systemUTC()
   ): Future[Seq[User]] = Mdc.preservingMdc {
-    val cutoffDate = Date.from(LocalDate.now(clock).minusDays(3).atStartOfDay(ZoneOffset.UTC).toInstant)
-    val now        = Date.from(LocalDate.now(clock).atStartOfDay(ZoneOffset.UTC).toInstant)
+    getUsersByAuthorisedEori(authorisedEori).map { users =>
+      val cutoffDate = LocalDate.now(clock).minusDays(3).atStartOfDay(ZoneOffset.UTC).toInstant
+      val now        = LocalDate.now(clock).atStartOfDay(ZoneOffset.UTC).toInstant
 
-    val filterT2AndAccess = Filters.elemMatch(
-      "authorisedUsers",
-      Filters.and(
-        Filters.equal("eori", authorisedEori),
-        Filters.lte("accessStart", now),
-        Filters.or(
-          Filters.gt("accessEnd", now),
-          Filters.exists("accessEnd", false)
-        ),
-        Filters.or(
-          Filters.lte("reportDataStart", cutoffDate),
-          Filters.exists("reportDataStart", false)
-        )
-      )
-    )
-    collection.find(filterT2AndAccess).toFuture()
+      users.filter { user =>
+        user.authorisedUsers.exists { au =>
+          au.eori == authorisedEori &&
+          !au.accessStart.isAfter(now) &&
+          (au.accessEnd.forall(_.isAfter(now))) &&
+          (au.reportDataStart.forall(dt => dt.isBefore(cutoffDate) || dt.equals(cutoffDate)))
+        }
+      }
+    }
 
   }
