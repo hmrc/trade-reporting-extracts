@@ -137,71 +137,39 @@ class CustomsDataStoreConnectorSpec
         }
       }
 
-    "return empty CompanyInformation when response is 404 and errorHandlingQa is true" in {
-      val app = new GuiceApplicationBuilder()
-        .configure(
-          "microservice.services.customs-data-store.port" -> server.port,
-          "features.error-handling-qa" -> true
-        )
-        .build()
-      running(app) {
-        val connector = app.injector.instanceOf[CustomsDataStoreConnector]
-        val appConfig = app.injector.instanceOf[AppConfig]
+      "return empty CompanyInformation when response is 404 (EORI not found)" in {
+        val app = applicationWithPort(server.port)
+        running(app) {
+          val connector = app.injector.instanceOf[CustomsDataStoreConnector]
+          val appConfig = app.injector.instanceOf[AppConfig]
 
-        server.stubFor(
-          WireMock
-            .post(WireMock.urlEqualTo(new URI(appConfig.companyInformationUrl).getPath))
-            .willReturn(WireMock.aResponse().withStatus(404))
-        )
+          server.stubFor(
+            WireMock
+              .post(WireMock.urlEqualTo(new URI(appConfig.companyInformationUrl).getPath))
+              .willReturn(WireMock.aResponse().withStatus(404))
+          )
 
-        val result = connector.getCompanyInformation(eori).futureValue
-        result mustBe CompanyInformation()
+          val result = connector.getCompanyInformation(eori).futureValue
+          result mustBe CompanyInformation()
+        }
       }
-    }
 
-    "fail with UpstreamErrorResponse when response is 404 and errorHandlingQa is false" in {
-      val app = new GuiceApplicationBuilder()
-        .configure(
-          "microservice.services.customs-data-store.port" -> server.port,
-          "features.error-handling-qa" -> false
-        )
-        .build()
-      running(app) {
-        val connector = app.injector.instanceOf[CustomsDataStoreConnector]
-        val appConfig = app.injector.instanceOf[AppConfig]
+      "return empty CompanyInformation when response is 500 (internal server error)" in {
+        val app = applicationWithPort(server.port)
+        running(app) {
+          val connector = app.injector.instanceOf[CustomsDataStoreConnector]
+          val appConfig = app.injector.instanceOf[AppConfig]
 
-        server.stubFor(
-          WireMock
-            .post(WireMock.urlEqualTo(new URI(appConfig.companyInformationUrl).getPath))
-            .willReturn(WireMock.aResponse().withStatus(404))
-        )
+          server.stubFor(
+            WireMock
+              .post(WireMock.urlEqualTo(new URI(appConfig.companyInformationUrl).getPath))
+              .willReturn(WireMock.aResponse().withStatus(500))
+          )
 
-        val result = connector.getCompanyInformation(eori).failed.futureValue
-        result mustBe a[UpstreamErrorResponse]
+          val result = connector.getCompanyInformation(eori).futureValue
+          result mustBe CompanyInformation()
+        }
       }
-    }
-
-    "fail with UpstreamErrorResponse when response is not 200 or 404" in {
-      val app = new GuiceApplicationBuilder()
-        .configure(
-          "microservice.services.customs-data-store.port" -> server.port,
-          "features.error-handling-qa" -> true
-        )
-        .build()
-      running(app) {
-        val connector = app.injector.instanceOf[CustomsDataStoreConnector]
-        val appConfig = app.injector.instanceOf[AppConfig]
-
-        server.stubFor(
-          WireMock
-            .post(WireMock.urlEqualTo(new URI(appConfig.companyInformationUrl).getPath))
-            .willReturn(WireMock.aResponse().withStatus(500))
-        )
-
-        val result = connector.getCompanyInformation(eori).failed.futureValue
-        result mustBe a[UpstreamErrorResponse]
-      }
-    }
     }
 
     "getEoriHistory" - {

@@ -46,17 +46,11 @@ class CustomsDataStoreConnector @Inject() (appConfig: AppConfig, httpClient: Htt
         response.status match {
           case OK        => Future.successful(response.json.as[CompanyInformation])
           case NOT_FOUND =>
-            if (appConfig.errorHandlingQa) {
-              logger.info(s"Company information not found for EORI: $eori")
-              Future.successful(CompanyInformation())
-            } else Future.failed(UpstreamErrorResponse(s"Company information not found for EORI: $eori", NOT_FOUND))
+            logger.info(s"Company information not found for EORI: $eori")
+            Future.successful(CompanyInformation())
           case _         =>
-            Future.failed(
-              UpstreamErrorResponse(
-                s"Unexpected response from getCompanyInformation : ${response.status}",
-                response.status
-              )
-            )
+            logger.warn(s"Unexpected response from : ${appConfig.companyInformationUrl}, status: ${response.status}")
+            Future.successful(CompanyInformation())
         }
       }
 
