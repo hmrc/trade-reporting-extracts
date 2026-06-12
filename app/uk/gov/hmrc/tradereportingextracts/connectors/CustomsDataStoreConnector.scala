@@ -49,7 +49,7 @@ class CustomsDataStoreConnector @Inject() (appConfig: AppConfig, httpClient: Htt
             logger.info(s"Company information not found for EORI: $eori")
             Future.successful(CompanyInformation())
           case _         =>
-            logger.error(s"Unexpected response from : ${appConfig.companyInformationUrl}, status: ${response.status}")
+            logger.warn(s"Unexpected response from : ${appConfig.companyInformationUrl}, status: ${response.status}")
             Future.successful(CompanyInformation())
         }
       }
