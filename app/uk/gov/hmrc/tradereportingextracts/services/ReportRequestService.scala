@@ -157,7 +157,7 @@ class ReportRequestService @Inject() (
               _  = Future.sequence(
                      req.recipientEmails.distinct.map { email =>
                        emailConnector.sendEmailRequest(
-                         templateId = EmailTemplate.ReportAvailableNonVerified.id,
+                         templateId = EmailTemplate.ReportFailedNonVerified.id,
                          email = email.decryptedValue,
                          params = Map("reportRequestId" -> maskedId)
                        )
