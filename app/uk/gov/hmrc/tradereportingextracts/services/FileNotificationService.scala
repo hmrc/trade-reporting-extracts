@@ -72,7 +72,7 @@ class FileNotificationService @Inject() (
                          Future.successful(())
                      }
                 _ <- Future.sequence(
-                       updatedReportRequest.recipientEmails.map { email =>
+                       updatedReportRequest.recipientEmails.distinct.map { email =>
                          emailConnector.sendEmailRequest(
                            templateId = EmailTemplate.ReportAvailableNonVerified.id,
                            email = email.decryptedValue,
