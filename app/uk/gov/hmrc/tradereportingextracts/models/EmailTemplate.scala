@@ -34,5 +34,7 @@ object EmailTemplate {
   case object ReportFailed extends EmailTemplate {
     val id: String = "tre_report_failed"
   }
-
+  case object ReportFailedNonVerified extends EmailTemplate {
+    val id: String = "tre_report_failed_non_verified"
+  }
 }

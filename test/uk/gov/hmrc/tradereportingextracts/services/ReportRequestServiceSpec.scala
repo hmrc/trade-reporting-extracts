@@ -402,7 +402,7 @@ class ReportRequestServiceSpec
         eqTo(Map("reportRequestId" -> "XXXXX456"))
       )(any())
       verify(mockEmailConnector).sendEmailRequest(
-        eqTo(EmailTemplate.ReportAvailableNonVerified.id),
+        eqTo(EmailTemplate.ReportFailedNonVerified.id),
         eqTo("additionalUser@email.com"),
         eqTo(Map("reportRequestId" -> "XXXXX456"))
       )(any())
