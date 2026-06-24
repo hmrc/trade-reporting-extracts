@@ -26,32 +26,26 @@ import play.api.mvc.Results.BadRequest
 import play.api.test.Helpers.*
 import play.api.test.{FakeRequest, Helpers}
 import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.internalauth.client.*
-import uk.gov.hmrc.internalauth.client.Retrieval.EmptyRetrieval
-import uk.gov.hmrc.internalauth.client.test.{BackendAuthComponentsStub, StubBehaviour}
 import uk.gov.hmrc.tradereportingextracts.config.AppConfig
 import uk.gov.hmrc.tradereportingextracts.models.AvailableReportResponse
 import uk.gov.hmrc.tradereportingextracts.services.AvailableReportService
 import uk.gov.hmrc.tradereportingextracts.utils.ApplicationConstants.eori
+import uk.gov.hmrc.tradereportingextracts.controllers.support.FakeAuth
 
 import scala.concurrent.{ExecutionContext, Future}
 
 class AvailableReportControllerSpec extends PlaySpec with MockitoSugar {
 
-  implicit val ec: ExecutionContext                        = ExecutionContext.Implicits.global
-  implicit val hc: HeaderCarrier                           = HeaderCarrier()
-  val mockService: AvailableReportService                  = mock[AvailableReportService]
-  val appConfig: AppConfig                                 = mock[AppConfig]
-  private val mockStubBehaviour                            = mock[StubBehaviour]
-  private val backendAuthComponents: BackendAuthComponents =
-    BackendAuthComponentsStub(mockStubBehaviour)(Helpers.stubControllerComponents())
-  val controller                                           =
-    new AvailableReportController(Helpers.stubControllerComponents(), backendAuthComponents, mockService)(using
-      ec
-    )
-  val permission                                           = Predicate.Permission(
-    Resource(ResourceType("trade-reporting-extracts"), ResourceLocation("trade-reporting-extracts/*")),
-    IAAction("READ")
+  implicit val ec: ExecutionContext       = ExecutionContext.Implicits.global
+  implicit val hc: HeaderCarrier          = HeaderCarrier()
+  val mockService: AvailableReportService = mock[AvailableReportService]
+  val appConfig: AppConfig                = mock[AppConfig]
+  private val fakeAuthAction              = FakeAuth.Helpers.success(ec)
+
+  private val controller = new AvailableReportController(
+    Helpers.stubControllerComponents(),
+    fakeAuthAction,
+    mockService
   )
 
   "getAvailableReports" should {
@@ -65,13 +59,11 @@ class AvailableReportControllerSpec extends PlaySpec with MockitoSugar {
             )
           )
         )
-      when(mockStubBehaviour.stubAuth(Some(permission), EmptyRetrieval))
-        .thenReturn(Future.successful(EmptyRetrieval))
+
       val request = FakeRequest(GET, s"/api/available-reports")
         .withHeaders(CONTENT_TYPE -> JSON, AUTHORIZATION -> "my-token")
         .withJsonBody(Json.obj(eori -> "GB123456789000"))
 
-      // val request = FakeRequest("GET", "/api/available-reports").withJsonBody(Json.obj(eori -> "GB123456789000"))
       val result = controller.getAvailableReports
         .apply(request)
 
@@ -84,9 +76,38 @@ class AvailableReportControllerSpec extends PlaySpec with MockitoSugar {
       )
     }
 
+    "return corresponding error code when call to auth fails" in {
+
+      val fakeFailingAuthAction = FakeAuth.Helpers.forbidden(ec)
+
+      val controller = new AvailableReportController(
+        Helpers.stubControllerComponents(),
+        fakeFailingAuthAction,
+        mockService
+      )
+
+      when(mockService.getAvailableReports(any[String])(any()))
+        .thenReturn(
+          Future.successful(
+            AvailableReportResponse(
+              availableUserReports = None,
+              availableThirdPartyReports = None
+            )
+          )
+        )
+
+      val request = FakeRequest(GET, s"/api/available-reports")
+        .withHeaders(CONTENT_TYPE -> JSON, AUTHORIZATION -> "my-token")
+        .withJsonBody(Json.obj(eori -> "GB123456789000"))
+
+      val result = controller.getAvailableReports
+        .apply(request)
+
+      status(result) mustBe FORBIDDEN
+
+    }
+
     "return BadRequest when EORI is missing" in {
-      when(mockStubBehaviour.stubAuth(Some(permission), EmptyRetrieval))
-        .thenReturn(Future.successful(EmptyRetrieval))
       val request = FakeRequest().withJsonBody(Json.obj()).withHeaders(AUTHORIZATION -> "my-token")
       val result  = controller.getAvailableReports()(request)
 
@@ -98,8 +119,6 @@ class AvailableReportControllerSpec extends PlaySpec with MockitoSugar {
     "return Ok with count when EORI is present" in {
       when(mockService.getAvailableReportsCount(any[String]))
         .thenReturn(Future.successful(25))
-      when(mockStubBehaviour.stubAuth(Some(permission), EmptyRetrieval))
-        .thenReturn(Future.successful(EmptyRetrieval))
       val request =
         FakeRequest().withJsonBody(Json.obj(eori -> "GB123456789000")).withHeaders(AUTHORIZATION -> "my-token")
       val result  = controller.getAvailableReportsCount()(request)
@@ -109,8 +128,6 @@ class AvailableReportControllerSpec extends PlaySpec with MockitoSugar {
     }
 
     "return BadRequest when EORI is missing" in {
-      when(mockStubBehaviour.stubAuth(Some(permission), EmptyRetrieval))
-        .thenReturn(Future.successful(EmptyRetrieval))
       val request = FakeRequest().withJsonBody(Json.obj()).withHeaders(AUTHORIZATION -> "my-token")
       val result  = controller.getAvailableReportsCount()(request)
 
@@ -120,8 +137,7 @@ class AvailableReportControllerSpec extends PlaySpec with MockitoSugar {
 
   "auditReportDownload" should {
     "return NoContent when audit succeeds" in {
-      when(mockStubBehaviour.stubAuth(Some(permission), EmptyRetrieval))
-        .thenReturn(Future.successful(EmptyRetrieval))
+
       when(mockService.processReportDownloadAudit(any())(any())).thenReturn(Future.successful(Right(())))
 
       val request                = FakeRequest().withHeaders(AUTHORIZATION -> "my-token").withJsonBody(Json.obj("foo" -> "bar"))
@@ -132,8 +148,6 @@ class AvailableReportControllerSpec extends PlaySpec with MockitoSugar {
 
     "return error result when audit fails" in {
       val errorResult = BadRequest("error")
-      when(mockStubBehaviour.stubAuth(Some(permission), EmptyRetrieval))
-        .thenReturn(Future.successful(EmptyRetrieval))
       when(mockService.processReportDownloadAudit(any())(any())).thenReturn(Future.successful(Left(errorResult)))
 
       val request                = FakeRequest().withHeaders(AUTHORIZATION -> "my-token").withJsonBody(Json.obj("foo" -> "bar"))

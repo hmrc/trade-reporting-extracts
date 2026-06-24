@@ -27,9 +27,6 @@ import play.api.libs.json.{JsValue, Json}
 import play.api.mvc.ControllerComponents
 import play.api.test.Helpers.*
 import play.api.test.{FakeRequest, Helpers}
-import uk.gov.hmrc.internalauth.client.Retrieval.EmptyRetrieval
-import uk.gov.hmrc.internalauth.client.{BackendAuthComponents, IAAction, Predicate, Resource, ResourceLocation, ResourceType}
-import uk.gov.hmrc.internalauth.client.test.{BackendAuthComponentsStub, StubBehaviour}
 import uk.gov.hmrc.tradereportingextracts.connectors.{CustomsDataStoreConnector, EmailConnector}
 import uk.gov.hmrc.tradereportingextracts.models.*
 import uk.gov.hmrc.tradereportingextracts.models.thirdParty.ThirdPartyAddedConfirmation
@@ -38,33 +35,38 @@ import uk.gov.hmrc.tradereportingextracts.services.UserService
 
 import java.time.{Instant, LocalDateTime}
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 import org.mockito.ArgumentMatchers.{eq as eqTo, *}
-import uk.gov.hmrc.tradereportingextracts.models.EmailTemplate.ThirdPartyAddedTp
+import uk.gov.hmrc.tradereportingextracts.controllers.support.FakeAuth
 
 class ThirdPartyRequestControllerSpec extends AnyFreeSpec with Matchers with MockitoSugar with ScalaFutures {
 
-  private val cc: ControllerComponents                     = Helpers.stubControllerComponents()
-  private val userService: UserService                     = mock[UserService]
-  private val mockStubBehaviour                            = mock[StubBehaviour]
-  private val mockReportRequestRepository                  = mock[ReportRequestRepository]
-  private val mockCustomsDataStoreConnector                = mock[CustomsDataStoreConnector]
-  private val mockEmailConnector                           = mock[EmailConnector]
-  private val backendAuthComponents: BackendAuthComponents =
-    BackendAuthComponentsStub(mockStubBehaviour)(cc)
-  private val controller                                   =
+  private val cc: ControllerComponents      = Helpers.stubControllerComponents()
+  private val userService: UserService      = mock[UserService]
+  private val mockReportRequestRepository   = mock[ReportRequestRepository]
+  private val mockCustomsDataStoreConnector = mock[CustomsDataStoreConnector]
+  private val mockEmailConnector            = mock[EmailConnector]
+  implicit val ec: ExecutionContext         = ExecutionContext.Implicits.global
+
+  private val controller =
     new ThirdPartyRequestController(
       cc,
       userService,
       mockReportRequestRepository,
-      backendAuthComponents,
+      FakeAuth.Helpers.success(ec),
       mockCustomsDataStoreConnector,
       mockEmailConnector
     )
-  private val permission: Predicate.Permission             = Predicate.Permission(
-    Resource(ResourceType("trade-reporting-extracts"), ResourceLocation("trade-reporting-extracts/*")),
-    IAAction("WRITE")
-  )
+
+  private val controllerWithFailingAuthAction =
+    new ThirdPartyRequestController(
+      cc,
+      userService,
+      mockReportRequestRepository,
+      FakeAuth.Helpers.forbidden(ec),
+      mockCustomsDataStoreConnector,
+      mockEmailConnector
+    )
 
   "addThirdPartyRequest" - {
 
@@ -85,8 +87,7 @@ class ThirdPartyRequestControllerSpec extends AnyFreeSpec with Matchers with Moc
       val confirmation = ThirdPartyAddedConfirmation(
         thirdPartyEori = "GB123456123456"
       )
-      when(mockStubBehaviour.stubAuth(Some(permission), EmptyRetrieval))
-        .thenReturn(Future.successful(EmptyRetrieval))
+
       when(userService.addAuthorisedUser(any(), any()))
         .thenReturn(Future.successful(confirmation))
       when(mockCustomsDataStoreConnector.getNotificationEmail(any()))
@@ -107,6 +108,38 @@ class ThirdPartyRequestControllerSpec extends AnyFreeSpec with Matchers with Moc
       )(any())
     }
 
+    "should return corresponding error code from failing auth call" in {
+      val requestBody = Json.parse("""
+          |{
+          |  "userEORI":"GB987654321098",
+          |  "thirdPartyEORI":"GB123456123456",
+          |  "accessStart":"2025-09-09T00:00:00Z",
+          |  "accessEnd":"2025-09-09T10:59:38.334682780Z",
+          |  "reportDateStart":"2025-09-10T00:00:00Z",
+          |  "reportDateEnd":"2025-09-09T10:59:38.334716742Z",
+          |  "accessType":["IMPORT","EXPORT"],
+          |  "referenceName":"TestReport"
+          |}
+        """.stripMargin)
+
+      val confirmation = ThirdPartyAddedConfirmation(
+        thirdPartyEori = "GB123456123456"
+      )
+
+      when(userService.addAuthorisedUser(any(), any()))
+        .thenReturn(Future.successful(confirmation))
+      when(mockCustomsDataStoreConnector.getNotificationEmail(any()))
+        .thenReturn(Future.successful(NotificationEmail("test@email.com", LocalDateTime.now())))
+      when(mockEmailConnector.sendEmailRequest(any(), any(), any())(any()))
+        .thenReturn(Future.successful(Done))
+
+      val result =
+        controllerWithFailingAuthAction.addThirdPartyRequest()(
+          FakeRequest().withHeaders(AUTHORIZATION -> "my-token").withBody(requestBody)
+        )
+      status(result) mustBe FORBIDDEN
+    }
+
     "should return 200 OK with confirmation for valid request and not send email when email not returned from CDS for third party" in {
       reset(mockCustomsDataStoreConnector, mockEmailConnector)
       val requestBody = Json.parse("""
@@ -125,8 +158,7 @@ class ThirdPartyRequestControllerSpec extends AnyFreeSpec with Matchers with Moc
       val confirmation = ThirdPartyAddedConfirmation(
         thirdPartyEori = "GB123456123456"
       )
-      when(mockStubBehaviour.stubAuth(Some(permission), EmptyRetrieval))
-        .thenReturn(Future.successful(EmptyRetrieval))
+
       when(userService.addAuthorisedUser(any(), any()))
         .thenReturn(Future.successful(confirmation))
       when(mockCustomsDataStoreConnector.getNotificationEmail(any()))
@@ -188,6 +220,35 @@ class ThirdPartyRequestControllerSpec extends AnyFreeSpec with Matchers with Moc
         eqTo("test@email.com"),
         eqTo(Map("businessName" -> "Test Business"))
       )(any())
+    }
+
+    "should return corrensponding error code from failing auth call " in {
+      reset(mockCustomsDataStoreConnector, mockEmailConnector)
+      val requestBody = Json.parse("""
+          |{
+          |  "eori":"GB987654321098",
+          |  "thirdPartyEori":"GB123456123456"
+          |}
+        """.stripMargin)
+
+      when(userService.deleteAuthorisedUser(any(), any()))
+        .thenReturn(Future.successful(true))
+      when(mockReportRequestRepository.deleteReportsForThirdPartyRemoval(any(), any())(any()))
+        .thenReturn(Future.successful(true))
+
+      when(mockCustomsDataStoreConnector.getNotificationEmail(any()))
+        .thenReturn(Future.successful(NotificationEmail("test@email.com", LocalDateTime.now())))
+      when(mockCustomsDataStoreConnector.getCompanyInformation(any()))
+        .thenReturn(Future.successful(CompanyInformation(name = "Test Business", consent = "1")))
+
+      when(mockEmailConnector.sendEmailRequest(any(), any(), any())(any()))
+        .thenReturn(Future.successful(Done))
+
+      val result = controllerWithFailingAuthAction.deleteThirdPartyDetails()(
+        FakeRequest().withHeaders(AUTHORIZATION -> "my-token").withBody(requestBody)
+      )
+      status(result) mustBe FORBIDDEN
+
     }
 
     "should not send email when no notification email found for third party" in {
@@ -306,8 +367,7 @@ class ThirdPartyRequestControllerSpec extends AnyFreeSpec with Matchers with Moc
       val confirmation = ThirdPartyAddedConfirmation(
         thirdPartyEori = "GB2"
       )
-      when(mockStubBehaviour.stubAuth(Some(permission), EmptyRetrieval))
-        .thenReturn(Future.successful(EmptyRetrieval))
+
       when(userService.getAuthorisedUser(any(), any()))
         .thenReturn(
           Future.successful(
@@ -333,6 +393,50 @@ class ThirdPartyRequestControllerSpec extends AnyFreeSpec with Matchers with Moc
       contentAsJson(result) mustBe Json.toJson(confirmation)
     }
 
+    "return corresponding error code from failed call to auth" in {
+      val requestBody = Json.parse("""
+          |{
+          |  "userEORI":"GB1",
+          |  "thirdPartyEORI":"GB2",
+          |  "accessStart":"2025-09-09T00:00:00Z",
+          |  "accessEnd":"2025-09-09T10:59:38.334682780Z",
+          |  "reportDateStart":"2025-09-10T00:00:00Z",
+          |  "reportDateEnd":"2025-09-09T10:59:38.334716742Z",
+          |  "accessType":["IMPORT","EXPORT"],
+          |  "referenceName":"TestReport"
+          |}
+        """.stripMargin)
+
+      val confirmation = ThirdPartyAddedConfirmation(
+        thirdPartyEori = "GB2"
+      )
+
+      when(userService.getAuthorisedUser(any(), any()))
+        .thenReturn(
+          Future.successful(
+            Some(
+              AuthorisedUser(
+                "GB2",
+                Instant.parse("2025-01-01T00:00:00Z"),
+                None,
+                None,
+                None,
+                Set(AccessType.IMPORTS),
+                Some("OldRef")
+              )
+            )
+          )
+        )
+      when(userService.updateAuthorisedUser(any(), any()))
+        .thenReturn(Future.successful(confirmation))
+
+      val result =
+        controllerWithFailingAuthAction.editThirdPartyRequest()(
+          FakeRequest().withHeaders(AUTHORIZATION -> "my-token").withBody(requestBody)
+        )
+      status(result) mustBe FORBIDDEN
+    }
+
     "should return 400 BadRequest for invalid JSON" in {
       val invalidJson = Json.parse("""{"foo": "bar"}""")
       val result      =
@@ -355,8 +459,6 @@ class ThirdPartyRequestControllerSpec extends AnyFreeSpec with Matchers with Moc
                                      |}
         """.stripMargin)
 
-      when(mockStubBehaviour.stubAuth(Some(permission), EmptyRetrieval))
-        .thenReturn(Future.successful(EmptyRetrieval))
       when(userService.getAuthorisedUser(any(), any()))
         .thenReturn(Future.successful(None))
       when(userService.updateAuthorisedUser(any(), any()))
@@ -383,9 +485,6 @@ class ThirdPartyRequestControllerSpec extends AnyFreeSpec with Matchers with Moc
         """.stripMargin)
 
       val confirmation = ThirdPartyAddedConfirmation(thirdPartyEori = "GB2")
-
-      when(mockStubBehaviour.stubAuth(Some(permission), EmptyRetrieval))
-        .thenReturn(Future.successful(EmptyRetrieval))
 
       when(userService.getAuthorisedUser(any(), any()))
         .thenReturn(
@@ -442,9 +541,6 @@ class ThirdPartyRequestControllerSpec extends AnyFreeSpec with Matchers with Moc
         """.stripMargin)
 
       val confirmation = ThirdPartyAddedConfirmation(thirdPartyEori = "GB2")
-
-      when(mockStubBehaviour.stubAuth(Some(permission), EmptyRetrieval))
-        .thenReturn(Future.successful(EmptyRetrieval))
 
       when(userService.getAuthorisedUser(any(), any()))
         .thenReturn(

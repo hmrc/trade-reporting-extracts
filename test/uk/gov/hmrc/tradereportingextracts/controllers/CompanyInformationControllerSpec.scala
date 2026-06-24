@@ -20,13 +20,11 @@ import org.mockito.Mockito.when
 import play.api.libs.json.Json
 import play.api.test.Helpers.*
 import play.api.test.{FakeRequest, Helpers}
-import uk.gov.hmrc.internalauth.client.Retrieval.EmptyRetrieval
-import uk.gov.hmrc.internalauth.client.test.{BackendAuthComponentsStub, StubBehaviour}
-import uk.gov.hmrc.internalauth.client.*
 import uk.gov.hmrc.tradereportingextracts.models.{AddressInformation, CompanyInformation}
 import uk.gov.hmrc.tradereportingextracts.services.CompanyInformationService
 import uk.gov.hmrc.tradereportingextracts.utils.SpecBase
 import uk.gov.hmrc.tradereportingextracts.utils.ApplicationConstants
+import uk.gov.hmrc.tradereportingextracts.controllers.support.FakeAuth
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -34,20 +32,12 @@ class CompanyInformationControllerSpec extends SpecBase {
 
   implicit val ec: ExecutionContext         = ExecutionContext.Implicits.global
   private val mockCompanyInformationService = mock[CompanyInformationService]
-  private val mockStubBehaviour             = mock[StubBehaviour]
-
-  private val backendAuthComponents: BackendAuthComponents =
-    BackendAuthComponentsStub(mockStubBehaviour)(Helpers.stubControllerComponents())
+  private val fakeAuthAction                = FakeAuth.Helpers.success(ec)
 
   private val controller = new CompanyInformationController(
     Helpers.stubControllerComponents(),
-    backendAuthComponents,
+    fakeAuthAction,
     mockCompanyInformationService
-  )
-
-  val permission = Predicate.Permission(
-    Resource(ResourceType("trade-reporting-extracts"), ResourceLocation("trade-reporting-extracts/*")),
-    IAAction("READ")
   )
 
   "CompanyInformationController.getCompanyInformation" should {
@@ -62,8 +52,6 @@ class CompanyInformationControllerSpec extends SpecBase {
 
       when(mockCompanyInformationService.getVisibleCompanyInformation(eori))
         .thenReturn(Future.successful(companyInfo))
-      when(mockStubBehaviour.stubAuth(Some(permission), EmptyRetrieval))
-        .thenReturn(Future.successful(EmptyRetrieval))
 
       val request = FakeRequest(POST, routes.CompanyInformationController.getCompanyInformation.url)
         .withHeaders("Content-Type" -> "application/json", AUTHORIZATION -> "Bearer token")
@@ -76,8 +64,6 @@ class CompanyInformationControllerSpec extends SpecBase {
     }
 
     "return 400 BadRequest when EORI is missing" in {
-      when(mockStubBehaviour.stubAuth(Some(permission), EmptyRetrieval))
-        .thenReturn(Future.successful(EmptyRetrieval))
 
       val request = FakeRequest(POST, routes.CompanyInformationController.getCompanyInformation.url)
         .withHeaders("Content-Type" -> "application/json", AUTHORIZATION -> "Bearer token")
@@ -88,7 +74,35 @@ class CompanyInformationControllerSpec extends SpecBase {
       status(result)        shouldBe BAD_REQUEST
       contentAsString(result) should include("Missing or invalid EORI in request body")
     }
-
   }
 
+  "when call to auth fails return corresponding status code" in {
+
+    val failingFakeAuthAction = FakeAuth.Helpers.forbidden(ec)
+
+    val controller = new CompanyInformationController(
+      Helpers.stubControllerComponents(),
+      failingFakeAuthAction,
+      mockCompanyInformationService
+    )
+
+    val eori        = "GB123456789000"
+    val companyInfo = CompanyInformation(
+      name = "Acme Ltd",
+      consent = "1",
+      address = AddressInformation("123 Street", "City", Some("AB12 3CD"), "UK")
+    )
+
+    when(mockCompanyInformationService.getVisibleCompanyInformation(eori))
+      .thenReturn(Future.successful(companyInfo))
+
+    val request = FakeRequest(POST, routes.CompanyInformationController.getCompanyInformation.url)
+      .withHeaders("Content-Type" -> "application/json", AUTHORIZATION -> "Bearer token")
+      .withBody(Json.obj(ApplicationConstants.eori -> eori))
+
+    val result = controller.getCompanyInformation.apply(request)
+
+    status(result) shouldBe FORBIDDEN
+
+  }
 }

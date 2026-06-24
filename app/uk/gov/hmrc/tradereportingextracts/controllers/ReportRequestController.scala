@@ -21,6 +21,7 @@ import play.api.mvc.{Action, AnyContent, ControllerComponents}
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 import uk.gov.hmrc.tradereportingextracts.config.AppConfig
 import uk.gov.hmrc.tradereportingextracts.connectors.CustomsDataStoreConnector
+import uk.gov.hmrc.tradereportingextracts.controllers.action.AuthAction
 import uk.gov.hmrc.tradereportingextracts.models.{ReportConfirmation, ReportRequestUserAnswersModel}
 import uk.gov.hmrc.tradereportingextracts.services.*
 
@@ -38,11 +39,12 @@ class ReportRequestController @Inject() (
   auditService: AuditService,
   userService: UserService,
   additionalEmailService: AdditionalEmailService,
-  appConfig: AppConfig
+  appConfig: AppConfig,
+  authAction: AuthAction
 )(implicit executionContext: ExecutionContext)
     extends BackendController(cc) {
 
-  def createReportRequest: Action[JsValue] = Action.async(parse.json) { implicit request =>
+  def createReportRequest: Action[JsValue] = authAction.async(parse.json) { implicit request =>
     request.body.validate[ReportRequestUserAnswersModel] match {
       case JsSuccess(value, _) =>
         val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")

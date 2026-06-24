@@ -19,46 +19,44 @@ package uk.gov.hmrc.tradereportingextracts.controllers
 import org.mockito.Mockito.*
 import org.apache.pekko.Done
 import org.mockito.ArgumentMatchers.any
-import org.mockito.Mockito.{never, verify, when}
+import org.mockito.stubbing.OngoingStubbing
 import play.api.Application
-import play.api.libs.json.{JsArray, JsObject, JsString, Json}
-import play.api.mvc.Result
+import play.api.libs.json.{JsArray, JsObject, JsString, JsValue, Json}
+import play.api.mvc.Results.Status
+import play.api.mvc.{Action, BodyParser, Request, Result}
 import play.api.test.Helpers.*
 import play.api.test.{FakeRequest, Helpers}
-import uk.gov.hmrc.internalauth.client.*
-import uk.gov.hmrc.internalauth.client.Retrieval.EmptyRetrieval
-import uk.gov.hmrc.internalauth.client.test.{BackendAuthComponentsStub, StubBehaviour}
 import uk.gov.hmrc.tradereportingextracts.connectors.{CustomsDataStoreConnector, EmailConnector}
 import uk.gov.hmrc.tradereportingextracts.models.thirdParty.EoriBusinessInfo
 import uk.gov.hmrc.tradereportingextracts.models.*
 import uk.gov.hmrc.tradereportingextracts.repositories.ReportRequestRepository
 import uk.gov.hmrc.tradereportingextracts.services.UserService
 import uk.gov.hmrc.tradereportingextracts.utils.{ApplicationConstants, SpecBase, WireMockHelper}
+import uk.gov.hmrc.tradereportingextracts.controllers.action.AuthAction
 
 import java.time.{Instant, LocalDate, LocalDateTime, ZoneOffset}
 import scala.concurrent.{ExecutionContext, Future}
 
 class UserControllerSpec extends SpecBase with WireMockHelper {
 
-  implicit val ec: ExecutionContext                        = ExecutionContext.Implicits.global
-  private val mockUserService: UserService                 = mock[UserService]
-  private val mockStubBehaviour                            = mock[StubBehaviour]
-  private val backendAuthComponents: BackendAuthComponents =
-    BackendAuthComponentsStub(mockStubBehaviour)(Helpers.stubControllerComponents())
-  private val mockReportRequestRepository                  = mock[ReportRequestRepository]
-  private val mockCustomsDataStoreConnector                = mock[CustomsDataStoreConnector]
-  private val mockEmailConnector                           = mock[EmailConnector]
+  implicit val ec: ExecutionContext         = ExecutionContext.Implicits.global
+  private val mockUserService: UserService  = mock[UserService]
+  private val mockReportRequestRepository   = mock[ReportRequestRepository]
+  private val mockCustomsDataStoreConnector = mock[CustomsDataStoreConnector]
+  private val mockEmailConnector            = mock[EmailConnector]
+  private val mockAuthAction                = mock[AuthAction]
 
   override def beforeEach(): Unit = {
     super.beforeEach()
     reset(mockEmailConnector)
+    reset(mockAuthAction)
   }
 
   val controllerWithConnectors =
     new UserController(
       mockUserService,
       Helpers.stubControllerComponents(),
-      backendAuthComponents,
+      mockAuthAction,
       mockReportRequestRepository,
       mockCustomsDataStoreConnector,
       mockEmailConnector
@@ -68,20 +66,11 @@ class UserControllerSpec extends SpecBase with WireMockHelper {
     new UserController(
       mockUserService,
       Helpers.stubControllerComponents(),
-      backendAuthComponents,
+      mockAuthAction,
       mockReportRequestRepository,
       null,
       null
     )(using ec)
-
-  val readPermission: Predicate.Permission = Predicate.Permission(
-    Resource(ResourceType("trade-reporting-extracts"), ResourceLocation("trade-reporting-extracts/*")),
-    IAAction("READ")
-  )
-  val writePermission                      = Predicate.Permission(
-    Resource(ResourceType("trade-reporting-extracts"), ResourceLocation("trade-reporting-extracts/*")),
-    IAAction("WRITE")
-  )
 
   "UserController.getNotificationEmail" should {
 
@@ -91,8 +80,8 @@ class UserControllerSpec extends SpecBase with WireMockHelper {
 
       when(mockUserService.getNotificationEmail(eori))
         .thenReturn(Future.successful(email))
-      when(mockStubBehaviour.stubAuth(Some(readPermission), EmptyRetrieval))
-        .thenReturn(Future.successful(EmptyRetrieval))
+
+      successfulAuthAction(mockAuthAction)
 
       val request: FakeRequest[JsObject] = FakeRequest(POST, routes.UserController.getNotificationEmail.url)
         .withHeaders("Content-Type" -> "application/json", AUTHORIZATION -> "my-token")
@@ -104,9 +93,28 @@ class UserControllerSpec extends SpecBase with WireMockHelper {
       contentAsJson(result) shouldBe Json.toJson(email)
     }
 
+    "return corresponding error code when call to auth fails" in new Setup {
+      val eori                     = "GB123456789000"
+      val email: NotificationEmail = NotificationEmail("user@example.com", LocalDateTime.now())
+
+      when(mockUserService.getNotificationEmail(eori))
+        .thenReturn(Future.successful(email))
+
+      failingAuthAction(mockAuthAction)
+
+      val request: FakeRequest[JsObject] = FakeRequest(POST, routes.UserController.getNotificationEmail.url)
+        .withHeaders("Content-Type" -> "application/json", AUTHORIZATION -> "my-token")
+        .withBody(Json.obj(ApplicationConstants.eori -> eori))
+
+      val result: Future[Result] = controller.getNotificationEmail.apply(request)
+
+      status(result) shouldBe FORBIDDEN
+    }
+
     "return 400 BadRequest when EORI is missing" in new Setup {
-      when(mockStubBehaviour.stubAuth(Some(readPermission), EmptyRetrieval))
-        .thenReturn(Future.successful(EmptyRetrieval))
+
+      successfulAuthAction(mockAuthAction)
+
       val request: FakeRequest[JsObject] = FakeRequest(POST, routes.UserController.getNotificationEmail.url)
         .withHeaders("Content-Type" -> "application/json", AUTHORIZATION -> "my-token")
         .withBody(Json.obj("invalidField" -> "value"))
@@ -120,10 +128,10 @@ class UserControllerSpec extends SpecBase with WireMockHelper {
     "return 500 InternalServerError when service fails" in new Setup {
       val eori = "GB123456789000"
 
+      successfulAuthAction(mockAuthAction)
+
       when(mockUserService.getNotificationEmail(eori))
         .thenReturn(Future.failed(new RuntimeException("Service failure")))
-      when(mockStubBehaviour.stubAuth(Some(readPermission), EmptyRetrieval))
-        .thenReturn(Future.successful(EmptyRetrieval))
       val request: FakeRequest[JsObject] = FakeRequest(POST, routes.UserController.getNotificationEmail.url)
         .withHeaders("Content-Type" -> "application/json", AUTHORIZATION -> "my-token")
         .withBody(Json.obj(ApplicationConstants.eori -> eori))
@@ -149,8 +157,8 @@ class UserControllerSpec extends SpecBase with WireMockHelper {
 
       when(mockUserService.getOrCreateUser(eori))
         .thenReturn(Future.successful(userDetails))
-      when(mockStubBehaviour.stubAuth(Some(readPermission), EmptyRetrieval))
-        .thenReturn(Future.successful(EmptyRetrieval))
+
+      successfulAuthAction(mockAuthAction)
 
       val request: FakeRequest[JsObject] = FakeRequest(GET, routes.UserController.getOrSetupUser().url)
         .withHeaders("Content-Type" -> "application/json", AUTHORIZATION -> "my-token")
@@ -162,9 +170,34 @@ class UserControllerSpec extends SpecBase with WireMockHelper {
       contentAsJson(result) shouldBe Json.toJson(userDetails)
     }
 
+    "return corresponding error code when call to auth fails" in new Setup {
+      val eori                     = "GB123456789000"
+      val userDetails: UserDetails = UserDetails(
+        eori = eori,
+        additionalEmails = Seq.empty,
+        authorisedUsers = Seq.empty,
+        companyInformation = CompanyInformation(), // assuming default constructor exists
+        notificationEmail = NotificationEmail("user@example.com", LocalDateTime.now())
+      )
+
+      when(mockUserService.getOrCreateUser(eori))
+        .thenReturn(Future.successful(userDetails))
+
+      failingAuthAction(mockAuthAction)
+
+      val request: FakeRequest[JsObject] = FakeRequest(GET, routes.UserController.getOrSetupUser().url)
+        .withHeaders("Content-Type" -> "application/json", AUTHORIZATION -> "my-token")
+        .withBody(Json.obj(ApplicationConstants.eori -> eori))
+
+      val result: Future[Result] = controller.getOrSetupUser().apply(request)
+
+      status(result) shouldBe FORBIDDEN
+    }
+
     "return 400 BadRequest when EORI is missing" in new Setup {
-      when(mockStubBehaviour.stubAuth(Some(readPermission), EmptyRetrieval))
-        .thenReturn(Future.successful(EmptyRetrieval))
+
+      successfulAuthAction(mockAuthAction)
+
       val request: FakeRequest[JsObject] = FakeRequest(GET, routes.UserController.getOrSetupUser().url)
         .withHeaders("Content-Type" -> "application/json", AUTHORIZATION -> "my-token")
         .withBody(Json.obj("wrongField" -> "value"))
@@ -184,8 +217,8 @@ class UserControllerSpec extends SpecBase with WireMockHelper {
 
       when(mockUserService.getAuthorisedEoris(eori))
         .thenReturn(Future.successful(authorisedEoris))
-      when(mockStubBehaviour.stubAuth(Some(readPermission), EmptyRetrieval))
-        .thenReturn(Future.successful(EmptyRetrieval))
+
+      successfulAuthAction(mockAuthAction)
 
       val request: FakeRequest[JsObject] = FakeRequest(POST, routes.UserController.getAuthorisedEoris.url)
         .withHeaders("Content-Type" -> "application/json", AUTHORIZATION -> "my-token")
@@ -197,13 +230,32 @@ class UserControllerSpec extends SpecBase with WireMockHelper {
       contentAsJson(result) shouldBe JsArray(authorisedEoris.map(JsString(_)))
     }
 
+    "return corresponding error code when call to auth fails" in new Setup {
+      val eori                         = "GB123456789000"
+      val authorisedEoris: Seq[String] = Seq("GB111111111111", "GB222222222222")
+
+      when(mockUserService.getAuthorisedEoris(eori))
+        .thenReturn(Future.successful(authorisedEoris))
+
+      failingAuthAction(mockAuthAction)
+
+      val request: FakeRequest[JsObject] = FakeRequest(POST, routes.UserController.getAuthorisedEoris.url)
+        .withHeaders("Content-Type" -> "application/json", AUTHORIZATION -> "my-token")
+        .withBody(Json.obj(ApplicationConstants.eori -> eori))
+
+      val result: Future[Result] = controller.getAuthorisedEoris.apply(request)
+
+      status(result) shouldBe FORBIDDEN
+    }
+
     "return 500 InternalServerError when service fails" in new Setup {
       val eori = "GB123456789000"
 
       when(mockUserService.getAuthorisedEoris(eori))
         .thenReturn(Future.failed(new RuntimeException("Service failure")))
-      when(mockStubBehaviour.stubAuth(Some(readPermission), EmptyRetrieval))
-        .thenReturn(Future.successful(EmptyRetrieval))
+
+      successfulAuthAction(mockAuthAction)
+
       val request: FakeRequest[JsObject] = FakeRequest(POST, routes.UserController.getAuthorisedEoris.url)
         .withHeaders("Content-Type" -> "application/json", AUTHORIZATION -> "my-token")
         .withBody(Json.obj(ApplicationConstants.eori -> eori))
@@ -223,8 +275,8 @@ class UserControllerSpec extends SpecBase with WireMockHelper {
 
       when(mockUserService.getUserAdditionalEmails(eori))
         .thenReturn(Future.successful(additionalEmails))
-      when(mockStubBehaviour.stubAuth(Some(readPermission), EmptyRetrieval))
-        .thenReturn(Future.successful(EmptyRetrieval))
+
+      successfulAuthAction(mockAuthAction)
 
       val request: FakeRequest[JsObject] = FakeRequest(GET, routes.UserController.getAdditionalEmails.url)
         .withHeaders("Content-Type" -> "application/json", AUTHORIZATION -> "my-token")
@@ -236,13 +288,42 @@ class UserControllerSpec extends SpecBase with WireMockHelper {
       contentAsJson(result) shouldBe JsArray(additionalEmails.map(JsString(_)))
     }
 
+    "return corresponding error code when call to auth fails" in new Setup {
+      val eori                          = "GB123456789000"
+      val additionalEmails: Seq[String] = Seq("email1@example.com", "email2@example.com")
+
+      when(mockUserService.getUserAdditionalEmails(eori))
+        .thenReturn(Future.successful(additionalEmails))
+
+      failingAuthAction(mockAuthAction)
+
+      val request: FakeRequest[JsObject] = FakeRequest(GET, routes.UserController.getAdditionalEmails.url)
+        .withHeaders("Content-Type" -> "application/json", AUTHORIZATION -> "my-token")
+        .withBody(Json.obj(ApplicationConstants.eori -> eori))
+
+      val result: Future[Result] = controller.getAdditionalEmails.apply(request)
+
+      status(result) shouldBe FORBIDDEN
+    }
+
     "return 500 InternalServerError when service fails" in new Setup {
       val eori = "GB123456789000"
 
       when(mockUserService.getUserAdditionalEmails(eori))
         .thenReturn(Future.failed(new RuntimeException("Service failure")))
-      when(mockStubBehaviour.stubAuth(Some(readPermission), EmptyRetrieval))
-        .thenReturn(Future.successful(EmptyRetrieval))
+
+      when(mockAuthAction.async[JsValue](any[BodyParser[JsValue]]())(any()))
+        .thenAnswer { invocation =>
+          val bodyParser = invocation.getArgument[BodyParser[JsValue]](0)
+          val block      = invocation.getArgument[Request[JsValue] => Future[Result]](1)
+          new Action[JsValue] {
+            override def apply(request: Request[JsValue]): Future[Result] = block(request)
+
+            override def parser: BodyParser[JsValue] = bodyParser
+
+            override def executionContext: ExecutionContext = ExecutionContext.global
+          }
+        }
 
       val request: FakeRequest[JsObject] = FakeRequest(GET, routes.UserController.getAdditionalEmails.url)
         .withHeaders("Content-Type" -> "application/json", AUTHORIZATION -> "my-token")
@@ -255,8 +336,19 @@ class UserControllerSpec extends SpecBase with WireMockHelper {
     }
 
     "return 400 BadRequest when EORI is missing" in new Setup {
-      when(mockStubBehaviour.stubAuth(Some(readPermission), EmptyRetrieval))
-        .thenReturn(Future.successful(EmptyRetrieval))
+
+      when(mockAuthAction.async[JsValue](any[BodyParser[JsValue]]())(any()))
+        .thenAnswer { invocation =>
+          val bodyParser = invocation.getArgument[BodyParser[JsValue]](0)
+          val block      = invocation.getArgument[Request[JsValue] => Future[Result]](1)
+          new Action[JsValue] {
+            override def apply(request: Request[JsValue]): Future[Result] = block(request)
+
+            override def parser: BodyParser[JsValue] = bodyParser
+
+            override def executionContext: ExecutionContext = ExecutionContext.global
+          }
+        }
 
       val request: FakeRequest[JsObject] = FakeRequest(GET, routes.UserController.getAdditionalEmails.url)
         .withHeaders("Content-Type" -> "application/json", AUTHORIZATION -> "my-token")
@@ -272,8 +364,8 @@ class UserControllerSpec extends SpecBase with WireMockHelper {
   "UserController.getUserAndEmail" should {
 
     "return 201 OK with user details when valid EORI is provided" in new Setup {
-      val eori                           = "GB123456789000"
-      val userDetails: UserDetails       = UserDetails(
+      val eori                     = "GB123456789000"
+      val userDetails: UserDetails = UserDetails(
         eori = eori,
         additionalEmails = Seq.empty,
         authorisedUsers = Seq.empty,
@@ -290,8 +382,9 @@ class UserControllerSpec extends SpecBase with WireMockHelper {
         notificationEmail = NotificationEmail("test@test.com", LocalDateTime.now())
       )
       when(mockUserService.getUserAndEmailDetails(eori)).thenReturn(Future.successful(userDetails))
-      when(mockStubBehaviour.stubAuth(Some(readPermission), EmptyRetrieval))
-        .thenReturn(Future.successful(EmptyRetrieval))
+
+      successfulAuthAction(mockAuthAction)
+
       val request: FakeRequest[JsObject] = FakeRequest(GET, routes.UserController.getUserAndEmail.url)
         .withHeaders("Content-Type" -> "application/json", AUTHORIZATION -> "my-token")
         .withBody(Json.obj(ApplicationConstants.eori -> eori))
@@ -300,9 +393,39 @@ class UserControllerSpec extends SpecBase with WireMockHelper {
       contentAsJson(result) shouldBe Json.toJson(userDetails)
     }
 
+    "return corresponding error code when call to auth fails" in new Setup {
+      val eori                     = "GB123456789000"
+      val userDetails: UserDetails = UserDetails(
+        eori = eori,
+        additionalEmails = Seq.empty,
+        authorisedUsers = Seq.empty,
+        companyInformation = CompanyInformation(
+          name = "Test Company",
+          consent = "1",
+          address = AddressInformation(
+            streetAndNumber = "123 Test Street",
+            city = "Test City",
+            postalCode = Some("12345"),
+            countryCode = "GB"
+          )
+        ),
+        notificationEmail = NotificationEmail("test@test.com", LocalDateTime.now())
+      )
+      when(mockUserService.getUserAndEmailDetails(eori)).thenReturn(Future.successful(userDetails))
+
+      failingAuthAction(mockAuthAction)
+
+      val request: FakeRequest[JsObject] = FakeRequest(GET, routes.UserController.getUserAndEmail.url)
+        .withHeaders("Content-Type" -> "application/json", AUTHORIZATION -> "my-token")
+        .withBody(Json.obj(ApplicationConstants.eori -> eori))
+      val result: Future[Result]         = controller.getUserAndEmail.apply(request)
+      status(result) shouldBe FORBIDDEN
+    }
+
     "return bad request when eori missing" in new Setup {
-      when(mockStubBehaviour.stubAuth(Some(readPermission), EmptyRetrieval))
-        .thenReturn(Future.successful(EmptyRetrieval))
+
+      successfulAuthAction(mockAuthAction)
+
       val request: FakeRequest[JsObject] = FakeRequest(GET, routes.UserController.getUserAndEmail.url)
         .withHeaders("Content-Type" -> "application/json", AUTHORIZATION -> "my-token")
         .withBody(Json.obj("invalid" -> "invalidEori"))
@@ -340,8 +463,7 @@ class UserControllerSpec extends SpecBase with WireMockHelper {
 
       when(mockUserService.getAuthorisedUser(any(), any())).thenReturn(Future.successful(Some(authUser)))
 
-      when(mockStubBehaviour.stubAuth(Some(readPermission), EmptyRetrieval))
-        .thenReturn(Future.successful(EmptyRetrieval))
+      successfulAuthAction(mockAuthAction)
 
       when(mockUserService.transformToThirdPartyDetails(any())).thenReturn(thirdPartyDetails)
 
@@ -355,12 +477,47 @@ class UserControllerSpec extends SpecBase with WireMockHelper {
 
     }
 
+    "return corresponding error code when call to auth fails" in new Setup {
+
+      val authUser: AuthorisedUser = AuthorisedUser(
+        eori = thirdPartyEori,
+        referenceName = Some("foo"),
+        accessStart = Instant.now(),
+        accessEnd = Some(Instant.now()),
+        accessType = Set(AccessType.IMPORTS, AccessType.EXPORTS),
+        reportDataStart = Some(Instant.now()),
+        reportDataEnd = Some(Instant.now())
+      )
+
+      val thirdPartyDetails: ThirdPartyDetails = ThirdPartyDetails(
+        referenceName = Some("foo"),
+        accessStartDate = LocalDate.ofInstant(Instant.now(), ZoneOffset.UTC),
+        accessEndDate = Some(LocalDate.ofInstant(Instant.now(), ZoneOffset.UTC)),
+        dataTypes = Set("imports", "exports"),
+        dataStartDate = Some(LocalDate.ofInstant(Instant.now(), ZoneOffset.UTC)),
+        dataEndDate = Some(LocalDate.ofInstant(Instant.now(), ZoneOffset.UTC))
+      )
+
+      when(mockUserService.getAuthorisedUser(any(), any())).thenReturn(Future.successful(Some(authUser)))
+
+      failingAuthAction(mockAuthAction)
+
+      when(mockUserService.transformToThirdPartyDetails(any())).thenReturn(thirdPartyDetails)
+
+      val request: FakeRequest[JsObject] = FakeRequest(GET, routes.UserController.getAuthorisedEoris.url)
+        .withHeaders(AUTHORIZATION -> "my-token")
+        .withBody(Json.obj(ApplicationConstants.eori -> eori, "thirdPartyEori" -> thirdPartyEori))
+
+      val result: Future[Result] = controller.getThirdPartyDetails.apply(request)
+      status(result) shouldBe FORBIDDEN
+
+    }
+
     "return a 404 when no authorised user is found" in new Setup {
 
       when(mockUserService.getAuthorisedUser(any(), any())).thenReturn(Future.successful(None))
 
-      when(mockStubBehaviour.stubAuth(Some(readPermission), EmptyRetrieval))
-        .thenReturn(Future.successful(EmptyRetrieval))
+      successfulAuthAction(mockAuthAction)
 
       val request: FakeRequest[JsObject] = FakeRequest(GET, routes.UserController.getAuthorisedEoris.url)
         .withHeaders(AUTHORIZATION -> "my-token")
@@ -375,8 +532,7 @@ class UserControllerSpec extends SpecBase with WireMockHelper {
 
       val thirdPartyEori = "456"
 
-      when(mockStubBehaviour.stubAuth(Some(readPermission), EmptyRetrieval))
-        .thenReturn(Future.successful(EmptyRetrieval))
+      successfulAuthAction(mockAuthAction)
 
       val request: FakeRequest[JsObject] = FakeRequest(GET, routes.UserController.getAuthorisedEoris.url)
         .withHeaders(AUTHORIZATION -> "my-token")
@@ -390,8 +546,7 @@ class UserControllerSpec extends SpecBase with WireMockHelper {
 
     "return a bad request when thirdPartyEori invalid" in new Setup {
 
-      when(mockStubBehaviour.stubAuth(Some(readPermission), EmptyRetrieval))
-        .thenReturn(Future.successful(EmptyRetrieval))
+      successfulAuthAction(mockAuthAction)
 
       val request: FakeRequest[JsObject] = FakeRequest(GET, routes.UserController.getAuthorisedEoris.url)
         .withHeaders(AUTHORIZATION -> "my-token")
@@ -429,10 +584,9 @@ class UserControllerSpec extends SpecBase with WireMockHelper {
         dataEndDate = Some(LocalDate.ofInstant(Instant.now(), ZoneOffset.UTC))
       )
 
-      when(mockUserService.getAuthorisedBusiness(any(), any())).thenReturn(Future.successful(Some(authUser)))
+      successfulAuthAction(mockAuthAction)
 
-      when(mockStubBehaviour.stubAuth(Some(readPermission), EmptyRetrieval))
-        .thenReturn(Future.successful(EmptyRetrieval))
+      when(mockUserService.getAuthorisedBusiness(any(), any())).thenReturn(Future.successful(Some(authUser)))
 
       when(mockUserService.transformToThirdPartyDetails(any())).thenReturn(thirdPartyDetails)
 
@@ -446,12 +600,47 @@ class UserControllerSpec extends SpecBase with WireMockHelper {
 
     }
 
+    "return corrensponding error code when call to auth fails" in new Setup {
+
+      val authUser = AuthorisedUser(
+        eori = eori,
+        referenceName = Some("foo"),
+        accessStart = Instant.now(),
+        accessEnd = Some(Instant.now()),
+        accessType = Set(AccessType.IMPORTS, AccessType.EXPORTS),
+        reportDataStart = Some(Instant.now()),
+        reportDataEnd = Some(Instant.now())
+      )
+
+      val thirdPartyDetails = ThirdPartyDetails(
+        referenceName = Some("foo"),
+        accessStartDate = LocalDate.ofInstant(Instant.now(), ZoneOffset.UTC),
+        accessEndDate = Some(LocalDate.ofInstant(Instant.now(), ZoneOffset.UTC)),
+        dataTypes = Set("imports", "exports"),
+        dataStartDate = Some(LocalDate.ofInstant(Instant.now(), ZoneOffset.UTC)),
+        dataEndDate = Some(LocalDate.ofInstant(Instant.now(), ZoneOffset.UTC))
+      )
+
+      failingAuthAction(mockAuthAction)
+
+      when(mockUserService.getAuthorisedBusiness(any(), any())).thenReturn(Future.successful(Some(authUser)))
+
+      when(mockUserService.transformToThirdPartyDetails(any())).thenReturn(thirdPartyDetails)
+
+      val request: FakeRequest[JsObject] = FakeRequest(GET, routes.UserController.getAuthorisedBusinessDetails.url)
+        .withHeaders(AUTHORIZATION -> "my-token")
+        .withBody(Json.obj("thirdPartyEori" -> eori, "traderEori" -> businessEori))
+
+      val result: Future[Result] = controller.getAuthorisedBusinessDetails.apply(request)
+      status(result) shouldBe FORBIDDEN
+
+    }
+
     "return a 404 when no authorised user is found" in new Setup {
 
       when(mockUserService.getAuthorisedBusiness(any(), any())).thenReturn(Future.successful(None))
 
-      when(mockStubBehaviour.stubAuth(Some(readPermission), EmptyRetrieval))
-        .thenReturn(Future.successful(EmptyRetrieval))
+      successfulAuthAction(mockAuthAction)
 
       val request: FakeRequest[JsObject] = FakeRequest(GET, routes.UserController.getAuthorisedBusinessDetails.url)
         .withHeaders(AUTHORIZATION -> "my-token")
@@ -464,8 +653,7 @@ class UserControllerSpec extends SpecBase with WireMockHelper {
 
     "should return bad request when invalid thirdPartyEori field" in new Setup {
 
-      when(mockStubBehaviour.stubAuth(Some(readPermission), EmptyRetrieval))
-        .thenReturn(Future.successful(EmptyRetrieval))
+      successfulAuthAction(mockAuthAction)
 
       val request: FakeRequest[JsObject] = FakeRequest(GET, routes.UserController.getAuthorisedBusinessDetails.url)
         .withHeaders(AUTHORIZATION -> "my-token")
@@ -478,8 +666,7 @@ class UserControllerSpec extends SpecBase with WireMockHelper {
 
     "should return bad request when invalid traderEori field" in new Setup {
 
-      when(mockStubBehaviour.stubAuth(Some(readPermission), EmptyRetrieval))
-        .thenReturn(Future.successful(EmptyRetrieval))
+      successfulAuthAction(mockAuthAction)
 
       val request: FakeRequest[JsObject] = FakeRequest(GET, routes.UserController.getAuthorisedBusinessDetails.url)
         .withHeaders(AUTHORIZATION -> "my-token")
@@ -506,8 +693,8 @@ class UserControllerSpec extends SpecBase with WireMockHelper {
 
       when(mockUserService.getUsersByAuthorisedEoriWithStatus(authorisedEori))
         .thenReturn(Future.successful(eoriBusinessInfos))
-      when(mockStubBehaviour.stubAuth(Some(readPermission), EmptyRetrieval))
-        .thenReturn(Future.successful(EmptyRetrieval))
+
+      successfulAuthAction(mockAuthAction)
 
       val request = FakeRequest(GET, routes.UserController.getUsersByAuthorisedEoriWithStatus.url)
         .withHeaders("Content-Type" -> "application/json", AUTHORIZATION -> "my-token")
@@ -515,6 +702,30 @@ class UserControllerSpec extends SpecBase with WireMockHelper {
 
       val result = controller.getUsersByAuthorisedEoriWithStatus.apply(request)
       contentAsJson(result) shouldBe Json.toJson(eoriBusinessInfos)
+    }
+
+    "return corresponding error code when call to auth fails" in new Setup {
+      val authorisedEori    = "GB111111111111"
+      val eoriBusinessInfos = Seq(
+        EoriBusinessInfo(
+          eori = "GB123456789000",
+          businessInfo = Some("ABC Ltd"),
+          status = Some(UserActiveStatus.Active)
+        )
+      )
+
+      when(mockUserService.getUsersByAuthorisedEoriWithStatus(authorisedEori))
+        .thenReturn(Future.successful(eoriBusinessInfos))
+
+      failingAuthAction(mockAuthAction)
+
+      val request = FakeRequest(GET, routes.UserController.getUsersByAuthorisedEoriWithStatus.url)
+        .withHeaders("Content-Type" -> "application/json", AUTHORIZATION -> "my-token")
+        .withBody(Json.obj("thirdPartyEori" -> authorisedEori))
+
+      val result = controller.getUsersByAuthorisedEoriWithStatus.apply(request)
+      status(result) shouldBe FORBIDDEN
+
     }
 
     "return 200 OK with list of users and no company information if no consent" in new Setup {
@@ -529,8 +740,8 @@ class UserControllerSpec extends SpecBase with WireMockHelper {
 
       when(mockUserService.getUsersByAuthorisedEoriWithStatus(authorisedEori))
         .thenReturn(Future.successful(eoriBusinessInfos))
-      when(mockStubBehaviour.stubAuth(Some(readPermission), EmptyRetrieval))
-        .thenReturn(Future.successful(EmptyRetrieval))
+
+      successfulAuthAction(mockAuthAction)
 
       val request = FakeRequest(GET, routes.UserController.getUsersByAuthorisedEoriWithStatus.url)
         .withHeaders("Content-Type" -> "application/json", AUTHORIZATION -> "my-token")
@@ -545,8 +756,8 @@ class UserControllerSpec extends SpecBase with WireMockHelper {
 
       when(mockUserService.getUsersByAuthorisedEoriWithStatus(authorisedEori))
         .thenReturn(Future.failed(new RuntimeException("error")))
-      when(mockStubBehaviour.stubAuth(Some(readPermission), EmptyRetrieval))
-        .thenReturn(Future.successful(EmptyRetrieval))
+
+      successfulAuthAction(mockAuthAction)
 
       val request = FakeRequest(GET, routes.UserController.getUsersByAuthorisedEoriWithStatus.url)
         .withHeaders("Content-Type" -> "application/json", AUTHORIZATION -> "my-token")
@@ -568,8 +779,8 @@ class UserControllerSpec extends SpecBase with WireMockHelper {
 
       when(mockUserService.getUsersByAuthorisedEoriWithStatus(authorisedEori))
         .thenReturn(Future.successful(eoriBusinessInfos))
-      when(mockStubBehaviour.stubAuth(Some(readPermission), EmptyRetrieval))
-        .thenReturn(Future.successful(EmptyRetrieval))
+
+      successfulAuthAction(mockAuthAction)
 
       val request = FakeRequest(GET, routes.UserController.getUsersByAuthorisedEoriWithStatus.url)
         .withHeaders("Content-Type" -> "application/json", AUTHORIZATION -> "my-token")
@@ -595,8 +806,8 @@ class UserControllerSpec extends SpecBase with WireMockHelper {
 
       when(mockUserService.getUsersByAuthorisedEoriWithDateFilter(authorisedEori))
         .thenReturn(Future.successful(eoriBusinessInfos))
-      when(mockStubBehaviour.stubAuth(Some(readPermission), EmptyRetrieval))
-        .thenReturn(Future.successful(EmptyRetrieval))
+
+      successfulAuthAction(mockAuthAction)
 
       val request = FakeRequest(GET, routes.UserController.getUsersByAuthorisedEoriWithDateFilter.url)
         .withHeaders("Content-Type" -> "application/json", AUTHORIZATION -> "my-token")
@@ -604,6 +815,29 @@ class UserControllerSpec extends SpecBase with WireMockHelper {
 
       val result = controller.getUsersByAuthorisedEoriWithDateFilter.apply(request)
       contentAsJson(result) shouldBe Json.toJson(eoriBusinessInfos)
+    }
+
+    "return corresponding error code when call to auth fails" in new Setup {
+      val authorisedEori    = "GB111111111111"
+      val eoriBusinessInfos = Seq(
+        EoriBusinessInfo(
+          eori = "GB123456789000",
+          businessInfo = Some("ABC Ltd"),
+          status = None
+        )
+      )
+
+      when(mockUserService.getUsersByAuthorisedEoriWithDateFilter(authorisedEori))
+        .thenReturn(Future.successful(eoriBusinessInfos))
+
+      failingAuthAction(mockAuthAction)
+
+      val request = FakeRequest(GET, routes.UserController.getUsersByAuthorisedEoriWithDateFilter.url)
+        .withHeaders("Content-Type" -> "application/json", AUTHORIZATION -> "my-token")
+        .withBody(Json.obj("thirdPartyEori" -> authorisedEori))
+
+      val result = controller.getUsersByAuthorisedEoriWithDateFilter.apply(request)
+      status(result) shouldBe FORBIDDEN
     }
 
     "return 200 OK with list of users and no company information if no consent" in new Setup {
@@ -618,8 +852,8 @@ class UserControllerSpec extends SpecBase with WireMockHelper {
 
       when(mockUserService.getUsersByAuthorisedEoriWithDateFilter(authorisedEori))
         .thenReturn(Future.successful(eoriBusinessInfos))
-      when(mockStubBehaviour.stubAuth(Some(readPermission), EmptyRetrieval))
-        .thenReturn(Future.successful(EmptyRetrieval))
+
+      successfulAuthAction(mockAuthAction)
 
       val request = FakeRequest(GET, routes.UserController.getUsersByAuthorisedEoriWithDateFilter.url)
         .withHeaders("Content-Type" -> "application/json", AUTHORIZATION -> "my-token")
@@ -634,8 +868,8 @@ class UserControllerSpec extends SpecBase with WireMockHelper {
 
       when(mockUserService.getUsersByAuthorisedEoriWithDateFilter(authorisedEori))
         .thenReturn(Future.failed(new RuntimeException("error")))
-      when(mockStubBehaviour.stubAuth(Some(readPermission), EmptyRetrieval))
-        .thenReturn(Future.successful(EmptyRetrieval))
+
+      successfulAuthAction(mockAuthAction)
 
       val request = FakeRequest(GET, routes.UserController.getUsersByAuthorisedEoriWithDateFilter.url)
         .withHeaders("Content-Type" -> "application/json", AUTHORIZATION -> "my-token")
@@ -657,8 +891,8 @@ class UserControllerSpec extends SpecBase with WireMockHelper {
 
       when(mockUserService.getUsersByAuthorisedEoriWithDateFilter(authorisedEori))
         .thenReturn(Future.successful(eoriBusinessInfos))
-      when(mockStubBehaviour.stubAuth(Some(readPermission), EmptyRetrieval))
-        .thenReturn(Future.successful(EmptyRetrieval))
+
+      successfulAuthAction(mockAuthAction)
 
       val request = FakeRequest(GET, routes.UserController.getUsersByAuthorisedEoriWithDateFilter.url)
         .withHeaders("Content-Type" -> "application/json", AUTHORIZATION -> "my-token")
@@ -686,8 +920,7 @@ class UserControllerSpec extends SpecBase with WireMockHelper {
       when(mockEmailConnector.sendEmailRequest(any(), any(), any())(any()))
         .thenReturn(Future.successful(Done))
 
-      when(mockStubBehaviour.stubAuth(Some(writePermission), EmptyRetrieval))
-        .thenReturn(Future.successful(EmptyRetrieval))
+      successfulAuthAction(mockAuthAction)
 
       val request: FakeRequest[JsObject] = FakeRequest(POST, routes.UserController.thirdPartyAccessSelfRemoval.url)
         .withHeaders("Content-Type" -> "application/json", AUTHORIZATION -> "my-token")
@@ -701,12 +934,34 @@ class UserControllerSpec extends SpecBase with WireMockHelper {
         .sendEmailRequest(any(), any(), any())(any())
     }
 
+    "return corresponding error code when call to auth fails" in new Setup {
+
+      when(mockUserService.deleteAuthorisedUser(traderEori, thirdPartyEori))
+        .thenReturn(Future.successful(true))
+      when(mockReportRequestRepository.deleteReportsForThirdPartyRemoval(traderEori, thirdPartyEori))
+        .thenReturn(Future.successful(true))
+      when(mockCustomsDataStoreConnector.getNotificationEmail(traderEori))
+        .thenReturn(Future.successful(NotificationEmail("trader@example.com", LocalDateTime.now())))
+      when(mockEmailConnector.sendEmailRequest(any(), any(), any())(any()))
+        .thenReturn(Future.successful(Done))
+
+      failingAuthAction(mockAuthAction)
+
+      val request: FakeRequest[JsObject] = FakeRequest(POST, routes.UserController.thirdPartyAccessSelfRemoval.url)
+        .withHeaders("Content-Type" -> "application/json", AUTHORIZATION -> "my-token")
+        .withBody(Json.obj("traderEori" -> traderEori, "thirdPartyEori" -> thirdPartyEori))
+
+      val result: Future[Result] = controllerWithConnectors.thirdPartyAccessSelfRemoval.apply(request)
+
+      status(result) shouldBe FORBIDDEN
+    }
+
     "return an internal server error when authorised user delete fails" in new Setup {
 
       when(mockUserService.deleteAuthorisedUser(traderEori, thirdPartyEori))
         .thenReturn(Future.successful(false))
-      when(mockStubBehaviour.stubAuth(Some(writePermission), EmptyRetrieval))
-        .thenReturn(Future.successful(EmptyRetrieval))
+
+      successfulAuthAction(mockAuthAction)
 
       val request: FakeRequest[JsObject] = FakeRequest(POST, routes.UserController.thirdPartyAccessSelfRemoval.url)
         .withHeaders("Content-Type" -> "application/json", AUTHORIZATION -> "my-token")
@@ -724,8 +979,8 @@ class UserControllerSpec extends SpecBase with WireMockHelper {
         .thenReturn(Future.successful(true))
       when(mockReportRequestRepository.deleteReportsForThirdPartyRemoval(traderEori, thirdPartyEori))
         .thenReturn(Future.successful(false))
-      when(mockStubBehaviour.stubAuth(Some(writePermission), EmptyRetrieval))
-        .thenReturn(Future.successful(EmptyRetrieval))
+
+      successfulAuthAction(mockAuthAction)
 
       val request: FakeRequest[JsObject] = FakeRequest(POST, routes.UserController.thirdPartyAccessSelfRemoval.url)
         .withHeaders("Content-Type" -> "application/json", AUTHORIZATION -> "my-token")
@@ -740,8 +995,7 @@ class UserControllerSpec extends SpecBase with WireMockHelper {
 
     "return a bad request when invalid traderEori" in new Setup {
 
-      when(mockStubBehaviour.stubAuth(Some(writePermission), EmptyRetrieval))
-        .thenReturn(Future.successful(EmptyRetrieval))
+      successfulAuthAction(mockAuthAction)
 
       val request: FakeRequest[JsObject] = FakeRequest(POST, routes.UserController.thirdPartyAccessSelfRemoval.url)
         .withHeaders("Content-Type" -> "application/json", AUTHORIZATION -> "my-token")
@@ -755,8 +1009,7 @@ class UserControllerSpec extends SpecBase with WireMockHelper {
 
     "return a bad request when invalid thirdPartyEori" in new Setup {
 
-      when(mockStubBehaviour.stubAuth(Some(writePermission), EmptyRetrieval))
-        .thenReturn(Future.successful(EmptyRetrieval))
+      successfulAuthAction(mockAuthAction)
 
       val request: FakeRequest[JsObject] = FakeRequest(POST, routes.UserController.thirdPartyAccessSelfRemoval.url)
         .withHeaders("Content-Type" -> "application/json", AUTHORIZATION -> "my-token")
@@ -770,12 +1023,11 @@ class UserControllerSpec extends SpecBase with WireMockHelper {
 
     "return a bad request when both EORIs are invalid" in new Setup {
 
+      successfulAuthAction(mockAuthAction)
+
       val request: FakeRequest[JsObject] = FakeRequest(POST, routes.UserController.thirdPartyAccessSelfRemoval.url)
         .withHeaders("Content-Type" -> "application/json", AUTHORIZATION -> "my-token")
         .withBody(Json.obj("foo" -> "bar", "fizz" -> "buzz"))
-
-      when(mockStubBehaviour.stubAuth(Some(writePermission), EmptyRetrieval))
-        .thenReturn(Future.successful(EmptyRetrieval))
 
       val result: Future[Result] = controllerWithConnectors.thirdPartyAccessSelfRemoval.apply(request)
 
@@ -788,4 +1040,32 @@ class UserControllerSpec extends SpecBase with WireMockHelper {
     val app: Application = application
       .build()
   }
+
+  def successfulAuthAction(mockAuthAction: AuthAction): OngoingStubbing[Action[JsValue]] =
+    when(mockAuthAction.async[JsValue](any[BodyParser[JsValue]]())(any()))
+      .thenAnswer { invocation =>
+        val bodyParser = invocation.getArgument[BodyParser[JsValue]](0)
+        val block      = invocation.getArgument[Request[JsValue] => Future[Result]](1)
+        new Action[JsValue] {
+          override def apply(request: Request[JsValue]): Future[Result] = block(request)
+
+          override def parser: BodyParser[JsValue] = bodyParser
+
+          override def executionContext: ExecutionContext = ExecutionContext.global
+        }
+      }
+
+  def failingAuthAction(mockAuthAction: AuthAction): OngoingStubbing[Action[JsValue]] =
+    when(mockAuthAction.async[JsValue](any[BodyParser[JsValue]]())(any()))
+      .thenAnswer { invocation =>
+        val bodyParser = invocation.getArgument[BodyParser[JsValue]](0)
+        new Action[JsValue] {
+          override def apply(request: Request[JsValue]): Future[Result] =
+            Future.successful(Status(FORBIDDEN))
+
+          override def parser: BodyParser[JsValue] = bodyParser
+
+          override def executionContext: ExecutionContext = ExecutionContext.global
+        }
+      }
 }
