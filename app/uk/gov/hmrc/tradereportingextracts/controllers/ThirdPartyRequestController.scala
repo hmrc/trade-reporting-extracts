@@ -72,7 +72,8 @@ class ThirdPartyRequestController @Inject() (
                                         }
           } yield Ok(Json.toJson(thirdPartyAddedConfirmed)))
             .recover { case ex =>
-              BadRequest(Json.obj("error" -> ex.getMessage))
+              logger.error("Error adding third party request", ex)
+              BadRequest(Json.obj("error" -> "Error adding third party request"))
             }
         case JsError(_)          =>
           Future.successful(BadRequest(Json.obj("error" -> "Invalid request format")))
@@ -121,8 +122,8 @@ class ThirdPartyRequestController @Inject() (
               }
           } yield Ok(Json.toJson(ThirdPartyAddedConfirmation(value.thirdPartyEORI))))
             .recover { case ex =>
-              logger.error(s"Error editing third party request: ${ex.getMessage}", ex)
-              BadRequest(Json.obj("error" -> ex.getMessage))
+              logger.error("Error editing third party request", ex)
+              BadRequest(Json.obj("error" -> "Error editing third party request"))
             }
         case JsError(_)          =>
           Future.successful(BadRequest(Json.obj("error" -> "Invalid edit request format")))
@@ -169,14 +170,16 @@ class ThirdPartyRequestController @Inject() (
                 case false => Future.successful(NotFound("No authorised user found for third party EORI"))
               }
               .recover { case ex: Exception =>
-                InternalServerError(Json.obj("error" -> ex.getMessage))
+                logger.error("Error deleting authorised user", ex)
+                InternalServerError(Json.obj("error" -> "Error deleting third party details"))
               }
           case (JsError(_), _)                                    => Future.successful(BadRequest("Missing or invalid 'eori' field"))
           case (_, JsError(_))                                    => Future.successful(BadRequest("Missing or invalid 'thirdPartyEori' field"))
         }
       } catch {
         case ex: Exception =>
-          Future.successful(InternalServerError(Json.obj("error" -> ex.getMessage)))
+          logger.error("Error processing delete third party details request", ex)
+          Future.successful(InternalServerError(Json.obj("error" -> "Error deleting third party details")))
       }
     }
 
