@@ -18,9 +18,6 @@ package uk.gov.hmrc.tradereportingextracts.models
 
 import org.scalatest.freespec.AnyFreeSpec
 import org.scalatest.matchers.must.Matchers.mustBe
-import org.scalatest.matchers.should.Matchers
-import org.scalatest.wordspec.AnyWordSpec
-import org.scalatestplus.mockito.MockitoSugar
 import play.api.libs.json.{JsError, JsString, JsSuccess}
 
 import java.time.{Clock, Instant, LocalDate, ZoneOffset}

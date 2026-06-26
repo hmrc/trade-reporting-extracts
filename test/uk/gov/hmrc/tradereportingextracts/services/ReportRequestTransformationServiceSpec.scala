@@ -17,7 +17,6 @@
 package uk.gov.hmrc.tradereportingextracts.services
 
 import org.mockito.Mockito.*
-import org.scalatest.BeforeAndAfterEach
 import org.scalatest.freespec.AsyncFreeSpec
 import org.scalatest.matchers.must.Matchers
 import org.scalatestplus.mockito.MockitoSugar
@@ -25,7 +24,7 @@ import uk.gov.hmrc.crypto.Sensitive.SensitiveString
 import uk.gov.hmrc.tradereportingextracts.config.AppConfig
 import uk.gov.hmrc.tradereportingextracts.models.*
 import uk.gov.hmrc.tradereportingextracts.models.eis.EisReportRequest
-import uk.gov.hmrc.tradereportingextracts.utils.{SpecBase, WireMockHelper}
+import uk.gov.hmrc.tradereportingextracts.utils.WireMockHelper
 
 import java.time.{Instant, LocalDate, ZoneOffset}
 import scala.concurrent.Future
