@@ -17,7 +17,7 @@
 package uk.gov.hmrc.tradereportingextracts.controllers
 
 import org.apache.pekko.Done
-import org.mockito.ArgumentMatchers.any
+import org.mockito.ArgumentMatchers.{any, eq as eqTo}
 import org.mockito.Mockito.*
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.freespec.AnyFreeSpec
@@ -28,16 +28,14 @@ import play.api.mvc.ControllerComponents
 import play.api.test.Helpers.*
 import play.api.test.{FakeRequest, Helpers}
 import uk.gov.hmrc.tradereportingextracts.connectors.{CustomsDataStoreConnector, EmailConnector}
+import uk.gov.hmrc.tradereportingextracts.controllers.support.FakeAuth
 import uk.gov.hmrc.tradereportingextracts.models.*
 import uk.gov.hmrc.tradereportingextracts.models.thirdParty.ThirdPartyAddedConfirmation
 import uk.gov.hmrc.tradereportingextracts.repositories.ReportRequestRepository
 import uk.gov.hmrc.tradereportingextracts.services.UserService
 
 import java.time.{Instant, LocalDateTime}
-import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{ExecutionContext, Future}
-import org.mockito.ArgumentMatchers.{eq as eqTo, *}
-import uk.gov.hmrc.tradereportingextracts.controllers.support.FakeAuth
 
 class ThirdPartyRequestControllerSpec extends AnyFreeSpec with Matchers with MockitoSugar with ScalaFutures {
 

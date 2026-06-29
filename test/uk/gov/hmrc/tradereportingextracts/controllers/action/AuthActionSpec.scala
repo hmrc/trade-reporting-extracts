@@ -18,19 +18,19 @@ package uk.gov.hmrc.tradereportingextracts.controllers.action
 
 import com.google.inject.Inject
 import org.scalatest.BeforeAndAfterEach
+import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.freespec.AnyFreeSpec
 import org.scalatest.matchers.should.Matchers
-import play.api.inject.guice.GuiceApplicationBuilder
-import play.api.mvc.{BodyParsers, ControllerComponents, Request, Result, Results}
-import play.api.test.FakeRequest
-import uk.gov.hmrc.auth.core.authorise.Predicate
-import uk.gov.hmrc.auth.core.{AffinityGroup, AuthConnector, AuthorisationException, Enrolment, Enrolments, InsufficientEnrolments, UnsupportedAffinityGroup}
-import uk.gov.hmrc.tradereportingextracts.utils.WireMockHelper
-import org.scalatest.concurrent.ScalaFutures
 import play.api.http.Status.OK
+import play.api.inject.guice.GuiceApplicationBuilder
+import play.api.mvc.*
+import play.api.test.FakeRequest
 import uk.gov.hmrc.auth.core.AffinityGroup.Organisation
+import uk.gov.hmrc.auth.core.authorise.Predicate
 import uk.gov.hmrc.auth.core.retrieve.{Retrieval, ~}
+import uk.gov.hmrc.auth.core.*
 import uk.gov.hmrc.http.{HeaderCarrier, UpstreamErrorResponse}
+import uk.gov.hmrc.tradereportingextracts.utils.WireMockHelper
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -90,8 +90,8 @@ class AuthActionSpec extends AnyFreeSpec with Matchers with BeforeAndAfterEach w
     }
   }
 
-  private def block(request: Request[_]): Future[Result] =
-    Future.successful(Results.Ok)
+  private val block: Request[_] => Future[Result] =
+    _ => Future.successful(Results.Ok)
 }
 
 class FakeFailingAuthConnector @Inject() (exceptionToReturn: Throwable) extends AuthConnector {

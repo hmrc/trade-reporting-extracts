@@ -17,11 +17,11 @@
 package uk.gov.hmrc.tradereportingextracts.controllers.support
 
 import play.api.mvc.*
-
-import scala.concurrent.{ExecutionContext, ExecutionContextExecutor, Future}
 import play.api.test.Helpers
 import play.api.test.Helpers.stubControllerComponents
 import uk.gov.hmrc.tradereportingextracts.controllers.action.AuthAction
+
+import scala.concurrent.{ExecutionContext, Future}
 
 object FakeAuth {
 
