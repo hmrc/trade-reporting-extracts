@@ -18,7 +18,6 @@ package uk.gov.hmrc.tradereportingextracts.services
 
 import uk.gov.hmrc.crypto.Sensitive.SensitiveString
 import uk.gov.hmrc.tradereportingextracts.config.AppConfig
-
 import javax.inject.{Inject, Singleton}
 import uk.gov.hmrc.tradereportingextracts.models.eis.EisReportRequest
 import uk.gov.hmrc.tradereportingextracts.models.{EoriRole, ReportConfirmation, ReportRequest, ReportRequestUserAnswersModel, ReportTypeName}

@@ -28,7 +28,6 @@ import uk.gov.hmrc.tradereportingextracts.models.thirdParty.ThirdPartyAddedConfi
 import uk.gov.hmrc.tradereportingextracts.models.{AuthorisedUser, User, UserActiveStatus, UserWithStatus}
 
 import java.time.{Clock, Instant, LocalDate, ZoneOffset}
-import java.util.Date
 import java.util.concurrent.TimeUnit
 import scala.concurrent.{ExecutionContext, Future}
 import scala.jdk.CollectionConverters.SeqHasAsJava

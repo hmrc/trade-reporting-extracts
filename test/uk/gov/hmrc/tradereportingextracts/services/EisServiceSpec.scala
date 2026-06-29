@@ -29,7 +29,6 @@ import org.scalatestplus.mockito.MockitoSugar
 import play.api.http.Status.{ACCEPTED, INTERNAL_SERVER_ERROR, NO_CONTENT, OK}
 import uk.gov.hmrc.crypto.Sensitive.SensitiveString
 import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse}
-import uk.gov.hmrc.tradereportingextracts.config.AppConfig
 import uk.gov.hmrc.tradereportingextracts.connectors.EisConnector
 import uk.gov.hmrc.tradereportingextracts.models.StatusCode.*
 import uk.gov.hmrc.tradereportingextracts.models.eis.EisReportStatusRequest.{ApplicationComponent, StatusType}
@@ -53,13 +52,12 @@ class EisServiceSpec extends AnyWordSpec with Matchers with MockitoSugar with Sc
 
   val mockConnector: EisConnector                    = mock[EisConnector]
   val mockReportRequestService: ReportRequestService = mock[ReportRequestService]
-  val mockAppConfig: AppConfig                       = mock[AppConfig]
   val mockActorSystem: ActorSystem                   = ActorSystem("test-system")
   val mockConfig: Config                             = mock[Config]
 
   when(mockConfig.getDurationList("http-verbs.retries.intervals"))
     .thenReturn(Arrays.asList(Duration.ofSeconds(1), Duration.ofSeconds(2), Duration.ofSeconds(4)))
-  val service = new EisService(mockConnector, mockReportRequestService, mockConfig, mockActorSystem, mockAppConfig)
+  val service = new EisService(mockConnector, mockReportRequestService, mockConfig, mockActorSystem)
 
   val eisReportRequest: EisReportRequest = EisReportRequest(
     endDate = "2024-01-01",

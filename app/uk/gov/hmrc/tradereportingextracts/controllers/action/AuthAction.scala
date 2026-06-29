@@ -63,7 +63,7 @@ class AuthActionImpl @Inject() (
     authorisedEnrolments: Enrolments,
     request: Request[A],
     block: Request[A] => Future[Result]
-  )(implicit hc: HeaderCarrier): Future[Result] = {
+  ): Future[Result] = {
     val maybeEnrolment = authorisedEnrolments
       .getEnrolment(cdsEnrolmentKey)
       .flatMap(_.getIdentifier(cdsEnrolmentIdentifier))

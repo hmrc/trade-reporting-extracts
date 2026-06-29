@@ -24,17 +24,16 @@ import play.api.inject.bind
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.*
 import play.api.mvc.Results.Status
-import play.api.mvc.{Action, AnyContent, BodyParser, BodyParsers, Request, Result}
+import play.api.mvc.{Action, BodyParser, Request, Result}
 import play.api.test.*
 import play.api.test.Helpers.*
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
 import uk.gov.hmrc.tradereportingextracts.config.AppConfig
 import uk.gov.hmrc.tradereportingextracts.connectors.CustomsDataStoreConnector
-import uk.gov.hmrc.tradereportingextracts.controllers.action.{AuthAction, AuthActionImpl}
-import uk.gov.hmrc.tradereportingextracts.controllers.support.FakeAuth
+import uk.gov.hmrc.tradereportingextracts.controllers.action.AuthAction
 import uk.gov.hmrc.tradereportingextracts.models.audit.ReportRequestSubmittedEvent
 import uk.gov.hmrc.tradereportingextracts.models.{EoriHistory, EoriHistoryResponse, NotificationEmail, ReportRequest}
-import uk.gov.hmrc.tradereportingextracts.services.{AdditionalEmailService, EisService, ReportRequestService, RequestReferenceService, UserService}
+import uk.gov.hmrc.tradereportingextracts.services.*
 import uk.gov.hmrc.tradereportingextracts.utils.{SpecBase, WireMockHelper}
 
 import java.time.LocalDateTime

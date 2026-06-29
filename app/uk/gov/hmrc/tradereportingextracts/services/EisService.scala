@@ -20,9 +20,8 @@ import org.apache.pekko.actor.ActorSystem
 import com.typesafe.config.Config
 import play.api.Logging
 import play.api.http.Status
-import play.api.libs.json.{JsError, JsSuccess, Json}
+import play.api.libs.json.{JsSuccess, Json}
 import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.tradereportingextracts.config.AppConfig
 import uk.gov.hmrc.tradereportingextracts.connectors.EisConnector
 import uk.gov.hmrc.tradereportingextracts.models.ReportRequest
 import uk.gov.hmrc.tradereportingextracts.models.StatusCode.*
@@ -39,8 +38,7 @@ class EisService @Inject() (
   connector: EisConnector,
   reportRequestService: ReportRequestService,
   override val configuration: Config,
-  override val actorSystem: ActorSystem,
-  appConfig: AppConfig
+  override val actorSystem: ActorSystem
 )(implicit
   ec: ExecutionContext
 ) extends Logging

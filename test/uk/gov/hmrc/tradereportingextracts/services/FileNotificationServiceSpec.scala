@@ -27,7 +27,6 @@ import play.api.http.Status.{BAD_REQUEST, CREATED, NOT_FOUND}
 import uk.gov.hmrc.crypto.Sensitive.SensitiveString
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.tradereportingextracts.connectors.EmailConnector
-import uk.gov.hmrc.tradereportingextracts.models.EmailTemplate.ReportAvailable
 import uk.gov.hmrc.tradereportingextracts.models.sdes.{FileNotificationMetadata, FileNotificationResponse}
 import uk.gov.hmrc.tradereportingextracts.models.{EmailTemplate, FileNotification as TreFileNotification, ReportRequest, ReportTypeName}
 import uk.gov.hmrc.tradereportingextracts.utils.WireMockHelper
