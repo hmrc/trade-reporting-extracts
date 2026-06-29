@@ -465,7 +465,7 @@ class ThirdPartyRequestControllerSpec extends AnyFreeSpec with Matchers with Moc
       val result =
         controller.editThirdPartyRequest()(FakeRequest().withHeaders(AUTHORIZATION -> "my-token").withBody(requestBody))
       status(result) mustBe BAD_REQUEST
-      (contentAsJson(result) \ "error").as[String] must include("Authorised user not found")
+      (contentAsJson(result) \ "error").as[String] must include("Error editing third party request")
     }
 
     "When just reference name changed, email and report cleanup should not occur" in {
