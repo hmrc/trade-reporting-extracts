@@ -19,16 +19,15 @@ package uk.gov.hmrc.tradereportingextracts.controllers
 import play.api.libs.json.{JsValue, Json}
 import play.api.Logging
 import play.api.mvc.{Action, ControllerComponents}
-import uk.gov.hmrc.internalauth.client.*
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 import uk.gov.hmrc.tradereportingextracts.connectors.{CustomsDataStoreConnector, EmailConnector}
+import uk.gov.hmrc.tradereportingextracts.controllers.action.AuthAction
 import uk.gov.hmrc.tradereportingextracts.models.{AuthorisedUser, EmailTemplate}
 import uk.gov.hmrc.tradereportingextracts.models.thirdParty.EoriBusinessInfo
 import uk.gov.hmrc.tradereportingextracts.repositories.ReportRequestRepository
 import uk.gov.hmrc.tradereportingextracts.services.UserService
 import uk.gov.hmrc.tradereportingextracts.utils.ApplicationConstants.eori
 import uk.gov.hmrc.tradereportingextracts.utils.JsonValidationHelper.validateFields
-import uk.gov.hmrc.tradereportingextracts.utils.PermissionsUtil.{readPermission, writePermission}
 
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
@@ -37,7 +36,7 @@ import scala.concurrent.{ExecutionContext, Future}
 class UserController @Inject() (
   userService: UserService,
   cc: ControllerComponents,
-  auth: BackendAuthComponents,
+  authAction: AuthAction,
   reportRequestRepository: ReportRequestRepository,
   customsDataStoreConnector: CustomsDataStoreConnector,
   emailConnector: EmailConnector
@@ -45,7 +44,7 @@ class UserController @Inject() (
     extends BackendController(cc)
     with Logging:
 
-  def getOrSetupUser(): Action[JsValue] = auth.authorizedAction(readPermission).async(parse.json) { implicit request =>
+  def getOrSetupUser(): Action[JsValue] = authAction.async(parse.json) { implicit request =>
     validateFields(
       "eori" -> (request.body \ eori).validate[String]
     ) match {
@@ -63,7 +62,7 @@ class UserController @Inject() (
   }
 
   def getAuthorisedEoris: Action[JsValue] =
-    auth.authorizedAction(readPermission).async(parse.json) { implicit request =>
+    authAction.async(parse.json) { implicit request =>
       validateFields(
         "eori" -> (request.body \ eori).validate[String]
       ) match {
@@ -86,7 +85,7 @@ class UserController @Inject() (
     }
 
   def getNotificationEmail: Action[JsValue] =
-    auth.authorizedAction(readPermission).async(parse.json) { implicit request =>
+    authAction.async(parse.json) { implicit request =>
       validateFields(
         "eori" -> (request.body \ eori).validate[String]
       ) match {
@@ -107,7 +106,7 @@ class UserController @Inject() (
     }
 
   def getUserAndEmail: Action[JsValue] =
-    auth.authorizedAction(readPermission).async(parse.json) { implicit request =>
+    authAction.async(parse.json) { implicit request =>
       validateFields(
         "eori" -> (request.body \ eori).validate[String]
       ) match {
@@ -127,7 +126,7 @@ class UserController @Inject() (
     }
 
   def getThirdPartyDetails: Action[JsValue] =
-    auth.authorizedAction(readPermission).async(parse.json) { implicit request =>
+    authAction.async(parse.json) { implicit request =>
       validateFields(
         "eori"           -> (request.body \ eori).validate[String],
         "thirdPartyEori" -> (request.body \ "thirdPartyEori").validate[String]
@@ -153,7 +152,7 @@ class UserController @Inject() (
     }
 
   def getAuthorisedBusinessDetails: Action[JsValue] =
-    auth.authorizedAction(readPermission).async(parse.json) { implicit request =>
+    authAction.async(parse.json) { implicit request =>
       validateFields(
         "thirdPartyEori" -> (request.body \ "thirdPartyEori").validate[String],
         "traderEori"     -> (request.body \ "traderEori").validate[String]
@@ -179,7 +178,7 @@ class UserController @Inject() (
     }
 
   def getUsersByAuthorisedEoriWithStatus: Action[JsValue] =
-    auth.authorizedAction(readPermission).async(parse.json) { implicit request =>
+    authAction.async(parse.json) { implicit request =>
       validateFields(
         "thirdPartyEori" -> (request.body \ "thirdPartyEori").validate[String]
       ) match {
@@ -200,7 +199,7 @@ class UserController @Inject() (
     }
 
   def getUsersByAuthorisedEoriWithDateFilter: Action[JsValue] =
-    auth.authorizedAction(readPermission).async(parse.json) { implicit request =>
+    authAction.async(parse.json) { implicit request =>
       validateFields(
         "thirdPartyEori" -> (request.body \ "thirdPartyEori").validate[String]
       ) match {
@@ -221,7 +220,7 @@ class UserController @Inject() (
     }
 
   def thirdPartyAccessSelfRemoval: Action[JsValue] =
-    auth.authorizedAction(writePermission).async(parse.json) { implicit request =>
+    authAction.async(parse.json) { implicit request =>
       validateFields(
         "traderEori"     -> (request.body \ "traderEori").validate[String],
         "thirdPartyEori" -> (request.body \ "thirdPartyEori").validate[String]
@@ -273,7 +272,7 @@ class UserController @Inject() (
     }
 
   def getAdditionalEmails: Action[JsValue] =
-    auth.authorizedAction(readPermission).async(parse.json) { implicit request =>
+    authAction.async(parse.json) { implicit request =>
       validateFields(
         "eori" -> (request.body \ eori).validate[String]
       ) match {

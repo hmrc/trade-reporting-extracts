@@ -22,46 +22,34 @@ import play.api.libs.json.{JsObject, Json}
 import play.api.mvc.Result
 import play.api.test.{FakeRequest, Helpers}
 import play.api.test.Helpers.*
-import uk.gov.hmrc.internalauth.client.Retrieval.EmptyRetrieval
-import uk.gov.hmrc.internalauth.client.test.{BackendAuthComponentsStub, StubBehaviour}
-import uk.gov.hmrc.internalauth.client.*
 import uk.gov.hmrc.tradereportingextracts.services.AdditionalEmailService
 import uk.gov.hmrc.tradereportingextracts.utils.SpecBase
+import uk.gov.hmrc.tradereportingextracts.controllers.support.FakeAuth
 
 import scala.concurrent.{ExecutionContext, Future}
 
 class AdditionalEmailsControllerSpec extends SpecBase {
 
-  implicit val ec: ExecutionContext                        = ExecutionContext.Implicits.global
-  private val mockUserService: AdditionalEmailService      = mock[AdditionalEmailService]
-  private val mockStubBehaviour                            = mock[StubBehaviour]
-  private val backendAuthComponents: BackendAuthComponents =
-    BackendAuthComponentsStub(mockStubBehaviour)(Helpers.stubControllerComponents())
-  val controller                                           =
+  implicit val ec: ExecutionContext                   = ExecutionContext.Implicits.global
+  private val mockUserService: AdditionalEmailService = mock[AdditionalEmailService]
+  private val fakeAuthAction                          = FakeAuth.Helpers.success(ec)
+
+  val controller =
     new AdditionalEmailsController(
       mockUserService,
       Helpers.stubControllerComponents(),
-      backendAuthComponents
+      fakeAuthAction
     )(using ec)
-  val readPermission: Predicate.Permission                 = Predicate.Permission(
-    Resource(ResourceType("trade-reporting-extracts"), ResourceLocation("trade-reporting-extracts/*")),
-    IAAction("READ")
-  )
-  val writePermission                                      = Predicate.Permission(
-    Resource(ResourceType("trade-reporting-extracts"), ResourceLocation("trade-reporting-extracts/*")),
-    IAAction("WRITE")
-  )
+
+  private val eori         = "GB123456789000"
+  private val emailAddress = "test@example.com"
 
   "UserController.addAdditionalEmail" should {
 
     "return 200 OK when valid EORI and email address are provided" in new Setup {
-      val eori         = "GB123456789000"
-      val emailAddress = "test@example.com"
 
       when(mockUserService.addAdditionalEmail(eori, emailAddress))
         .thenReturn(Future.successful(true))
-      when(mockStubBehaviour.stubAuth(Some(writePermission), EmptyRetrieval))
-        .thenReturn(Future.successful(EmptyRetrieval))
 
       val request: FakeRequest[JsObject] = FakeRequest(POST, routes.AdditionalEmailsController.addAdditionalEmail().url)
         .withHeaders("Content-Type" -> "application/json", AUTHORIZATION -> "my-token")
@@ -72,14 +60,33 @@ class AdditionalEmailsControllerSpec extends SpecBase {
       status(result) shouldBe OK
     }
 
+    "return corresponding error code when call to auth fails" in new Setup {
+
+      private val fakeFailingAuthAction = FakeAuth.Helpers.forbidden(ec)
+
+      val controller =
+        new AdditionalEmailsController(
+          mockUserService,
+          Helpers.stubControllerComponents(),
+          fakeFailingAuthAction
+        )(using ec)
+
+      when(mockUserService.addAdditionalEmail(eori, emailAddress))
+        .thenReturn(Future.successful(true))
+
+      val request: FakeRequest[JsObject] = FakeRequest(POST, routes.AdditionalEmailsController.addAdditionalEmail().url)
+        .withHeaders("Content-Type" -> "application/json", AUTHORIZATION -> "my-token")
+        .withBody(Json.obj("eori" -> eori, "emailAddress" -> emailAddress))
+
+      val result: Future[Result] = controller.addAdditionalEmail().apply(request)
+
+      status(result) shouldBe FORBIDDEN
+    }
+
     "return 500 InternalServerError when service fails to add additional email" in new Setup {
-      val eori         = "GB123456789000"
-      val emailAddress = "test@example.com"
 
       when(mockUserService.addAdditionalEmail(eori, emailAddress))
         .thenReturn(Future.successful(false))
-      when(mockStubBehaviour.stubAuth(Some(writePermission), EmptyRetrieval))
-        .thenReturn(Future.successful(EmptyRetrieval))
 
       val request: FakeRequest[JsObject] = FakeRequest(POST, routes.AdditionalEmailsController.addAdditionalEmail().url)
         .withHeaders("Content-Type" -> "application/json", AUTHORIZATION -> "my-token")
@@ -94,13 +101,9 @@ class AdditionalEmailsControllerSpec extends SpecBase {
   "AdditionalEmailsController.removeAdditionalEmail" should {
 
     "return 204 NoContent when valid EORI and email address are provided and removed successfully" in new Setup {
-      val eori         = "GB123456789000"
-      val emailAddress = "test@example.com"
 
       when(mockUserService.removeAdditionalEmail(eori, emailAddress))
         .thenReturn(Future.successful(true))
-      when(mockStubBehaviour.stubAuth(Some(writePermission), EmptyRetrieval))
-        .thenReturn(Future.successful(EmptyRetrieval))
 
       val request: FakeRequest[JsObject] =
         FakeRequest(POST, routes.AdditionalEmailsController.removeAdditionalEmail().url)
@@ -113,13 +116,9 @@ class AdditionalEmailsControllerSpec extends SpecBase {
     }
 
     "return 404 NotFound when the additional email address is not found" in new Setup {
-      val eori         = "GB123456789000"
-      val emailAddress = "missing@example.com"
 
       when(mockUserService.removeAdditionalEmail(eori, emailAddress))
         .thenReturn(Future.successful(false))
-      when(mockStubBehaviour.stubAuth(Some(writePermission), EmptyRetrieval))
-        .thenReturn(Future.successful(EmptyRetrieval))
 
       val request: FakeRequest[JsObject] =
         FakeRequest(POST, routes.AdditionalEmailsController.removeAdditionalEmail().url)
@@ -133,13 +132,9 @@ class AdditionalEmailsControllerSpec extends SpecBase {
     }
 
     "return 500 InternalServerError when service fails with an exception" in new Setup {
-      val eori         = "GB123456789000"
-      val emailAddress = "test@example.com"
 
       when(mockUserService.removeAdditionalEmail(eori, emailAddress))
         .thenReturn(Future.failed(new RuntimeException("boom")))
-      when(mockStubBehaviour.stubAuth(Some(writePermission), EmptyRetrieval))
-        .thenReturn(Future.successful(EmptyRetrieval))
 
       val request: FakeRequest[JsObject] =
         FakeRequest(POST, routes.AdditionalEmailsController.removeAdditionalEmail().url)
@@ -154,9 +149,6 @@ class AdditionalEmailsControllerSpec extends SpecBase {
 
     "return 400 BadRequest when required fields are missing" in new Setup {
       val eori = "GB123456789000"
-
-      when(mockStubBehaviour.stubAuth(Some(writePermission), EmptyRetrieval))
-        .thenReturn(Future.successful(EmptyRetrieval))
 
       val request: FakeRequest[JsObject] =
         FakeRequest(POST, routes.AdditionalEmailsController.removeAdditionalEmail().url)

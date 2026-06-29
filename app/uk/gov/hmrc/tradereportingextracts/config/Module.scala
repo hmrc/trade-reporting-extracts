@@ -18,7 +18,10 @@ package uk.gov.hmrc.tradereportingextracts.config
 
 import play.api.{Configuration, Environment}
 import play.api.inject.Binding
+import uk.gov.hmrc.auth.core.AuthConnector
 import uk.gov.hmrc.crypto.{Decrypter, Encrypter}
+import uk.gov.hmrc.play.bootstrap.auth.DefaultAuthConnector
+import uk.gov.hmrc.tradereportingextracts.controllers.action.{AuthAction, AuthActionImpl}
 
 import java.time.Clock
 
@@ -26,14 +29,14 @@ class Module extends play.api.inject.Module:
 
   override def bindings(environment: Environment, configuration: Configuration): collection.Seq[Binding[_]] =
 
-    val authTokenInitializerBinding: Binding[InternalAuthTokenInitializer] =
-      if (configuration.get[Boolean]("internal-auth-token-initializer.enabled")) {
-        bind[InternalAuthTokenInitializer].to[InternalAuthTokenInitializerImpl].eagerly()
-      } else bind[InternalAuthTokenInitializer].to[NoOpInternalAuthTokenInitializer].eagerly()
+    val authActionBinding: Binding[AuthAction] =
+      bind[AuthAction].to[AuthActionImpl].eagerly()
 
+    val authConnectorBinding: Binding[AuthConnector] =
+      bind[AuthConnector].to[DefaultAuthConnector].eagerly()
     Seq(
       bind[AppConfig].toSelf.eagerly(),
       bind[Clock].toInstance(Clock.systemUTC()),
       bind[Encrypter with Decrypter].toProvider[CryptoProvider].eagerly(),
-      authTokenInitializerBinding
+      authConnectorBinding
     )

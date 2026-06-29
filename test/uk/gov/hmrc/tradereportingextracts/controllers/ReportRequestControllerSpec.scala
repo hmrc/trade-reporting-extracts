@@ -23,20 +23,27 @@ import org.scalatest.matchers.must.Matchers.{must, mustBe}
 import play.api.inject.bind
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.*
+import play.api.mvc.Results.Status
+import play.api.mvc.{Action, AnyContent, BodyParser, BodyParsers, Request, Result}
 import play.api.test.*
 import play.api.test.Helpers.*
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
 import uk.gov.hmrc.tradereportingextracts.config.AppConfig
 import uk.gov.hmrc.tradereportingextracts.connectors.CustomsDataStoreConnector
+import uk.gov.hmrc.tradereportingextracts.controllers.action.{AuthAction, AuthActionImpl}
+import uk.gov.hmrc.tradereportingextracts.controllers.support.FakeAuth
 import uk.gov.hmrc.tradereportingextracts.models.audit.ReportRequestSubmittedEvent
 import uk.gov.hmrc.tradereportingextracts.models.{EoriHistory, EoriHistoryResponse, NotificationEmail, ReportRequest}
 import uk.gov.hmrc.tradereportingextracts.services.{AdditionalEmailService, EisService, ReportRequestService, RequestReferenceService, UserService}
 import uk.gov.hmrc.tradereportingextracts.utils.{SpecBase, WireMockHelper}
 
 import java.time.LocalDateTime
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 class ReportRequestControllerSpec extends SpecBase with WireMockHelper {
+
+  implicit val ec: ExecutionContext = ExecutionContext.global
+
   val mockCustomsDataStoreConnector: CustomsDataStoreConnector = mock[CustomsDataStoreConnector]
   val mockReportRequestService: ReportRequestService           = mock[ReportRequestService]
   val mockRequestReferenceService: RequestReferenceService     = mock[RequestReferenceService]
@@ -45,6 +52,7 @@ class ReportRequestControllerSpec extends SpecBase with WireMockHelper {
   val mockAdditionalEmailService: AdditionalEmailService       = mock[AdditionalEmailService]
   val mockAuditConnector: AuditConnector                       = mock[AuditConnector]
   val mockAppConfig: AppConfig                                 = mock[AppConfig]
+  val mockAuthAction: AuthAction                               = mock[AuthAction]
 
   override def beforeEach(): Unit = {
     super.beforeEach()
@@ -55,6 +63,7 @@ class ReportRequestControllerSpec extends SpecBase with WireMockHelper {
     reset(mockUserService)
     reset(mockAdditionalEmailService)
     reset(mockAppConfig)
+    reset(mockAuthAction)
   }
 
   private val app = new GuiceApplicationBuilder()
@@ -65,7 +74,8 @@ class ReportRequestControllerSpec extends SpecBase with WireMockHelper {
       bind[AdditionalEmailService].toInstance(mockAdditionalEmailService),
       bind[EisService].toInstance(mockEisService),
       bind[UserService].toInstance(mockUserService),
-      bind[AppConfig].toInstance(mockAppConfig)
+      bind[AppConfig].toInstance(mockAppConfig),
+      bind[AuthAction].toInstance(mockAuthAction)
     )
     .build()
 
@@ -87,6 +97,19 @@ class ReportRequestControllerSpec extends SpecBase with WireMockHelper {
           }
         """
       )
+
+      when(mockAuthAction.async[JsValue](any[BodyParser[JsValue]]())(any()))
+        .thenAnswer { invocation =>
+          val bodyParser = invocation.getArgument[BodyParser[JsValue]](0)
+          val block      = invocation.getArgument[Request[JsValue] => Future[Result]](1)
+          new Action[JsValue] {
+            override def apply(request: Request[JsValue]): Future[Result] = block(request)
+
+            override def parser: BodyParser[JsValue] = bodyParser
+
+            override def executionContext: ExecutionContext = ExecutionContext.global
+          }
+        }
       when(mockCustomsDataStoreConnector.getNotificationEmail(any()))
         .thenReturn(Future.successful(NotificationEmail("email@example.com", LocalDateTime.now())))
 
@@ -144,6 +167,82 @@ class ReportRequestControllerSpec extends SpecBase with WireMockHelper {
       capturedRequest.requesterEORI mustBe "GB123456789014"
     }
 
+    "should return corresponding error code when call to auth fails" in {
+
+      val inputJson: JsValue = Json.parse(
+        """
+          {
+            "eori": "GB123456789014",
+            "reportStartDate": "2025-04-16",
+            "reportEndDate": "2025-05-16",
+            "whichEori": "GB123456789014",
+            "reportName": "MyReport",
+            "eoriRole": ["declarant"],
+            "reportType": ["importHeader"],
+            "dataType": "import",
+            "additionalEmail": ["email1@gmail.com"]
+          }
+        """
+      )
+
+      when(mockAuthAction.async[JsValue](any[BodyParser[JsValue]]())(any()))
+        .thenAnswer { invocation =>
+          val bodyParser = invocation.getArgument[BodyParser[JsValue]](0)
+          new Action[JsValue] {
+            override def apply(request: Request[JsValue]): Future[Result] =
+              Future.successful(Status(FORBIDDEN))
+
+            override def parser: BodyParser[JsValue] = bodyParser
+
+            override def executionContext: ExecutionContext = ExecutionContext.global
+          }
+        }
+
+      when(mockCustomsDataStoreConnector.getNotificationEmail(any()))
+        .thenReturn(Future.successful(NotificationEmail("email@example.com", LocalDateTime.now())))
+
+      when(mockAdditionalEmailService.updateEmailAccessDate(any(), any()))
+        .thenReturn(Future.successful(true))
+
+      when(mockCustomsDataStoreConnector.getEoriHistory(any()))
+        .thenReturn(
+          Future.successful(
+            EoriHistoryResponse(
+              Seq(
+                EoriHistory(
+                  "eori",
+                  Some("2023-02-01"),
+                  Some("2023-03-01")
+                )
+              )
+            )
+          )
+        )
+
+      when(mockRequestReferenceService.generateUnique())
+        .thenReturn(Future.successful("REF-00000001"))
+
+      when(mockReportRequestService.createAll(any())(any()))
+        .thenReturn(Future.successful(true))
+
+      val reportRequestCaptor = ArgumentCaptor.forClass(classOf[ReportRequest])
+      when(mockEisService.requestTraderReport(any(), reportRequestCaptor.capture())(any()))
+        .thenAnswer(_ => Future.successful(reportRequestCaptor.getValue))
+
+      doNothing()
+        .when(mockAuditConnector)
+        .sendExplicitAudit(any[String], any[ReportRequestSubmittedEvent])(any(), any(), any())
+
+      val request = FakeRequest(POST, "/trade-reporting-extracts/create-report-request")
+        .withHeaders("Content-Type" -> "application/json")
+        .withJsonBody(inputJson)
+
+      val result = route(app, request).value
+
+      status(result) mustBe FORBIDDEN
+
+    }
+
     "return OK and report ID for a single report when input is valid when a third party requesting trader data" in {
       val inputJson: JsValue = Json.parse(
         """
@@ -160,6 +259,19 @@ class ReportRequestControllerSpec extends SpecBase with WireMockHelper {
           }
         """
       )
+
+      when(mockAuthAction.async[JsValue](any[BodyParser[JsValue]]())(any()))
+        .thenAnswer { invocation =>
+          val bodyParser = invocation.getArgument[BodyParser[JsValue]](0)
+          val block      = invocation.getArgument[Request[JsValue] => Future[Result]](1)
+          new Action[JsValue] {
+            override def apply(request: Request[JsValue]): Future[Result] = block(request)
+
+            override def parser: BodyParser[JsValue] = bodyParser
+
+            override def executionContext: ExecutionContext = ExecutionContext.global
+          }
+        }
       when(mockCustomsDataStoreConnector.getNotificationEmail(any()))
         .thenReturn(Future.successful(NotificationEmail("email@example.com", LocalDateTime.now())))
 
@@ -235,6 +347,20 @@ class ReportRequestControllerSpec extends SpecBase with WireMockHelper {
           }
     """
       )
+
+      when(mockAuthAction.async[JsValue](any[BodyParser[JsValue]]())(any()))
+        .thenAnswer { invocation =>
+          val bodyParser = invocation.getArgument[BodyParser[JsValue]](0)
+          val block      = invocation.getArgument[Request[JsValue] => Future[Result]](1)
+          new Action[JsValue] {
+            override def apply(request: Request[JsValue]): Future[Result] = block(request)
+
+            override def parser: BodyParser[JsValue] = bodyParser
+
+            override def executionContext: ExecutionContext = ExecutionContext.global
+          }
+        }
+
       when(mockCustomsDataStoreConnector.getNotificationEmail(any()))
         .thenReturn(Future.successful(NotificationEmail("email@example.com", LocalDateTime.now())))
 
@@ -312,6 +438,20 @@ class ReportRequestControllerSpec extends SpecBase with WireMockHelper {
       }
     """
       )
+
+      when(mockAuthAction.async[JsValue](any[BodyParser[JsValue]]())(any()))
+        .thenAnswer { invocation =>
+          val bodyParser = invocation.getArgument[BodyParser[JsValue]](0)
+          val block      = invocation.getArgument[Request[JsValue] => Future[Result]](1)
+          new Action[JsValue] {
+            override def apply(request: Request[JsValue]): Future[Result] = block(request)
+
+            override def parser: BodyParser[JsValue] = bodyParser
+
+            override def executionContext: ExecutionContext = ExecutionContext.global
+          }
+        }
+
       when(mockCustomsDataStoreConnector.getNotificationEmail(any()))
         .thenReturn(Future.successful(NotificationEmail("email@example.com", LocalDateTime.now())))
 
@@ -380,6 +520,20 @@ class ReportRequestControllerSpec extends SpecBase with WireMockHelper {
     }
 
     "return BadRequest if JSON is invalid" in {
+
+      when(mockAuthAction.async[JsValue](any[BodyParser[JsValue]]())(any()))
+        .thenAnswer { invocation =>
+          val bodyParser = invocation.getArgument[BodyParser[JsValue]](0)
+          val block      = invocation.getArgument[Request[JsValue] => Future[Result]](1)
+          new Action[JsValue] {
+            override def apply(request: Request[JsValue]): Future[Result] = block(request)
+
+            override def parser: BodyParser[JsValue] = bodyParser
+
+            override def executionContext: ExecutionContext = ExecutionContext.global
+          }
+        }
+
       val invalidJson = Json.obj("foo" -> "bar")
 
       val request = FakeRequest(POST, "/trade-reporting-extracts/create-report-request")
@@ -407,6 +561,19 @@ class ReportRequestControllerSpec extends SpecBase with WireMockHelper {
           }
         """
       )
+
+      when(mockAuthAction.async[JsValue](any[BodyParser[JsValue]]())(any()))
+        .thenAnswer { invocation =>
+          val bodyParser = invocation.getArgument[BodyParser[JsValue]](0)
+          val block      = invocation.getArgument[Request[JsValue] => Future[Result]](1)
+          new Action[JsValue] {
+            override def apply(request: Request[JsValue]): Future[Result] = block(request)
+
+            override def parser: BodyParser[JsValue] = bodyParser
+
+            override def executionContext: ExecutionContext = ExecutionContext.global
+          }
+        }
 
       when(mockAdditionalEmailService.updateEmailAccessDate(any(), any()))
         .thenReturn(Future.successful(true))
@@ -439,6 +606,19 @@ class ReportRequestControllerSpec extends SpecBase with WireMockHelper {
           }
         """
       )
+
+      when(mockAuthAction.async[JsValue](any[BodyParser[JsValue]]())(any()))
+        .thenAnswer { invocation =>
+          val bodyParser = invocation.getArgument[BodyParser[JsValue]](0)
+          val block      = invocation.getArgument[Request[JsValue] => Future[Result]](1)
+          new Action[JsValue] {
+            override def apply(request: Request[JsValue]): Future[Result] = block(request)
+
+            override def parser: BodyParser[JsValue] = bodyParser
+
+            override def executionContext: ExecutionContext = ExecutionContext.global
+          }
+        }
 
       when(mockUserService.keepAlive(eqTo("GB987654321000")))
         .thenReturn(Future.successful(true))
@@ -508,6 +688,20 @@ class ReportRequestControllerSpec extends SpecBase with WireMockHelper {
           }
         """
       )
+
+      when(mockAuthAction.async[JsValue](any[BodyParser[JsValue]]())(any()))
+        .thenAnswer { invocation =>
+          val bodyParser = invocation.getArgument[BodyParser[JsValue]](0)
+          val block      = invocation.getArgument[Request[JsValue] => Future[Result]](1)
+          new Action[JsValue] {
+            override def apply(request: Request[JsValue]): Future[Result] = block(request)
+
+            override def parser: BodyParser[JsValue] = bodyParser
+
+            override def executionContext: ExecutionContext = ExecutionContext.global
+          }
+        }
+
       when(mockAdditionalEmailService.updateEmailAccessDate(any(), any()))
         .thenReturn(Future.successful(true))
       when(mockCustomsDataStoreConnector.getNotificationEmail(any()))
@@ -576,6 +770,19 @@ class ReportRequestControllerSpec extends SpecBase with WireMockHelper {
         """
       )
 
+      when(mockAuthAction.async[JsValue](any[BodyParser[JsValue]]())(any()))
+        .thenAnswer { invocation =>
+          val bodyParser = invocation.getArgument[BodyParser[JsValue]](0)
+          val block      = invocation.getArgument[Request[JsValue] => Future[Result]](1)
+          new Action[JsValue] {
+            override def apply(request: Request[JsValue]): Future[Result] = block(request)
+
+            override def parser: BodyParser[JsValue] = bodyParser
+
+            override def executionContext: ExecutionContext = ExecutionContext.global
+          }
+        }
+
       when(mockCustomsDataStoreConnector.getNotificationEmail(any()))
         .thenReturn(Future.successful(NotificationEmail("email@example.com", LocalDateTime.now())))
 
@@ -641,6 +848,19 @@ class ReportRequestControllerSpec extends SpecBase with WireMockHelper {
           }
         """
       )
+
+      when(mockAuthAction.async[JsValue](any[BodyParser[JsValue]]())(any()))
+        .thenAnswer { invocation =>
+          val bodyParser = invocation.getArgument[BodyParser[JsValue]](0)
+          val block      = invocation.getArgument[Request[JsValue] => Future[Result]](1)
+          new Action[JsValue] {
+            override def apply(request: Request[JsValue]): Future[Result] = block(request)
+
+            override def parser: BodyParser[JsValue] = bodyParser
+
+            override def executionContext: ExecutionContext = ExecutionContext.global
+          }
+        }
 
       when(mockCustomsDataStoreConnector.getNotificationEmail(any()))
         .thenReturn(Future.successful(NotificationEmail("email@example.com", LocalDateTime.now())))

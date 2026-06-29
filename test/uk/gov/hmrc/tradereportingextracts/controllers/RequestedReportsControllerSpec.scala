@@ -23,9 +23,7 @@ import play.api.libs.json.{JsValue, Json}
 import play.api.mvc.{Request, Result}
 import play.api.test.Helpers.{AUTHORIZATION, GET, contentAsJson, status}
 import play.api.test.{FakeRequest, Helpers}
-import uk.gov.hmrc.internalauth.client.*
-import uk.gov.hmrc.internalauth.client.Retrieval.EmptyRetrieval
-import uk.gov.hmrc.internalauth.client.test.{BackendAuthComponentsStub, StubBehaviour}
+import uk.gov.hmrc.tradereportingextracts.controllers.support.FakeAuth
 import uk.gov.hmrc.tradereportingextracts.models.ReportStatus.IN_PROGRESS
 import uk.gov.hmrc.tradereportingextracts.models.ReportTypeName.EXPORTS_ITEM_REPORT
 import uk.gov.hmrc.tradereportingextracts.models.{GetReportRequestsResponse, UserReport}
@@ -34,18 +32,19 @@ import uk.gov.hmrc.tradereportingextracts.utils.SpecBase
 import uk.gov.hmrc.tradereportingextracts.utils.ApplicationConstants
 
 import java.time.Instant
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 class RequestedReportsControllerSpec extends SpecBase:
 
+  implicit val ec: ExecutionContext = ExecutionContext.Implicits.global
+
   private val mockReportRequestService: ReportRequestService =
     mock[ReportRequestService]
-  private val mockStubBehaviour                              = mock[StubBehaviour]
-  private val backendAuthComponents: BackendAuthComponents   =
-    BackendAuthComponentsStub(mockStubBehaviour)(Helpers.stubControllerComponents())
-  private val controller                                     =
-    new RequestedReportsController(Helpers.stubControllerComponents(), backendAuthComponents, mockReportRequestService)
+
+  private val fakeAuthAction = FakeAuth.Helpers.success(ec)
+
+  private val controller =
+    new RequestedReportsController(Helpers.stubControllerComponents(), fakeAuthAction, mockReportRequestService)
 
   private val expectedResponse = GetReportRequestsResponse(
     userReports = Some(
@@ -64,11 +63,6 @@ class RequestedReportsControllerSpec extends SpecBase:
     thirdPartyReports = None
   )
 
-  val permission = Predicate.Permission(
-    Resource(ResourceType("trade-reporting-extracts"), ResourceLocation("trade-reporting-extracts/*")),
-    IAAction("READ")
-  )
-
   "POST /requested-reports" should {
 
     "return 200 OK with reports when EORI is provided" in {
@@ -76,8 +70,6 @@ class RequestedReportsControllerSpec extends SpecBase:
 
       when(mockReportRequestService.getReportRequestsForUser(eori))
         .thenReturn(Future.successful(expectedResponse))
-      when(mockStubBehaviour.stubAuth(Some(permission), EmptyRetrieval))
-        .thenReturn(Future.successful(EmptyRetrieval))
 
       val request: Request[JsValue] = FakeRequest(GET, "/requested-reports")
         .withHeaders(AUTHORIZATION -> "my-token")
@@ -89,13 +81,34 @@ class RequestedReportsControllerSpec extends SpecBase:
       contentAsJson(result) mustBe Json.toJson(expectedResponse)
     }
 
+    "return corresponding error code when failing call to auth" in {
+
+      val failingFakeAuthAction           = FakeAuth.Helpers.forbidden(ec)
+      val controllerWithFailingAuthAction =
+        new RequestedReportsController(
+          Helpers.stubControllerComponents(),
+          failingFakeAuthAction,
+          mockReportRequestService
+        )
+      val eori                            = "GB123456789000"
+
+      when(mockReportRequestService.getReportRequestsForUser(eori))
+        .thenReturn(Future.successful(expectedResponse))
+
+      val request: Request[JsValue] = FakeRequest(GET, "/requested-reports")
+        .withHeaders(AUTHORIZATION -> "my-token")
+        .withBody(Json.obj(ApplicationConstants.eori -> eori))
+
+      val result: Future[Result] = controllerWithFailingAuthAction.getRequestedReports()(request)
+
+      status(result) mustBe FORBIDDEN
+    }
+
     "return 204 NoContent when no reports are found for the given EORI" in {
       val eori = "GB000000000000"
 
       when(mockReportRequestService.getReportRequestsForUser(eori))
         .thenReturn(Future.successful(GetReportRequestsResponse(None, None)))
-      when(mockStubBehaviour.stubAuth(Some(permission), EmptyRetrieval))
-        .thenReturn(Future.successful(EmptyRetrieval))
 
       val request: Request[JsValue] = FakeRequest(GET, "/requested-reports")
         .withHeaders(AUTHORIZATION -> "my-token")
@@ -107,8 +120,6 @@ class RequestedReportsControllerSpec extends SpecBase:
     }
 
     "return 400 BadRequest when EORI is missing" in {
-      when(mockStubBehaviour.stubAuth(Some(permission), EmptyRetrieval))
-        .thenReturn(Future.successful(EmptyRetrieval))
       val request: Request[JsValue] = FakeRequest(GET, "/requested-reports")
         .withHeaders(AUTHORIZATION -> "my-token")
         .withBody(Json.obj())
@@ -123,8 +134,6 @@ class RequestedReportsControllerSpec extends SpecBase:
 
       when(mockReportRequestService.getReportRequestsForUser(eori))
         .thenReturn(Future.failed(new RuntimeException("error")))
-      when(mockStubBehaviour.stubAuth(Some(permission), EmptyRetrieval))
-        .thenReturn(Future.successful(EmptyRetrieval))
 
       val request: Request[JsValue] = FakeRequest(GET, "/requested-reports")
         .withHeaders(AUTHORIZATION -> "my-token")

@@ -20,15 +20,14 @@ import play.api.Logging
 import play.api.libs.json.{JsError, JsSuccess, JsValue, Json}
 import play.api.mvc.{Action, ControllerComponents}
 import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.internalauth.client.BackendAuthComponents
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 import uk.gov.hmrc.tradereportingextracts.connectors.{CustomsDataStoreConnector, EmailConnector}
+import uk.gov.hmrc.tradereportingextracts.controllers.action.AuthAction
 import uk.gov.hmrc.tradereportingextracts.models.{AccessType, AuthorisedUser, EmailTemplate}
 import uk.gov.hmrc.tradereportingextracts.models.thirdParty.{ThirdPartyAddedConfirmation, ThirdPartyRequest}
 import uk.gov.hmrc.tradereportingextracts.repositories.ReportRequestRepository
 import uk.gov.hmrc.tradereportingextracts.services.UserService
 import uk.gov.hmrc.tradereportingextracts.utils.ApplicationConstants
-import uk.gov.hmrc.tradereportingextracts.utils.PermissionsUtil.writePermission
 
 import javax.inject.Inject
 import scala.collection.immutable.Map
@@ -38,7 +37,7 @@ class ThirdPartyRequestController @Inject() (
   cc: ControllerComponents,
   userService: UserService,
   reportRequestRepository: ReportRequestRepository,
-  auth: BackendAuthComponents,
+  authAction: AuthAction,
   customsDataStoreConnector: CustomsDataStoreConnector,
   emailConnector: EmailConnector
 )(implicit
@@ -49,7 +48,7 @@ class ThirdPartyRequestController @Inject() (
   implicit val hc: HeaderCarrier = HeaderCarrier()
 
   def addThirdPartyRequest(): Action[JsValue] =
-    auth.authorizedAction(writePermission).async(parse.json) { implicit request =>
+    authAction.async(parse.json) { implicit request =>
       request.body.validate[ThirdPartyRequest] match {
         case JsSuccess(value, _) =>
           val authorisedUser = AuthorisedUser(
@@ -80,7 +79,7 @@ class ThirdPartyRequestController @Inject() (
     }
 
   def editThirdPartyRequest(): Action[JsValue] =
-    auth.authorizedAction(writePermission).async(parse.json) { implicit request =>
+    authAction.async(parse.json) { implicit request =>
       request.body.validate[ThirdPartyRequest] match {
         case JsSuccess(value, _) =>
           (for {
@@ -140,7 +139,7 @@ class ThirdPartyRequestController @Inject() (
     }
 
   def deleteThirdPartyDetails(): Action[JsValue] =
-    auth.authorizedAction(writePermission).async(parse.json) { implicit request =>
+    authAction.async(parse.json) { implicit request =>
       try {
         val eoriResult           = (request.body \ ApplicationConstants.eori).validate[String]
         val thirdPartyEoriResult = (request.body \ "thirdPartyEori").validate[String]

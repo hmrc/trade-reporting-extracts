@@ -18,12 +18,11 @@ package uk.gov.hmrc.tradereportingextracts.controllers
 
 import play.api.libs.json.JsValue
 import play.api.mvc.{Action, ControllerComponents}
-import uk.gov.hmrc.internalauth.client.*
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
+import uk.gov.hmrc.tradereportingextracts.controllers.action.AuthAction
 import uk.gov.hmrc.tradereportingextracts.services.AdditionalEmailService
 import uk.gov.hmrc.tradereportingextracts.utils.ApplicationConstants.eori
 import uk.gov.hmrc.tradereportingextracts.utils.JsonValidationHelper.validateFields
-import uk.gov.hmrc.tradereportingextracts.utils.PermissionsUtil.writePermission
 
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
@@ -32,12 +31,12 @@ import scala.concurrent.{ExecutionContext, Future}
 class AdditionalEmailsController @Inject() (
   additionalEmailService: AdditionalEmailService,
   cc: ControllerComponents,
-  auth: BackendAuthComponents
+  authAction: AuthAction
 )(using executionContext: ExecutionContext)
     extends BackendController(cc):
 
   def addAdditionalEmail(): Action[JsValue] =
-    auth.authorizedAction(writePermission).async(parse.json) { implicit request =>
+    authAction.async(parse.json) { implicit request =>
       validateFields(
         "eori"         -> (request.body \ eori).validate[String],
         "emailAddress" -> (request.body \ "emailAddress").validate[String]
@@ -58,7 +57,7 @@ class AdditionalEmailsController @Inject() (
     }
 
   def removeAdditionalEmail(): Action[JsValue] =
-    auth.authorizedAction(writePermission).async(parse.json) { implicit request =>
+    authAction.async(parse.json) { implicit request =>
       validateFields(
         "eori"         -> (request.body \ eori).validate[String],
         "emailAddress" -> (request.body \ "emailAddress").validate[String]
