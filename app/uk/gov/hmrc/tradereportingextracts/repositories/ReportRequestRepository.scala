@@ -52,6 +52,10 @@ class ReportRequestRepository @Inject() (appConfig: AppConfig, mongoComponent: M
         IndexModel(
           Indexes.ascending("requesterEORI"),
           IndexOptions().name("requesterEORI-index")
+        ),
+        IndexModel(
+          Indexes.ascending("correlationId"),
+          IndexOptions().name("correlationId-index")
         )
       ),
       replaceIndexes = true
