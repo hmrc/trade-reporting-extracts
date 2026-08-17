@@ -92,6 +92,7 @@ class CustomsDataStoreConnectorSpec
           val result = connector.getNotificationEmail(eori).futureValue
           result mustBe a[NotificationEmail]
           result.address mustBe ""
+          result.emailNotFound mustBe true
         }
       }
 
@@ -137,7 +138,7 @@ class CustomsDataStoreConnectorSpec
         }
       }
 
-      "return empty CompanyInformation when response is 404 (EORI not found)" in {
+      "return empty CompanyInformation with  when response is 404 (EORI not found)" in {
         val app = applicationWithPort(server.port)
         running(app) {
           val connector = app.injector.instanceOf[CustomsDataStoreConnector]
@@ -150,7 +151,7 @@ class CustomsDataStoreConnectorSpec
           )
 
           val result = connector.getCompanyInformation(eori).futureValue
-          result mustBe CompanyInformation()
+          result mustBe CompanyInformation(inactiveEori = true)
         }
       }
 

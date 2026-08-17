@@ -47,7 +47,7 @@ class CustomsDataStoreConnector @Inject() (appConfig: AppConfig, httpClient: Htt
           case OK        => Future.successful(response.json.as[CompanyInformation])
           case NOT_FOUND =>
             logger.info(s"Company information not found for EORI: $eori")
-            Future.successful(CompanyInformation())
+            Future.successful(CompanyInformation(inactiveEori = true))
           case _         =>
             logger.warn(s"Unexpected response from : ${appConfig.companyInformationUrl}, status: ${response.status}")
             Future.successful(CompanyInformation())
@@ -128,11 +128,11 @@ class CustomsDataStoreConnector @Inject() (appConfig: AppConfig, httpClient: Htt
           case OK        => Future.successful(response.json.as[NotificationEmail])
           case NOT_FOUND =>
             logger.info(s"Email not found")
-            Future.successful(NotificationEmail())
+            Future.successful(NotificationEmail(emailNotFound = true))
           case _         =>
             Future.failed(
               UpstreamErrorResponse(
-                s"Unexpected response from getNotifacationEmail : ${response.status}",
+                s"Unexpected response from getNotificationEmail : ${response.status}",
                 response.status
               )
             )
