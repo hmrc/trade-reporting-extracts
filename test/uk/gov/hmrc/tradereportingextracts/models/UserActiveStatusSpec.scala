@@ -41,38 +41,38 @@ class UserActiveStatusSpec extends AnyFreeSpec {
       status.displayName mustBe "Active"
     }
 
-    "return Upcoming when accessStart is after today" in {
+    "return Pending when accessStart is after today" in {
       val accessStart     = today.plusDays(2).toInstant(ZoneOffset.UTC)
       val reportDataStart = None
 
       val status = UserActiveStatus.fromInstants(accessStart, reportDataStart, clock)
 
-      status mustBe UserActiveStatus.Upcoming
+      status mustBe UserActiveStatus.Pending
       status.cssClass mustBe "govuk-tag--blue"
-      status.displayName mustBe "Upcoming"
+      status.displayName mustBe "Pending"
     }
 
-    "return upcoming when reportDataStart is after cutoffDate" in {
+    "return pending when reportDataStart is after cutoffDate" in {
       val accessStart     = today.minusDays(1).toInstant(ZoneOffset.UTC)
       val reportDataStart = Some(cutoffDate.plusDays(1).toInstant(ZoneOffset.UTC))
 
       val status = UserActiveStatus.fromInstants(accessStart, reportDataStart, clock)
 
-      status mustBe UserActiveStatus.Upcoming
+      status mustBe UserActiveStatus.Pending
       status.cssClass mustBe "govuk-tag--blue"
-      status.displayName mustBe "Upcoming"
+      status.displayName mustBe "Pending"
     }
   }
 
   "UserActiveStatus JSON format" - {
     "serialize to JsString" in {
       UserActiveStatus.userActiveStatusFormat.writes(UserActiveStatus.Active) mustBe JsString("Active")
-      UserActiveStatus.userActiveStatusFormat.writes(UserActiveStatus.Upcoming) mustBe JsString("Upcoming")
+      UserActiveStatus.userActiveStatusFormat.writes(UserActiveStatus.Pending) mustBe JsString("Pending")
     }
 
     "deserialize from JsString" in {
       UserActiveStatus.userActiveStatusFormat.reads(JsString("Active")) mustBe JsSuccess(UserActiveStatus.Active)
-      UserActiveStatus.userActiveStatusFormat.reads(JsString("Upcoming")) mustBe JsSuccess(UserActiveStatus.Upcoming)
+      UserActiveStatus.userActiveStatusFormat.reads(JsString("Pending")) mustBe JsSuccess(UserActiveStatus.Pending)
     }
 
     "fail to deserialize unknown value" in {

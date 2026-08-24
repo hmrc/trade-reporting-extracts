@@ -24,7 +24,7 @@ sealed abstract class UserActiveStatus(val displayName: String, val cssClass: St
 
 object UserActiveStatus {
   case object Active extends UserActiveStatus("Active", "govuk-tag--green")
-  case object Upcoming extends UserActiveStatus("Upcoming", "govuk-tag--blue")
+  case object Pending extends UserActiveStatus("Pending", "govuk-tag--blue")
 
   def fromInstants(
     accessStart: Instant,
@@ -38,14 +38,14 @@ object UserActiveStatus {
     val isReportDataStarted = reportDataStart.forall(!_.isAfter(cutoffDate))
 
     if (isAccessStarted && isReportDataStarted) Active
-    else Upcoming
+    else Pending
   }
 
   implicit val userActiveStatusFormat: Format[UserActiveStatus] = new Format[UserActiveStatus] {
     override def reads(json: JsValue): JsResult[UserActiveStatus] = json match {
-      case JsString("Active")   => JsSuccess(Active)
-      case JsString("Upcoming") => JsSuccess(Upcoming)
-      case _                    => JsError("Unknown UserActiveStatus")
+      case JsString("Active")  => JsSuccess(Active)
+      case JsString("Pending") => JsSuccess(Pending)
+      case _                   => JsError("Unknown UserActiveStatus")
     }
 
     override def writes(status: UserActiveStatus): JsValue = JsString(status.displayName)
