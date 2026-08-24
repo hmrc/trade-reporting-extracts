@@ -25,7 +25,8 @@ case class User(
   eori: String,
   additionalEmails: Seq[String] = Seq.empty,
   authorisedUsers: Seq[AuthorisedUser] = Seq.empty,
-  accessDate: Instant = Instant.now()
+  accessDate: Instant = Instant.now(),
+  personalEmailNotificationsEnabled: Option[Boolean] = None
 )
 
 case class AuthorisedUser(
