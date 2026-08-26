@@ -21,7 +21,8 @@ import play.api.libs.json.{Json, OFormat}
 case class CompanyInformation(
   var name: String = "",
   var consent: String = "",
-  var address: AddressInformation = AddressInformation()
+  var address: AddressInformation = AddressInformation(),
+  var inactiveEori: Boolean = false
 )
 
 object CompanyInformation:
