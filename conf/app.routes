@@ -55,3 +55,4 @@ POST        /trade-reporting-extracts/add-additional-email              uk.gov.h
 
 DELETE      /trade-reporting-extracts/remove-additional-email           uk.gov.hmrc.tradereportingextracts.controllers.AdditionalEmailsController.removeAdditionalEmail()
 
+POST        /trade-reporting-extracts/user/update-personal-email-notification-preference        uk.gov.hmrc.tradereportingextracts.controllers.UserController.updatePersonalEmailNotificationsPreference()
