@@ -904,6 +904,60 @@ class UserControllerSpec extends SpecBase with WireMockHelper {
     }
   }
 
+  "updatePersonalEmailNotificationsPreference" should {
+
+    "return OK when email updated successfully" in new Setup {
+      val preference = UpdateEmailPreference(eori = "GB123456789000", updatedPreference = true)
+
+      when(mockUserService.updatePersonalEmailNotificationsPreference(preference))
+        .thenReturn(Future.successful(Done))
+
+      successfulAuthAction(mockAuthAction)
+
+      val request: FakeRequest[JsObject] =
+        FakeRequest(POST, routes.UserController.updatePersonalEmailNotificationsPreference().url)
+          .withHeaders("Content-Type" -> "application/json", AUTHORIZATION -> "my-token")
+          .withBody(Json.toJson(preference).as[JsObject])
+
+      val result: Future[Result] = controller.updatePersonalEmailNotificationsPreference.apply(request)
+
+      status(result) shouldBe OK
+    }
+
+    "return internal server error when fails to update" in new Setup {
+      val preference = UpdateEmailPreference(eori = "GB123456789000", updatedPreference = false)
+
+      when(mockUserService.updatePersonalEmailNotificationsPreference(preference))
+        .thenReturn(Future.failed(new RuntimeException("Service failure")))
+
+      successfulAuthAction(mockAuthAction)
+
+      val request: FakeRequest[JsObject] =
+        FakeRequest(POST, routes.UserController.updatePersonalEmailNotificationsPreference().url)
+          .withHeaders("Content-Type" -> "application/json", AUTHORIZATION -> "my-token")
+          .withBody(Json.toJson(preference).as[JsObject])
+
+      val result: Future[Result] = controller.updatePersonalEmailNotificationsPreference.apply(request)
+
+      status(result)        shouldBe INTERNAL_SERVER_ERROR
+      contentAsString(result) should include("Failed to update personal email notification preference")
+    }
+
+    "return BadRequest when request body fails validation" in new Setup {
+      successfulAuthAction(mockAuthAction)
+
+      val request: FakeRequest[JsObject] =
+        FakeRequest(POST, routes.UserController.updatePersonalEmailNotificationsPreference().url)
+          .withHeaders("Content-Type" -> "application/json", AUTHORIZATION -> "my-token")
+          .withBody(Json.obj("invalidField" -> "value"))
+
+      val result: Future[Result] = controller.updatePersonalEmailNotificationsPreference.apply(request)
+
+      status(result)        shouldBe BAD_REQUEST
+      contentAsString(result) should include("Invalid update personal email notification preference")
+    }
+  }
+
   "UserController.thirdPartyAccessSelfRemoval" should {
 
     val traderEori     = "123"

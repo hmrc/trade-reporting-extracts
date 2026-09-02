@@ -16,6 +16,7 @@
 
 package uk.gov.hmrc.tradereportingextracts.services
 
+import org.apache.pekko.Done
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito.{reset, verify, when}
 import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}
@@ -857,6 +858,42 @@ class UserServiceSpec
         val result = service.updateAuthorisedUser(eori, authorisedUser).failed.futureValue
         result mustBe an[Exception]
         result.getMessage must include("User not found")
+      }
+
+      "updatePersonalEmailNotificationsPreference" - {
+        "return Done when user updated" in {
+
+          when(mockRepository.findByEori("eori"))
+            .thenReturn(Future.successful(Some(User("eori", Seq(), Seq(), personalEmailNotificationsEnabled = None))))
+
+          when(mockRepository.update(any())).thenReturn(Future.successful(true))
+
+          val result =
+            service.updatePersonalEmailNotificationsPreference(UpdateEmailPreference("eori", false)).futureValue
+          result mustBe Done
+        }
+
+        "return Done when user not found" in {
+          when(mockRepository.findByEori("eori"))
+            .thenReturn(Future.successful(None))
+
+          val result =
+            service.updatePersonalEmailNotificationsPreference(UpdateEmailPreference("eori", true)).failed.futureValue
+          result mustBe an[Exception]
+          result.getMessage must include("No user found when trying to update personal notification preference")
+        }
+
+        "fail when repository update returns false" in {
+          when(mockRepository.findByEori("eori"))
+            .thenReturn(Future.successful(Some(User("eori", Seq(), Seq(), personalEmailNotificationsEnabled = None))))
+
+          when(mockRepository.update(any())).thenReturn(Future.successful(false))
+
+          val result =
+            service.updatePersonalEmailNotificationsPreference(UpdateEmailPreference("eori", true)).failed.futureValue
+          result mustBe an[Exception]
+          result.getMessage must include("Failed to update personal email preference")
+        }
       }
     }
   }

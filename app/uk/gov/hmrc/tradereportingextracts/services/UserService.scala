@@ -16,6 +16,7 @@
 
 package uk.gov.hmrc.tradereportingextracts.services
 
+import org.apache.pekko.Done
 import uk.gov.hmrc.tradereportingextracts.connectors.CustomsDataStoreConnector
 import uk.gov.hmrc.tradereportingextracts.models.*
 import uk.gov.hmrc.tradereportingextracts.models.etmp.EoriUpdate
@@ -134,6 +135,19 @@ class UserService @Inject() (
 
   def getNotificationEmail(eori: String): Future[NotificationEmail] =
     customsDataStoreConnector.getNotificationEmail(eori)
+
+  def updatePersonalEmailNotificationsPreference(newPreference: UpdateEmailPreference): Future[Done] =
+    userRepository.findByEori(newPreference.eori).flatMap {
+      case None       =>
+        Future.failed(new Exception(s"No user found when trying to update personal notification preference"))
+      case Some(user) =>
+        val updatedUser = user
+          .copy(personalEmailNotificationsEnabled = Some(newPreference.updatedPreference), accessDate = Instant.now())
+        userRepository.update(updatedUser).flatMap {
+          case true  => Future.successful(Done)
+          case false => Future.failed(new Exception(s"Failed to update personal email preference"))
+        }
+    }
 
   def getUserAndEmailDetails(eori: String): Future[UserDetails] =
     for {

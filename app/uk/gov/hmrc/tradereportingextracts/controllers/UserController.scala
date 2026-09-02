@@ -16,13 +16,13 @@
 
 package uk.gov.hmrc.tradereportingextracts.controllers
 
-import play.api.libs.json.{JsValue, Json}
+import play.api.libs.json.{JsError, JsSuccess, JsValue, Json}
 import play.api.Logging
 import play.api.mvc.{Action, ControllerComponents}
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 import uk.gov.hmrc.tradereportingextracts.connectors.{CustomsDataStoreConnector, EmailConnector}
 import uk.gov.hmrc.tradereportingextracts.controllers.action.AuthAction
-import uk.gov.hmrc.tradereportingextracts.models.{AuthorisedUser, EmailTemplate}
+import uk.gov.hmrc.tradereportingextracts.models.{AuthorisedUser, EmailTemplate, UpdateEmailPreference}
 import uk.gov.hmrc.tradereportingextracts.models.thirdParty.EoriBusinessInfo
 import uk.gov.hmrc.tradereportingextracts.repositories.ReportRequestRepository
 import uk.gov.hmrc.tradereportingextracts.services.UserService
@@ -289,5 +289,21 @@ class UserController @Inject() (
 
         case Left(errorResult) =>
           Future.successful(errorResult)
+      }
+    }
+
+  def updatePersonalEmailNotificationsPreference: Action[JsValue] =
+    authAction.async(parse.json) { implicit request =>
+      request.body.validate[UpdateEmailPreference] match {
+        case JsSuccess(newPreference, _) =>
+          userService
+            .updatePersonalEmailNotificationsPreference(newPreference)
+            .map(_ => Ok)
+            .recover { case _ =>
+              InternalServerError("Failed to update personal email notification preference")
+            }
+
+        case JsError(_) =>
+          Future.successful(BadRequest(Json.obj("error" -> "Invalid update personal email notification preference")))
       }
     }
