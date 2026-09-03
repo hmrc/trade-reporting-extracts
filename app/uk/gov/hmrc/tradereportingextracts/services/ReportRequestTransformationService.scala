@@ -44,7 +44,7 @@ class ReportRequestTransformationService @Inject() (
     eoriValue: String,
     reportRequestUserAnswersModel: ReportRequestUserAnswersModel,
     historicalEoris: Seq[String],
-    userEmail: String
+    userEmail: Option[String]
   ): Future[ReportRequest] = {
 
     val userAnswers = reportRequestUserAnswersModel
@@ -82,7 +82,10 @@ class ReportRequestTransformationService @Inject() (
         } else {
           transformToXIEorisWithGBEoris(historicalEoris :+ userAnswers.whichEori)
         },
-        userEmail = Some(SensitiveString(userEmail)),
+        userEmail = userEmail.match {
+          case Some(email) => Some(SensitiveString(email))
+          case _           => None
+        },
         recipientEmails = userAnswers.additionalEmail.getOrElse(Seq()).toSeq.map(email => SensitiveString(email)),
         reportTypeName = getReportType(userAnswers.reportType.head),
         reportStart = LocalDate.parse(userAnswers.reportStartDate).atStartOfDay(ZoneOffset.UTC).toInstant,

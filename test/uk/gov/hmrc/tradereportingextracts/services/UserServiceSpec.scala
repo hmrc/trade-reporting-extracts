@@ -200,6 +200,26 @@ class UserServiceSpec
       }
     }
 
+    "personalEmailNotificationsEnabled" - {
+      "must return true when repository returns true" in {
+        when(mockRepository.personalEmailNotificationsEnabled(eori)).thenReturn(Future.successful(true))
+
+        val result = service.personalEmailNotificationsEnabled(eori)
+
+        result.futureValue mustEqual true
+        verify(mockRepository).personalEmailNotificationsEnabled(eori)
+
+      }
+      "must return false when repository returns false" in {
+        when(mockRepository.personalEmailNotificationsEnabled(eori)).thenReturn(Future.successful(false))
+
+        val result = service.personalEmailNotificationsEnabled(eori)
+
+        result.futureValue mustEqual false
+        verify(mockRepository).personalEmailNotificationsEnabled(eori)
+      }
+    }
+
     "getUsersByAuthorisedEoriWithStatus" - {
 
       "return EoriBusinessInfo with status and business info when consent is 1" in {

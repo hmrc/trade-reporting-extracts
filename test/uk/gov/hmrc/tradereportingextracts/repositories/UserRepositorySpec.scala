@@ -101,6 +101,27 @@ class UserRepositorySpec
       }
     }
 
+    "personalEmailNotificationsEnabled" should {
+      "return true if user has personal email notifications enabled" in {
+        val insertResult = userRepository.insert(user.copy(personalEmailNotificationsEnabled = Some(true))).futureValue
+        val result       = userRepository.personalEmailNotificationsEnabled(user.eori).futureValue
+        insertResult mustEqual true
+        result mustEqual Some(true)
+      }
+
+      "return false if user has personal email notifications disabled" in {
+        val insertResult = userRepository.insert(user.copy(personalEmailNotificationsEnabled = Some(false))).futureValue
+        val result       = userRepository.personalEmailNotificationsEnabled(user.eori).futureValue
+        insertResult mustEqual true
+        result mustEqual Some(false)
+      }
+
+      "return none if user does not exist" in {
+        val result = userRepository.personalEmailNotificationsEnabled("nonExistingEori").futureValue
+        result mustEqual None
+      }
+    }
+
     "updateByUserEori" should {
       "must be able to update an existing user" in {
         val eoriNew                   = "EORI-NEW"
