@@ -29,7 +29,7 @@ import uk.gov.hmrc.tradereportingextracts.config.AppConfig
 import uk.gov.hmrc.tradereportingextracts.models.AccessType.{EXPORTS, IMPORTS}
 import uk.gov.hmrc.tradereportingextracts.models.etmp.EoriUpdate
 import uk.gov.hmrc.tradereportingextracts.models.thirdParty.ThirdPartyAddedConfirmation
-import uk.gov.hmrc.tradereportingextracts.models.{AuthorisedUser, User, UserActiveStatus}
+import uk.gov.hmrc.tradereportingextracts.models.{AuthorisedUser, User}
 import uk.gov.hmrc.tradereportingextracts.services.{AdditionalEmailService, UserService}
 
 import java.time.temporal.ChronoUnit
@@ -315,7 +315,7 @@ class UserRepositorySpec
       }
     }
 
-    "getUsersByAuthorisedEoriWithStatus" should {
+    "getUsersByAuthorisedEoriWithAccessDates" should {
       val cutoffDate = today.minusDays(3)
       "return users who have authorised a specific EORI with correct status" in {
         val accessStart     = today.minusDays(1).toInstant(ZoneOffset.UTC)
@@ -361,7 +361,7 @@ class UserRepositorySpec
               eori = authorisedEori,
               accessStart = accessStart,
               accessEnd = Some(accessEnd),
-              reportDataStart = Some(reportDataStart),
+              reportDataStart = None,
               reportDataEnd = Some(accessEnd),
               accessType = Set(IMPORTS)
             )
@@ -373,10 +373,12 @@ class UserRepositorySpec
         userRepository.insert(user2).futureValue
         userRepository.insert(user3).futureValue
 
-        val result = userRepository.getUsersByAuthorisedEoriWithStatus(authorisedEori).futureValue
+        val result = userRepository.getUsersByAuthorisedEoriWithAccessDates(authorisedEori).futureValue
 
         result.map(_.user.eori) mustBe List("EORI1", "EORI3")
-        result.map(_.status) must contain only UserActiveStatus.Active
+        result.map(_.accessStart).foreach(accessStart => accessStart mustBe an[Instant])
+        result.map(_.reportDataStart).foreach(reportDataStart => reportDataStart mustBe an[Option[Instant]])
+
       }
 
       "return empty if authorised user is not found" in {
@@ -390,7 +392,7 @@ class UserRepositorySpec
 
         userRepository.insert(user).futureValue
 
-        val result = userRepository.getUsersByAuthorisedEoriWithStatus(authorisedEori).futureValue
+        val result = userRepository.getUsersByAuthorisedEoriWithAccessDates(authorisedEori).futureValue
 
         result mustBe empty
       }

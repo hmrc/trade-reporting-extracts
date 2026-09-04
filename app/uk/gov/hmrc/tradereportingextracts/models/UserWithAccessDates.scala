@@ -14,15 +14,8 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.tradereportingextracts.models.thirdParty
+package uk.gov.hmrc.tradereportingextracts.models
 
-import play.api.libs.json.{Json, OFormat}
+import java.time.Instant
 
-case class EoriBusinessInfo(
-  eori: String,
-  businessInfo: Option[String]
-)
-
-object EoriBusinessInfo {
-  implicit val format: OFormat[EoriBusinessInfo] = Json.format[EoriBusinessInfo]
-}
+case class UserWithAccessDates(user: User, accessStart: Instant, reportDataStart: Option[Instant])

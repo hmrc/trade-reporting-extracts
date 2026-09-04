@@ -30,7 +30,7 @@ import uk.gov.hmrc.tradereportingextracts.connectors.CustomsDataStoreConnector
 import uk.gov.hmrc.tradereportingextracts.models.*
 import uk.gov.hmrc.tradereportingextracts.models.AccessType.IMPORTS
 import uk.gov.hmrc.tradereportingextracts.models.etmp.EoriUpdate
-import uk.gov.hmrc.tradereportingextracts.models.thirdParty.{EoriBusinessInfo, ThirdPartyAddedConfirmation}
+import uk.gov.hmrc.tradereportingextracts.models.thirdParty.{EoriBusinessAccessInfo, EoriBusinessInfo, ThirdPartyAddedConfirmation}
 import uk.gov.hmrc.tradereportingextracts.repositories.{ReportRequestRepository, UserRepository}
 
 import java.time.{Instant, LocalDate, LocalDateTime}
@@ -221,7 +221,7 @@ class UserServiceSpec
       }
     }
 
-    "getUsersByAuthorisedEoriWithStatus" - {
+    "getUsersByAuthorisedEoriWithAccessDates" - {
 
       "return EoriBusinessInfo with status and business info when consent is 1" in {
         val authorisedEori = "GB111111111111"
@@ -231,7 +231,7 @@ class UserServiceSpec
           authorisedUsers = Seq(
             AuthorisedUser(
               eori = authorisedEori,
-              accessStart = Instant.now(),
+              accessStart = Instant.parse("2024-07-01T10:00:00Z"),
               accessEnd = None,
               reportDataStart = None,
               reportDataEnd = None,
@@ -241,19 +241,20 @@ class UserServiceSpec
           )
         )
 
-        val userWithStatus = UserWithStatus(user, UserActiveStatus.Active)
+        val userWithAccessDates = UserWithAccessDates(user, Instant.parse("2024-07-01T10:00:00Z"), None)
 
-        when(mockRepository.getUsersByAuthorisedEoriWithStatus(authorisedEori))
-          .thenReturn(Future.successful(Seq(userWithStatus)))
+        when(mockRepository.getUsersByAuthorisedEoriWithAccessDates(authorisedEori))
+          .thenReturn(Future.successful(Seq(userWithAccessDates)))
         when(mockCustomsDataStoreConnector.getCompanyInformation(user.eori)).thenReturn(Future.successful(companyInfo))
 
-        val result = service.getUsersByAuthorisedEoriWithStatus(authorisedEori)
+        val result = service.getUsersByAuthorisedEoriWithAccessDates(authorisedEori)
 
         result.futureValue shouldBe Seq(
-          EoriBusinessInfo(
+          EoriBusinessAccessInfo(
             eori = "GB123456789000",
             businessInfo = Some("Test Ltd"),
-            status = Some(UserActiveStatus.Active)
+            accessStart = Instant.parse("2024-07-01T10:00:00Z"),
+            None
           )
         )
       }
@@ -266,7 +267,7 @@ class UserServiceSpec
           authorisedUsers = Seq(
             AuthorisedUser(
               eori = authorisedEori,
-              accessStart = Instant.now(),
+              accessStart = Instant.parse("2024-07-01T10:00:00Z"),
               accessEnd = None,
               reportDataStart = None,
               reportDataEnd = None,
@@ -276,19 +277,20 @@ class UserServiceSpec
           )
         )
 
-        val userWithStatus = UserWithStatus(user, UserActiveStatus.Active)
+        val userWithAccessDates = UserWithAccessDates(user, Instant.parse("2024-07-01T10:00:00Z"), None)
 
-        when(mockRepository.getUsersByAuthorisedEoriWithStatus(authorisedEori))
-          .thenReturn(Future.successful(Seq(userWithStatus)))
+        when(mockRepository.getUsersByAuthorisedEoriWithAccessDates(authorisedEori))
+          .thenReturn(Future.successful(Seq(userWithAccessDates)))
         when(mockCustomsDataStoreConnector.getCompanyInformation(user.eori)).thenReturn(Future.successful(companyInfo))
 
-        val result = service.getUsersByAuthorisedEoriWithStatus(authorisedEori)
+        val result = service.getUsersByAuthorisedEoriWithAccessDates(authorisedEori)
 
         result.futureValue shouldBe Seq(
-          EoriBusinessInfo(
+          EoriBusinessAccessInfo(
             eori = "GB123456789000",
             businessInfo = None,
-            status = Some(UserActiveStatus.Active)
+            accessStart = Instant.parse("2024-07-01T10:00:00Z"),
+            None
           )
         )
       }
@@ -297,10 +299,10 @@ class UserServiceSpec
         val authorisedEori    = "GB111111111111"
         val expectedException = new Exception("Repository failure")
 
-        when(mockRepository.getUsersByAuthorisedEoriWithStatus(authorisedEori))
+        when(mockRepository.getUsersByAuthorisedEoriWithAccessDates(authorisedEori))
           .thenReturn(Future.failed(expectedException))
 
-        val result = service.getUsersByAuthorisedEoriWithStatus(authorisedEori)
+        val result = service.getUsersByAuthorisedEoriWithAccessDates(authorisedEori)
 
         whenReady(result.failed) { ex =>
           ex shouldBe expectedException
@@ -335,11 +337,7 @@ class UserServiceSpec
         val result = service.getUsersByAuthorisedEoriWithDateFilter(authorisedEori)
 
         result.futureValue shouldBe Seq(
-          EoriBusinessInfo(
-            eori = "GB123456789000",
-            businessInfo = Some("Test Ltd"),
-            status = None
-          )
+          EoriBusinessInfo(eori = "GB123456789000", businessInfo = Some("Test Ltd"))
         )
       }
 
@@ -368,11 +366,7 @@ class UserServiceSpec
         val result = service.getUsersByAuthorisedEoriWithDateFilter(authorisedEori)
 
         result.futureValue shouldBe Seq(
-          EoriBusinessInfo(
-            eori = "GB123456789000",
-            businessInfo = None,
-            status = None
-          )
+          EoriBusinessInfo(eori = "GB123456789000", businessInfo = None)
         )
       }
 

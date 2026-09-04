@@ -177,7 +177,7 @@ class UserController @Inject() (
       }
     }
 
-  def getUsersByAuthorisedEoriWithStatus: Action[JsValue] =
+  def getUsersByAuthorisedEoriWithAccessDates: Action[JsValue] =
     authAction.async(parse.json) { implicit request =>
       validateFields(
         "thirdPartyEori" -> (request.body \ "thirdPartyEori").validate[String]
@@ -187,10 +187,10 @@ class UserController @Inject() (
           val thirdPartyEori = values("thirdPartyEori")
 
           userService
-            .getUsersByAuthorisedEoriWithStatus(thirdPartyEori)
+            .getUsersByAuthorisedEoriWithAccessDates(thirdPartyEori)
             .map(eoriInfos => Ok(Json.toJson(eoriInfos)))
             .recover { case _ =>
-              InternalServerError("Failed to fetch users by authorised EORI with status")
+              InternalServerError("Failed to fetch users by authorised EORI with access dates")
             }
 
         case Left(errorResult) =>

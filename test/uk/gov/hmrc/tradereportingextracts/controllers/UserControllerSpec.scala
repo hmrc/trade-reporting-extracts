@@ -27,7 +27,7 @@ import play.api.mvc.{Action, BodyParser, Request, Result}
 import play.api.test.Helpers.*
 import play.api.test.{FakeRequest, Helpers}
 import uk.gov.hmrc.tradereportingextracts.connectors.{CustomsDataStoreConnector, EmailConnector}
-import uk.gov.hmrc.tradereportingextracts.models.thirdParty.EoriBusinessInfo
+import uk.gov.hmrc.tradereportingextracts.models.thirdParty.{EoriBusinessAccessInfo, EoriBusinessInfo}
 import uk.gov.hmrc.tradereportingextracts.models.*
 import uk.gov.hmrc.tradereportingextracts.repositories.ReportRequestRepository
 import uk.gov.hmrc.tradereportingextracts.services.UserService
@@ -684,46 +684,48 @@ class UserControllerSpec extends SpecBase with WireMockHelper {
     "return 200 OK with list of users including status" in new Setup {
       val authorisedEori    = "GB111111111111"
       val eoriBusinessInfos = Seq(
-        EoriBusinessInfo(
+        EoriBusinessAccessInfo(
           eori = "GB123456789000",
           businessInfo = Some("ABC Ltd"),
-          status = Some(UserActiveStatus.Active)
+          accessStart = Instant.parse("2024-07-01T10:00:00Z"),
+          reportDataStart = Some(Instant.parse("2024-07-01T10:00:00Z"))
         )
       )
 
-      when(mockUserService.getUsersByAuthorisedEoriWithStatus(authorisedEori))
+      when(mockUserService.getUsersByAuthorisedEoriWithAccessDates(authorisedEori))
         .thenReturn(Future.successful(eoriBusinessInfos))
 
       successfulAuthAction(mockAuthAction)
 
-      val request = FakeRequest(GET, routes.UserController.getUsersByAuthorisedEoriWithStatus.url)
+      val request = FakeRequest(GET, routes.UserController.getUsersByAuthorisedEoriWithAccessDates.url)
         .withHeaders("Content-Type" -> "application/json", AUTHORIZATION -> "my-token")
         .withBody(Json.obj("thirdPartyEori" -> authorisedEori))
 
-      val result = controller.getUsersByAuthorisedEoriWithStatus.apply(request)
+      val result = controller.getUsersByAuthorisedEoriWithAccessDates.apply(request)
       contentAsJson(result) shouldBe Json.toJson(eoriBusinessInfos)
     }
 
     "return corresponding error code when call to auth fails" in new Setup {
       val authorisedEori    = "GB111111111111"
       val eoriBusinessInfos = Seq(
-        EoriBusinessInfo(
+        EoriBusinessAccessInfo(
           eori = "GB123456789000",
           businessInfo = Some("ABC Ltd"),
-          status = Some(UserActiveStatus.Active)
+          accessStart = Instant.parse("2024-07-01T10:00:00Z"),
+          reportDataStart = Some(Instant.parse("2024-07-01T10:00:00Z"))
         )
       )
 
-      when(mockUserService.getUsersByAuthorisedEoriWithStatus(authorisedEori))
+      when(mockUserService.getUsersByAuthorisedEoriWithAccessDates(authorisedEori))
         .thenReturn(Future.successful(eoriBusinessInfos))
 
       failingAuthAction(mockAuthAction)
 
-      val request = FakeRequest(GET, routes.UserController.getUsersByAuthorisedEoriWithStatus.url)
+      val request = FakeRequest(GET, routes.UserController.getUsersByAuthorisedEoriWithAccessDates.url)
         .withHeaders("Content-Type" -> "application/json", AUTHORIZATION -> "my-token")
         .withBody(Json.obj("thirdPartyEori" -> authorisedEori))
 
-      val result = controller.getUsersByAuthorisedEoriWithStatus.apply(request)
+      val result = controller.getUsersByAuthorisedEoriWithAccessDates.apply(request)
       status(result) shouldBe FORBIDDEN
 
     }
@@ -731,62 +733,64 @@ class UserControllerSpec extends SpecBase with WireMockHelper {
     "return 200 OK with list of users and no company information if no consent" in new Setup {
       val authorisedEori    = "GB111111111111"
       val eoriBusinessInfos = Seq(
-        EoriBusinessInfo(
+        EoriBusinessAccessInfo(
           eori = "GB123456789000",
           businessInfo = None,
-          status = Some(UserActiveStatus.Active)
+          accessStart = Instant.parse("2024-07-01T10:00:00Z"),
+          reportDataStart = Some(Instant.parse("2024-07-01T10:00:00Z"))
         )
       )
 
-      when(mockUserService.getUsersByAuthorisedEoriWithStatus(authorisedEori))
+      when(mockUserService.getUsersByAuthorisedEoriWithAccessDates(authorisedEori))
         .thenReturn(Future.successful(eoriBusinessInfos))
 
       successfulAuthAction(mockAuthAction)
 
-      val request = FakeRequest(GET, routes.UserController.getUsersByAuthorisedEoriWithStatus.url)
+      val request = FakeRequest(GET, routes.UserController.getUsersByAuthorisedEoriWithAccessDates.url)
         .withHeaders("Content-Type" -> "application/json", AUTHORIZATION -> "my-token")
         .withBody(Json.obj("thirdPartyEori" -> authorisedEori))
 
-      val result = controller.getUsersByAuthorisedEoriWithStatus.apply(request)
+      val result = controller.getUsersByAuthorisedEoriWithAccessDates.apply(request)
       contentAsJson(result) shouldBe Json.toJson(eoriBusinessInfos)
     }
 
     "return 500 InternalServerError when the service throws an exceptions" in new Setup {
       val authorisedEori = "GB111111111111"
 
-      when(mockUserService.getUsersByAuthorisedEoriWithStatus(authorisedEori))
+      when(mockUserService.getUsersByAuthorisedEoriWithAccessDates(authorisedEori))
         .thenReturn(Future.failed(new RuntimeException("error")))
 
       successfulAuthAction(mockAuthAction)
 
-      val request = FakeRequest(GET, routes.UserController.getUsersByAuthorisedEoriWithStatus.url)
+      val request = FakeRequest(GET, routes.UserController.getUsersByAuthorisedEoriWithAccessDates.url)
         .withHeaders("Content-Type" -> "application/json", AUTHORIZATION -> "my-token")
         .withBody(Json.obj("thirdPartyEori" -> authorisedEori))
 
-      val result = controller.getUsersByAuthorisedEoriWithStatus.apply(request)
+      val result = controller.getUsersByAuthorisedEoriWithAccessDates.apply(request)
       status(result) shouldBe INTERNAL_SERVER_ERROR
     }
 
     "return bad request when invalid body" in new Setup {
       val authorisedEori    = "GB111111111111"
       val eoriBusinessInfos = Seq(
-        EoriBusinessInfo(
+        EoriBusinessAccessInfo(
           eori = "GB123456789000",
           businessInfo = None,
-          status = Some(UserActiveStatus.Active)
+          accessStart = Instant.parse("2024-07-01T10:00:00Z"),
+          reportDataStart = Some(Instant.parse("2024-07-01T10:00:00Z"))
         )
       )
 
-      when(mockUserService.getUsersByAuthorisedEoriWithStatus(authorisedEori))
+      when(mockUserService.getUsersByAuthorisedEoriWithAccessDates(authorisedEori))
         .thenReturn(Future.successful(eoriBusinessInfos))
 
       successfulAuthAction(mockAuthAction)
 
-      val request = FakeRequest(GET, routes.UserController.getUsersByAuthorisedEoriWithStatus.url)
+      val request = FakeRequest(GET, routes.UserController.getUsersByAuthorisedEoriWithAccessDates.url)
         .withHeaders("Content-Type" -> "application/json", AUTHORIZATION -> "my-token")
         .withBody(Json.obj("invalidField" -> authorisedEori))
 
-      val result = controller.getUsersByAuthorisedEoriWithStatus.apply(request)
+      val result = controller.getUsersByAuthorisedEoriWithAccessDates.apply(request)
       status(result)        shouldBe BAD_REQUEST
       contentAsString(result) should include("Missing or invalid 'thirdPartyEori' field")
     }
@@ -797,11 +801,7 @@ class UserControllerSpec extends SpecBase with WireMockHelper {
     "return 200 OK with list of users without status" in new Setup {
       val authorisedEori    = "GB111111111111"
       val eoriBusinessInfos = Seq(
-        EoriBusinessInfo(
-          eori = "GB123456789000",
-          businessInfo = Some("ABC Ltd"),
-          status = None
-        )
+        EoriBusinessInfo(eori = "GB123456789000", businessInfo = Some("ABC Ltd"))
       )
 
       when(mockUserService.getUsersByAuthorisedEoriWithDateFilter(authorisedEori))
@@ -820,11 +820,7 @@ class UserControllerSpec extends SpecBase with WireMockHelper {
     "return corresponding error code when call to auth fails" in new Setup {
       val authorisedEori    = "GB111111111111"
       val eoriBusinessInfos = Seq(
-        EoriBusinessInfo(
-          eori = "GB123456789000",
-          businessInfo = Some("ABC Ltd"),
-          status = None
-        )
+        EoriBusinessInfo(eori = "GB123456789000", businessInfo = Some("ABC Ltd"))
       )
 
       when(mockUserService.getUsersByAuthorisedEoriWithDateFilter(authorisedEori))
@@ -843,11 +839,7 @@ class UserControllerSpec extends SpecBase with WireMockHelper {
     "return 200 OK with list of users and no company information if no consent" in new Setup {
       val authorisedEori    = "GB111111111111"
       val eoriBusinessInfos = Seq(
-        EoriBusinessInfo(
-          eori = "GB123456789000",
-          businessInfo = None,
-          status = None
-        )
+        EoriBusinessInfo(eori = "GB123456789000", businessInfo = None)
       )
 
       when(mockUserService.getUsersByAuthorisedEoriWithDateFilter(authorisedEori))
@@ -882,11 +874,7 @@ class UserControllerSpec extends SpecBase with WireMockHelper {
     "return bad request when invalid body" in new Setup {
       val authorisedEori    = "GB111111111111"
       val eoriBusinessInfos = Seq(
-        EoriBusinessInfo(
-          eori = "GB123456789000",
-          businessInfo = None,
-          status = None
-        )
+        EoriBusinessInfo(eori = "GB123456789000", businessInfo = None)
       )
 
       when(mockUserService.getUsersByAuthorisedEoriWithDateFilter(authorisedEori))
