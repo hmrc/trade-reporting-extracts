@@ -24,7 +24,7 @@ case class EoriBusinessAccessInfo(
   businessInfo: Option[String],
   accessStart: Instant,
   reportDataStart: Option[Instant]
-                           )
+)
 
 object EoriBusinessAccessInfo {
   implicit val format: OFormat[EoriBusinessAccessInfo] = Json.format[EoriBusinessAccessInfo]
