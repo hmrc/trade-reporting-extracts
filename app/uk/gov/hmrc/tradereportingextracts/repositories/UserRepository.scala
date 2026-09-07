@@ -71,6 +71,10 @@ class UserRepository @Inject() (appConfig: AppConfig, mongoComponent: MongoCompo
       .headOption()
   }
 
+  def personalEmailNotificationsEnabled(eori: String): Future[Option[Boolean]] = Mdc.preservingMdc {
+    findByEori(eori).map(_.flatMap(_.personalEmailNotificationsEnabled))
+  }
+
   def getOrCreateUser(eori: String): Future[(User, Boolean)] = Mdc.preservingMdc {
     findByEori(eori).flatMap {
       case Some(existingUser) =>

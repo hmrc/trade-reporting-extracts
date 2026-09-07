@@ -59,29 +59,34 @@ class ReportRequestController @Inject() (
         }
 
         (for {
-          _                   <- traderTtlUpdate
-          userEmail           <- customsDataStoreConnector.getNotificationEmail(value.eori).map(_.address)
-          _                   <- value.additionalEmail
-                                   .map { emails =>
-                                     Future.sequence(emails.map(email => additionalEmailService.updateEmailAccessDate(value.eori, email)))
-                                   }
-                                   .getOrElse(Future.successful(Seq.empty))
-//          eoriHistory          = if (value.eori == value.whichEori)
-//                                   customsDataStoreConnector.getTraderEoriHistory(value.eori, hc.authorization)
-//                                 else customsDataStoreConnector.getEoriHistory(value.whichEori)
-          eoriHistory          = customsDataStoreConnector.getEoriHistory(value.whichEori)
-          filteredEoriHisotry <- eoriHistory.map(_.filterByDateRange(startDate, endDate).map(_.eori))
-          reportRequests      <- Future.sequence {
-                                   value.reportType.toSeq.map { reportTypeName =>
-                                     reportRequestTransformationService.transformReportRequest(
-                                       value.eori,
-                                       value.copy(reportType = Set(reportTypeName)),
-                                       filteredEoriHisotry,
-                                       userEmail
-                                     )
-                                   }
-                                 }
-          persisted           <- reportRequestService.createAll(reportRequests)
+          _                                                  <- traderTtlUpdate
+          personalEmailNotificationsEnabled: Option[Boolean] <-
+            userService.personalEmailNotificationsEnabled(value.eori)
+          maybeUserEmail: Option[String]                     <- personalEmailNotificationsEnabled match {
+                                                                  case Some(false) => Future.successful(None)
+                                                                  case _           =>
+                                                                    customsDataStoreConnector
+                                                                      .getNotificationEmail(value.eori)
+                                                                      .map(email => Some(email.address))
+                                                                }
+          _                                                  <- value.additionalEmail
+                                                                  .map { emails =>
+                                                                    Future.sequence(emails.map(email => additionalEmailService.updateEmailAccessDate(value.eori, email)))
+                                                                  }
+                                                                  .getOrElse(Future.successful(Seq.empty))
+          eoriHistory                                         = customsDataStoreConnector.getEoriHistory(value.whichEori)
+          filteredEoriHisotry                                <- eoriHistory.map(_.filterByDateRange(startDate, endDate).map(_.eori))
+          reportRequests                                     <- Future.sequence {
+                                                                  value.reportType.toSeq.map { reportTypeName =>
+                                                                    reportRequestTransformationService.transformReportRequest(
+                                                                      value.eori,
+                                                                      value.copy(reportType = Set(reportTypeName)),
+                                                                      filteredEoriHisotry,
+                                                                      maybeUserEmail
+                                                                    )
+                                                                  }
+                                                                }
+          persisted                                          <- reportRequestService.createAll(reportRequests)
         } yield (persisted, reportRequests)).flatMap { case (persisted, reportRequests) =>
           if (persisted) {
             Future

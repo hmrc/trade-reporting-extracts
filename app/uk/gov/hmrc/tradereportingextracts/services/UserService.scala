@@ -233,3 +233,6 @@ class UserService @Inject() (
                      }
                    )
     } yield eoriInfos
+
+  def personalEmailNotificationsEnabled(eori: String): Future[Option[Boolean]] =
+    userRepository.personalEmailNotificationsEnabled(eori)

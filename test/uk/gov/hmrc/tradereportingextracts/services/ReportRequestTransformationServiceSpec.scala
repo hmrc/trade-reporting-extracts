@@ -62,7 +62,7 @@ class ReportRequestTransformationServiceSpec extends AsyncFreeSpec with Matchers
           "GB123456789000",
           reportRequestTemplate,
           Seq("GB123456789001"),
-          "user@email.com"
+          Some("user@email.com")
         )
         .map { result =>
           result.reportRequestId mustBe "REF-00000001"
@@ -86,11 +86,25 @@ class ReportRequestTransformationServiceSpec extends AsyncFreeSpec with Matchers
           "GB123456789000",
           model,
           Seq(),
-          "user@email.com"
+          Some("user@email.com")
         )
         .map { result =>
           result.eoriRole mustBe EoriRole.TRADER
           result.reportTypeName mustBe ReportTypeName.IMPORTS_ITEM_REPORT
+        }
+    }
+
+    "create a ReportRequest when email is not provided" in {
+      val model = reportRequestTemplate.copy(eoriRole = Set("importer"), reportType = Set("importItem"))
+      service
+        .transformReportRequest(
+          "GB123456789000",
+          model,
+          Seq(),
+          None
+        )
+        .map { result =>
+          result.userEmail must be(None)
         }
     }
 
@@ -101,7 +115,7 @@ class ReportRequestTransformationServiceSpec extends AsyncFreeSpec with Matchers
           "GB123456789000",
           model,
           Seq(),
-          "user@email.com"
+          Some("user@email.com")
         )
         .map { result =>
           result.eoriRole mustBe EoriRole.TRADER_DECLARANT
@@ -116,7 +130,7 @@ class ReportRequestTransformationServiceSpec extends AsyncFreeSpec with Matchers
           "GB123456789000",
           model,
           Seq(),
-          "user@email.com"
+          Some("user@email.com")
         )
         .map { result =>
           result.eoriRole mustBe EoriRole.TRADER_DECLARANT
@@ -131,7 +145,7 @@ class ReportRequestTransformationServiceSpec extends AsyncFreeSpec with Matchers
           "GB123456789000",
           model,
           Seq(),
-          "user@email.com"
+          Some("user@email.com")
         )
         .map { result =>
           result.reportTypeName mustBe ReportTypeName.EXPORTS_ITEM_REPORT
@@ -155,7 +169,7 @@ class ReportRequestTransformationServiceSpec extends AsyncFreeSpec with Matchers
             "GB123456789000",
             model,
             historicalEoris,
-            "test@test.com"
+            Some("test@test.com")
           )
           .map { result =>
             result.reportEORIs must contain allOf (
@@ -179,7 +193,7 @@ class ReportRequestTransformationServiceSpec extends AsyncFreeSpec with Matchers
             "GB123456789000",
             model,
             historicalEoris,
-            "test@test.com"
+            Some("test@test.com")
           )
           .map { result =>
             result.reportEORIs must contain allOf (
@@ -199,7 +213,7 @@ class ReportRequestTransformationServiceSpec extends AsyncFreeSpec with Matchers
             "GB123456789000",
             reportRequestTemplate,
             Seq("GB123456789001"),
-            "user@email.com"
+            Some("user@email.com")
           )
           .map { reportRequest =>
             val eisRequest = service.toEisReportRequest(reportRequest)
@@ -219,7 +233,7 @@ class ReportRequestTransformationServiceSpec extends AsyncFreeSpec with Matchers
             "GB123456789000",
             reportRequestTemplate.copy(eoriRole = Set("exporter"), reportType = Set("exportItem")),
             Seq("GB123456789001"),
-            "user@email.com"
+            Some("user@email.com")
           )
           .map { reportRequest =>
             val eisRequest = service.toEisReportRequest(reportRequest)
@@ -239,7 +253,7 @@ class ReportRequestTransformationServiceSpec extends AsyncFreeSpec with Matchers
             "GB123456789000",
             reportRequestTemplate.copy(eoriRole = Set("exporter", "declarant"), reportType = Set("exportItem")),
             Seq("GB123456789001"),
-            "user@email.com"
+            Some("user@email.com")
           )
           .map { reportRequest =>
             val eisRequest = service.toEisReportRequest(reportRequest)
