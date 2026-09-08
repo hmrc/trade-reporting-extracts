@@ -25,7 +25,7 @@ import uk.gov.hmrc.mdc.Mdc
 import uk.gov.hmrc.tradereportingextracts.config.AppConfig
 import uk.gov.hmrc.tradereportingextracts.models.etmp.EoriUpdate
 import uk.gov.hmrc.tradereportingextracts.models.thirdParty.ThirdPartyAddedConfirmation
-import uk.gov.hmrc.tradereportingextracts.models.{AuthorisedUser, User, UserActiveStatus, UserWithStatus}
+import uk.gov.hmrc.tradereportingextracts.models.{AuthorisedUser, User, UserWithAccessDates}
 
 import java.time.{Clock, Instant, LocalDate, ZoneOffset}
 import java.util.concurrent.TimeUnit
@@ -217,27 +217,23 @@ class UserRepository @Inject() (appConfig: AppConfig, mongoComponent: MongoCompo
       .toFuture()
   }
 
-  def getUsersByAuthorisedEoriWithStatus(
+  def getUsersByAuthorisedEoriWithAccessDates(
     authorisedEori: String,
     clock: Clock = Clock.systemUTC()
-  ): Future[Seq[UserWithStatus]] = Mdc.preservingMdc {
+  ): Future[Seq[UserWithAccessDates]] = Mdc.preservingMdc {
     collection
       .find(Filters.elemMatch("authorisedUsers", Filters.equal("eori", authorisedEori)))
       .toFuture()
       .map(_.map { user =>
-        val status = user.authorisedUsers
+        val (authUserAcccessStart, authUserReportDataStart) = user.authorisedUsers
           .collectFirst {
             case authUser if authUser.eori == authorisedEori =>
-              UserActiveStatus.fromInstants(
-                authUser.accessStart,
-                authUser.reportDataStart,
-                clock
-              )
+              (authUser.accessStart, authUser.reportDataStart)
           }
           .getOrElse {
             throw new IllegalStateException(s"Expected authorisedUser for EORI $authorisedEori")
           }
-        UserWithStatus(user, status)
+        UserWithAccessDates(user, authUserAcccessStart, authUserReportDataStart)
       })
   }
 

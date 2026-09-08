@@ -23,7 +23,7 @@ import play.api.libs.json.Json
 class EoriBusinessInfoSpec extends AnyWordSpec with Matchers {
   "EoriBusinessInfo JSON format" should {
     "serialize and deserialize when optional fields are present" in {
-      val info = EoriBusinessInfo(eori = "eori1", businessInfo = Some("info"), status = None)
+      val info = EoriBusinessInfo(eori = "eori1", businessInfo = Some("info"))
       val json = Json.toJson(info)
 
       (json \ "eori").as[String]            shouldBe "eori1"
@@ -34,7 +34,7 @@ class EoriBusinessInfoSpec extends AnyWordSpec with Matchers {
     }
 
     "handle missing optional fields" in {
-      val info = EoriBusinessInfo(eori = "eori1", businessInfo = None, status = None)
+      val info = EoriBusinessInfo(eori = "eori1", businessInfo = None)
       val json = Json.toJson(info)
 
       (json \ "businessInfo").asOpt[String] shouldBe None

@@ -20,7 +20,7 @@ import org.apache.pekko.Done
 import uk.gov.hmrc.tradereportingextracts.connectors.CustomsDataStoreConnector
 import uk.gov.hmrc.tradereportingextracts.models.*
 import uk.gov.hmrc.tradereportingextracts.models.etmp.EoriUpdate
-import uk.gov.hmrc.tradereportingextracts.models.thirdParty.{EoriBusinessInfo, ThirdPartyAddedConfirmation}
+import uk.gov.hmrc.tradereportingextracts.models.thirdParty.{EoriBusinessAccessInfo, EoriBusinessInfo, ThirdPartyAddedConfirmation}
 import uk.gov.hmrc.tradereportingextracts.repositories.{ReportRequestRepository, UserRepository}
 
 import java.time.{Instant, LocalDate, ZoneOffset}
@@ -196,22 +196,24 @@ class UserService @Inject() (
       }
     )
 
-  def getUsersByAuthorisedEoriWithStatus(thirdPartyEori: String): Future[Seq[EoriBusinessInfo]] =
+  def getUsersByAuthorisedEoriWithAccessDates(thirdPartyEori: String): Future[Seq[EoriBusinessAccessInfo]] =
     for {
-      usersWithStatus <- userRepository.getUsersByAuthorisedEoriWithStatus(thirdPartyEori)
-      eoriInfos       <- Future.traverse(usersWithStatus) { case UserWithStatus(user, status) =>
-                           customsDataStoreConnector.getCompanyInformation(user.eori).map { companyInfo =>
-                             val businessInfo =
-                               if (companyInfo.consent == "1") Some(companyInfo.name)
-                               else None
+      usersWithAccessDates <- userRepository.getUsersByAuthorisedEoriWithAccessDates(thirdPartyEori)
+      eoriInfos            <- Future.traverse(usersWithAccessDates) {
+                                case UserWithAccessDates(user, accessStart, reportDataStart) =>
+                                  customsDataStoreConnector.getCompanyInformation(user.eori).map { companyInfo =>
+                                    val businessInfo =
+                                      if (companyInfo.consent == "1") Some(companyInfo.name)
+                                      else None
 
-                             EoriBusinessInfo(
-                               eori = user.eori,
-                               businessInfo = businessInfo,
-                               status = Some(status)
-                             )
-                           }
-                         }
+                                    EoriBusinessAccessInfo(
+                                      eori = user.eori,
+                                      businessInfo = businessInfo,
+                                      accessStart = accessStart,
+                                      reportDataStart = reportDataStart
+                                    )
+                                  }
+                              }
     } yield eoriInfos
 
   def getUsersByAuthorisedEoriWithDateFilter(thirdPartyEori: String): Future[Seq[EoriBusinessInfo]] =
@@ -226,8 +228,7 @@ class UserService @Inject() (
 
                          EoriBusinessInfo(
                            eori = user.eori,
-                           businessInfo = businessInfo,
-                           status = None
+                           businessInfo = businessInfo
                          )
                        }
                      }
