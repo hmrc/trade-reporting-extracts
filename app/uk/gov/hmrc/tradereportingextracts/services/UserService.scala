@@ -68,7 +68,7 @@ class UserService @Inject() (
                             } else {
                               additionalEmailService.getAdditionalEmails(eori).map(_ => ())
                             }
-      emailPreference = determineEmailPreference(user.personalEmailNotificationsEnabled)
+      emailPreference     = determineEmailPreference(user.personalEmailNotificationsEnabled)
     } yield UserDetails(
       eori = user.eori,
       additionalEmails = Seq.empty,
@@ -89,8 +89,8 @@ class UserService @Inject() (
                                 .flatMap(_ => cleanExpiredAccesses(user))
                             } else {
                               Future.successful(())
-                            } 
-      emailPreference = determineEmailPreference(user.personalEmailNotificationsEnabled)
+                            }
+      emailPreference     = determineEmailPreference(user.personalEmailNotificationsEnabled)
     } yield UserDetails(
       eori = user.eori,
       additionalEmails = additionalEmails,
@@ -159,7 +159,7 @@ class UserService @Inject() (
       companyInformation <- customsDataStoreConnector.getCompanyInformation(eori)
       notificationEmail  <- customsDataStoreConnector.getNotificationEmail(eori)
       additionalEmails   <- additionalEmailService.getAdditionalEmails(eori)
-      emailPreference = determineEmailPreference(user.personalEmailNotificationsEnabled)
+      emailPreference     = determineEmailPreference(user.personalEmailNotificationsEnabled)
     } yield UserDetails(
       eori = user.eori,
       additionalEmails = additionalEmails,
@@ -247,5 +247,5 @@ class UserService @Inject() (
   private def determineEmailPreference(emailPref: Option[Boolean]): Boolean =
     emailPref match {
       case Some(false) => false
-      case _ => true
+      case _           => true
     }
