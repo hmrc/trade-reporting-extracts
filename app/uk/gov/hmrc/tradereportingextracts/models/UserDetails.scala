@@ -25,7 +25,8 @@ case class UserDetails(
   additionalEmails: Seq[String],
   authorisedUsers: Seq[AuthorisedUser],
   companyInformation: CompanyInformation,
-  notificationEmail: NotificationEmail
+  notificationEmail: NotificationEmail,
+  personalEmailNotificationsEnabled: Boolean 
 )
 
 object UserDetails:
