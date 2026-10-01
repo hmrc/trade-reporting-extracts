@@ -68,12 +68,14 @@ class UserService @Inject() (
                             } else {
                               additionalEmailService.getAdditionalEmails(eori).map(_ => ())
                             }
+      emailPreference     = determineEmailPreference(user.personalEmailNotificationsEnabled)
     } yield UserDetails(
       eori = user.eori,
       additionalEmails = Seq.empty,
       authorisedUsers = user.authorisedUsers,
       companyInformation = companyInformation,
-      notificationEmail = NotificationEmail()
+      notificationEmail = NotificationEmail(),
+      personalEmailNotificationsEnabled = emailPreference
     )
 
   def getUserDetailsAll(eori: String): Future[UserDetails] =
@@ -88,12 +90,14 @@ class UserService @Inject() (
                             } else {
                               Future.successful(())
                             }
+      emailPreference     = determineEmailPreference(user.personalEmailNotificationsEnabled)
     } yield UserDetails(
       eori = user.eori,
       additionalEmails = additionalEmails,
       authorisedUsers = user.authorisedUsers,
       companyInformation = companyInformation,
-      notificationEmail = NotificationEmail()
+      notificationEmail = NotificationEmail(),
+      personalEmailNotificationsEnabled = emailPreference
     )
 
   def cleanExpiredAccesses(user: User): Future[Unit] = {
@@ -155,6 +159,7 @@ class UserService @Inject() (
       companyInformation <- customsDataStoreConnector.getCompanyInformation(eori)
       notificationEmail  <- customsDataStoreConnector.getNotificationEmail(eori)
       additionalEmails   <- additionalEmailService.getAdditionalEmails(eori)
+      emailPreference     = determineEmailPreference(user.personalEmailNotificationsEnabled)
     } yield UserDetails(
       eori = user.eori,
       additionalEmails = additionalEmails,
@@ -162,7 +167,8 @@ class UserService @Inject() (
       companyInformation = companyInformation.copy(
         address = AddressInformation()
       ),
-      notificationEmail = notificationEmail
+      notificationEmail = notificationEmail,
+      personalEmailNotificationsEnabled = emailPreference
     )
 
   def addAuthorisedUser(eori: String, authorisedUser: AuthorisedUser): Future[ThirdPartyAddedConfirmation] =
@@ -237,3 +243,9 @@ class UserService @Inject() (
 
   def personalEmailNotificationsEnabled(eori: String): Future[Option[Boolean]] =
     userRepository.personalEmailNotificationsEnabled(eori)
+
+  private def determineEmailPreference(emailPref: Option[Boolean]): Boolean =
+    emailPref match {
+      case Some(false) => false
+      case _           => true
+    }

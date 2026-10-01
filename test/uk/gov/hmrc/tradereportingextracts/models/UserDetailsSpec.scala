@@ -44,7 +44,8 @@ class UserDetailsSpec extends AnyFreeSpec with Matchers {
         additionalEmails = Seq("test@example.com"),
         authorisedUsers = Seq(authorisedUser),
         companyInformation = companyInfo,
-        notificationEmail = notificationEmail
+        notificationEmail = notificationEmail,
+        personalEmailNotificationsEnabled = true
       )
 
       val json = Json.toJson(userDetails)

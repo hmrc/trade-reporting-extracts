@@ -408,7 +408,12 @@ class UserServiceSpec
     "getUserAndEmailDetails" - {
 
       "must return user details with notification email when both user and email are found" in {
-        val user               = User(eori, additionalEmails = Seq(), authorisedUsers = Seq.empty)
+        val user               = User(
+          eori,
+          additionalEmails = Seq(),
+          authorisedUsers = Seq.empty,
+          personalEmailNotificationsEnabled = Some(false)
+        )
         val companyInformation = CompanyInformation(
           name = "Test Company",
           consent = "Yes"
@@ -427,12 +432,18 @@ class UserServiceSpec
           additionalEmails = additionalEmails,
           authorisedUsers = user.authorisedUsers,
           companyInformation = companyInformation,
-          notificationEmail = notificationEmail
+          notificationEmail = notificationEmail,
+          personalEmailNotificationsEnabled = false
         )
       }
 
       "must return user details without notification email when email is not found" in {
-        val user               = User(eori, additionalEmails = Seq(), authorisedUsers = Seq.empty)
+        val user               = User(
+          eori,
+          additionalEmails = Seq(),
+          authorisedUsers = Seq.empty,
+          personalEmailNotificationsEnabled = Some(true)
+        )
         val companyInformation = CompanyInformation(
           name = "Test Company",
           consent = "1",
@@ -451,7 +462,8 @@ class UserServiceSpec
           additionalEmails = additionalEmails,
           authorisedUsers = user.authorisedUsers,
           companyInformation = companyInformation,
-          notificationEmail = notificationEmail
+          notificationEmail = notificationEmail,
+          personalEmailNotificationsEnabled = true
         )
       }
     }

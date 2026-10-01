@@ -152,7 +152,8 @@ class UserControllerSpec extends SpecBase with WireMockHelper {
         additionalEmails = Seq.empty,
         authorisedUsers = Seq.empty,
         companyInformation = CompanyInformation(), // assuming default constructor exists
-        notificationEmail = NotificationEmail("user@example.com", LocalDateTime.now())
+        notificationEmail = NotificationEmail("user@example.com", LocalDateTime.now()),
+        personalEmailNotificationsEnabled = true
       )
 
       when(mockUserService.getOrCreateUser(eori))
@@ -177,7 +178,8 @@ class UserControllerSpec extends SpecBase with WireMockHelper {
         additionalEmails = Seq.empty,
         authorisedUsers = Seq.empty,
         companyInformation = CompanyInformation(), // assuming default constructor exists
-        notificationEmail = NotificationEmail("user@example.com", LocalDateTime.now())
+        notificationEmail = NotificationEmail("user@example.com", LocalDateTime.now()),
+        personalEmailNotificationsEnabled = true
       )
 
       when(mockUserService.getOrCreateUser(eori))
@@ -379,7 +381,8 @@ class UserControllerSpec extends SpecBase with WireMockHelper {
             countryCode = "GB"
           )
         ),
-        notificationEmail = NotificationEmail("test@test.com", LocalDateTime.now())
+        notificationEmail = NotificationEmail("test@test.com", LocalDateTime.now()),
+        personalEmailNotificationsEnabled = true
       )
       when(mockUserService.getUserAndEmailDetails(eori)).thenReturn(Future.successful(userDetails))
 
@@ -409,7 +412,8 @@ class UserControllerSpec extends SpecBase with WireMockHelper {
             countryCode = "GB"
           )
         ),
-        notificationEmail = NotificationEmail("test@test.com", LocalDateTime.now())
+        notificationEmail = NotificationEmail("test@test.com", LocalDateTime.now()),
+        personalEmailNotificationsEnabled = true
       )
       when(mockUserService.getUserAndEmailDetails(eori)).thenReturn(Future.successful(userDetails))
 
