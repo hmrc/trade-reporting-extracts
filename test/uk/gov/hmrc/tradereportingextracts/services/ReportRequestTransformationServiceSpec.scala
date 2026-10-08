@@ -21,7 +21,6 @@ import org.scalatest.freespec.AsyncFreeSpec
 import org.scalatest.matchers.must.Matchers
 import org.scalatestplus.mockito.MockitoSugar
 import uk.gov.hmrc.crypto.Sensitive.SensitiveString
-import uk.gov.hmrc.tradereportingextracts.config.AppConfig
 import uk.gov.hmrc.tradereportingextracts.models.*
 import uk.gov.hmrc.tradereportingextracts.models.eis.EisReportRequest
 import uk.gov.hmrc.tradereportingextracts.utils.WireMockHelper
@@ -31,17 +30,13 @@ import scala.concurrent.Future
 
 class ReportRequestTransformationServiceSpec extends AsyncFreeSpec with Matchers with MockitoSugar with WireMockHelper {
 
-  val mockAppConfig: AppConfig                             = mock[AppConfig]
   val mockRequestReferenceService: RequestReferenceService = mock[RequestReferenceService]
-  when(mockAppConfig.strategicXIFeatureEnabled).thenReturn(false)
   when(mockRequestReferenceService.generateUnique()).thenReturn(Future.successful("REF-00000001"))
 
-  val service = new ReportRequestTransformationService(mockRequestReferenceService, mockAppConfig)
+  val service = new ReportRequestTransformationService(mockRequestReferenceService)
 
-  override def beforeEach(): Unit = {
+  override def beforeEach(): Unit =
     super.beforeEach()
-    reset(mockAppConfig)
-  }
 
   val reportRequestTemplate: ReportRequestUserAnswersModel = ReportRequestUserAnswersModel(
     eori = "GB123456789000",
@@ -153,10 +148,8 @@ class ReportRequestTransformationServiceSpec extends AsyncFreeSpec with Matchers
     }
 
     "strategic XI implementation" - {
-      "when strategic xi feature is enabled, should only returns historical EORIs passed from connector response " in {
-        when(mockAppConfig.strategicXIFeatureEnabled).thenReturn(true)
-
-        val service         = new ReportRequestTransformationService(mockRequestReferenceService, mockAppConfig)
+      "should only returns historical EORIs passed from connector response " in {
+        val service         = new ReportRequestTransformationService(mockRequestReferenceService)
         val model           = reportRequestTemplate.copy(
           whichEori = "GB123456789002",
           eoriRole = Set("declarant"),
@@ -180,30 +173,6 @@ class ReportRequestTransformationServiceSpec extends AsyncFreeSpec with Matchers
           }
       }
 
-      "when strategic xi feature is not enabled, should transform all EORIs from connector response" in {
-        val model           = reportRequestTemplate.copy(
-          whichEori = "GB123456789002",
-          eoriRole = Set("declarant"),
-          reportType = Set("importHeader")
-        )
-        val historicalEoris = Seq("GB123456789001")
-
-        service
-          .transformReportRequest(
-            "GB123456789000",
-            model,
-            historicalEoris,
-            Some("test@test.com")
-          )
-          .map { result =>
-            result.reportEORIs must contain allOf (
-              "GB123456789001",
-              "GB123456789002",
-              "XI123456789001",
-              "XI123456789002"
-            )
-          }
-      }
     }
 
     "toEisReportRequest" - {

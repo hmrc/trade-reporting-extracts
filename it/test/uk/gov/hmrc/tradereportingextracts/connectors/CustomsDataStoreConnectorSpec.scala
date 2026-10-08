@@ -18,6 +18,7 @@ package uk.gov.hmrc.tradereportingextracts.connectors
 
 import com.github.tomakehurst.wiremock.client.WireMock
 import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}
+import org.scalatest.freespec.AnyFreeSpec
 import org.scalatest.matchers.must.Matchers.*
 import org.scalatest.matchers.should.Matchers
 import org.scalatestplus.mockito.MockitoSugar
@@ -25,12 +26,10 @@ import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import play.api.Application
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.test.Helpers.*
+import uk.gov.hmrc.http.{Authorization, UpstreamErrorResponse}
 import uk.gov.hmrc.tradereportingextracts.config.AppConfig
 import uk.gov.hmrc.tradereportingextracts.models.{CompanyInformation, EoriHistory, EoriHistoryResponse, NotificationEmail}
 import uk.gov.hmrc.tradereportingextracts.utils.WireMockHelper
-import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}
-import org.scalatest.freespec.AnyFreeSpec
-import uk.gov.hmrc.http.{Authorization, UpstreamErrorResponse}
 
 import java.net.URI
 import java.time.LocalDateTime
@@ -185,44 +184,12 @@ class CustomsDataStoreConnectorSpec
            |  }
            |]
            |}""".stripMargin
-
-      "when strategic disabled return EoriHistoryResponse when response is OK" in {
-        val app = new GuiceApplicationBuilder()
-          .configure(
-            "microservice.services.customs-data-store.port" -> server.port,
-            "features.error-handling-qa" -> false,
-            "features.strategic-xi" -> false
-          )
-          .build()
-        running(app) {
-          val connector = app.injector.instanceOf[CustomsDataStoreConnector]
-          val appConfig = app.injector.instanceOf[AppConfig]
-
-          server.stubFor(
-            WireMock
-              .post(WireMock.urlEqualTo(new URI(appConfig.eoriHistoryUrl).getPath))
-              .willReturn(WireMock.ok(responseBody))
-          )
-
-          val result = connector.getEoriHistory(eori).futureValue
-          result mustBe EoriHistoryResponse(
-            Seq(
-              EoriHistory(
-                "GB123456789012",
-                Some("2001-01-20"),
-                Some("2002-01-20")
-              )
-            )
-          )
-        }
-      }
-
+      
       "when strategic enabled return EoriHistoryResponse when response is OK" in {
         val app = new GuiceApplicationBuilder()
           .configure(
             "microservice.services.customs-data-store.port" -> server.port,
-            "features.error-handling-qa" -> false,
-            "features.strategic-xi" -> true
+            "features.error-handling-qa" -> false
           )
           .build()
         running(app) {
@@ -252,8 +219,7 @@ class CustomsDataStoreConnectorSpec
         val app = new GuiceApplicationBuilder()
           .configure(
             "microservice.services.customs-data-store.port" -> server.port,
-            "features.error-handling-qa" -> true,
-            "features.strategic-xi" -> false
+            "features.error-handling-qa" -> true
           )
           .build()
         running(app) {
@@ -262,7 +228,7 @@ class CustomsDataStoreConnectorSpec
 
           server.stubFor(
             WireMock
-              .post(WireMock.urlEqualTo(new URI(appConfig.eoriHistoryUrl).getPath))
+              .post(WireMock.urlEqualTo(new URI(appConfig.eoriHistoryGBXIUrl).getPath))
               .willReturn(WireMock.aResponse().withStatus(404))
           )
 
@@ -270,13 +236,12 @@ class CustomsDataStoreConnectorSpec
           result mustBe EoriHistoryResponse(Seq.empty)
         }
       }
-
+      
       "fail with UpstreamErrorResponse when response is 404 and errorHandlingQa is false" in {
         val app = new GuiceApplicationBuilder()
           .configure(
             "microservice.services.customs-data-store.port" -> server.port,
-            "features.error-handling-qa" -> false,
-            "features.strategic-xi" -> false
+            "features.error-handling-qa" -> false
           )
           .build()
         running(app) {
@@ -285,7 +250,7 @@ class CustomsDataStoreConnectorSpec
 
           server.stubFor(
             WireMock
-              .post(WireMock.urlEqualTo(new URI(appConfig.eoriHistoryUrl).getPath))
+              .post(WireMock.urlEqualTo(new URI(appConfig.eoriHistoryGBXIUrl).getPath))
               .willReturn(WireMock.aResponse().withStatus(404))
           )
 
@@ -298,8 +263,7 @@ class CustomsDataStoreConnectorSpec
         val app = new GuiceApplicationBuilder()
           .configure(
             "microservice.services.customs-data-store.port" -> server.port,
-            "features.error-handling-qa" -> true,
-            "features.strategic-xi" -> false
+            "features.error-handling-qa" -> true
           )
           .build()
         running(app) {
@@ -308,7 +272,7 @@ class CustomsDataStoreConnectorSpec
 
           server.stubFor(
             WireMock
-              .post(WireMock.urlEqualTo(new URI(appConfig.eoriHistoryUrl).getPath))
+              .post(WireMock.urlEqualTo(new URI(appConfig.eoriHistoryGBXIUrl).getPath))
               .willReturn(WireMock.aResponse().withStatus(500))
           )
 
@@ -333,43 +297,12 @@ class CustomsDataStoreConnectorSpec
            |]
            |}""".stripMargin
 
-      "when strategic disabled return EoriHistoryResponse when response is OK" in {
+
+      "return EoriHistoryResponse when response is OK" in {
         val app = new GuiceApplicationBuilder()
           .configure(
             "microservice.services.customs-data-store.port" -> server.port,
-            "features.error-handling-qa" -> false,
-            "features.strategic-xi" -> false
-          )
-          .build()
-        running(app) {
-          val connector = app.injector.instanceOf[CustomsDataStoreConnector]
-          val appConfig = app.injector.instanceOf[AppConfig]
-
-          server.stubFor(
-            WireMock
-              .get(WireMock.urlEqualTo(new URI(appConfig.eoriTraderHistoryUrl).getPath))
-              .willReturn(WireMock.ok(responseBody))
-          )
-
-          val result = connector.getTraderEoriHistory(eori, Some(authToken)).futureValue
-          result mustBe EoriHistoryResponse(
-            Seq(
-              EoriHistory(
-                "GB123456789012",
-                Some("2001-01-20"),
-                Some("2002-01-20")
-              )
-            )
-          )
-        }
-      }
-
-      "when strategic enabled return EoriHistoryResponse when response is OK" in {
-        val app = new GuiceApplicationBuilder()
-          .configure(
-            "microservice.services.customs-data-store.port" -> server.port,
-            "features.error-handling-qa" -> false,
-            "features.strategic-xi" -> true
+            "features.error-handling-qa" -> false
           )
           .build()
         running(app) {
@@ -399,8 +332,7 @@ class CustomsDataStoreConnectorSpec
         val app = new GuiceApplicationBuilder()
           .configure(
             "microservice.services.customs-data-store.port" -> server.port,
-            "features.error-handling-qa" -> true,
-            "features.strategic-xi" -> false
+            "features.error-handling-qa" -> true
           )
           .build()
         running(app) {
@@ -409,7 +341,7 @@ class CustomsDataStoreConnectorSpec
 
           server.stubFor(
             WireMock
-              .get(WireMock.urlEqualTo(new URI(appConfig.eoriTraderHistoryUrl).getPath))
+              .get(WireMock.urlEqualTo(new URI(appConfig.eoriTraderHistoryGBXIUrl).getPath))
               .willReturn(WireMock.aResponse().withStatus(404))
           )
 
@@ -422,8 +354,7 @@ class CustomsDataStoreConnectorSpec
         val app = new GuiceApplicationBuilder()
           .configure(
             "microservice.services.customs-data-store.port" -> server.port,
-            "features.error-handling-qa" -> false,
-            "features.strategic-xi" -> false
+            "features.error-handling-qa" -> false
           )
           .build()
         running(app) {
@@ -432,7 +363,7 @@ class CustomsDataStoreConnectorSpec
 
           server.stubFor(
             WireMock
-              .post(WireMock.urlEqualTo(new URI(appConfig.eoriTraderHistoryUrl).getPath))
+              .post(WireMock.urlEqualTo(new URI(appConfig.eoriTraderHistoryGBXIUrl).getPath))
               .willReturn(WireMock.aResponse().withStatus(404))
           )
 
@@ -445,8 +376,7 @@ class CustomsDataStoreConnectorSpec
         val app = new GuiceApplicationBuilder()
           .configure(
             "microservice.services.customs-data-store.port" -> server.port,
-            "features.error-handling-qa" -> true,
-            "features.strategic-xi" -> false
+            "features.error-handling-qa" -> true
           )
           .build()
         running(app) {
@@ -455,7 +385,7 @@ class CustomsDataStoreConnectorSpec
 
           server.stubFor(
             WireMock
-              .get(WireMock.urlEqualTo(new URI(appConfig.eoriTraderHistoryUrl).getPath))
+              .get(WireMock.urlEqualTo(new URI(appConfig.eoriTraderHistoryGBXIUrl).getPath))
               .willReturn(WireMock.aResponse().withStatus(500))
           )
 

@@ -33,21 +33,13 @@ class CustomsDataStoreConfig @Inject() (servicesConfig: ServicesConfig, config: 
   val companyInformationPath: String =
     config.get[String]("microservice.services.customs-data-store.company-information")
 
-  val eoriHistoryPath: String =
-    config.get[String]("microservice.services.customs-data-store.eori-history")
-
   val eoriHistoryGBXIPath: String =
     config.get[String]("microservice.services.customs-data-store.eori-history-gb-xi")
-
-  val eoriTraderHistoryPath: String =
-    config.get[String]("microservice.services.customs-data-store.eori-trader-history")
 
   val eoriTraderHistoryGBXIPath: String =
     config.get[String]("microservice.services.customs-data-store.eori-trader-history-gb-xi")
 
   val verifiedEmailUrl: String         = url + verifiedEmailPath
   val companyInformationUrl: String    = url + companyInformationPath
-  val eoriHistoryUrl: String           = url + eoriHistoryPath
   val eoriHistoryGBXIUrl: String       = url + eoriHistoryGBXIPath
-  val eoriTraderHistoryUrl: String     = url + eoriTraderHistoryPath
   val eoriTraderHistoryGBXIUrl: String = url + eoriTraderHistoryGBXIPath
