@@ -35,6 +35,9 @@ class ReportRequestTransformationServiceSpec extends AsyncFreeSpec with Matchers
 
   val service = new ReportRequestTransformationService(mockRequestReferenceService)
 
+  override def beforeEach(): Unit =
+    super.beforeEach()
+
   val reportRequestTemplate: ReportRequestUserAnswersModel = ReportRequestUserAnswersModel(
     eori = "GB123456789000",
     reportStartDate = "2025-04-01",

@@ -18,6 +18,7 @@ package uk.gov.hmrc.tradereportingextracts.connectors
 
 import com.github.tomakehurst.wiremock.client.WireMock
 import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}
+import org.scalatest.freespec.AnyFreeSpec
 import org.scalatest.matchers.must.Matchers.*
 import org.scalatest.matchers.should.Matchers
 import org.scalatestplus.mockito.MockitoSugar
@@ -25,12 +26,10 @@ import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import play.api.Application
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.test.Helpers.*
+import uk.gov.hmrc.http.{Authorization, UpstreamErrorResponse}
 import uk.gov.hmrc.tradereportingextracts.config.AppConfig
 import uk.gov.hmrc.tradereportingextracts.models.{CompanyInformation, EoriHistory, EoriHistoryResponse, NotificationEmail}
 import uk.gov.hmrc.tradereportingextracts.utils.WireMockHelper
-import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}
-import org.scalatest.freespec.AnyFreeSpec
-import uk.gov.hmrc.http.{Authorization, UpstreamErrorResponse}
 
 import java.net.URI
 import java.time.LocalDateTime
@@ -213,6 +212,28 @@ class CustomsDataStoreConnectorSpec
               )
             )
           )
+        }
+      }
+
+      "return empty EoriHistoryResponse when response is 404 and errorHandlingQa is true" in {
+        val app = new GuiceApplicationBuilder()
+          .configure(
+            "microservice.services.customs-data-store.port" -> server.port,
+            "features.error-handling-qa" -> true
+          )
+          .build()
+        running(app) {
+          val connector = app.injector.instanceOf[CustomsDataStoreConnector]
+          val appConfig = app.injector.instanceOf[AppConfig]
+
+          server.stubFor(
+            WireMock
+              .post(WireMock.urlEqualTo(new URI(appConfig.eoriHistoryGBXIUrl).getPath))
+              .willReturn(WireMock.aResponse().withStatus(404))
+          )
+
+          val result = connector.getEoriHistory(eori).futureValue
+          result mustBe EoriHistoryResponse(Seq.empty)
         }
       }
       
