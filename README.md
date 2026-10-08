@@ -39,8 +39,8 @@ The service's endpoints (that need Enrolment to access) can be accessed by using
 
 | Enrolment Key | Identifier Name | Identifier Value |
 | ------------- | --------------- |------------------|
-| HMRC-CUS-ORG  | EORINumber      | GBXXXXXXXXXXXX   |
-| HMRC-CUS-ORG  | EORINumber      | GBYYYYYYYYYYYY   |
+| HMRC-CUS-ORG  | EORINumber      | GB123456789012   |
+| HMRC-CUS-ORG  | EORINumber      | GB123456789014   |
 
 ## Testing
 
@@ -128,7 +128,7 @@ POST /trade-reporting-extracts/create-report-request
 
 ```json
 {
-  "eori": "GBxxxxxxxxxxxx",
+  "eori": "GBXXXXXXXXXXXX",
   "reportStartDate": "2025-04-16",
   "reportEndDate": "2025-05-16",
   "whichEori": "GBYYYYYYYYYYYY",
@@ -291,7 +291,7 @@ The EORI is supplied in the request body.
 
 ```json
 {
-  "eori": "GBxxxxxxxxxxxx"
+  "eori": "GBXXXXXXXXXXXX"
 }
 ```
 
@@ -301,7 +301,7 @@ Returns a JSON array containing the EORIs authorised for the supplied EORI.
 
 ```json
 [
-  "GBxxxxxxxxxxxx",
+  "GBXXXXXXXXXXXX",
   "GBYYYYYYYYYYYY"
 ]
 ```
@@ -335,7 +335,7 @@ The EORI is supplied in the request body.
 
 ```json
 {
-  "eori": "GBxxxxxxxxxxxx"
+  "eori": "GBXXXXXXXXXXXX"
 }
 ```
 
@@ -376,7 +376,7 @@ The response contains the following fields:
 
 ```json
 {
-  "eori": "GBxxxxxxxxxxxx",
+  "eori": "GBXXXXXXXXXXXX",
   "additionalEmails": [],
   "authorisedUsers": [],
   "companyInformation": {},
@@ -420,7 +420,7 @@ Retrieves company information associated with an authorised EORI.
 
 ```json
 {
-  "eori": "GBxxxxxxxxxxxx"
+  "eori": "GBXXXXXXXXXXXX"
 }
 ```
 ### Response
@@ -548,7 +548,7 @@ The request body must contain a valid FileNotificationResponse.
 
 ```json
 {
-  "eori": "GBxxxxxxxxxxxx",
+  "eori": "GBXXXXXXXXXXXX",
   "fileName": "testFileName",
   "fileSize": 12345,
   "metadata": [
@@ -559,7 +559,7 @@ The request body must contain a valid FileNotificationResponse.
       "fileType": "CSV"
     },
     {
-      "eori": "GBxxxxxxxxxxxx"
+      "eori": "GBXXXXXXXXXXXX"
     },
     {
       "mdtpReportXCorrelationID": "asfd-asdf-asdf"
@@ -672,7 +672,7 @@ The request body must contain a valid EoriUpdate.
 Example:
 ```json
 {
-    "newEori": "GBxxxxxxxxxxxx",
+    "newEori": "GBXXXXXXXXXXXX",
     "oldEori": "GBYYYYYYYYYYYY"
 }
 ```
@@ -720,7 +720,7 @@ The request requires both the trader EORI and the third-party EORI.
 
 ```json
 {
-  "traderEori": "GBxxxxxxxxxxxx",
+  "traderEori": "GBXXXXXXXXXXXX",
   "thirdPartyEori": "GBYYYYYYYYYYYY"
 }
 ```
@@ -784,7 +784,7 @@ The request requires both the user's EORI and the third-party EORI.
 
 ```json
 {
-  "eori": "GBxxxxxxxxxxxx",
+  "eori": "GBXXXXXXXXXXXX",
   "thirdPartyEori": "GBYYYYYYYYYYYY"
 }
 ```
@@ -855,7 +855,7 @@ The request requires both the third-party EORI and trader EORI.
 
 ```json
 {
-  "thirdPartyEori": "GBxxxxxxxxxxxx",
+  "thirdPartyEori": "GBXXXXXXXXXXXX",
   "traderEori": "GBYYYYYYYYYYYY"
 }
 ```
@@ -926,7 +926,7 @@ The authorised EORI is supplied in the request body.
 
 ```json
 {
-  "thirdPartyEori": "GBxxxxxxxxxxxx"
+  "thirdPartyEori": "GBXXXXXXXXXXXX"
 }
 ```
 
@@ -948,7 +948,7 @@ Example:
 ```json
 [
   {
-    "eori": "GBxxxxxxxxxxxx",
+    "eori": "GBXXXXXXXXXXXX",
     "businessInfo": "ABC Ltd",
     "accessStart": "2025-04-16T00:00:00Z",
     "reportDataStart": "2025-04-16T00:00:00Z"
@@ -991,7 +991,7 @@ The authorised EORI is supplied in the request body.
 
 ```json
 {
-  "thirdPartyEori": "GBxxxxxxxxxxxx"
+  "thirdPartyEori": "GBXXXXXXXXXXXX"
 }
 ```
 
@@ -1011,7 +1011,7 @@ Example:
 ```json
 [
   {
-    "eori": "GBxxxxxxxxxxxx",
+    "eori": "GBXXXXXXXXXXXX",
     "businessInfo": "ABC Ltd"
   }
 ]
@@ -1054,7 +1054,7 @@ The request is an `UpdateEmailPreference` object.
 
 ```json
 {
-  "eori": "GBxxxxxxxxxxxx",
+  "eori": "GBXXXXXXXXXXXX",
   "updatedPreference": true
 }
 ```
@@ -1112,7 +1112,7 @@ If the third party has a notification email configured, a notification email is 
 
 ```json
 {
-  "userEORI": "GBxxxxxxxxxxxx",
+  "userEORI": "GBXXXXXXXXXXXX",
   "thirdPartyEORI": "GBYYYYYYYYYYYY",
   "accessStart": "2025-09-09T00:00:00Z",
   "accessEnd": "2025-09-09T10:59:38.334682780Z",
@@ -1131,7 +1131,7 @@ Returns a ThirdPartyAddedConfirmation.
 
 ```json
 {
-  "thirdPartyEori": "GBxxxxxxxxxxxx"
+  "thirdPartyEori": "GBXXXXXXXXXXXX"
 }
 ```
 
@@ -1177,7 +1177,7 @@ If access details are modified (other than the reference name), existing third-p
 
 ```json
 {
-  "userEORI": "GBxxxxxxxxxxxx",
+  "userEORI": "GBXXXXXXXXXXXX",
   "thirdPartyEORI": "GBYYYYYYYYYYYY",
   "accessStart": "2025-09-09T00:00:00Z",
   "accessEnd": "2025-09-09T10:59:38.334682780Z",
@@ -1197,7 +1197,7 @@ Returns a ThirdPartyAddedConfirmation.
 
 ```json
 {
-  "thirdPartyEori": "GBxxxxxxxxxxxx"
+  "thirdPartyEori": "GBXXXXXXXXXXXX"
 }
 ```
 
@@ -1249,7 +1249,7 @@ Returns HTTP 204 No Content.
 
 ```json
 {
-  "eori": "GBxxxxxxxxxxxx",
+  "eori": "GBXXXXXXXXXXXX",
   "thirdPartyEori": "GBYYYYYYYYYYYY"
 }
 ```
@@ -1311,7 +1311,7 @@ Returns additional email addresses configured for notifications.
 
 ```json
 {
-  "eori": "GBxxxxxxxxxxxx"
+  "eori": "GBXXXXXXXXXXXX"
 }
 ```
 
@@ -1354,7 +1354,7 @@ Adds an additional email address to receive trade report notifications for the s
 
 ```json
 {
-  "eori": "GBxxxxxxxxxxxx",
+  "eori": "GBXXXXXXXXXXXX",
   "emailAddress": "test@example.com"
 }
 ```
@@ -1395,7 +1395,7 @@ Removes an additional email address associated with the supplied EORI.
 
 ```json
 {
-  "eori": "GBxxxxxxxxxxxx",
+  "eori": "GBXXXXXXXXXXXX",
   "emailAddress": "test@example.com"
 }
 ```
