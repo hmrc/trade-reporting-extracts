@@ -38,9 +38,7 @@ class AppConfig @Inject() (
   lazy val customsDataStore: String         = customsDataStoreConfig.url
   lazy val verifiedEmailUrl: String         = customsDataStoreConfig.verifiedEmailUrl
   lazy val companyInformationUrl: String    = customsDataStoreConfig.companyInformationUrl
-  lazy val eoriHistoryUrl: String           = customsDataStoreConfig.eoriHistoryUrl
   lazy val eoriHistoryGBXIUrl: String       = customsDataStoreConfig.eoriHistoryGBXIUrl
-  lazy val eoriTraderHistoryUrl: String     = customsDataStoreConfig.eoriTraderHistoryUrl
   lazy val eoriTraderHistoryGBXIUrl: String = customsDataStoreConfig.eoriTraderHistoryGBXIUrl
 
   lazy val eisAPI1AuthToken: String    = eisConfig.authTokenAPI1
@@ -53,8 +51,6 @@ class AppConfig @Inject() (
   lazy val email: String        = servicesConfig.baseUrl("email") + "/hmrc/email"
 
   lazy val dailySubmissionLimit: Int = config.get[Int]("reportRequest.dailySubmissionLimit")
-
-  lazy val strategicXIFeatureEnabled: Boolean = config.get[Boolean]("features.strategic-xi")
 
   lazy val dummyReportEnabled: Boolean =
     config.get[Boolean]("features.dummy-report-enabled")

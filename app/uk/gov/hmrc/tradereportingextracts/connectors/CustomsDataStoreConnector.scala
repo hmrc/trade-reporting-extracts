@@ -55,7 +55,7 @@ class CustomsDataStoreConnector @Inject() (appConfig: AppConfig, httpClient: Htt
       }
 
   def getEoriHistory(eori: String): Future[EoriHistoryResponse] = {
-    val url = if (appConfig.strategicXIFeatureEnabled) appConfig.eoriHistoryGBXIUrl else appConfig.eoriHistoryUrl
+    val url = appConfig.eoriHistoryGBXIUrl
     logger.info(s"Requesting EORI history at : $url")
     httpClient
       .post(url"$url")
@@ -81,8 +81,7 @@ class CustomsDataStoreConnector @Inject() (appConfig: AppConfig, httpClient: Htt
   }
 
   def getTraderEoriHistory(eori: String, authorisationToken: Option[Authorization]): Future[EoriHistoryResponse] = {
-    val url =
-      if (appConfig.strategicXIFeatureEnabled) appConfig.eoriTraderHistoryGBXIUrl else appConfig.eoriTraderHistoryUrl
+    val url = appConfig.eoriTraderHistoryGBXIUrl
 
     logger.info(s"Requesting EORI history at : $url")
 
