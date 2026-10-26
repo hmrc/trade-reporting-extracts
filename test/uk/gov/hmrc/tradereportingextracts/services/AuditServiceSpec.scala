@@ -27,12 +27,12 @@ import uk.gov.hmrc.tradereportingextracts.models.*
 import uk.gov.hmrc.tradereportingextracts.models.StatusCode.INITIATED
 import uk.gov.hmrc.tradereportingextracts.models.audit.{AuditEvent, ReportRequestSubmittedEvent}
 import uk.gov.hmrc.tradereportingextracts.models.eis.EisReportStatusRequest
-import uk.gov.hmrc.tradereportingextracts.utils.SpecBase
+import uk.gov.hmrc.tradereportingextracts.utils.UnitSpecBase
 
 import java.time.{Instant, LocalDate}
 import scala.concurrent.ExecutionContext
 
-class AuditServiceSpec extends SpecBase {
+class AuditServiceSpec extends UnitSpecBase {
 
   "AuditService" should {
 

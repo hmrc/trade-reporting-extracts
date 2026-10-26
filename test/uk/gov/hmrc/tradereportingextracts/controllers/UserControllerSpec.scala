@@ -30,13 +30,13 @@ import uk.gov.hmrc.tradereportingextracts.models.thirdParty.{EoriBusinessAccessI
 import uk.gov.hmrc.tradereportingextracts.models.*
 import uk.gov.hmrc.tradereportingextracts.repositories.ReportRequestRepository
 import uk.gov.hmrc.tradereportingextracts.services.UserService
-import uk.gov.hmrc.tradereportingextracts.utils.{ApplicationConstants, SpecBase}
+import uk.gov.hmrc.tradereportingextracts.utils.{ApplicationConstants, UnitSpecBase}
 import uk.gov.hmrc.tradereportingextracts.controllers.action.AuthAction
 
 import java.time.{Instant, LocalDate, LocalDateTime, ZoneOffset}
 import scala.concurrent.{ExecutionContext, Future}
 
-class UserControllerSpec extends SpecBase {
+class UserControllerSpec extends UnitSpecBase {
 
   implicit val ec: ExecutionContext         = ExecutionContext.Implicits.global
   private val mockUserService: UserService  = mock[UserService]
