@@ -25,8 +25,10 @@ import uk.gov.hmrc.tradereportingextracts.utils.SpecBase
 
 class EoriUpdateControllerSpec extends SpecBase {
 
+  override def fakeApplication(): Application = application.build()
+
   "EoriUpdateController" should {
-    "return 201 Created" in new Setup {
+    "return 201 Created" in {
       val eoriUpdate = EoriUpdate(newEori = "GB987654321098", oldEori = "GB123456789012")
       val request    = FakeRequest(PUT, routes.EoriUpdateController.eoriUpdate().url)
         .withHeaders(
@@ -42,7 +44,7 @@ class EoriUpdateControllerSpec extends SpecBase {
       status(result) shouldBe CREATED
     }
   }
-  "return 400 BadRequest when missing headers" in new Setup {
+  "return 400 BadRequest when missing headers" in {
     val request = FakeRequest(PUT, routes.EoriUpdateController.eoriUpdate().url)
       .withHeaders(
         "authorization"    -> "Bearer EtmpAuthToken",
@@ -55,7 +57,7 @@ class EoriUpdateControllerSpec extends SpecBase {
     status(result) shouldBe BAD_REQUEST
   }
 
-  "return 403 forbidden when not authorised" in new Setup {
+  "return 403 forbidden when not authorised" in {
     val eoriUpdate = EoriUpdate(newEori = "GB987654321098", oldEori = "GB123456789012")
     val request    = FakeRequest(PUT, routes.EoriUpdateController.eoriUpdate().url)
       .withHeaders(
@@ -71,7 +73,7 @@ class EoriUpdateControllerSpec extends SpecBase {
     status(result) shouldBe FORBIDDEN
   }
 
-  "return 400 BadRequest when missing body" in new Setup {
+  "return 400 BadRequest when missing body" in {
     val eoriUpdate = EoriUpdate(newEori = "GB987654321098", oldEori = "GB123456789012")
     val request    = FakeRequest(PUT, routes.EoriUpdateController.eoriUpdate().url)
       .withHeaders(
@@ -86,7 +88,7 @@ class EoriUpdateControllerSpec extends SpecBase {
     status(result) shouldBe BAD_REQUEST
   }
 
-  "return 400 BadRequest when invalid body" in new Setup {
+  "return 400 BadRequest when invalid body" in {
     val eoriUpdate = EoriUpdate(newEori = "GB987654321098", oldEori = "GB123456789012")
     val request    = FakeRequest(PUT, routes.EoriUpdateController.eoriUpdate().url)
       .withHeaders(
@@ -101,9 +103,4 @@ class EoriUpdateControllerSpec extends SpecBase {
     val result     = route(app, request).value
     status(result) shouldBe BAD_REQUEST
   }
-
-  trait Setup {
-    val app: Application = application.build()
-  }
-
 }

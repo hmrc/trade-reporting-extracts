@@ -20,7 +20,6 @@ import org.mockito.Mockito.*
 import org.apache.pekko.Done
 import org.mockito.ArgumentMatchers.any
 import org.mockito.stubbing.OngoingStubbing
-import play.api.Application
 import play.api.libs.json.{JsArray, JsObject, JsString, JsValue, Json}
 import play.api.mvc.Results.Status
 import play.api.mvc.{Action, BodyParser, Request, Result}
@@ -31,13 +30,13 @@ import uk.gov.hmrc.tradereportingextracts.models.thirdParty.{EoriBusinessAccessI
 import uk.gov.hmrc.tradereportingextracts.models.*
 import uk.gov.hmrc.tradereportingextracts.repositories.ReportRequestRepository
 import uk.gov.hmrc.tradereportingextracts.services.UserService
-import uk.gov.hmrc.tradereportingextracts.utils.{ApplicationConstants, SpecBase, WireMockHelper}
+import uk.gov.hmrc.tradereportingextracts.utils.{ApplicationConstants, SpecBase}
 import uk.gov.hmrc.tradereportingextracts.controllers.action.AuthAction
 
 import java.time.{Instant, LocalDate, LocalDateTime, ZoneOffset}
 import scala.concurrent.{ExecutionContext, Future}
 
-class UserControllerSpec extends SpecBase with WireMockHelper {
+class UserControllerSpec extends SpecBase {
 
   implicit val ec: ExecutionContext         = ExecutionContext.Implicits.global
   private val mockUserService: UserService  = mock[UserService]
@@ -74,7 +73,7 @@ class UserControllerSpec extends SpecBase with WireMockHelper {
 
   "UserController.getNotificationEmail" should {
 
-    "return 200 OK with NotificationEmail when valid EORI is provided" in new Setup {
+    "return 200 OK with NotificationEmail when valid EORI is provided" in {
       val eori                     = "GB123456789000"
       val email: NotificationEmail = NotificationEmail("user@example.com", LocalDateTime.now())
 
@@ -93,7 +92,7 @@ class UserControllerSpec extends SpecBase with WireMockHelper {
       contentAsJson(result) shouldBe Json.toJson(email)
     }
 
-    "return corresponding error code when call to auth fails" in new Setup {
+    "return corresponding error code when call to auth fails" in {
       val eori                     = "GB123456789000"
       val email: NotificationEmail = NotificationEmail("user@example.com", LocalDateTime.now())
 
@@ -111,7 +110,7 @@ class UserControllerSpec extends SpecBase with WireMockHelper {
       status(result) shouldBe FORBIDDEN
     }
 
-    "return 400 BadRequest when EORI is missing" in new Setup {
+    "return 400 BadRequest when EORI is missing" in {
 
       successfulAuthAction(mockAuthAction)
 
@@ -125,7 +124,7 @@ class UserControllerSpec extends SpecBase with WireMockHelper {
       contentAsString(result) should include("Missing or invalid 'eori' field")
     }
 
-    "return 500 InternalServerError when service fails" in new Setup {
+    "return 500 InternalServerError when service fails" in {
       val eori = "GB123456789000"
 
       successfulAuthAction(mockAuthAction)
@@ -145,7 +144,7 @@ class UserControllerSpec extends SpecBase with WireMockHelper {
 
   "UserController.getOrSetupUser" should {
 
-    "return 201 Created with user details when valid EORI is provided" in new Setup {
+    "return 201 Created with user details when valid EORI is provided" in {
       val eori                     = "GB123456789000"
       val userDetails: UserDetails = UserDetails(
         eori = eori,
@@ -171,7 +170,7 @@ class UserControllerSpec extends SpecBase with WireMockHelper {
       contentAsJson(result) shouldBe Json.toJson(userDetails)
     }
 
-    "return corresponding error code when call to auth fails" in new Setup {
+    "return corresponding error code when call to auth fails" in {
       val eori                     = "GB123456789000"
       val userDetails: UserDetails = UserDetails(
         eori = eori,
@@ -196,7 +195,7 @@ class UserControllerSpec extends SpecBase with WireMockHelper {
       status(result) shouldBe FORBIDDEN
     }
 
-    "return 400 BadRequest when EORI is missing" in new Setup {
+    "return 400 BadRequest when EORI is missing" in {
 
       successfulAuthAction(mockAuthAction)
 
@@ -213,7 +212,7 @@ class UserControllerSpec extends SpecBase with WireMockHelper {
 
   "UserController.getAuthorisedEoris" should {
 
-    "return 200 OK with list of authorised EORIs" in new Setup {
+    "return 200 OK with list of authorised EORIs" in {
       val eori                         = "GB123456789000"
       val authorisedEoris: Seq[String] = Seq("GB111111111111", "GB222222222222")
 
@@ -232,7 +231,7 @@ class UserControllerSpec extends SpecBase with WireMockHelper {
       contentAsJson(result) shouldBe JsArray(authorisedEoris.map(JsString(_)))
     }
 
-    "return corresponding error code when call to auth fails" in new Setup {
+    "return corresponding error code when call to auth fails" in {
       val eori                         = "GB123456789000"
       val authorisedEoris: Seq[String] = Seq("GB111111111111", "GB222222222222")
 
@@ -250,7 +249,7 @@ class UserControllerSpec extends SpecBase with WireMockHelper {
       status(result) shouldBe FORBIDDEN
     }
 
-    "return 500 InternalServerError when service fails" in new Setup {
+    "return 500 InternalServerError when service fails" in {
       val eori = "GB123456789000"
 
       when(mockUserService.getAuthorisedEoris(eori))
@@ -271,7 +270,7 @@ class UserControllerSpec extends SpecBase with WireMockHelper {
 
   "UserController.getAdditionalEmails" should {
 
-    "return 200 OK with list of additional emails" in new Setup {
+    "return 200 OK with list of additional emails" in {
       val eori                          = "GB123456789000"
       val additionalEmails: Seq[String] = Seq("email1@example.com", "email2@example.com")
 
@@ -290,7 +289,7 @@ class UserControllerSpec extends SpecBase with WireMockHelper {
       contentAsJson(result) shouldBe JsArray(additionalEmails.map(JsString(_)))
     }
 
-    "return corresponding error code when call to auth fails" in new Setup {
+    "return corresponding error code when call to auth fails" in {
       val eori                          = "GB123456789000"
       val additionalEmails: Seq[String] = Seq("email1@example.com", "email2@example.com")
 
@@ -308,7 +307,7 @@ class UserControllerSpec extends SpecBase with WireMockHelper {
       status(result) shouldBe FORBIDDEN
     }
 
-    "return 500 InternalServerError when service fails" in new Setup {
+    "return 500 InternalServerError when service fails" in {
       val eori = "GB123456789000"
 
       when(mockUserService.getUserAdditionalEmails(eori))
@@ -337,7 +336,7 @@ class UserControllerSpec extends SpecBase with WireMockHelper {
       contentAsString(result) should include("Service failure")
     }
 
-    "return 400 BadRequest when EORI is missing" in new Setup {
+    "return 400 BadRequest when EORI is missing" in {
 
       when(mockAuthAction.async[JsValue](any[BodyParser[JsValue]]())(any()))
         .thenAnswer { invocation =>
@@ -365,7 +364,7 @@ class UserControllerSpec extends SpecBase with WireMockHelper {
 
   "UserController.getUserAndEmail" should {
 
-    "return 201 OK with user details when valid EORI is provided" in new Setup {
+    "return 201 OK with user details when valid EORI is provided" in {
       val eori                     = "GB123456789000"
       val userDetails: UserDetails = UserDetails(
         eori = eori,
@@ -396,7 +395,7 @@ class UserControllerSpec extends SpecBase with WireMockHelper {
       contentAsJson(result) shouldBe Json.toJson(userDetails)
     }
 
-    "return corresponding error code when call to auth fails" in new Setup {
+    "return corresponding error code when call to auth fails" in {
       val eori                     = "GB123456789000"
       val userDetails: UserDetails = UserDetails(
         eori = eori,
@@ -426,7 +425,7 @@ class UserControllerSpec extends SpecBase with WireMockHelper {
       status(result) shouldBe FORBIDDEN
     }
 
-    "return bad request when eori missing" in new Setup {
+    "return bad request when eori missing" in {
 
       successfulAuthAction(mockAuthAction)
 
@@ -444,7 +443,7 @@ class UserControllerSpec extends SpecBase with WireMockHelper {
     val eori           = "123"
     val thirdPartyEori = "456"
 
-    "return a 200 when provided a valid eori and thirdPartyEori" in new Setup {
+    "return a 200 when provided a valid eori and thirdPartyEori" in {
 
       val authUser: AuthorisedUser = AuthorisedUser(
         eori = thirdPartyEori,
@@ -481,7 +480,7 @@ class UserControllerSpec extends SpecBase with WireMockHelper {
 
     }
 
-    "return corresponding error code when call to auth fails" in new Setup {
+    "return corresponding error code when call to auth fails" in {
 
       val authUser: AuthorisedUser = AuthorisedUser(
         eori = thirdPartyEori,
@@ -517,7 +516,7 @@ class UserControllerSpec extends SpecBase with WireMockHelper {
 
     }
 
-    "return a 404 when no authorised user is found" in new Setup {
+    "return a 404 when no authorised user is found" in {
 
       when(mockUserService.getAuthorisedUser(any(), any())).thenReturn(Future.successful(None))
 
@@ -532,7 +531,7 @@ class UserControllerSpec extends SpecBase with WireMockHelper {
       contentAsString(result) should include("No authorised user found for third party EORI")
     }
 
-    "return a bad request when eori invalid" in new Setup {
+    "return a bad request when eori invalid" in {
 
       val thirdPartyEori = "456"
 
@@ -548,7 +547,7 @@ class UserControllerSpec extends SpecBase with WireMockHelper {
 
     }
 
-    "return a bad request when thirdPartyEori invalid" in new Setup {
+    "return a bad request when thirdPartyEori invalid" in {
 
       successfulAuthAction(mockAuthAction)
 
@@ -567,7 +566,7 @@ class UserControllerSpec extends SpecBase with WireMockHelper {
     val eori         = "123"
     val businessEori = "456"
 
-    "return a 200 when provided a valid eori and businessEori" in new Setup {
+    "return a 200 when provided a valid eori and businessEori" in {
 
       val authUser = AuthorisedUser(
         eori = eori,
@@ -604,7 +603,7 @@ class UserControllerSpec extends SpecBase with WireMockHelper {
 
     }
 
-    "return corrensponding error code when call to auth fails" in new Setup {
+    "return corrensponding error code when call to auth fails" in {
 
       val authUser = AuthorisedUser(
         eori = eori,
@@ -640,7 +639,7 @@ class UserControllerSpec extends SpecBase with WireMockHelper {
 
     }
 
-    "return a 404 when no authorised user is found" in new Setup {
+    "return a 404 when no authorised user is found" in {
 
       when(mockUserService.getAuthorisedBusiness(any(), any())).thenReturn(Future.successful(None))
 
@@ -655,7 +654,7 @@ class UserControllerSpec extends SpecBase with WireMockHelper {
       contentAsString(result) should include("No authorised user found for the trader EORI")
     }
 
-    "should return bad request when invalid thirdPartyEori field" in new Setup {
+    "should return bad request when invalid thirdPartyEori field" in {
 
       successfulAuthAction(mockAuthAction)
 
@@ -668,7 +667,7 @@ class UserControllerSpec extends SpecBase with WireMockHelper {
       contentAsString(result) should include("Missing or invalid 'thirdPartyEori' field")
     }
 
-    "should return bad request when invalid traderEori field" in new Setup {
+    "should return bad request when invalid traderEori field" in {
 
       successfulAuthAction(mockAuthAction)
 
@@ -685,7 +684,7 @@ class UserControllerSpec extends SpecBase with WireMockHelper {
 
   "UserController.getUsersByAuthorisedEoriWithStatus" should {
 
-    "return 200 OK with list of users including status" in new Setup {
+    "return 200 OK with list of users including status" in {
       val authorisedEori    = "GB111111111111"
       val eoriBusinessInfos = Seq(
         EoriBusinessAccessInfo(
@@ -709,7 +708,7 @@ class UserControllerSpec extends SpecBase with WireMockHelper {
       contentAsJson(result) shouldBe Json.toJson(eoriBusinessInfos)
     }
 
-    "return corresponding error code when call to auth fails" in new Setup {
+    "return corresponding error code when call to auth fails" in {
       val authorisedEori    = "GB111111111111"
       val eoriBusinessInfos = Seq(
         EoriBusinessAccessInfo(
@@ -734,7 +733,7 @@ class UserControllerSpec extends SpecBase with WireMockHelper {
 
     }
 
-    "return 200 OK with list of users and no company information if no consent" in new Setup {
+    "return 200 OK with list of users and no company information if no consent" in {
       val authorisedEori    = "GB111111111111"
       val eoriBusinessInfos = Seq(
         EoriBusinessAccessInfo(
@@ -758,7 +757,7 @@ class UserControllerSpec extends SpecBase with WireMockHelper {
       contentAsJson(result) shouldBe Json.toJson(eoriBusinessInfos)
     }
 
-    "return 500 InternalServerError when the service throws an exceptions" in new Setup {
+    "return 500 InternalServerError when the service throws an exceptions" in {
       val authorisedEori = "GB111111111111"
 
       when(mockUserService.getUsersByAuthorisedEoriWithAccessDates(authorisedEori))
@@ -774,7 +773,7 @@ class UserControllerSpec extends SpecBase with WireMockHelper {
       status(result) shouldBe INTERNAL_SERVER_ERROR
     }
 
-    "return bad request when invalid body" in new Setup {
+    "return bad request when invalid body" in {
       val authorisedEori    = "GB111111111111"
       val eoriBusinessInfos = Seq(
         EoriBusinessAccessInfo(
@@ -802,7 +801,7 @@ class UserControllerSpec extends SpecBase with WireMockHelper {
 
   "UserController.getUsersByAuthorisedEoriWithDateFilter" should {
 
-    "return 200 OK with list of users without status" in new Setup {
+    "return 200 OK with list of users without status" in {
       val authorisedEori    = "GB111111111111"
       val eoriBusinessInfos = Seq(
         EoriBusinessInfo(eori = "GB123456789000", businessInfo = Some("ABC Ltd"))
@@ -821,7 +820,7 @@ class UserControllerSpec extends SpecBase with WireMockHelper {
       contentAsJson(result) shouldBe Json.toJson(eoriBusinessInfos)
     }
 
-    "return corresponding error code when call to auth fails" in new Setup {
+    "return corresponding error code when call to auth fails" in {
       val authorisedEori    = "GB111111111111"
       val eoriBusinessInfos = Seq(
         EoriBusinessInfo(eori = "GB123456789000", businessInfo = Some("ABC Ltd"))
@@ -840,7 +839,7 @@ class UserControllerSpec extends SpecBase with WireMockHelper {
       status(result) shouldBe FORBIDDEN
     }
 
-    "return 200 OK with list of users and no company information if no consent" in new Setup {
+    "return 200 OK with list of users and no company information if no consent" in {
       val authorisedEori    = "GB111111111111"
       val eoriBusinessInfos = Seq(
         EoriBusinessInfo(eori = "GB123456789000", businessInfo = None)
@@ -859,7 +858,7 @@ class UserControllerSpec extends SpecBase with WireMockHelper {
       contentAsJson(result) shouldBe Json.toJson(eoriBusinessInfos)
     }
 
-    "return 500 InternalServerError when the service throws an exceptions" in new Setup {
+    "return 500 InternalServerError when the service throws an exceptions" in {
       val authorisedEori = "GB111111111111"
 
       when(mockUserService.getUsersByAuthorisedEoriWithDateFilter(authorisedEori))
@@ -875,7 +874,7 @@ class UserControllerSpec extends SpecBase with WireMockHelper {
       status(result) shouldBe INTERNAL_SERVER_ERROR
     }
 
-    "return bad request when invalid body" in new Setup {
+    "return bad request when invalid body" in {
       val authorisedEori    = "GB111111111111"
       val eoriBusinessInfos = Seq(
         EoriBusinessInfo(eori = "GB123456789000", businessInfo = None)
@@ -898,7 +897,7 @@ class UserControllerSpec extends SpecBase with WireMockHelper {
 
   "updatePersonalEmailNotificationsPreference" should {
 
-    "return OK when email updated successfully" in new Setup {
+    "return OK when email updated successfully" in {
       val preference = UpdateEmailPreference(eori = "GB123456789000", updatedPreference = true)
 
       when(mockUserService.updatePersonalEmailNotificationsPreference(preference))
@@ -916,7 +915,7 @@ class UserControllerSpec extends SpecBase with WireMockHelper {
       status(result) shouldBe OK
     }
 
-    "return internal server error when fails to update" in new Setup {
+    "return internal server error when fails to update" in {
       val preference = UpdateEmailPreference(eori = "GB123456789000", updatedPreference = false)
 
       when(mockUserService.updatePersonalEmailNotificationsPreference(preference))
@@ -935,7 +934,7 @@ class UserControllerSpec extends SpecBase with WireMockHelper {
       contentAsString(result) should include("Failed to update personal email notification preference")
     }
 
-    "return BadRequest when request body fails validation" in new Setup {
+    "return BadRequest when request body fails validation" in {
       successfulAuthAction(mockAuthAction)
 
       val request: FakeRequest[JsObject] =
@@ -955,7 +954,7 @@ class UserControllerSpec extends SpecBase with WireMockHelper {
     val traderEori     = "123"
     val thirdPartyEori = "456"
 
-    "return an OK when authorised user deleted and third party reports removed and send email" in new Setup {
+    "return an OK when authorised user deleted and third party reports removed and send email" in {
 
       when(mockUserService.deleteAuthorisedUser(traderEori, thirdPartyEori))
         .thenReturn(Future.successful(true))
@@ -980,7 +979,7 @@ class UserControllerSpec extends SpecBase with WireMockHelper {
         .sendEmailRequest(any(), any(), any())(any())
     }
 
-    "return corresponding error code when call to auth fails" in new Setup {
+    "return corresponding error code when call to auth fails" in {
 
       when(mockUserService.deleteAuthorisedUser(traderEori, thirdPartyEori))
         .thenReturn(Future.successful(true))
@@ -1002,7 +1001,7 @@ class UserControllerSpec extends SpecBase with WireMockHelper {
       status(result) shouldBe FORBIDDEN
     }
 
-    "return an internal server error when authorised user delete fails" in new Setup {
+    "return an internal server error when authorised user delete fails" in {
 
       when(mockUserService.deleteAuthorisedUser(traderEori, thirdPartyEori))
         .thenReturn(Future.successful(false))
@@ -1019,7 +1018,7 @@ class UserControllerSpec extends SpecBase with WireMockHelper {
       contentAsString(result) should include("Failed to remove third party access")
     }
 
-    "return an internal server error when deleteReportsForThirdParty fails" in new Setup {
+    "return an internal server error when deleteReportsForThirdParty fails" in {
 
       when(mockUserService.deleteAuthorisedUser(traderEori, thirdPartyEori))
         .thenReturn(Future.successful(true))
@@ -1039,7 +1038,7 @@ class UserControllerSpec extends SpecBase with WireMockHelper {
       verify(mockEmailConnector, never()).sendEmailRequest(any(), any(), any())(any())
     }
 
-    "return a bad request when invalid traderEori" in new Setup {
+    "return a bad request when invalid traderEori" in {
 
       successfulAuthAction(mockAuthAction)
 
@@ -1053,7 +1052,7 @@ class UserControllerSpec extends SpecBase with WireMockHelper {
       contentAsString(result) should include("Missing or invalid 'traderEori' field")
     }
 
-    "return a bad request when invalid thirdPartyEori" in new Setup {
+    "return a bad request when invalid thirdPartyEori" in {
 
       successfulAuthAction(mockAuthAction)
 
@@ -1067,7 +1066,7 @@ class UserControllerSpec extends SpecBase with WireMockHelper {
       contentAsString(result) should include("Missing or invalid 'thirdPartyEori' field")
     }
 
-    "return a bad request when both EORIs are invalid" in new Setup {
+    "return a bad request when both EORIs are invalid" in {
 
       successfulAuthAction(mockAuthAction)
 
@@ -1080,11 +1079,6 @@ class UserControllerSpec extends SpecBase with WireMockHelper {
       status(result)        shouldBe BAD_REQUEST
       contentAsString(result) should include("Missing or invalid 'traderEori', 'thirdPartyEori' fields")
     }
-  }
-
-  trait Setup {
-    val app: Application = application
-      .build()
   }
 
   def successfulAuthAction(mockAuthAction: AuthAction): OngoingStubbing[Action[JsValue]] =

@@ -20,8 +20,6 @@ import org.mockito.ArgumentCaptor
 import org.mockito.ArgumentMatchers.{any, anyString}
 import org.mockito.Mockito.{doNothing, verify}
 import org.scalatest.matchers.should.Matchers.*
-import play.api.test.Helpers.running
-import play.api.{Application, inject}
 import uk.gov.hmrc.crypto.Sensitive.SensitiveString
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
@@ -68,31 +66,26 @@ class AuditServiceSpec extends SpecBase {
       val extendedDataEventCaptor: ArgumentCaptor[AuditEvent] =
         ArgumentCaptor.forClass(classOf[AuditEvent])
 
-      running(app) {
+      doNothing()
+        .when(mockAuditConnector)
+        .sendExplicitAudit(anyString(), any[ReportRequestSubmittedEvent])(any(), any(), any())
 
-        doNothing()
-          .when(mockAuditConnector)
-          .sendExplicitAudit(anyString(), any[ReportRequestSubmittedEvent])(any(), any(), any())
+      val result = service.auditReportRequestSubmitted(Seq(reportRequest), Set("importer"))
 
-        val result = service.auditReportRequestSubmitted(Seq(reportRequest), Set("importer"))
+      whenReady(result) { _ =>
 
-        whenReady(result) { _ =>
+        val captor = ArgumentCaptor.forClass(classOf[ReportRequestSubmittedEvent])
+        verify(mockAuditConnector).sendExplicitAudit(anyString(), captor.capture())(any(), any(), any())
 
-          val captor = ArgumentCaptor.forClass(classOf[ReportRequestSubmittedEvent])
-          verify(mockAuditConnector).sendExplicitAudit(anyString(), captor.capture())(any(), any(), any())
-
-          val event = captor.getValue
-          event.reports.head.requestId      shouldBe "RR123"
-          event.reports.head.xCorrelationId shouldBe "CORR123"
-        }
+        val event = captor.getValue
+        event.reports.head.requestId      shouldBe "RR123"
+        event.reports.head.xCorrelationId shouldBe "CORR123"
       }
     }
 
     "return Future.unit when reportRequests is empty" in new Setup {
-      running(app) {
-        val result = service.auditReportRequestSubmitted(Seq.empty, Set.empty)
-        whenReady(result)(_ shouldBe ())
-      }
+      val result = service.auditReportRequestSubmitted(Seq.empty, Set.empty)
+      whenReady(result)(_ shouldBe ())
     }
   }
 
@@ -102,12 +95,6 @@ class AuditServiceSpec extends SpecBase {
 
     val mockAuditConnector: AuditConnector = mock[AuditConnector]
 
-    val app: Application = application
-      .overrides(
-        inject.bind[AuditConnector].toInstance(mockAuditConnector)
-      )
-      .build()
-
-    val service: AuditService = app.injector.instanceOf[AuditService]
+    val service: AuditService = new AuditService(mockAuditConnector)
   }
 }

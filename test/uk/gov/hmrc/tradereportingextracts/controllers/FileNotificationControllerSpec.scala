@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.tradereportingextracts.controllers
 
-import org.mockito.Mockito.when
+import org.mockito.Mockito.{reset, when}
 import org.scalatestplus.mockito.MockitoSugar
 import play.api.libs.json.Json
 import play.api.test.Helpers.*
@@ -28,9 +28,22 @@ import uk.gov.hmrc.tradereportingextracts.utils.SpecBase
 
 class FileNotificationControllerSpec extends SpecBase with MockitoSugar {
 
+  lazy val mockFileNotificationService: FileNotificationService = mock[FileNotificationService]
+
+  override def fakeApplication(): Application = application
+    .overrides(
+      inject.bind[FileNotificationService].toInstance(mockFileNotificationService)
+    )
+    .build()
+
+  override def beforeEach(): Unit = {
+    super.beforeEach()
+    reset(mockFileNotificationService)
+  }
+
   "FileNotificationController" should {
 
-    "return 400 BadRequest when body is not JSON" in new Setup {
+    "return 400 BadRequest when body is not JSON" in {
       val request = FakeRequest(POST, routes.FileNotificationController.fileNotification().url)
         .withHeaders(
           "authorization"         -> "Bearer SdesAuthToken",
@@ -45,7 +58,7 @@ class FileNotificationControllerSpec extends SpecBase with MockitoSugar {
       contentAsString(result) should include("Expected application/json request body")
     }
 
-    "return 400 BadRequest when JSON is invalid" in new Setup {
+    "return 400 BadRequest when JSON is invalid" in {
       val invalidJson = Json.obj("foo" -> "bar")
       val request     = FakeRequest(POST, routes.FileNotificationController.fileNotification().url)
         .withHeaders(
@@ -61,7 +74,7 @@ class FileNotificationControllerSpec extends SpecBase with MockitoSugar {
       contentAsString(result) should include("Invalid value at path")
     }
 
-    "still return 201 even when FileNotificationService returns error as external caller is not concerned with our errors" in new Setup {
+    "still return 201 even when FileNotificationService returns error as external caller is not concerned with our errors" in {
       val fileNotification = FileNotificationResponse(
         eori = "GB123456789012",
         fileName = "testFileName",
@@ -90,7 +103,7 @@ class FileNotificationControllerSpec extends SpecBase with MockitoSugar {
       status(result) shouldBe CREATED
     }
 
-    "return 201 Created" in new Setup {
+    "return 201 Created" in {
       val fileNotification = FileNotificationResponse(
         eori = "GB123456789012",
         fileName = "testFileName",
@@ -121,19 +134,10 @@ class FileNotificationControllerSpec extends SpecBase with MockitoSugar {
       status(result) shouldBe CREATED
     }
 
-    "return 404 MethodNotAllowed" in new Setup {
+    "return 404 MethodNotAllowed" in {
       val request = FakeRequest(GET, routes.FileNotificationController.fileNotification().url)
       val result  = route(app, request).value
       status(result) shouldBe 404
     }
-  }
-
-  trait Setup {
-    val mockFileNotificationService: FileNotificationService = mock[FileNotificationService]
-    val app: Application                                     = application
-      .overrides(
-        inject.bind[FileNotificationService].toInstance(mockFileNotificationService)
-      )
-      .build()
   }
 }

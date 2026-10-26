@@ -22,16 +22,14 @@ import uk.gov.hmrc.tradereportingextracts.utils.SpecBase
 
 class ModuleSpec extends SpecBase with Matchers {
 
+  override def fakeApplication(): Application = application.build()
+
   "Module" should {
 
-    "bind AppConfig, CryptoProvider as an eager singleton" in new Setup {
+    "bind AppConfig, CryptoProvider as an eager singleton" in {
       val appConfig: AppConfig           = app.injector.instanceOf[AppConfig]
       val cryptoProvider: CryptoProvider = app.injector.instanceOf[CryptoProvider]
       appConfig should not be null
     }
-  }
-
-  trait Setup {
-    val app: Application = application.build()
   }
 }
