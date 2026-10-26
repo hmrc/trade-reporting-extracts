@@ -20,8 +20,8 @@ import org.mockito.ArgumentCaptor
 import org.mockito.ArgumentMatchers.{any, eq as eqTo}
 import org.mockito.Mockito.*
 import org.scalatest.matchers.must.Matchers.{must, mustBe}
+import play.api.Application
 import play.api.inject.bind
-import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.*
 import play.api.mvc.Results.Status
 import play.api.mvc.{Action, BodyParser, Request, Result}
@@ -35,24 +35,24 @@ import uk.gov.hmrc.tradereportingextracts.controllers.action.AuthAction
 import uk.gov.hmrc.tradereportingextracts.models.audit.ReportRequestSubmittedEvent
 import uk.gov.hmrc.tradereportingextracts.models.{EoriHistory, EoriHistoryResponse, NotificationEmail, ReportRequest}
 import uk.gov.hmrc.tradereportingextracts.services.*
-import uk.gov.hmrc.tradereportingextracts.utils.{SpecBase, WireMockHelper}
+import uk.gov.hmrc.tradereportingextracts.utils.SpecBase
 
 import java.time.LocalDateTime
 import scala.concurrent.{ExecutionContext, Future}
 
-class ReportRequestControllerSpec extends SpecBase with WireMockHelper {
+class ReportRequestControllerSpec extends SpecBase {
 
   implicit val ec: ExecutionContext = ExecutionContext.global
 
-  val mockCustomsDataStoreConnector: CustomsDataStoreConnector = mock[CustomsDataStoreConnector]
-  val mockReportRequestService: ReportRequestService           = mock[ReportRequestService]
-  val mockRequestReferenceService: RequestReferenceService     = mock[RequestReferenceService]
-  val mockEisService: EisService                               = mock[EisService]
-  val mockUserService: UserService                             = mock[UserService]
-  val mockAdditionalEmailService: AdditionalEmailService       = mock[AdditionalEmailService]
-  val mockAuditConnector: AuditConnector                       = mock[AuditConnector]
-  val mockAppConfig: AppConfig                                 = mock[AppConfig]
-  val mockAuthAction: AuthAction                               = mock[AuthAction]
+  lazy val mockCustomsDataStoreConnector: CustomsDataStoreConnector = mock[CustomsDataStoreConnector]
+  lazy val mockReportRequestService: ReportRequestService           = mock[ReportRequestService]
+  lazy val mockRequestReferenceService: RequestReferenceService     = mock[RequestReferenceService]
+  lazy val mockEisService: EisService                               = mock[EisService]
+  lazy val mockUserService: UserService                             = mock[UserService]
+  lazy val mockAdditionalEmailService: AdditionalEmailService       = mock[AdditionalEmailService]
+  lazy val mockAuditConnector: AuditConnector                       = mock[AuditConnector]
+  lazy val mockAppConfig: AppConfig                                 = mock[AppConfig]
+  lazy val mockAuthAction: AuthAction                               = mock[AuthAction]
 
   override def beforeEach(): Unit = {
     super.beforeEach()
@@ -66,7 +66,7 @@ class ReportRequestControllerSpec extends SpecBase with WireMockHelper {
     reset(mockAuthAction)
   }
 
-  private val app = new GuiceApplicationBuilder()
+  override def fakeApplication(): Application = application
     .overrides(
       bind[CustomsDataStoreConnector].toInstance(mockCustomsDataStoreConnector),
       bind[ReportRequestService].toInstance(mockReportRequestService),

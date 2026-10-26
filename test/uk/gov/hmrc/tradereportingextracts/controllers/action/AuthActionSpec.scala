@@ -22,7 +22,7 @@ import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.freespec.AnyFreeSpec
 import org.scalatest.matchers.should.Matchers
 import play.api.http.Status.OK
-import play.api.inject.guice.GuiceApplicationBuilder
+import play.api.test.Helpers.stubControllerComponents
 import play.api.mvc.*
 import play.api.test.FakeRequest
 import uk.gov.hmrc.auth.core.AffinityGroup.Organisation
@@ -30,15 +30,14 @@ import uk.gov.hmrc.auth.core.authorise.Predicate
 import uk.gov.hmrc.auth.core.retrieve.{Retrieval, ~}
 import uk.gov.hmrc.auth.core.*
 import uk.gov.hmrc.http.{HeaderCarrier, UpstreamErrorResponse}
-import uk.gov.hmrc.tradereportingextracts.utils.WireMockHelper
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class AuthActionSpec extends AnyFreeSpec with Matchers with BeforeAndAfterEach with WireMockHelper with ScalaFutures {
+class AuthActionSpec extends AnyFreeSpec with Matchers with BeforeAndAfterEach with ScalaFutures {
 
-  private val app                             = GuiceApplicationBuilder().build()
-  private val bodyParser: BodyParsers.Default = app.injector.instanceOf(classOf[BodyParsers.Default])
-  private val cc: ControllerComponents        = app.injector.instanceOf(classOf[ControllerComponents])
+  private val cc: ControllerComponents = stubControllerComponents()
+  private val bodyParser: BodyParsers.Default = new BodyParsers.Default(cc.parsers)
+
   implicit val ec: ExecutionContext           = ExecutionContext.Implicits.global
 
   private val eoriNumber           = "GB123456789001"
