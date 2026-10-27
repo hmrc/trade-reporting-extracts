@@ -36,7 +36,7 @@ import uk.gov.hmrc.play.bootstrap.metrics.Metrics
 import java.net.URL
 import scala.concurrent.{ExecutionContext, Future}
 
-class SpecBase
+abstract class SpecBase
     extends AnyWordSpecLike
     with GuiceOneAppPerSuite
     with MockitoSugar

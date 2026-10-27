@@ -19,9 +19,11 @@ package uk.gov.hmrc.tradereportingextracts.controllers
 import org.mockito.ArgumentCaptor
 import org.mockito.ArgumentMatchers.{any, eq as eqTo}
 import org.mockito.Mockito.*
-import org.scalatest.matchers.must.Matchers.{must, mustBe}
-import play.api.inject.bind
-import play.api.inject.guice.GuiceApplicationBuilder
+import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}
+import org.scalatest.matchers.must.Matchers
+import org.scalatest.wordspec.AnyWordSpec
+import org.scalatest.{BeforeAndAfterEach, OptionValues}
+import org.scalatestplus.mockito.MockitoSugar
 import play.api.libs.json.*
 import play.api.mvc.Results.Status
 import play.api.mvc.{Action, BodyParser, Request, Result}
@@ -35,12 +37,18 @@ import uk.gov.hmrc.tradereportingextracts.controllers.action.AuthAction
 import uk.gov.hmrc.tradereportingextracts.models.audit.ReportRequestSubmittedEvent
 import uk.gov.hmrc.tradereportingextracts.models.{EoriHistory, EoriHistoryResponse, NotificationEmail, ReportRequest}
 import uk.gov.hmrc.tradereportingextracts.services.*
-import uk.gov.hmrc.tradereportingextracts.utils.{SpecBase, WireMockHelper}
 
 import java.time.LocalDateTime
 import scala.concurrent.{ExecutionContext, Future}
 
-class ReportRequestControllerSpec extends SpecBase with WireMockHelper {
+class ReportRequestControllerSpec
+    extends AnyWordSpec
+    with Matchers
+    with MockitoSugar
+    with BeforeAndAfterEach
+    with OptionValues
+    with ScalaFutures
+    with IntegrationPatience {
 
   implicit val ec: ExecutionContext = ExecutionContext.global
 
@@ -66,18 +74,18 @@ class ReportRequestControllerSpec extends SpecBase with WireMockHelper {
     reset(mockAuthAction)
   }
 
-  private val app = new GuiceApplicationBuilder()
-    .overrides(
-      bind[CustomsDataStoreConnector].toInstance(mockCustomsDataStoreConnector),
-      bind[ReportRequestService].toInstance(mockReportRequestService),
-      bind[RequestReferenceService].toInstance(mockRequestReferenceService),
-      bind[AdditionalEmailService].toInstance(mockAdditionalEmailService),
-      bind[EisService].toInstance(mockEisService),
-      bind[UserService].toInstance(mockUserService),
-      bind[AppConfig].toInstance(mockAppConfig),
-      bind[AuthAction].toInstance(mockAuthAction)
-    )
-    .build()
+  private val controller = new ReportRequestController(
+    stubControllerComponents(),
+    mockCustomsDataStoreConnector,
+    mockReportRequestService,
+    new ReportRequestTransformationService(mockRequestReferenceService),
+    mockEisService,
+    new AuditService(mockAuditConnector),
+    mockUserService,
+    mockAdditionalEmailService,
+    mockAppConfig,
+    mockAuthAction
+  )
 
   "createReportRequest" should {
 
@@ -150,9 +158,9 @@ class ReportRequestControllerSpec extends SpecBase with WireMockHelper {
 
       val request = FakeRequest(POST, "/trade-reporting-extracts/create-report-request")
         .withHeaders("Content-Type" -> "application/json")
-        .withJsonBody(inputJson)
+        .withBody(inputJson)
 
-      val result = route(app, request).value
+      val result = controller.createReportRequest(request)
 
       status(result) mustBe OK
       contentAsJson(result) mustBe Json.arr(
@@ -240,9 +248,9 @@ class ReportRequestControllerSpec extends SpecBase with WireMockHelper {
 
       val request = FakeRequest(POST, "/trade-reporting-extracts/create-report-request")
         .withHeaders("Content-Type" -> "application/json")
-        .withJsonBody(inputJson)
+        .withBody(inputJson)
 
-      val result = route(app, request).value
+      val result = controller.createReportRequest(request)
 
       status(result) mustBe OK
       contentAsJson(result) mustBe Json.arr(
@@ -330,9 +338,9 @@ class ReportRequestControllerSpec extends SpecBase with WireMockHelper {
 
       val request = FakeRequest(POST, "/trade-reporting-extracts/create-report-request")
         .withHeaders("Content-Type" -> "application/json")
-        .withJsonBody(inputJson)
+        .withBody(inputJson)
 
-      val result = route(app, request).value
+      val result = controller.createReportRequest(request)
 
       status(result) mustBe OK
       contentAsJson(result) mustBe Json.arr(
@@ -419,9 +427,9 @@ class ReportRequestControllerSpec extends SpecBase with WireMockHelper {
 
       val request = FakeRequest(POST, "/trade-reporting-extracts/create-report-request")
         .withHeaders("Content-Type" -> "application/json")
-        .withJsonBody(inputJson)
+        .withBody(inputJson)
 
-      val result = route(app, request).value
+      val result = controller.createReportRequest(request)
 
       status(result) mustBe FORBIDDEN
 
@@ -498,9 +506,9 @@ class ReportRequestControllerSpec extends SpecBase with WireMockHelper {
 
       val request = FakeRequest(POST, "/trade-reporting-extracts/create-report-request")
         .withHeaders("Content-Type" -> "application/json")
-        .withJsonBody(inputJson)
+        .withBody(inputJson)
 
-      val result = route(app, request).value
+      val result = controller.createReportRequest(request)
 
       status(result) mustBe OK
       contentAsJson(result) mustBe Json.arr(
@@ -589,9 +597,9 @@ class ReportRequestControllerSpec extends SpecBase with WireMockHelper {
 
       val request = FakeRequest(POST, "/trade-reporting-extracts/create-report-request")
         .withHeaders("Content-Type" -> "application/json")
-        .withJsonBody(inputJson)
+        .withBody(inputJson)
 
-      val result = route(app, request).value
+      val result = controller.createReportRequest(request)
 
       status(result) mustBe OK
       contentAsJson(result) mustBe Json.arr(
@@ -684,9 +692,9 @@ class ReportRequestControllerSpec extends SpecBase with WireMockHelper {
 
       val request = FakeRequest(POST, "/trade-reporting-extracts/create-report-request")
         .withHeaders("Content-Type" -> "application/json")
-        .withJsonBody(inputJson)
+        .withBody(inputJson)
 
-      val result = route(app, request).value
+      val result = controller.createReportRequest(request)
 
       status(result) mustBe OK
       contentAsJson(result) mustBe Json.arr(
@@ -731,9 +739,9 @@ class ReportRequestControllerSpec extends SpecBase with WireMockHelper {
 
       val request = FakeRequest(POST, "/trade-reporting-extracts/create-report-request")
         .withHeaders("Content-Type" -> "application/json")
-        .withJsonBody(invalidJson)
+        .withBody(invalidJson)
 
-      val result = route(app, request).value
+      val result = controller.createReportRequest(request)
 
       status(result) mustBe BAD_REQUEST
     }
@@ -779,9 +787,9 @@ class ReportRequestControllerSpec extends SpecBase with WireMockHelper {
 
       val request = FakeRequest(POST, "/trade-reporting-extracts/create-report-request")
         .withHeaders("Content-Type" -> "application/json")
-        .withJsonBody(inputJson)
+        .withBody(inputJson)
 
-      val thrown = route(app, request).value.failed.futureValue
+      val thrown = controller.createReportRequest(request).failed.futureValue
       thrown mustBe a[RuntimeException]
       thrown.getMessage must include("CDS Unavailable")
     }
@@ -859,9 +867,9 @@ class ReportRequestControllerSpec extends SpecBase with WireMockHelper {
 
       val request = FakeRequest(POST, "/trade-reporting-extracts/create-report-request")
         .withHeaders("Content-Type" -> "application/json")
-        .withJsonBody(inputJson)
+        .withBody(inputJson)
 
-      val result = route(app, request).value
+      val result = controller.createReportRequest(request)
 
       status(result) mustBe OK
 
@@ -942,9 +950,9 @@ class ReportRequestControllerSpec extends SpecBase with WireMockHelper {
 
       val request = FakeRequest(POST, "/trade-reporting-extracts/create-report-request")
         .withHeaders("Content-Type" -> "application/json")
-        .withJsonBody(inputJson)
+        .withBody(inputJson)
 
-      val result = route(app, request).value
+      val result = controller.createReportRequest(request)
 
       status(result) mustBe OK
 
@@ -1024,9 +1032,9 @@ class ReportRequestControllerSpec extends SpecBase with WireMockHelper {
 
       val request = FakeRequest(POST, "/trade-reporting-extracts/create-report-request")
         .withHeaders("Content-Type" -> "application/json")
-        .withJsonBody(inputJson)
+        .withBody(inputJson)
 
-      val result = route(app, request).value
+      val result = controller.createReportRequest(request)
 
       status(result) mustBe OK
 
@@ -1103,9 +1111,9 @@ class ReportRequestControllerSpec extends SpecBase with WireMockHelper {
 
       val request = FakeRequest(POST, "/trade-reporting-extracts/create-report-request")
         .withHeaders("Content-Type" -> "application/json")
-        .withJsonBody(inputJson)
+        .withBody(inputJson)
 
-      val result = route(app, request).value
+      val result = controller.createReportRequest(request)
 
       status(result) mustBe OK
 
@@ -1126,7 +1134,7 @@ class ReportRequestControllerSpec extends SpecBase with WireMockHelper {
         "Content-Type" -> "application/json"
       )
 
-      val result = route(app, request).value
+      val result = controller.hasReachedSubmissionLimit(eori)(request)
 
       status(result) mustBe TOO_MANY_REQUESTS
     }
@@ -1139,7 +1147,7 @@ class ReportRequestControllerSpec extends SpecBase with WireMockHelper {
 
       val request = FakeRequest(GET, s"/trade-reporting-extracts/report-submission-limit/$eori")
 
-      val result = route(app, request).value
+      val result = controller.hasReachedSubmissionLimit(eori)(request)
 
       status(result) mustBe NO_CONTENT
     }
@@ -1151,7 +1159,7 @@ class ReportRequestControllerSpec extends SpecBase with WireMockHelper {
 
       val request = FakeRequest(GET, "/trade-reporting-extracts/report-request-limit-number")
 
-      val result = route(app, request).value
+      val result = controller.getReportRequestLimitNumber(request)
 
       contentAsJson(result) mustBe Json.toJson("25")
     }

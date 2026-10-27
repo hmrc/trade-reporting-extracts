@@ -18,7 +18,7 @@ package uk.gov.hmrc.tradereportingextracts.utils
 
 import play.api.test.FakeRequest
 
-class HeaderUtilsSpec extends SpecBase {
+class HeaderUtilsSpec extends UnitSpecBase {
 
   "HeaderUtils" should {
 

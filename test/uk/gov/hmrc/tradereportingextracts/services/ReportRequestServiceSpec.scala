@@ -17,6 +17,7 @@
 package uk.gov.hmrc.tradereportingextracts.services
 
 import org.mockito.Mockito.{reset, verify, when}
+import org.scalatest.BeforeAndAfterEach
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.matchers.must.Matchers.{mustBe, mustEqual}
 import org.scalatest.matchers.should.Matchers
@@ -28,7 +29,6 @@ import uk.gov.hmrc.tradereportingextracts.models.*
 import uk.gov.hmrc.tradereportingextracts.models.eis.EisReportStatusRequest
 import uk.gov.hmrc.tradereportingextracts.models.eis.EisReportStatusRequest.StatusType
 import uk.gov.hmrc.tradereportingextracts.repositories.ReportRequestRepository
-import uk.gov.hmrc.tradereportingextracts.utils.WireMockHelper
 import org.mockito.Mockito.*
 import org.mockito.ArgumentMatchers.{eq as eqTo, *}
 import org.scalatestplus.mockito.MockitoSugar
@@ -44,7 +44,7 @@ class ReportRequestServiceSpec
     with Matchers
     with MockitoSugar
     with ScalaFutures
-    with WireMockHelper {
+    with BeforeAndAfterEach {
 
   val service                                              =
     new ReportRequestService(null, null, null, null) // nulls are fine here since we’re only testing private logic

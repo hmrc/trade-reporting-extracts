@@ -25,15 +25,17 @@ import uk.gov.hmrc.tradereportingextracts.utils.SpecBase
 
 class ReportStatusControllerSpec extends SpecBase {
 
+  override def fakeApplication(): Application = application.build()
+
   "ReportStatusController" should {
-    "return 400 BadRequest" in new Setup {
+    "return 400 BadRequest" in {
       val request = FakeRequest(PUT, routes.ReportStatusController.notifyReportStatus().url)
 
       val result = route(app, request).value
       status(result) shouldBe BAD_REQUEST
     }
   }
-  "return 403 Forbidden" in new Setup {
+  "return 403 Forbidden" in {
     val request = FakeRequest(PUT, routes.ReportStatusController.notifyReportStatus().url)
       .withHeaders(
         "content-type"          -> "application/json",
@@ -49,7 +51,7 @@ class ReportStatusControllerSpec extends SpecBase {
 
   }
 
-  "return 201 Created" in new Setup {
+  "return 201 Created" in {
     val eisReportStatusRequest = EisReportStatusRequest(
       applicationComponent = EisReportStatusRequest.ApplicationComponent.CDAP,
       statusCode = "200",
@@ -72,7 +74,7 @@ class ReportStatusControllerSpec extends SpecBase {
     status(result) shouldBe CREATED
 
   }
-  "return 404 MethodNotAllowed" in new Setup {
+  "return 404 MethodNotAllowed" in {
     val request = FakeRequest(GET, routes.ReportStatusController.notifyReportStatus().url)
 
     val result = route(app, request).value
@@ -80,7 +82,7 @@ class ReportStatusControllerSpec extends SpecBase {
 
   }
 
-  "return 400 when missing body" in new Setup {
+  "return 400 when missing body" in {
     val request = FakeRequest(PUT, routes.ReportStatusController.notifyReportStatus().url)
       .withHeaders(
         "content-type"          -> "application/json",
@@ -95,7 +97,7 @@ class ReportStatusControllerSpec extends SpecBase {
     status(result) shouldBe 400
   }
 
-  "return 400 when invalid body" in new Setup {
+  "return 400 when invalid body" in {
     val request = FakeRequest(PUT, routes.ReportStatusController.notifyReportStatus().url)
       .withHeaders(
         "content-type"          -> "application/json",
@@ -110,9 +112,4 @@ class ReportStatusControllerSpec extends SpecBase {
     val result = route(app, request).value
     status(result) shouldBe 400
   }
-
-  trait Setup {
-    val app: Application = application.build()
-  }
-
 }

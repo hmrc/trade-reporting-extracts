@@ -22,23 +22,22 @@ import uk.gov.hmrc.tradereportingextracts.utils.SpecBase
 
 class AppConfigSpec extends SpecBase with Matchers {
 
+  override def fakeApplication(): Application = application.build()
+
+  private lazy val appConfig: AppConfig = app.injector.instanceOf[AppConfig]
+
   "AppConfig" should {
 
-    "return the correct appName" in new Setup {
+    "return the correct appName" in {
       appConfig.appName shouldBe "trade-reporting-extracts"
     }
 
-    "return the correct customsDataStore URL" in new Setup {
+    "return the correct customsDataStore URL" in {
       appConfig.customsDataStore shouldBe "http://localhost:2101/trade-reporting-extracts-stub"
     }
 
-    "return correct eis" in new Setup {
+    "return correct eis" in {
       appConfig.eis shouldBe "http://localhost:2101/trade-reporting-extracts-stub/gbe/requesttraderreport/v1"
     }
-  }
-
-  trait Setup {
-    val app: Application     = application.build()
-    val appConfig: AppConfig = app.injector.instanceOf[AppConfig]
   }
 }

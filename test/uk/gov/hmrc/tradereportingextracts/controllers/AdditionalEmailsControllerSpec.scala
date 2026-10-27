@@ -23,12 +23,12 @@ import play.api.mvc.Result
 import play.api.test.{FakeRequest, Helpers}
 import play.api.test.Helpers.*
 import uk.gov.hmrc.tradereportingextracts.services.AdditionalEmailService
-import uk.gov.hmrc.tradereportingextracts.utils.SpecBase
+import uk.gov.hmrc.tradereportingextracts.utils.UnitSpecBase
 import uk.gov.hmrc.tradereportingextracts.controllers.support.FakeAuth
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class AdditionalEmailsControllerSpec extends SpecBase {
+class AdditionalEmailsControllerSpec extends UnitSpecBase {
 
   implicit val ec: ExecutionContext                   = ExecutionContext.Implicits.global
   private val mockUserService: AdditionalEmailService = mock[AdditionalEmailService]

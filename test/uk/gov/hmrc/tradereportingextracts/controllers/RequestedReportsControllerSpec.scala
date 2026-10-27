@@ -28,13 +28,13 @@ import uk.gov.hmrc.tradereportingextracts.models.ReportStatus.IN_PROGRESS
 import uk.gov.hmrc.tradereportingextracts.models.ReportTypeName.EXPORTS_ITEM_REPORT
 import uk.gov.hmrc.tradereportingextracts.models.{GetReportRequestsResponse, UserReport}
 import uk.gov.hmrc.tradereportingextracts.services.ReportRequestService
-import uk.gov.hmrc.tradereportingextracts.utils.SpecBase
+import uk.gov.hmrc.tradereportingextracts.utils.UnitSpecBase
 import uk.gov.hmrc.tradereportingextracts.utils.ApplicationConstants
 
 import java.time.Instant
 import scala.concurrent.{ExecutionContext, Future}
 
-class RequestedReportsControllerSpec extends SpecBase:
+class RequestedReportsControllerSpec extends UnitSpecBase:
 
   implicit val ec: ExecutionContext = ExecutionContext.Implicits.global
 

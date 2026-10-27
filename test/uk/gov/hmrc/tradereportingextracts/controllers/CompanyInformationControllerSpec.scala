@@ -22,13 +22,13 @@ import play.api.test.Helpers.*
 import play.api.test.{FakeRequest, Helpers}
 import uk.gov.hmrc.tradereportingextracts.models.{AddressInformation, CompanyInformation}
 import uk.gov.hmrc.tradereportingextracts.services.CompanyInformationService
-import uk.gov.hmrc.tradereportingextracts.utils.SpecBase
+import uk.gov.hmrc.tradereportingextracts.utils.UnitSpecBase
 import uk.gov.hmrc.tradereportingextracts.utils.ApplicationConstants
 import uk.gov.hmrc.tradereportingextracts.controllers.support.FakeAuth
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class CompanyInformationControllerSpec extends SpecBase {
+class CompanyInformationControllerSpec extends UnitSpecBase {
 
   implicit val ec: ExecutionContext         = ExecutionContext.Implicits.global
   private val mockCompanyInformationService = mock[CompanyInformationService]
