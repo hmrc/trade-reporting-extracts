@@ -74,8 +74,7 @@ class EoriUpdateControllerSpec extends SpecBase {
   }
 
   "return 400 BadRequest when missing body" in {
-    val eoriUpdate = EoriUpdate(newEori = "GB987654321098", oldEori = "GB123456789012")
-    val request    = FakeRequest(PUT, routes.EoriUpdateController.eoriUpdate().url)
+    val request = FakeRequest(PUT, routes.EoriUpdateController.eoriUpdate().url)
       .withHeaders(
         "authorization"         -> "Bearer EtmpAuthToken",
         "content-type"          -> "application/json",
@@ -84,13 +83,12 @@ class EoriUpdateControllerSpec extends SpecBase {
         "x-transmitting-system" -> "CDAP",
         "source-system"         -> "CDAP"
       )
-    val result     = route(app, request).value
+    val result  = route(app, request).value
     status(result) shouldBe BAD_REQUEST
   }
 
   "return 400 BadRequest when invalid body" in {
-    val eoriUpdate = EoriUpdate(newEori = "GB987654321098", oldEori = "GB123456789012")
-    val request    = FakeRequest(PUT, routes.EoriUpdateController.eoriUpdate().url)
+    val request = FakeRequest(PUT, routes.EoriUpdateController.eoriUpdate().url)
       .withHeaders(
         "authorization"         -> "Bearer EtmpAuthToken",
         "content-type"          -> "application/json",
@@ -100,7 +98,7 @@ class EoriUpdateControllerSpec extends SpecBase {
         "source-system"         -> "CDAP"
       )
       .withBody(Json.obj("invalidField" -> "invalidValue"))
-    val result     = route(app, request).value
+    val result  = route(app, request).value
     status(result) shouldBe BAD_REQUEST
   }
 }
