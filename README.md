@@ -1,88 +1,70 @@
 # trade-reporting-extracts
 
-[![License: Apache 2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](http://www.apache.org/licenses/LICENSE-2.0.html)
+## About
 
 Trade Reporting Extracts (TRE) is a backend service that receives report requests from the frontend, persists them in the TRE data store, and manages notifications about report availability and status. It enables users to request, track, and download trade reports efficiently.
 
-## Running the Service Locally
+## How to Run this Service
 
-You can run the service locally in two ways:
-
-### 1. Using sbt
-
-After cloning the repository, run the following command in the root directory:
+To run the service locally, you can use:
 
 ```bash
-sbt run
+ sbt run
 ```
 
-### 2. Using Service Manager CLI
+### Prerequisites
 
 To use the service manager CLI (sm2), please refer to the [official setup guide](https://docs.tax.service.gov.uk/mdtp-handbook/documentation/developer-set-up/set-up-service-manager.html) for instructions on how to install and configure it locally.
 
 Once set up:
-
-* To start the service:
-
+- To start this specific use:
+  ```sh
+  sm2 --start TRADE_REPORTING_EXTRACTS
+  ```
+- To run the full set of services connected to this frontend, use:
   ```sh
   sm2 --start TRE_ALL
   ```
-* To stop the service:
-
+- To stop the service:
   ```sh
-  sm2 --stop TRE_ALL
+  sm2 --stop TRADE_REPORTING_EXTRACTS
   ```
 
-## Login enrolments
-
-The service's endpoints (that need Enrolment to access) can be accessed by using the enrolments below:
-
-| Enrolment Key | Identifier Name | Identifier Value |
-| ------------- | --------------- |------------------|
-| HMRC-CUS-ORG  | EORINumber      | GB123456789012   |
-| HMRC-CUS-ORG  | EORINumber      | GB123456789014   |
-
-## Testing
+## How to Test This Service
 
 The minimum requirement for test coverage is **90%**. Builds will fail when the project drops below this threshold.
 
-| Command                                | Description                  |
-| -------------------------------------- | ---------------------------- |
-| `sbt test`                             | Runs unit tests locally      |
-| `sbt "test/testOnly *TEST_FILE_NAME*"` | Runs tests for a single file |
-
-## Coverage
-
 | Command                                  | Description                                                                                                        |
-| ---------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
-| `sbt clean coverage test coverageReport` | Generates a unit test coverage report. The report can be found at `target/scala-3.3.4/scoverage-report/index.html` |
+|------------------------------------------|--------------------------------------------------------------------------------------------------------------------|
+| `sbt test`                               | Runs unit tests locally                                                                                            |
+| `sbt it/test`                            | Runs integration tests                                                                                             |
+| `sbt "test/testOnly *TEST_FILE_NAME*"`   | Runs tests for a single file                                                                                       |
+| `sbt clean coverage test coverageReport` | Generates a unit test coverage report. The report can be found at `target/scala-3.3.6/scoverage-report/index.html` |
 
----
+## Manual Testing in QA and Staging
+Once the above acceptance tests jobs have been completed successfully, manually verify the service in the QA and Staging environments.
+> **Note:** The QA environment uses real upstream services, so the acceptance tests are **not** run against QA. QA must be verified manually.
+> Before testing in QA, make sure the EORINumber being used has a valid CDS subscription.
 
-## Helpful Commands
+| Environment | Service URL                                                                                      | 
+|-------------|--------------------------------------------------------------------------------------------------|
+| Local       | [Open the service in Local](http://localhost:9949/auth-login-stub/gg-sign-in)                    |
+| QA          | [Open the service in QA](https://www.qa.tax.service.gov.uk/auth-login-stub/gg-sign-in)           |
+| Staging     | [Open the service in Staging](https://www.staging.tax.service.gov.uk/auth-login-stub/gg-sign-in) |
 
-| Command                                  | Description                |
-| ---------------------------------------- | -------------------------- |
-| `sbt run`                                | Runs the service           |
-| `sbt clean`                              | Cleans build artifacts     |
-| `sbt compile`                            | Compiles the project       |
-| `sbt coverage`                           | Generates coverage data    |
-| `sbt test`                               | Runs unit tests            |
-| `sbt it/test`                            | Runs integration tests     |
-| `sbt scalafmtCheckAll`                   | Formatting checks          |
-| `sbt scalafmtAll`                        | Formats source code        |
-| `sbt "test/testOnly *TEST_FILE_NAME*"`   | Run a single test          |
-| `sbt clean coverage test coverageReport` | Generate a coverage report |
+## Service Catalogue
+- You can find this repo in the MDTP catalogue here: [trade-reporting-extracts](https://catalogue.tax.service.gov.uk/repositories/trade-reporting-extracts)
 
-Coverage report location:
+## Jenkins Pipeline
+- [trade-reporting-extracts](https://build.tax.service.gov.uk/job/BordersAndTradeLiveServices/job/TRE/job/trade-reporting-extracts/)
+- [trade-reporting-extracts-pipeline](https://build.tax.service.gov.uk/job/BordersAndTradeLiveServices/job/TRE/job/trade-reporting-extracts-pipeline/)
+- [trade-reporting-extracts-pr-builder](https://build.tax.service.gov.uk/job/BordersAndTradeLiveServices/job/TRE/job/trade-reporting-extracts-pr-builder/)
 
-```text
-target/scala-3.3.5/scoverage-report/index.html
-```
+## Service Manager Profiles
+These profiles are defined in [service-manager-config](https://github.com/hmrc/service-manager-config).
+Depending on what you wish to run, you can use one of these profiles (which include the trade-reporting-extracts-frontend service):
 
----
-
-## API Endpoints Overview
+## Endpoints
 
 | Name                                                                                                    | Method | Endpoint                                                                       | Description                                                                         |
 |---------------------------------------------------------------------------------------------------------|--------|--------------------------------------------------------------------------------|-------------------------------------------------------------------------------------|
@@ -113,8 +95,6 @@ target/scala-3.3.5/scoverage-report/index.html
 | [Add Additional Email API](#add-additional-email-api)                                                   | POST   | `/trade-reporting-extracts/add-additional-email`                               | Add an additional email address for report notifications.                                                   |
 | [Remove Additional Email API](#remove-additional-email-api)                                             | DELETE | `/trade-reporting-extracts/remove-additional-email`                            | Remove an additional email address used for report notifications.                                                 |
 | [Update Personal Email Notification Preference API](#update-personal-email-notification-preference-api) | POST   | `/trade-reporting-extracts/user/update-personal-email-notification-preference` | Update personal email notification preferences.                                     |
-
----
 
 ## ReportRequest API
 
@@ -1426,4 +1406,39 @@ Service failure:
 Failed to remove additional email
 ```
 
----
+## Enrolment Required
+
+The service's endpoints (that need Enrolment to access) can be accessed by using the enrolments below:
+
+| Enrolment Key | Identifier Name | Identifier Value |
+| ------------- | --------------- |------------------|
+| HMRC-CUS-ORG  | EORINumber      | GB123456789012   |
+| HMRC-CUS-ORG  | EORINumber      | GB123456789014   |
+
+### Scalafmt
+
+The code is formatted with [sbt-scalafmt](https://scalameta.org/scalafmt/docs/installation.html#sbt), using the rules in `.scalafmt.conf`.
+To check all project files are formatted as expected use the following commands:
+
+```bash
+ sbt scalafmtCheckAll scalafmtCheck
+```
+
+Format `*.sbt` and `project/*.scala` files as follows:
+
+```bash
+ sbt scalafmtSbt
+```
+
+Format all project files as follows:
+
+```bash
+ sbt scalafmtAll
+```
+
+## License
+
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
+
+This code is open source software licensed under
+the [Apache 2.0 License](http://www.apache.org/licenses/LICENSE-2.0.html).
